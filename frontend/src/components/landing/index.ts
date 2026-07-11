@@ -1,0 +1,9 @@
+export { HeroSection } from "./HeroSection";
+export { TrustStripSection } from "./TrustStripSection";
+export { HookSection } from "./HookSection";
+export { WhatYouGetSection } from "./WhatYouGetSection";
+export { PillarsSection } from "./PillarsSection";
+export { WhoItsForSection } from "./WhoItsForSection";
+export { CertificationSection } from "./CertificationSection";
+export { PricingTeaserSection } from "./PricingTeaserSection";
+export { FinalCTASection } from "./FinalCTASection";

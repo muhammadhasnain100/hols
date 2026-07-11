@@ -1,0 +1,102 @@
+@import "tailwindcss";
+
+/*
+ * Brand tokens are defined in src/config/brand.ts
+ * and injected at runtime via <BrandStyles /> in layout.tsx.
+ * Tailwind utilities below map to those CSS variables.
+ */
+
+@theme inline {
+  --color-background: var(--brand-background);
+  --color-foreground: var(--brand-foreground);
+  --color-muted: var(--brand-muted);
+  --color-border: var(--brand-border);
+  --color-ring: var(--brand-ring);
+
+  --color-primary: var(--brand-prussian-blue);
+  --color-primary-light: var(--brand-dusk-blue);
+  --color-accent: var(--brand-lemon-lime);
+  --color-accent-light: var(--brand-baby-blue);
+  --color-neutral: var(--brand-charcoal);
+
+  --font-sans: var(--font-primary-stack);
+  --font-body: var(--font-secondary-stack);
+}
+
+/* Responsive brand heading scale */
+@media (max-width: 768px) {
+  :root {
+    --brand-text-heading: 2.25rem;
+    --brand-text-subheading: 1.75rem;
+  }
+}
+
+body {
+  background: var(--brand-background);
+  color: var(--brand-foreground);
+  font-family: var(--font-secondary-stack);
+  font-size: var(--brand-text-body);
+  font-weight: 300;
+  line-height: var(--brand-leading-body);
+  letter-spacing: var(--brand-tracking-body);
+}
+
+/* ── Brand typography utilities ─────────────────────────────── */
+
+.text-brand-heading {
+  font-family: var(--font-primary-stack);
+  font-size: var(--brand-text-heading);
+  font-weight: 700;
+  line-height: var(--brand-leading-heading);
+  letter-spacing: var(--brand-tracking-heading);
+}
+
+.text-brand-subheading {
+  font-family: var(--font-primary-stack);
+  font-size: var(--brand-text-subheading);
+  font-weight: 400;
+  line-height: var(--brand-leading-subheading);
+  letter-spacing: var(--brand-tracking-subheading);
+}
+
+.text-brand-body {
+  font-family: var(--font-secondary-stack);
+  font-size: var(--brand-text-body);
+  font-weight: 300;
+  line-height: var(--brand-leading-body);
+  letter-spacing: var(--brand-tracking-body);
+}
+
+.text-brand-caption {
+  font-family: var(--font-primary-stack);
+  font-size: var(--brand-text-caption);
+  font-weight: 400;
+  line-height: var(--brand-leading-caption);
+  letter-spacing: var(--brand-tracking-caption);
+}
+
+/* ── Brand gradient utilities ───────────────────────────────── */
+
+.bg-gradient-life-glow {
+  background: var(--brand-gradient-lifeGlow);
+}
+
+.bg-gradient-science-haze {
+  background: var(--brand-gradient-scienceHaze);
+}
+
+.bg-gradient-deep-intelligence {
+  background: var(--brand-gradient-deepIntelligence);
+}
+
+.bg-gradient-human-touch {
+  background: var(--brand-gradient-humanTouch);
+}
+
+.bg-gradient-bio-calm {
+  background: var(--brand-gradient-bioCalm);
+}
+
+.bg-gradient-future-pulse {
+  background: var(--brand-gradient-futurePulse);
+}
