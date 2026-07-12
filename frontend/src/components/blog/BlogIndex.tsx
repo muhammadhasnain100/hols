@@ -5,11 +5,10 @@ import { Button } from "@/components/ui/Button";
 import { BlogCard } from "@/components/blog/BlogCard";
 import { NewsletterBlock } from "@/components/blog/BlogClient";
 import { blogCategories, blogContent } from "@/content/blog";
-import { getFeaturedPost, getPostsByCategory } from "@/lib/blog";
+import { getPostsByCategory } from "@/lib/blog";
 import { cn } from "@/lib/utils";
 
 export function BlogIndex() {
-  const featured = getFeaturedPost();
   const [activeCategory, setActiveCategory] = useState<string>("All");
   const [visibleCount, setVisibleCount] = useState<number>(blogContent.index.initialVisible);
 
@@ -28,20 +27,6 @@ export function BlogIndex() {
 
   return (
     <>
-      {featured && (
-        <div className="mb-12 md:mb-16">
-          <BlogCard
-            slug={featured.slug}
-            title={featured.title}
-            teaser={featured.teaser}
-            date={featured.date}
-            category={featured.category}
-            lastReviewed={featured.lastReviewed}
-            featured
-          />
-        </div>
-      )}
-
       <div className="flex flex-wrap justify-center gap-2.5 md:gap-3">
         {["All", ...blogCategories].map((category) => (
           <button

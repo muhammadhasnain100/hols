@@ -1,10 +1,9 @@
 "use client";
 
+import Image from "next/image";
 import { useEffect, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap, registerGsap, ScrollTrigger } from "@/lib/gsap";
-import { HookProblemIllustration } from "@/components/illustrations/HookProblemIllustration";
-import { HookSolutionIllustration } from "@/components/illustrations/HookSolutionIllustration";
 import { Container } from "@/components/ui/Container";
 import { landingContent } from "@/content/landing";
 import { prefersReducedMotion } from "@/lib/motion";
@@ -23,11 +22,13 @@ function SplitTitle({ text, className }: { text: string; className?: string }) {
 }
 
 function HookImage({
-  variant,
+  src,
+  alt,
   label,
   dark = false,
 }: {
-  variant: "problem" | "solution";
+  src: string;
+  alt: string;
   label: string;
   dark?: boolean;
 }) {
@@ -38,11 +39,9 @@ function HookImage({
         dark ? "border-white/20 bg-primary" : "border-primary/10 bg-white",
       )}
     >
-      {variant === "problem" ? (
-        <HookProblemIllustration className="h-auto w-full" />
-      ) : (
-        <HookSolutionIllustration className="h-auto w-full" />
-      )}
+      <div className="relative aspect-[16/10] w-full">
+        <Image src={src} alt={alt} fill className="object-cover" sizes="(max-width: 1024px) 100vw, 50vw" />
+      </div>
       <figcaption
         className={cn(
           "px-5 py-3 font-sans text-xs font-semibold uppercase tracking-[0.16em]",
@@ -59,15 +58,19 @@ function HookPanelContent({
   imageLeft,
   label,
   text,
-  variant,
+  image,
+  imageAlt,
+  dark = false,
 }: {
   imageLeft: boolean;
   label: string;
   text: string;
-  variant: "problem" | "solution";
+  image: string;
+  imageAlt: string;
+  dark?: boolean;
 }) {
-  const image = (
-    <HookImage variant={variant} label={label} dark={variant === "solution"} />
+  const imageBlock = (
+    <HookImage src={image} alt={imageAlt} label={label} dark={dark} />
   );
 
   const copy = (
@@ -75,7 +78,9 @@ function HookPanelContent({
       <p className="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-primary-light">
         {label}
       </p>
-      <p className="mt-5 text-base leading-7 text-muted md:text-lg md:leading-8">{text}</p>
+      <p className="mt-5 text-base leading-7 text-muted md:text-lg md:leading-8">
+        {text}
+      </p>
     </div>
   );
 
@@ -83,13 +88,13 @@ function HookPanelContent({
     <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
       {imageLeft ? (
         <>
-          <div>{image}</div>
+          <div>{imageBlock}</div>
           <div>{copy}</div>
         </>
       ) : (
         <>
           <div className="lg:order-1">{copy}</div>
-          <div className="lg:order-2">{image}</div>
+          <div className="lg:order-2">{imageBlock}</div>
         </>
       )}
     </div>
@@ -111,13 +116,17 @@ function HookSectionStatic() {
             imageLeft
             label={hook.beforeLabel}
             text={hook.problem}
-            variant="problem"
+            image={hook.problemImage}
+            imageAlt={hook.beforeLabel}
+            dark
           />
           <HookPanelContent
             imageLeft={false}
             label={hook.afterLabel}
             text={hook.resolution}
-            variant="solution"
+            image={hook.solutionImage}
+            imageAlt={hook.afterLabel}
+            dark
           />
         </div>
       </Container>
@@ -257,7 +266,9 @@ export function HookSection() {
                   imageLeft
                   label={hook.beforeLabel}
                   text={hook.problem}
-                  variant="problem"
+                  image={hook.problemImage}
+                  imageAlt={hook.beforeLabel}
+                  dark
                 />
               </div>
 
@@ -266,7 +277,9 @@ export function HookSection() {
                   imageLeft={false}
                   label={hook.afterLabel}
                   text={hook.resolution}
-                  variant="solution"
+                  image={hook.solutionImage}
+                  imageAlt={hook.afterLabel}
+                  dark
                 />
               </div>
 
@@ -276,7 +289,9 @@ export function HookSection() {
                   imageLeft
                   label={hook.beforeLabel}
                   text={hook.problem}
-                  variant="problem"
+                  image={hook.problemImage}
+                  imageAlt={hook.beforeLabel}
+                  dark
                 />
               </div>
             </div>

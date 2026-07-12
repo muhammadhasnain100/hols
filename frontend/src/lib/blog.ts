@@ -17,9 +17,8 @@ export function getPostBySlug(slug: string): BlogPost | undefined {
 }
 
 export function getPostsByCategory(category: BlogCategory | "All"): BlogPost[] {
-  const gridPosts = getGridPosts();
-  if (category === "All") return gridPosts;
-  return gridPosts.filter((post) => post.category === category);
+  if (category === "All") return blogPosts;
+  return blogPosts.filter((post) => post.category === category);
 }
 
 export function getAllPostSlugs(): string[] {

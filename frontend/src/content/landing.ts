@@ -3,7 +3,7 @@ export const landingContent = {
     eyebrow: "HOUSE OF LIFE SCIENCES",
     headline: "Run peptides in your clinic with confidence.",
     subhead:
-      "Get your whole team trained, keep the dosing right, and hand patients clean, branded materials — without becoming the peptide expert yourself.",
+      "Get your whole team trained, keep the dosing right, and hand patients clean, branded materials without becoming the peptide expert yourself.",
     primaryCta: { label: "Get Started", href: "/contact" },
     secondaryCta: { label: "Book a Demo", href: "/contact#demo" },
   },
@@ -14,106 +14,111 @@ export const landingContent = {
   ],
   hook: {
     headline:
-      "Demand for peptides is growing fast — and getting it right shouldn’t be left to guesswork.",
+      "Demand for peptides is growing fast, and getting it right shouldn’t be left to guesswork.",
     problem:
-      "Today the answers are scattered across forums, group chats, and unverified PDFs — and that uncertainty becomes your clinic’s risk.",
+      "Today the answers are scattered across forums, group chats, and unverified PDFs, and that uncertainty becomes your clinic’s risk.",
     resolution:
-      "We bring everything your clinic needs into one place — the training, the dosing, the patient paperwork — so your team can move quickly and get it right.",
+      "We bring everything your clinic needs into one place: the training, the dosing, and the patient paperwork, so your team can move quickly and get it right.",
     beforeLabel: "Scattered information",
     afterLabel: "One trusted system",
+    problemImage: "/assets/images/hols-tote-bag-lifestyle.png",
+    solutionImage: "/assets/images/hols-welcome-sign-lobby.png",
   },
   whatYouGet: {
-    eyebrow: "What you get",
     headline: "One place to train your team and run peptides properly.",
-    trustBar:
-      "Every protocol, dose, and document is vetted by clinical experts and updated in real-time.",
     cards: [
       {
         id: "courses",
+        image: "/assets/images/hols-education-books-mockup.png",
         title: "Expert-Led Courses",
         description:
           "Training that actually teaches. Onboard your team quickly and ensure everyone operates at the highest clinical standard.",
       },
       {
         id: "dosing",
+        image: "/assets/images/hols-brand-cards-trio.png",
         title: "Dosing Tools That Do the Math",
         description:
           "Eliminate human error. Get precise, instant calculations tailored to your patient protocols without the guesswork.",
       },
       {
         id: "documents",
+        image: "/assets/images/hols-business-cards-mockup.png",
         title: "Ready-to-Use Patient Documents",
         description:
           "Fully compliant paperwork customized with your clinic’s branding. Ready to print or sign digitally from day one.",
       },
     ],
-    badge: {
-      title: "Expert-Checked & Updated",
-      description: "Checked by experts · Kept up to date · Sources on everything",
-    },
   },
   pillars: {
     headline: "Everything inside",
     items: [
       {
         id: "training",
+        image: "/assets/images/hols-education-books-mockup.png",
         title: "Training that sticks",
         description:
           "Short, structured courses that take your staff from “new to peptides” to confident, with a certificate at the end.",
       },
       {
         id: "reference",
+        image: "/assets/images/hols-notebook-bookmarks.png",
         title: "A peptide reference you can trust",
         description:
           "Every peptide, explained the same clear way: what it does, how to dose it, what to watch for, and the sources behind it.",
       },
       {
         id: "dosing",
+        image: "/assets/images/hols-brand-cards-trio.png",
         title: "Dosing tools that do the math",
         description:
-          "Reconstitution, titration, and full protocols worked out for you — no more manual calculations.",
+          "Reconstitution, titration, and full protocols worked out for you, no more manual calculations.",
       },
       {
         id: "paperwork",
+        image: "/assets/images/hols-business-cards-mockup.png",
         title: "Patient paperwork, done for you",
         description:
           "Handouts, consent forms, and dosing sheets with your clinic’s logo, ready to print and hand over.",
       },
       {
         id: "community",
+        image: "/assets/images/hols-welcome-sign-lobby.png",
         title: "A community that understands your work",
         description:
           "A private forum, monthly live Q&As, and updates so you’re never figuring it out alone.",
       },
       {
         id: "assistant",
+        image: "/assets/images/hols-subway-poster-mockup.png",
         title: "An assistant you can trust",
         description:
           "Ask anything about peptides and get a clear answer, drawn only from our vetted content, with the source attached.",
       },
     ],
-    cta: { label: "See everything inside", href: "/features" },
   },
   whoItsFor: {
-    eyebrow: "Who it's for",
     headline: "Built for your whole practice.",
     audiences: [
       {
         id: "owners",
+        image: "/assets/images/hols-awning-storefront.png",
         title: "Clinic owners",
         description:
           "Train everyone to the same standard, lower your risk, and present your practice professionally.",
       },
       {
         id: "providers",
+        image: "/assets/images/hols-subway-poster-mockup.png",
         title: "Your providers",
         description:
           "Dosing and protocols they can rely on, plus a credential worth showing.",
       },
       {
         id: "learners",
+        image: "/assets/images/hols-notebook-bookmarks.png",
         title: "Anyone serious about learning",
-        description: "Clear, evidence-based peptide education.",
+        description: "Clear, evidence based peptide education.",
       },
     ],
   },
