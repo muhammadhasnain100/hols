@@ -1,4 +1,5 @@
 import { Section } from "@/components/ui/Section";
+import { ScrollReveal } from "@/components/animations/ScrollReveal";
 import { landingContent } from "@/content/landing";
 
 export function CertificationSection() {
@@ -6,7 +7,7 @@ export function CertificationSection() {
 
   return (
     <Section variant="default">
-      <div className="mx-auto flex max-w-4xl flex-col items-center gap-8 rounded-3xl border border-border/50 bg-primary/[0.03] p-10 text-center md:p-14">
+      <ScrollReveal className="mx-auto flex max-w-4xl flex-col items-center gap-8 rounded-3xl border border-border/50 bg-primary/[0.03] p-10 text-center md:p-14">
         <div className="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-accent/30 text-primary">
           <svg
             className="h-7 w-7"
@@ -29,7 +30,7 @@ export function CertificationSection() {
         <p className="max-w-2xl text-brand-body text-muted">
           {certification.body}
         </p>
-      </div>
+      </ScrollReveal>
     </Section>
   );
 }

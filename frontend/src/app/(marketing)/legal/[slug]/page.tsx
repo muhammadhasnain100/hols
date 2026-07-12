@@ -1,4 +1,4 @@
-import { Section } from "@/components/ui/Section";
+import { HeroShell } from "@/components/layout/HeroShell";
 import { PageHero } from "@/components/ui/PageHero";
 
 const titles: Record<string, string> = {
@@ -27,12 +27,8 @@ export default async function LegalPage({
   const title = titles[slug] ?? "Legal";
 
   return (
-    <Section variant="default" className="pt-20">
-      <PageHero
-        headline={title}
-        subhead="This page is coming soon."
-        centered
-      />
-    </Section>
+    <HeroShell>
+      <PageHero headline={title} subhead="This page is coming soon." centered />
+    </HeroShell>
   );
 }

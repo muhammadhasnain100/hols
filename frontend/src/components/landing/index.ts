@@ -1,5 +1,4 @@
 export { HeroSection } from "./HeroSection";
-export { TrustStripSection } from "./TrustStripSection";
 export { HookSection } from "./HookSection";
 export { WhatYouGetSection } from "./WhatYouGetSection";
 export { PillarsSection } from "./PillarsSection";

@@ -1,6 +1,5 @@
 import {
   HeroSection,
-  TrustStripSection,
   HookSection,
   WhatYouGetSection,
   PillarsSection,
@@ -20,7 +19,6 @@ export default function HomePage() {
   return (
     <>
       <HeroSection />
-      <TrustStripSection />
       <HookSection />
       <WhatYouGetSection />
       <PillarsSection />

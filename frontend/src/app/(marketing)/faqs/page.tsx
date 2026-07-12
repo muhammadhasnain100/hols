@@ -1,31 +1,21 @@
-import { Section } from "@/components/ui/Section";
+import { HeroShell } from "@/components/layout/HeroShell";
 import { PageHero } from "@/components/ui/PageHero";
 import { CTABlock } from "@/components/ui/CTABlock";
-import { FAQItem } from "@/components/faqs/FAQItem";
+import { FAQsSection } from "@/components/faqs/FAQsSection";
 import { faqsContent } from "@/content/faqs";
 
 export default function FAQsPage() {
   return (
     <>
-      <Section variant="gradient" className="pt-20 pb-16 md:pt-28">
+      <HeroShell variant="landing">
         <PageHero
+          variant="landing"
           headline={faqsContent.hero.headline}
           subhead={faqsContent.hero.subhead}
         />
-      </Section>
+      </HeroShell>
 
-      <Section variant="default">
-        <div className="mx-auto max-w-3xl">
-          {faqsContent.items.map((item, index) => (
-            <FAQItem
-              key={item.question}
-              question={item.question}
-              answer={item.answer}
-              defaultOpen={index === 0}
-            />
-          ))}
-        </div>
-      </Section>
+      <FAQsSection />
 
       <CTABlock
         headline={faqsContent.closingCta.headline}

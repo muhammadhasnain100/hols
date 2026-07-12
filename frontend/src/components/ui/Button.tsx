@@ -1,52 +1,85 @@
-import Link from "next/link";
-import { cn } from "@/lib/utils";
+"use client";
 
-type ButtonVariant = "primary" | "secondary" | "ghost" | "accent";
+import Link from "next/link";
+import { useSpreadHover } from "@/hooks/useSpreadHover";
+import {
+  buttonHoverSpread,
+  getButtonClassName,
+  type ButtonVariant,
+  buttonSizes,
+} from "@/lib/button-styles";
 
 type ButtonProps = {
   href?: string;
   variant?: ButtonVariant;
+  size?: keyof typeof buttonSizes;
   children: React.ReactNode;
   className?: string;
   type?: "button" | "submit";
   onClick?: () => void;
 };
 
-const variants: Record<ButtonVariant, string> = {
-  primary:
-    "bg-primary text-white hover:bg-primary-light border border-transparent",
-  secondary:
-    "bg-white text-primary border border-primary/20 hover:border-primary/40 hover:bg-primary/5",
-  ghost: "bg-transparent text-primary hover:bg-primary/5 border border-transparent",
-  accent:
-    "bg-accent text-primary border border-transparent hover:brightness-95",
-};
-
 export function Button({
   href,
   variant = "primary",
+  size = "md",
   children,
   className,
   type = "button",
   onClick,
 }: ButtonProps) {
-  const classes = cn(
-    "inline-flex items-center justify-center rounded-full px-6 py-3 text-sm font-medium transition-colors duration-200",
-    variants[variant],
-    className,
+  const spread = buttonHoverSpread[variant];
+  const { containerRef, fillRef, labelRef, onMouseEnter, onMouseLeave } =
+    useSpreadHover({
+      fillColor: spread.fill,
+      defaultColor: spread.textDefault,
+      hoverColor: spread.textHover,
+    });
+
+  const classes = getButtonClassName(variant, className, size);
+
+  const inner = (
+    <>
+      <span
+        ref={fillRef}
+        aria-hidden
+        className="pointer-events-none absolute z-0 rounded-full will-change-transform"
+      />
+      <span
+        ref={labelRef}
+        className="relative z-10 inline-flex items-center justify-center gap-2"
+        style={{ color: spread.textDefault }}
+      >
+        {children}
+      </span>
+    </>
   );
 
   if (href) {
     return (
-      <Link href={href} className={classes}>
-        {children}
+      <Link
+        ref={containerRef as React.RefObject<HTMLAnchorElement>}
+        href={href}
+        onClick={onClick}
+        className={classes}
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+      >
+        {inner}
       </Link>
     );
   }
 
   return (
-    <button type={type} onClick={onClick} className={classes}>
-      {children}
+    <button
+      ref={containerRef as React.RefObject<HTMLButtonElement>}
+      type={type}
+      onClick={onClick}
+      className={classes}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+    >
+      {inner}
     </button>
   );
 }
