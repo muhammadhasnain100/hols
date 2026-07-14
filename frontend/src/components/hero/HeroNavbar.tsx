@@ -35,7 +35,7 @@ export function HeroNavbar({ variant = "landing" }: HeroNavbarProps) {
             <Button href="/login" variant="glass" size="lg">
               Log in
             </Button>
-            <Button href="/contact" variant="primary" size="lg">
+            <Button href="/register" variant="primary" size="lg">
               Get Started
             </Button>
           </div>
@@ -45,7 +45,7 @@ export function HeroNavbar({ variant = "landing" }: HeroNavbarProps) {
         <div className="flex items-center justify-between gap-3 md:hidden">
           <HeroNavbarMobile />
           <HeroLogo variant="dark" compact className="h-8" />
-          <Button href="/contact" variant="primary" size="lg" className="min-w-[5.5rem] justify-center">
+          <Button href="/register" variant="primary" size="lg" className="min-w-[5.5rem] justify-center">
             Start
           </Button>
         </div>

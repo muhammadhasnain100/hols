@@ -10,6 +10,7 @@ type HeroShellProps = {
   fullHeight?: boolean;
   contained?: boolean;
   variant?: "page" | "landing";
+  showNavbar?: boolean;
 };
 
 export function HeroShell({
@@ -19,6 +20,7 @@ export function HeroShell({
   fullHeight = false,
   contained = true,
   variant = "page",
+  showNavbar = true,
 }: HeroShellProps) {
   const isLandingStyle = variant === "landing";
 
@@ -32,12 +34,18 @@ export function HeroShell({
         )}
       >
         <HeroBackground />
-        <HeroNavbar variant="landing" />
+        {showNavbar ? <HeroNavbar variant="landing" /> : null}
 
         <div
           className={cn(
             "relative z-10 flex flex-col justify-center",
-            fullHeight ? "min-h-svh pt-28 pb-20 md:pt-32 md:pb-28" : "min-h-[52vh] pt-28 pb-14 md:min-h-[58vh] md:pt-32 md:pb-16",
+            fullHeight
+              ? showNavbar
+                ? "min-h-svh pt-28 pb-20 md:pt-32 md:pb-28"
+                : "min-h-svh py-16 md:py-20"
+              : showNavbar
+                ? "min-h-[52vh] pt-28 pb-14 md:min-h-[58vh] md:pt-32 md:pb-16"
+                : "min-h-[52vh] py-14 md:min-h-[58vh] md:py-16",
             contentClassName,
           )}
         >
@@ -55,14 +63,18 @@ export function HeroShell({
         className,
       )}
     >
-      <HeroNavbar variant="page" />
+      {showNavbar ? <HeroNavbar variant="page" /> : null}
 
       <div
         className={cn(
           "relative",
           fullHeight
-            ? "flex min-h-svh flex-col justify-center pt-16 pb-20 md:pt-20 md:pb-28"
-            : "pt-24 pb-16 md:pt-28 md:pb-20",
+            ? showNavbar
+              ? "flex min-h-svh flex-col justify-center pt-16 pb-20 md:pt-20 md:pb-28"
+              : "flex min-h-svh flex-col justify-center py-16 md:py-20"
+            : showNavbar
+              ? "pt-24 pb-16 md:pt-28 md:pb-20"
+              : "py-16 md:py-20",
           contentClassName,
         )}
       >

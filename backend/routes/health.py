@@ -1,15 +1,20 @@
 from fastapi import APIRouter
 
-from models import HealthResponse, TestResponse
+from core.route_handlers import handle_route_errors
+from models.common import success_response
+from models.health import HealthData, HealthResponse, TestData, TestResponse
+from services.routes.health import service as health_service
 
 router = APIRouter()
 
 
 @router.get("/health", response_model=HealthResponse)
-def health_check() -> HealthResponse:
-    return HealthResponse(status="ok", message="HOLS API is running")
+@handle_route_errors("health check", log_prefix="Health")
+async def health_check() -> HealthResponse:
+    return success_response(HealthData(**health_service.get_health()))
 
 
 @router.get("/test", response_model=TestResponse)
-def test_endpoint() -> TestResponse:
-    return TestResponse(success=True, data="Backend test route is working")
+@handle_route_errors("test endpoint", log_prefix="Health")
+async def test_endpoint() -> TestResponse:
+    return success_response(TestData(**health_service.get_test()))

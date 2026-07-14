@@ -2,12 +2,16 @@
 
 from __future__ import annotations
 
+import logging
 from typing import Sequence
 
 import boto3
 from botocore.exceptions import ClientError
 
 from config import settings
+from core.async_io import run_sync
+
+logger = logging.getLogger(__name__)
 
 
 def _client():
@@ -60,7 +64,29 @@ def send_email(
         message = exc.response["Error"]["Message"]
         raise RuntimeError(f"SES send failed: {message}") from exc
 
-    return response["MessageId"]
+    message_id = response["MessageId"]
+    logger.info("SES email sent to %s (message_id=%s)", recipients, message_id)
+    return message_id
+
+
+async def send_email_async(
+    to: str | Sequence[str],
+    subject: str,
+    html_body: str | None = None,
+    text_body: str | None = None,
+    from_address: str | None = None,
+    reply_to: Sequence[str] | None = None,
+) -> str:
+    """Async wrapper for SES email delivery."""
+    return await run_sync(
+        send_email,
+        to,
+        subject,
+        html_body=html_body,
+        text_body=text_body,
+        from_address=from_address,
+        reply_to=reply_to,
+    )
 
 
 def send_bulk_email(

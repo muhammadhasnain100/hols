@@ -72,7 +72,7 @@ export function HeroNavbarMobile() {
                 Log in
               </Button>
               <Button
-                href="/contact"
+                href="/register"
                 variant="primary"
                 size="lg"
                 className="w-full justify-center"

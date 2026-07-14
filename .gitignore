@@ -58,3 +58,7 @@ coverage/
 
 # Misc
 *.local
+
+# Large lecture seed dumps (import via script, do not commit)
+backend/lectures/courses_complete.json
+backend/lectures/*.complete.json

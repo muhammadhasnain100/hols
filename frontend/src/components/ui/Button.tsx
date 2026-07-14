@@ -8,6 +8,7 @@ import {
   type ButtonVariant,
   buttonSizes,
 } from "@/lib/button-styles";
+import { cn } from "@/lib/utils";
 
 type ButtonProps = {
   href?: string;
@@ -16,6 +17,7 @@ type ButtonProps = {
   children: React.ReactNode;
   className?: string;
   type?: "button" | "submit";
+  disabled?: boolean;
   onClick?: () => void;
 };
 
@@ -26,6 +28,7 @@ export function Button({
   children,
   className,
   type = "button",
+  disabled = false,
   onClick,
 }: ButtonProps) {
   const spread = buttonHoverSpread[variant];
@@ -36,7 +39,11 @@ export function Button({
       hoverColor: spread.textHover,
     });
 
-  const classes = getButtonClassName(variant, className, size);
+  const classes = getButtonClassName(
+    variant,
+    disabled ? cn("pointer-events-none opacity-60", className) : className,
+    size,
+  );
 
   const inner = (
     <>
@@ -55,7 +62,7 @@ export function Button({
     </>
   );
 
-  if (href) {
+  if (href && !disabled) {
     return (
       <Link
         ref={containerRef as React.RefObject<HTMLAnchorElement>}
@@ -74,10 +81,11 @@ export function Button({
     <button
       ref={containerRef as React.RefObject<HTMLButtonElement>}
       type={type}
+      disabled={disabled}
       onClick={onClick}
       className={classes}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
+      onMouseEnter={disabled ? undefined : onMouseEnter}
+      onMouseLeave={disabled ? undefined : onMouseLeave}
     >
       {inner}
     </button>

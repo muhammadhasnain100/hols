@@ -32,9 +32,22 @@ class Settings(BaseSettings):
     bedrock_model_id: str = ""
     bedrock_api_key: str = ""
 
-    # ---- DynamoDB (Onboarding Agent Chat History) ----
+    # ---- DynamoDB ----
     dynamodb_region: str = "us-east-1"
     dynamodb_table: str = "hols-backend"
+
+    # ---- Auth / JWT ----
+    jwt_secret_key: str = "change-me"
+    jwt_access_token_expire_minutes: int = 30
+    jwt_refresh_token_expire_days: int = 7
+
+    # ---- OTP ----
+    otp_required_after_seconds: int = 604800
+    otp_expire_seconds: int = 600
+
+    # ---- Logging ----
+    log_level: str = "INFO"
+    log_format: str = "plain"
 
 
 @lru_cache
