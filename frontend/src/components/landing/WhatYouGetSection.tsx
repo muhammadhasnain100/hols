@@ -17,11 +17,11 @@ function Callout({
 }) {
   const connector =
     side === "left" ? (
-      <div className="relative hidden h-px w-10 shrink-0 bg-gradient-to-r from-transparent to-accent lg:block xl:w-14">
+      <div className="relative hidden h-px w-16 shrink-0 bg-gradient-to-l from-accent to-transparent lg:block lg:-mr-6 xl:w-24">
         <span className="absolute right-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-accent shadow-[0_0_0_4px_rgba(21,39,68,0.06)]" />
       </div>
     ) : (
-      <div className="relative hidden h-px w-10 shrink-0 bg-gradient-to-l from-transparent to-accent lg:block xl:w-14">
+      <div className="relative hidden h-px w-16 shrink-0 bg-gradient-to-r from-accent to-transparent lg:block lg:-ml-6 xl:w-24">
         <span className="absolute left-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-accent shadow-[0_0_0_4px_rgba(21,39,68,0.06)]" />
       </div>
     );
@@ -29,26 +29,24 @@ function Callout({
   return (
     <div
       data-stagger-item
-      className={cn(
-        "flex items-center gap-4",
-        side === "right" && "lg:flex-row-reverse",
-      )}
+      className={cn("flex items-start", side === "left" ? "lg:justify-end" : "lg:justify-start")}
     >
-        <div className={cn("flex-1", side === "left" ? "lg:text-right" : "lg:text-left")}>
-          <div
-            className={cn(
-              "flex items-center gap-3",
-              side === "left" ? "lg:justify-end" : "lg:justify-start",
-            )}
-          >
-            <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 font-sans text-xs font-semibold text-accent">
-              0{index}
-            </span>
-            <h3 className="font-sans text-lg font-semibold text-white md:text-xl">{title}</h3>
-          </div>
-          <p className="mt-3 text-sm leading-relaxed text-white/70 md:text-base">{description}</p>
+      <div className={cn("flex-1", side === "left" ? "lg:text-right" : "lg:text-left")}>
+        <div
+          className={cn(
+            "flex items-center gap-3",
+            side === "left" ? "lg:justify-end" : "lg:justify-start",
+          )}
+        >
+          {side === "right" ? connector : null}
+          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 font-sans text-xs font-semibold text-accent">
+            0{index}
+          </span>
+          <h3 className="font-sans text-lg font-semibold text-white md:text-xl">{title}</h3>
+          {side === "left" ? connector : null}
         </div>
-      {connector}
+        <p className="mt-3 text-sm leading-relaxed text-white/70 md:text-base">{description}</p>
+      </div>
     </div>
   );
 }

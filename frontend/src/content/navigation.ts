@@ -14,6 +14,10 @@ export const footerNav = {
   ],
   social: [
     { label: "LinkedIn", href: "https://linkedin.com" },
+    { label: "Instagram", href: "https://instagram.com" },
+    { label: "Facebook", href: "https://facebook.com" },
+    { label: "YouTube", href: "https://youtube.com" },
+    { label: "TikTok", href: "https://tiktok.com" },
     { label: "X", href: "https://x.com" },
   ],
 } as const;
