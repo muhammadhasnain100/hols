@@ -4,11 +4,17 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
 
-const LINKS = [
+type PaymentSubnavLink = {
+  href: string;
+  label: string;
+  exact?: boolean;
+};
+
+const LINKS: readonly PaymentSubnavLink[] = [
   { href: "/student/payment", label: "Membership", exact: true },
   { href: "/student/payment/orders", label: "Orders" },
   { href: "/student/payment/card", label: "Card" },
-] as const;
+];
 
 export function PaymentSubnav() {
   const pathname = usePathname();

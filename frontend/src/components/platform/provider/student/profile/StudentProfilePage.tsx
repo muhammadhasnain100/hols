@@ -19,6 +19,7 @@ import { ApiRequestError } from "@/lib/integrate/client";
 import { getStoredUser, updateStoredProfile } from "@/lib/integrate/auth/storage";
 import {
   getStudentProfile,
+  getCachedStudentProfile,
   updateStudentProfile,
   type StudentAddress,
   type StudentProfile,
@@ -206,7 +207,7 @@ function ReadRow({ label, value }: { label: string; value: React.ReactNode }) {
 }
 
 export function StudentProfilePage() {
-  const cached = storedProfileFallback();
+  const cached = (getCachedStudentProfile()?.profile as StudentProfile | undefined) ?? storedProfileFallback();
   const [mode, setMode] = useState<"read" | "edit">("read");
   const [refreshing, setRefreshing] = useState(!cached);
   const [saving, setSaving] = useState(false);

@@ -10,6 +10,7 @@ import { ApiRequestError } from "@/lib/integrate/client";
 import {
   addCard,
   getCard,
+  getCachedCard,
   updateCard,
   type PaymentCard,
 } from "@/lib/integrate/provider/student/payment/api";
@@ -36,11 +37,12 @@ const emptyCardForm: CardFormState = {
 };
 
 export function StudentCardPage() {
-  const [loading, setLoading] = useState(true);
+  const cachedCard = getCachedCard();
+  const [loading, setLoading] = useState(cachedCard === undefined);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [card, setCard] = useState<PaymentCard | null>(null);
+  const [card, setCard] = useState<PaymentCard | null>(cachedCard ?? null);
   const [form, setForm] = useState<CardFormState>(emptyCardForm);
 
   const loadCard = useCallback(async (signal?: AbortSignal) => {
@@ -65,8 +67,11 @@ export function StudentCardPage() {
 
   useEffect(() => {
     const controller = new AbortController();
-    void loadCard(controller.signal);
-    return () => controller.abort();
+    const timer = window.setTimeout(() => void loadCard(controller.signal), 0);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
   }, [loadCard]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {

@@ -33,6 +33,11 @@ export type {
 } from "@/lib/integrate/provider/student/lectures/types";
 
 const lectureMemoryCache = new Map<string, unknown>();
+const lecturePendingRequests = new Map<string, Promise<unknown>>();
+
+function cacheKey(kind: string, ...parts: Array<string | number | undefined | null>) {
+  return ["lectures", kind, ...parts.map((part) => part ?? "")].join(":");
+}
 
 function readSessionCache<T>(key: string): T | null {
   if (typeof window === "undefined") return null;
@@ -53,7 +58,7 @@ function writeSessionCache<T>(key: string, value: T) {
   }
 }
 
-async function cachedLectureRequest<T>(key: string, path: string): Promise<T> {
+function readLectureCache<T>(key: string): T | null {
   const memoryValue = lectureMemoryCache.get(key);
   if (memoryValue) return memoryValue as T;
 
@@ -63,10 +68,29 @@ async function cachedLectureRequest<T>(key: string, path: string): Promise<T> {
     return sessionValue;
   }
 
-  const value = await apiRequest<T>(path, { auth: true });
-  lectureMemoryCache.set(key, value);
-  writeSessionCache(key, value);
-  return value;
+  return null;
+}
+
+async function cachedLectureRequest<T>(key: string, path: string): Promise<T> {
+  const cachedValue = readLectureCache<T>(key);
+  if (cachedValue) return cachedValue;
+
+  const pending = lecturePendingRequests.get(key);
+  if (pending) {
+    return pending as Promise<T>;
+  }
+
+  const request = apiRequest<T>(path, { auth: true })
+    .then((value) => {
+      lectureMemoryCache.set(key, value);
+      writeSessionCache(key, value);
+      return value;
+    })
+    .finally(() => {
+      lecturePendingRequests.delete(key);
+    });
+  lecturePendingRequests.set(key, request);
+  return request;
 }
 
 function toQuery(params: Record<string, string | number | undefined | null>) {
@@ -81,74 +105,87 @@ function toQuery(params: Record<string, string | number | undefined | null>) {
 
 export function listCourses(params: PaginationParams = {}) {
   const query = toQuery({
-      page: params.page,
-      limit: params.limit,
-      cursor: params.cursor,
-    });
+    page: params.page,
+    limit: params.limit,
+    cursor: params.cursor,
+  });
   return cachedLectureRequest<CourseListData>(
-    `lectures:courses:${query}`,
+    cacheKey("courses", query),
     `/api/lectures/courses${query}`,
   );
 }
 
 export function getCourse(courseId: string) {
   return cachedLectureRequest<CourseDetailData>(
-    `lectures:course:${courseId}`,
+    cacheKey("course", courseId),
     `/api/lectures/courses/${courseId}`,
   );
 }
 
 export function getCourseBundle(courseId: string) {
   return cachedLectureRequest<CourseBundleData>(
-    `lectures:course-bundle:${courseId}`,
+    cacheKey("course-bundle", courseId),
     `/api/lectures/courses/${courseId}/bundle`,
   );
 }
 
+export function getCachedCourseBundle(courseId: string) {
+  return readLectureCache<CourseBundleData>(cacheKey("course-bundle", courseId));
+}
+
 export function listTopics(courseId: string, params: PaginationParams = {}) {
   const query = toQuery({
-      page: params.page,
-      limit: params.limit,
-      cursor: params.cursor,
-    });
+    page: params.page,
+    limit: params.limit,
+    cursor: params.cursor,
+  });
   return cachedLectureRequest<TopicListData>(
-    `lectures:topics:${courseId}:${query}`,
+    cacheKey("topics", courseId, query),
     `/api/lectures/courses/${courseId}/topics${query}`,
   );
 }
 
 export function listSections(courseId: string, params: SectionListParams = {}) {
   const query = toQuery({
-      page: params.page,
-      limit: params.limit,
-      cursor: params.cursor,
-      l1_name: params.l1_name,
-      l1_order: params.l1_order,
-    });
+    page: params.page,
+    limit: params.limit,
+    cursor: params.cursor,
+    l1_name: params.l1_name,
+    l1_order: params.l1_order,
+  });
   return cachedLectureRequest<SectionListData>(
-    `lectures:sections:${courseId}:${query}`,
+    cacheKey("sections", courseId, query),
     `/api/lectures/courses/${courseId}/sections${query}`,
   );
 }
 
 export function listLessons(courseId: string, params: LessonListParams = {}) {
   const query = toQuery({
-      page: params.page,
-      limit: params.limit,
-      cursor: params.cursor,
-      topic_id: params.topic_id,
-      l1_name: params.l1_name,
-      l2_name: params.l2_name,
-    });
+    page: params.page,
+    limit: params.limit,
+    cursor: params.cursor,
+    topic_id: params.topic_id,
+    l1_name: params.l1_name,
+    l2_name: params.l2_name,
+  });
   return cachedLectureRequest<LessonListData>(
-    `lectures:lessons:${courseId}:${query}`,
+    cacheKey("lessons", courseId, query),
     `/api/lectures/courses/${courseId}/lessons${query}`,
   );
 }
 
 export function getLesson(courseId: string, lessonId: string) {
   return cachedLectureRequest<LessonDetailData>(
-    `lectures:lesson:${courseId}:${lessonId}`,
+    cacheKey("lesson", courseId, lessonId),
     `/api/lectures/courses/${courseId}/lessons/${lessonId}`,
   );
+}
+
+export function getCachedLesson(courseId: string, lessonId: string): LessonDetailData | null {
+  const detail = readLectureCache<LessonDetailData>(cacheKey("lesson", courseId, lessonId));
+  if (detail) return detail;
+
+  const bundle = getCachedCourseBundle(courseId);
+  const bundleLesson = bundle?.lessons.find((lesson) => lesson.lesson_id === lessonId);
+  return bundleLesson ? { lesson: bundleLesson } : null;
 }

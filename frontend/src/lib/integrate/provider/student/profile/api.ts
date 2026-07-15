@@ -1,9 +1,7 @@
 import { apiFormRequest, apiRequest } from "@/lib/integrate/client";
 import type { ProfileData } from "@/lib/integrate/auth/types";
-import type {
-  StudentAddress,
-  StudentProfileUpdate,
-} from "@/lib/integrate/provider/student/profile/types";
+import { getStoredUser, updateStoredProfile } from "@/lib/integrate/auth/storage";
+import type { StudentProfileUpdate } from "@/lib/integrate/provider/student/profile/types";
 
 export type {
   StudentAddress,
@@ -11,8 +9,62 @@ export type {
   StudentProfileUpdate,
 } from "@/lib/integrate/provider/student/profile/types";
 
+let profileMemoryCache: ProfileData | null = null;
+let profileMemoryUserId: string | null = null;
+let pendingProfileRequest: Promise<ProfileData> | null = null;
+
+function profileCacheKey() {
+  return `student-profile:${getStoredUser()?.user_id ?? "anonymous"}:me`;
+}
+
+function readSessionProfile(): ProfileData | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw = window.sessionStorage.getItem(profileCacheKey());
+    return raw ? (JSON.parse(raw) as ProfileData) : null;
+  } catch {
+    return null;
+  }
+}
+
+function writeProfileCache(data: ProfileData) {
+  profileMemoryCache = data;
+  profileMemoryUserId = getStoredUser()?.user_id ?? null;
+  updateStoredProfile(data.profile);
+  if (typeof window === "undefined") return;
+  try {
+    window.sessionStorage.setItem(profileCacheKey(), JSON.stringify(data));
+  } catch {
+    // Profile cache is only an optimization; ignore storage failures.
+  }
+}
+
+export function getCachedStudentProfile() {
+  const userId = getStoredUser()?.user_id ?? null;
+  if (profileMemoryCache && profileMemoryUserId === userId) return profileMemoryCache;
+  const sessionProfile = readSessionProfile();
+  if (sessionProfile) {
+    profileMemoryCache = sessionProfile;
+    profileMemoryUserId = userId;
+    return sessionProfile;
+  }
+  return null;
+}
+
 export function getStudentProfile(signal?: AbortSignal) {
-  return apiRequest<ProfileData>("/api/auth/profile", { auth: true, signal });
+  const cached = getCachedStudentProfile();
+  if (cached) return Promise.resolve(cached);
+  if (pendingProfileRequest) return pendingProfileRequest;
+
+  pendingProfileRequest = apiRequest<ProfileData>("/api/auth/profile", { auth: true, signal })
+    .then((data) => {
+      writeProfileCache(data);
+      return data;
+    })
+    .finally(() => {
+      pendingProfileRequest = null;
+    });
+  return pendingProfileRequest;
 }
 
 export function updateStudentProfile(
@@ -48,5 +100,8 @@ export function updateStudentProfile(
 
   return apiFormRequest<ProfileData>("/api/auth/profile", formData, {
     auth: true,
+  }).then((data) => {
+    writeProfileCache(data);
+    return data;
   });
 }

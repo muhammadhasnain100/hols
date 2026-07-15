@@ -8,6 +8,7 @@ import { CourseOptionNav } from "@/components/platform/provider/student/lectures
 import { studentNav } from "@/components/platform/provider/student/studentNav";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
+  getCachedLesson,
   getLesson,
   type LessonDetail,
   type LessonVariant,
@@ -63,13 +64,26 @@ function VariantCard({ variant }: { variant: LessonVariant }) {
 }
 
 export function StudentLessonPage({ courseId, lessonId }: StudentLessonPageProps) {
-  const [loading, setLoading] = useState(true);
+  const cachedLesson = getCachedLesson(courseId, lessonId)?.lesson ?? null;
+  const [loading, setLoading] = useState(!cachedLesson);
   const [error, setError] = useState<string | null>(null);
-  const [lesson, setLesson] = useState<LessonDetail | null>(null);
+  const [lesson, setLesson] = useState<LessonDetail | null>(cachedLesson);
 
   useEffect(() => {
     async function load() {
-      setLoading(true);
+      const cached = getCachedLesson(courseId, lessonId)?.lesson ?? null;
+      if (cached) {
+        setLesson(cached);
+        const hasFullDetail =
+          Boolean(cached.fact || cached.text_content || cached.supporting_content || cached.study_bullets) ||
+          cached.variants.length > 0;
+        if (hasFullDetail) {
+          setLoading(false);
+          return;
+        }
+      }
+
+      setLoading(!cached);
       setError(null);
       try {
         const data = await getLesson(courseId, lessonId);

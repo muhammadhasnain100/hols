@@ -11,6 +11,9 @@ import { Button } from "@/components/ui/Button";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
   getCard,
+  getCachedCard,
+  getCachedCurrentMembership,
+  getCachedPlans,
   getCurrentMembership,
   listPlans,
   purchasePlan,
@@ -27,12 +30,17 @@ import {
 import { cn } from "@/lib/utils";
 
 export function StudentPaymentPage() {
-  const [loading, setLoading] = useState(true);
+  const cachedMembership = getCachedCurrentMembership();
+  const cachedPlans = getCachedPlans();
+  const cachedCard = getCachedCard();
+  const hasCachedPageData =
+    cachedMembership !== undefined && cachedPlans !== undefined && cachedCard !== undefined;
+  const [loading, setLoading] = useState(!hasCachedPageData);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [membership, setMembership] = useState<Membership | null>(null);
-  const [plans, setPlans] = useState<Plan[]>([]);
-  const [card, setCard] = useState<PaymentCard | null>(null);
+  const [membership, setMembership] = useState<Membership | null>(cachedMembership ?? null);
+  const [plans, setPlans] = useState<Plan[]>(cachedPlans ?? []);
+  const [card, setCard] = useState<PaymentCard | null>(cachedCard ?? null);
   const [purchasingPlan, setPurchasingPlan] = useState<PlanType | null>(null);
 
   const loadData = useCallback(async (signal?: AbortSignal) => {
@@ -71,8 +79,11 @@ export function StudentPaymentPage() {
 
   useEffect(() => {
     const controller = new AbortController();
-    void loadData(controller.signal);
-    return () => controller.abort();
+    const timer = window.setTimeout(() => void loadData(controller.signal), 0);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
   }, [loadData]);
 
   async function handlePurchase(planType: PlanType) {

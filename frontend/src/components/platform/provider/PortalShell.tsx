@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { HeroLogo } from "@/components/hero/HeroLogo";
+import { stopPortalAuthRuntime } from "@/lib/integrate/auth/runtime";
 import { clearAuthSession, getStoredUser } from "@/lib/integrate/auth/storage";
 import type { UserRole } from "@/lib/integrate/auth/types";
 import { cn } from "@/lib/utils";
@@ -50,10 +51,13 @@ export function PortalShell({ role, title, subtitle, nav, children }: PortalShel
     .toUpperCase();
 
   useEffect(() => {
-    const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
-    if (stored !== null) {
-      setSidebarOpen(stored === "true");
-    }
+    const timer = window.setTimeout(() => {
+      const stored = localStorage.getItem(SIDEBAR_STORAGE_KEY);
+      if (stored !== null) {
+        setSidebarOpen(stored === "true");
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -61,12 +65,16 @@ export function PortalShell({ role, title, subtitle, nav, children }: PortalShel
   }, [sidebarOpen]);
 
   useEffect(() => {
-    if (typeof window !== "undefined" && window.innerWidth < 1024) {
-      setSidebarOpen(false);
-    }
+    const timer = window.setTimeout(() => {
+      if (typeof window !== "undefined" && window.innerWidth < 1024) {
+        setSidebarOpen(false);
+      }
+    }, 0);
+    return () => window.clearTimeout(timer);
   }, [pathname]);
 
   function handleLogout() {
+    stopPortalAuthRuntime();
     clearAuthSession();
     router.push("/login");
     router.refresh();

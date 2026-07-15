@@ -7,7 +7,11 @@ import { PaymentSubnav } from "@/components/platform/provider/student/payment/Pa
 import { studentNav } from "@/components/platform/provider/student/studentNav";
 import { Button } from "@/components/ui/Button";
 import { ApiRequestError } from "@/lib/integrate/client";
-import { listOrders, type Order } from "@/lib/integrate/provider/student/payment/api";
+import {
+  getCachedOrders,
+  listOrders,
+  type Order,
+} from "@/lib/integrate/provider/student/payment/api";
 import {
   formatDate,
   formatMoney,
@@ -15,11 +19,12 @@ import {
 } from "@/lib/integrate/provider/student/payment/types";
 
 export function StudentOrdersPage() {
-  const [loading, setLoading] = useState(true);
+  const cachedFirstPage = getCachedOrders({ page: 1, limit: 10 });
+  const [loading, setLoading] = useState(!cachedFirstPage);
   const [error, setError] = useState<string | null>(null);
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<Order[]>(cachedFirstPage?.items ?? []);
   const [page, setPage] = useState(1);
-  const [hasNext, setHasNext] = useState(false);
+  const [hasNext, setHasNext] = useState(cachedFirstPage?.pagination.has_next ?? false);
 
   const loadOrders = useCallback(async (pageNum: number, signal?: AbortSignal) => {
     setLoading(true);
@@ -41,8 +46,11 @@ export function StudentOrdersPage() {
 
   useEffect(() => {
     const controller = new AbortController();
-    void loadOrders(page, controller.signal);
-    return () => controller.abort();
+    const timer = window.setTimeout(() => void loadOrders(page, controller.signal), 0);
+    return () => {
+      window.clearTimeout(timer);
+      controller.abort();
+    };
     // Intentionally only refetch when page changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);

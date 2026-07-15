@@ -9,6 +9,7 @@ import { studentNav } from "@/components/platform/provider/student/studentNav";
 import { Button } from "@/components/ui/Button";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
+  getCachedLesson,
   getCourseBundle,
   getLesson,
   type CourseSummary,
@@ -67,6 +68,18 @@ export function StudentLessonsPage({ courseId, topicId, l1Name }: StudentLessons
         setLessonDetail(null);
         setLessonDetailLoading(false);
         return;
+      }
+
+      const cached = getCachedLesson(courseId, currentLessonId)?.lesson ?? null;
+      if (cached) {
+        setLessonDetail(cached);
+        const hasFullDetail =
+          Boolean(cached.fact || cached.text_content || cached.supporting_content || cached.study_bullets) ||
+          cached.variants.length > 0;
+        if (hasFullDetail) {
+          setLessonDetailLoading(false);
+          return;
+        }
       }
 
       setLessonDetailLoading(true);

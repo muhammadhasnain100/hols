@@ -50,6 +50,7 @@ export function LoginForm({ className, initialMessage }: LoginFormProps) {
   async function completeLogin(result: {
     access_token: string;
     refresh_token: string;
+    expires_in?: number;
     user_id: string;
     role: UserRole;
     profile: Record<string, unknown>;
