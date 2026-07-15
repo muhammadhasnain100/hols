@@ -11,6 +11,7 @@ export type AdminProfile = {
   marketing_pref?: boolean;
   margin_percent?: number;
   invite_code?: string;
+  invitation_quota?: number;
   student_count?: number;
   referred_by_affiliate_id?: string;
   email_verified?: boolean;

@@ -33,6 +33,7 @@ SELF_EDITABLE_FIELDS: dict[str, set[str]] = {
 ADMIN_EDITABLE_FIELDS: set[str] = {
     "margin_percent",
     "invite_code",
+    "invitation_quota",
     "role",
 }
 
@@ -62,6 +63,7 @@ VISIBLE_PROFILE_FIELDS: dict[str, set[str]] = {
         "marketing_pref",
         "margin_percent",
         "invite_code",
+        "invitation_quota",
         "student_count",
         "email_verified",
         "created_at",
@@ -77,6 +79,7 @@ VISIBLE_PROFILE_FIELDS: dict[str, set[str]] = {
         "marketing_pref",
         "margin_percent",
         "invite_code",
+        "invitation_quota",
         "student_count",
         "referred_by_affiliate_id",
         "email_verified",

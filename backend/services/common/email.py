@@ -6,6 +6,7 @@ import logging
 from typing import Sequence
 
 import boto3
+from botocore.config import Config
 from botocore.exceptions import ClientError
 
 from config import settings
@@ -20,6 +21,7 @@ def _client():
         region_name=settings.ses_region,
         aws_access_key_id=settings.aws_access_key_id,
         aws_secret_access_key=settings.aws_secret_access_key,
+        config=Config(connect_timeout=3, read_timeout=8, retries={"max_attempts": 1}),
     )
 
 

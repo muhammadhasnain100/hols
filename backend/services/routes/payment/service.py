@@ -115,6 +115,9 @@ async def update_plan_price(
     price: float,
     admin_user_id: str,
 ) -> dict[str, Any]:
+    if price <= 0:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Plan price must be greater than zero")
+
     await ensure_default_plans()
     plan = await get_plan(plan_type)
     if not plan:

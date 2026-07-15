@@ -17,6 +17,7 @@ export type AffiliateSummary = {
   last_name: string;
   invite_code?: string;
   margin_percent?: number;
+  invitation_quota?: number;
   student_count: number;
   created_at?: string;
 };
@@ -28,6 +29,7 @@ export type StudentAffiliateInfo = {
   last_name: string;
   invite_code?: string;
   margin_percent?: number;
+  invitation_quota?: number;
   student_count: number;
   created_at?: string;
 };

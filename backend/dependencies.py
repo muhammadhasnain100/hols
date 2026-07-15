@@ -45,10 +45,6 @@ async def get_current_user(
     if not user_id or not role or not email:
         raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid access token")
 
-    user = await auth_service.get_user_by_id(user_id)
-    if not user:
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "User not found")
-
     return CurrentUser(user_id=user_id, role=role, email=email)
 
 

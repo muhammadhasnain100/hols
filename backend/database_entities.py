@@ -167,6 +167,7 @@ class UserProfile(BaseEntity):
     # Affiliate-only fields (admin-controlled)
     margin_percent: Optional[float] = None
     invite_code: Optional[str] = None
+    invitation_quota: Optional[int] = None
     student_count: int = 0
     created_at: str = Field(default_factory=now_iso)
 
@@ -199,6 +200,7 @@ class UserProfile(BaseEntity):
             "email_verified": self.email_verified,
             "margin_percent": _money(self.margin_percent),
             "invite_code": self.invite_code,
+            "invitation_quota": self.invitation_quota if self.role == UserRole.AFFILIATE else None,
             "student_count": self.student_count if self.role == UserRole.AFFILIATE else None,
             "created_at": self.created_at,
             # GSI1: email login (or invite-code lookup for affiliates)

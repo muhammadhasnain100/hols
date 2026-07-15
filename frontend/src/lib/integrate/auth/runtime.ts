@@ -12,9 +12,14 @@ import { getStudentProfile } from "@/lib/integrate/provider/student/profile/api"
 import {
   getCard,
   getCurrentMembership,
-  listPlans,
+  listPlans as listStudentPlans,
   listOrders,
 } from "@/lib/integrate/provider/student/payment/api";
+import { listStudents } from "@/lib/integrate/provider/admin/users/api";
+import { listAdminAffiliates } from "@/lib/integrate/provider/admin/affiliates/api";
+import { listPlans as listAdminPlans } from "@/lib/integrate/provider/admin/payment/api";
+import { getAdminProfile } from "@/lib/integrate/provider/admin/profile/api";
+import { getAffiliateProfile } from "@/lib/integrate/provider/affiliate/profile/api";
 
 const TEN_MINUTES_MS = 10 * 60 * 1000;
 let refreshTimer: number | null = null;
@@ -35,11 +40,26 @@ async function prefetchStudentData() {
     getCurrentMembership(),
     listOrders({ page: 1, limit: 1 }),
     listOrders({ page: 1, limit: 10 }),
-    listPlans(),
+    listStudentPlans(),
     getCard(),
     // Static lecture catalog is session-cached, so refreshes reuse it without a network call.
     listCourses({ page: 1, limit: 12 }),
   ]);
+}
+
+async function prefetchAdminData() {
+  await Promise.allSettled([
+    getAdminProfile(),
+    listStudents({ page: 1, limit: 1 }),
+    listStudents({ page: 1, limit: 15 }),
+    listAdminAffiliates({ page: 1, limit: 1 }),
+    listAdminAffiliates({ page: 1, limit: 15 }),
+    listAdminPlans(),
+  ]);
+}
+
+async function prefetchAffiliateData() {
+  await Promise.allSettled([getAffiliateProfile()]);
 }
 
 function prefetchPortalData(role: UserRole) {
@@ -52,6 +72,10 @@ function prefetchPortalData(role: UserRole) {
   prefetchPromise = (async () => {
     if (role === "student") {
       await prefetchStudentData();
+    } else if (role === "admin") {
+      await prefetchAdminData();
+    } else if (role === "affiliate") {
+      await prefetchAffiliateData();
     }
   })().finally(() => {
     prefetchPromise = null;

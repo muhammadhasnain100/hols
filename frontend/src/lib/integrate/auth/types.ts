@@ -60,5 +60,6 @@ export type ProfileUpdatePayload = {
   marketing_pref?: boolean;
   margin_percent?: number;
   invite_code?: string;
+  invitation_quota?: number;
   role?: UserRole;
 };

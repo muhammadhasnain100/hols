@@ -8,6 +8,7 @@ import logging
 import secrets
 import uuid
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 from typing import Any, Optional
 
 import jwt
@@ -97,6 +98,52 @@ def _table():
     return get_table()
 
 
+def user_role_index_item(user: dict[str, Any]) -> dict[str, Any]:
+    role = user.get("role")
+    user_id = user.get("user_id")
+    created_at = user.get("created_at") or now_iso()
+    item = {
+        "PK": f"ROLE#{role}",
+        "SK": f"USER#{created_at}#{user_id}",
+        "entity": "USER_ROLE_INDEX",
+        "user_id": user_id,
+        "role": role,
+        "email": user.get("email"),
+        "first_name": user.get("first_name"),
+        "last_name": user.get("last_name"),
+        "marketing_pref": user.get("marketing_pref", False),
+        "referred_by_affiliate_id": user.get("referred_by_affiliate_id"),
+        "margin_percent": user.get("margin_percent"),
+        "invite_code": user.get("invite_code"),
+        "invitation_quota": user.get("invitation_quota"),
+        "student_count": user.get("student_count", 0) if role == UserRole.AFFILIATE.value else None,
+        "created_at": created_at,
+    }
+    return {key: value for key, value in item.items() if value is not None}
+
+
+def user_role_count_key(role: str) -> dict[str, str]:
+    return {"PK": f"ROLE#{role}", "SK": "COUNT"}
+
+
+def role_count_item(role: str, total: int) -> dict[str, Any]:
+    return {
+        **user_role_count_key(role),
+        "entity": "USER_ROLE_COUNT",
+        "role": role,
+        "total": total,
+    }
+
+
+def _clear_user_list_cache() -> None:
+    try:
+        from services.routes.users import service as users_service
+
+        users_service.clear_user_list_cache()
+    except Exception:
+        logger.debug("Could not clear user list cache", exc_info=True)
+
+
 async def get_user_by_email(email: str) -> Optional[dict[str, Any]]:
     def _fetch():
         response = _table().query(
@@ -123,13 +170,37 @@ async def save_user(profile: UserProfile) -> dict[str, Any]:
     item = profile.to_item()
 
     def _save():
-        _table().put_item(Item=item)
+        table = _table()
+        with table.batch_writer() as batch:
+            batch.put_item(Item=item)
+            batch.put_item(Item=user_role_index_item(item))
+        table.update_item(
+            Key=user_role_count_key(item["role"]),
+            UpdateExpression=(
+                "SET #entity = :entity, #role = :role, #total = if_not_exists(#total, :zero) + :inc"
+            ),
+            ExpressionAttributeNames={
+                "#entity": "entity",
+                "#role": "role",
+                "#total": "total",
+            },
+            ExpressionAttributeValues={
+                ":entity": "USER_ROLE_COUNT",
+                ":role": item["role"],
+                ":zero": 0,
+                ":inc": 1,
+            },
+        )
         return item
 
-    return await run_sync(_save)
+    saved = await run_sync(_save)
+    _clear_user_list_cache()
+    return saved
 
 
 async def update_user_fields(user_id: str, fields: dict[str, Any]) -> dict[str, Any]:
+    existing_user = await get_user_by_id(user_id) if "role" in fields else None
+
     if not fields:
         user = await get_user_by_id(user_id)
         if not user:
@@ -156,16 +227,47 @@ async def update_user_fields(user_id: str, fields: dict[str, Any]) -> dict[str, 
         return user
 
     def _update():
-        response = _table().update_item(
+        table = _table()
+        response = table.update_item(
             Key={"PK": UserProfile.pk(user_id), "SK": UserProfile.sk()},
             UpdateExpression="SET " + ", ".join(parts),
             ExpressionAttributeNames=expr_names,
             ExpressionAttributeValues=expr_values,
             ReturnValues="ALL_NEW",
         )
-        return response["Attributes"]
+        updated = response["Attributes"]
+        if existing_user and existing_user.get("role") != updated.get("role"):
+            old_index = user_role_index_item(existing_user)
+            table.delete_item(Key={"PK": old_index["PK"], "SK": old_index["SK"]})
+            table.update_item(
+                Key=user_role_count_key(existing_user["role"]),
+                UpdateExpression="SET #total = if_not_exists(#total, :zero) - :dec",
+                ExpressionAttributeNames={"#total": "total"},
+                ExpressionAttributeValues={":zero": 0, ":dec": 1},
+            )
+            table.update_item(
+                Key=user_role_count_key(updated["role"]),
+                UpdateExpression=(
+                    "SET #entity = :entity, #role = :role, #total = if_not_exists(#total, :zero) + :inc"
+                ),
+                ExpressionAttributeNames={
+                    "#entity": "entity",
+                    "#role": "role",
+                    "#total": "total",
+                },
+                ExpressionAttributeValues={
+                    ":entity": "USER_ROLE_COUNT",
+                    ":role": updated["role"],
+                    ":zero": 0,
+                    ":inc": 1,
+                },
+            )
+        table.put_item(Item=user_role_index_item(updated))
+        return updated
 
-    return await run_sync(_update)
+    updated_user = await run_sync(_update)
+    _clear_user_list_cache()
+    return updated_user
 
 
 async def save_otp_session(session: OtpSession) -> None:
@@ -384,6 +486,14 @@ def public_profile(user: dict[str, Any]) -> dict[str, Any]:
     return {k: v for k, v in user.items() if k not in hidden}
 
 
+def _as_int(value: Any) -> Optional[int]:
+    if value is None:
+        return None
+    if isinstance(value, Decimal):
+        return int(value)
+    return int(value)
+
+
 async def issue_tokens(user: dict[str, Any]) -> dict[str, Any]:
     access = create_access_token(user["user_id"], user["role"], user["email"])
     refresh, _ = await create_refresh_token_value(user["user_id"], user["role"])
@@ -416,6 +526,10 @@ async def signup_student(
         affiliate = await get_user_by_id(referred_by_affiliate_id)
         if not affiliate or affiliate.get("role") != UserRole.AFFILIATE.value:
             raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid affiliate id")
+        invitation_quota = _as_int(affiliate.get("invitation_quota"))
+        student_count = _as_int(affiliate.get("student_count")) or 0
+        if invitation_quota is not None and student_count >= invitation_quota:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Affiliate invitation quota reached")
 
     user_id = uuid.uuid4().hex
     profile = UserProfile(
@@ -440,12 +554,17 @@ async def _increment_affiliate_student_count(affiliate_id: str) -> None:
     if not affiliate or affiliate.get("role") != UserRole.AFFILIATE.value:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid affiliate id")
 
-    await run_sync(
-        _table().update_item,
-        Key={"PK": UserProfile.pk(affiliate_id), "SK": UserProfile.sk()},
-        UpdateExpression="SET student_count = if_not_exists(student_count, :zero) + :inc",
-        ExpressionAttributeValues={":zero": 0, ":inc": 1},
-    )
+    def _update():
+        response = _table().update_item(
+            Key={"PK": UserProfile.pk(affiliate_id), "SK": UserProfile.sk()},
+            UpdateExpression="SET student_count = if_not_exists(student_count, :zero) + :inc",
+            ExpressionAttributeValues={":zero": 0, ":inc": 1},
+            ReturnValues="ALL_NEW",
+        )
+        updated = response["Attributes"]
+        _table().put_item(Item=user_role_index_item(updated))
+
+    await run_sync(_update)
 
 
 async def create_admin(

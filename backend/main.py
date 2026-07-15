@@ -11,7 +11,15 @@ from core.exceptions import register_exception_handlers
 from core.logging_config import setup_logging
 from core.middleware import ApiResponseMiddleware, RequestLoggingMiddleware
 from database import create_table_async
-from routes import auth_router, health_router, lectures_router, payment_router, users_router
+from routes import (
+    affiliate_portal_router,
+    affiliates_router,
+    auth_router,
+    health_router,
+    lectures_router,
+    payment_router,
+    users_router,
+)
 from services.routes.payment.service import ensure_default_plans
 
 logger = logging.getLogger(__name__)
@@ -61,6 +69,8 @@ app.add_middleware(
 app.include_router(health_router, prefix="/api", tags=["health"])
 app.include_router(auth_router, prefix="/api")
 app.include_router(users_router, prefix="/api")
+app.include_router(affiliates_router, prefix="/api")
+app.include_router(affiliate_portal_router, prefix="/api")
 app.include_router(payment_router, prefix="/api")
 app.include_router(lectures_router, prefix="/api")
 

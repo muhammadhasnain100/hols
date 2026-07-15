@@ -27,6 +27,7 @@ type FormState = {
   marketing_pref: boolean;
   margin_percent: string;
   invite_code: string;
+  invitation_quota: string;
   role: UserRole;
 };
 
@@ -37,6 +38,7 @@ function profileToForm(profile: AdminProfile): FormState {
     marketing_pref: Boolean(profile.marketing_pref),
     margin_percent: profile.margin_percent != null ? String(profile.margin_percent) : "",
     invite_code: profile.invite_code ?? "",
+    invitation_quota: profile.invitation_quota != null ? String(profile.invitation_quota) : "",
     role: (profile.role as UserRole) ?? "student",
   };
 }
@@ -92,6 +94,9 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
       payload.margin_percent = Number(form.margin_percent);
     }
     if (canEdit("invite_code")) payload.invite_code = form.invite_code.trim() || undefined;
+    if (canEdit("invitation_quota") && form.invitation_quota.trim()) {
+      payload.invitation_quota = Number(form.invitation_quota);
+    }
     if (canEdit("role")) payload.role = form.role;
 
     try {
@@ -149,10 +154,6 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
                   <dd className="mt-1 font-medium capitalize text-primary">{profile.role}</dd>
                 </div>
                 <div>
-                  <dt className="text-muted">User ID</dt>
-                  <dd className="mt-1 font-medium text-primary">{profile.user_id}</dd>
-                </div>
-                <div>
                   <dt className="text-muted">Joined</dt>
                   <dd className="mt-1 font-medium text-primary">{formatDate(profile.created_at)}</dd>
                 </div>
@@ -160,6 +161,12 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
                   <div>
                     <dt className="text-muted">Student count</dt>
                     <dd className="mt-1 font-medium text-primary">{profile.student_count}</dd>
+                  </div>
+                ) : null}
+                {profile.invitation_quota != null ? (
+                  <div>
+                    <dt className="text-muted">Invitation quota</dt>
+                    <dd className="mt-1 font-medium text-primary">{profile.invitation_quota}</dd>
                   </div>
                 ) : null}
                 {profile.referred_by_affiliate_id ? (
@@ -235,6 +242,22 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
                     id="invite-code"
                     value={form.invite_code}
                     onChange={(e) => setForm((prev) => ({ ...prev, invite_code: e.target.value }))}
+                    className={inputClassName}
+                  />
+                </div>
+              ) : null}
+
+              {canEdit("invitation_quota") ? (
+                <div className="mt-5">
+                  <label htmlFor="invitation-quota" className="mb-2 block text-sm font-medium text-primary">
+                    Invitation quota
+                  </label>
+                  <input
+                    id="invitation-quota"
+                    type="number"
+                    min="0"
+                    value={form.invitation_quota}
+                    onChange={(e) => setForm((prev) => ({ ...prev, invitation_quota: e.target.value }))}
                     className={inputClassName}
                   />
                 </div>

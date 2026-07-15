@@ -28,6 +28,7 @@ class AffiliateSummary(BaseModel):
     last_name: str
     invite_code: Optional[str] = None
     margin_percent: Optional[float] = None
+    invitation_quota: Optional[int] = None
     student_count: int = 0
     created_at: Optional[str] = None
 
@@ -39,6 +40,7 @@ class StudentAffiliateInfo(BaseModel):
     last_name: str
     invite_code: Optional[str] = None
     margin_percent: Optional[float] = None
+    invitation_quota: Optional[int] = None
     student_count: int = 0
     created_at: Optional[str] = None
 

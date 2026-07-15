@@ -1,4 +1,8 @@
-import { apiRequest } from "@/lib/integrate/client";
+import {
+  adminCacheKey,
+  cachedAdminRequest,
+  readAdminCache,
+} from "@/lib/integrate/provider/admin/cache";
 import type {
   AdminPaginationMeta,
   AffiliateSummary,
@@ -23,16 +27,33 @@ function buildQuery(params: PaginationParams) {
   return query ? `?${query}` : "";
 }
 
+type AdminListResult<T> = {
+  items: T[];
+  pagination: AdminPaginationMeta;
+};
+
+export function getCachedAffiliates(params: PaginationParams = {}) {
+  return readAdminCache<AdminListResult<AffiliateSummary>>(
+    adminCacheKey("users-affiliates", params.page, params.limit, params.cursor),
+  );
+}
+
+export function getCachedStudents(params: PaginationParams = {}) {
+  return readAdminCache<AdminListResult<StudentSummary>>(
+    adminCacheKey("students", params.page, params.limit, params.cursor),
+  );
+}
+
 export function listAffiliates(params: PaginationParams = {}) {
-  return apiRequest<{ items: AffiliateSummary[]; pagination: AdminPaginationMeta }>(
+  return cachedAdminRequest<AdminListResult<AffiliateSummary>>(
+    adminCacheKey("users-affiliates", params.page, params.limit, params.cursor),
     `/api/users/affiliates${buildQuery(params)}`,
-    { auth: true },
   );
 }
 
 export function listStudents(params: PaginationParams = {}) {
-  return apiRequest<{ items: StudentSummary[]; pagination: AdminPaginationMeta }>(
+  return cachedAdminRequest<AdminListResult<StudentSummary>>(
+    adminCacheKey("students", params.page, params.limit, params.cursor),
     `/api/users/students${buildQuery(params)}`,
-    { auth: true },
   );
 }

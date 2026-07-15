@@ -61,6 +61,7 @@ class ProfileUpdateRequest(BaseModel):
     marketing_pref: Optional[bool] = None
     margin_percent: Optional[float] = None
     invite_code: Optional[str] = None
+    invitation_quota: Optional[int] = Field(default=None, ge=0)
     role: Optional[UserRole] = None
 
 

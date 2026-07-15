@@ -10,6 +10,7 @@ const LECTURE_CACHE_PREFIX = "lectures:";
 const PREFETCH_CACHE_PREFIX = "hols_prefetched_";
 const PAYMENT_CACHE_PREFIX = "student-payment:";
 const PROFILE_CACHE_PREFIX = "student-profile:";
+const AFFILIATE_PROFILE_CACHE_PREFIX = "affiliate-profile:";
 
 export function saveAuthSession(data: {
   access_token: string;
@@ -50,7 +51,8 @@ export function clearAuthSession() {
         key.startsWith(LECTURE_CACHE_PREFIX) ||
         key.startsWith(PREFETCH_CACHE_PREFIX) ||
         key.startsWith(PAYMENT_CACHE_PREFIX) ||
-        key.startsWith(PROFILE_CACHE_PREFIX)
+        key.startsWith(PROFILE_CACHE_PREFIX) ||
+        key.startsWith(AFFILIATE_PROFILE_CACHE_PREFIX)
       ) {
         window.sessionStorage.removeItem(key);
       }

@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { Button } from "@/components/ui/Button";
 import { ApiRequestError } from "@/lib/integrate/client";
 import { signup } from "@/lib/integrate/auth";
+import { resolveAffiliateInviteCode } from "@/lib/integrate/provider/affiliate/referrals/api";
 import { cn } from "@/lib/utils";
 
 const fieldClass =
@@ -19,7 +20,8 @@ type RegisterFormProps = {
 export function RegisterForm({ className }: RegisterFormProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const referralId = searchParams.get("ref")?.trim() || "";
+  const referralCode = searchParams.get("ref")?.trim() || "";
+  const referralIdParam = searchParams.get("affiliate_id")?.trim() || "";
 
   const [firstName, setFirstName] = useState("");
   const [lastName, setLastName] = useState("");
@@ -28,8 +30,39 @@ export function RegisterForm({ className }: RegisterFormProps) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [marketingPref, setMarketingPref] = useState(false);
+  const [referralId, setReferralId] = useState(referralIdParam);
+  const [referralName, setReferralName] = useState("");
+  const [referralLoading, setReferralLoading] = useState(Boolean(referralCode && !referralIdParam));
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!referralCode || referralIdParam) return;
+    const controller = new AbortController();
+    const timer = window.setTimeout(() => {
+      async function resolveReferral() {
+        setReferralLoading(true);
+        try {
+          const result = await resolveAffiliateInviteCode(referralCode, controller.signal);
+          if (controller.signal.aborted) return;
+          setReferralId(result.affiliate_id);
+          setReferralName([result.first_name, result.last_name].filter(Boolean).join(" "));
+        } catch (err) {
+          if (controller.signal.aborted) return;
+          setError(err instanceof ApiRequestError ? err.message : "Invalid referral link.");
+        } finally {
+          if (!controller.signal.aborted) setReferralLoading(false);
+        }
+      }
+
+      void resolveReferral();
+    }, 0);
+
+    return () => {
+      controller.abort();
+      window.clearTimeout(timer);
+    };
+  }, [referralCode, referralIdParam]);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -42,6 +75,11 @@ export function RegisterForm({ className }: RegisterFormProps) {
 
     if (password.length < 8) {
       setError("Password must be at least 8 characters.");
+      return;
+    }
+
+    if (referralCode && !referralId) {
+      setError("Referral link is not ready. Please wait or use a valid invite link.");
       return;
     }
 
@@ -77,7 +115,12 @@ export function RegisterForm({ className }: RegisterFormProps) {
     >
       <div className="grid gap-5">
         {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
-        {referralId ? <AuthAlert variant="info">Referral link applied.</AuthAlert> : null}
+        {referralLoading ? <AuthAlert variant="info">Checking referral link...</AuthAlert> : null}
+        {referralId && !referralLoading ? (
+          <AuthAlert variant="info">
+            Referral link applied{referralName ? ` from ${referralName}` : ""}.
+          </AuthAlert>
+        ) : null}
 
         <div className="grid gap-5 sm:grid-cols-2">
           <input
@@ -182,7 +225,7 @@ export function RegisterForm({ className }: RegisterFormProps) {
         type="submit"
         variant="primary"
         size="lg"
-        disabled={loading}
+        disabled={loading || referralLoading}
         className="mt-6 w-full justify-center"
       >
         {loading ? "Creating…" : "Create account"}
