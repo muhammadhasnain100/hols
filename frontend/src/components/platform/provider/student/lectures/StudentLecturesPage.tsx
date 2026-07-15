@@ -1,6 +1,5 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { PortalShell } from "@/components/platform/provider/PortalShell";
@@ -12,6 +11,12 @@ import {
   type CourseSummary,
   type PaginationMeta,
 } from "@/lib/integrate/provider/student/lectures";
+
+function shortDescription(description?: string) {
+  if (!description?.trim()) return "Course details and lessons...";
+  const words = description.trim().split(/\s+/).slice(0, 5);
+  return `${words.join(" ")}...`;
+}
 
 export function StudentLecturesPage() {
   const [loading, setLoading] = useState(true);
@@ -35,14 +40,15 @@ export function StudentLecturesPage() {
   }, [page]);
 
   useEffect(() => {
-    void load();
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timer);
   }, [load]);
 
   return (
     <PortalShell
       role="student"
       title="Lectures"
-      subtitle="Browse courses, topics, sections, and lessons."
+      subtitle="Choose a course and continue learning."
       nav={studentNav}
     >
       <div className="grid gap-6">
@@ -55,32 +61,52 @@ export function StudentLecturesPage() {
         ) : (
           <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
             {courses.map((course) => (
-              <Link
+              <article
                 key={course.course_id}
-                href={`/student/lectures/${course.course_id}`}
-                className="glass-panel block rounded-3xl p-6 transition hover:bg-white/80"
+                className="glass-panel flex min-h-[17rem] flex-col rounded-3xl p-6 transition hover:-translate-y-0.5 hover:bg-white/80"
               >
-                <h2 className="font-sans text-lg font-semibold text-primary">{course.title}</h2>
-                {course.description ? (
-                  <p className="mt-2 line-clamp-3 text-sm leading-relaxed text-muted">
-                    {course.description}
+                <div className="flex-1">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary/35">
+                    Lecture
                   </p>
-                ) : null}
-                <dl className="mt-4 grid grid-cols-3 gap-2 text-center text-xs text-muted">
-                  <div>
+                  <h2 className="mt-3 font-sans text-lg font-semibold text-primary">
+                    {course.title}
+                  </h2>
+                  <p className="mt-2 text-sm leading-relaxed text-muted">
+                    {shortDescription(course.description)}
+                  </p>
+                </div>
+
+                <dl className="mt-5 grid grid-cols-3 gap-2 rounded-2xl bg-primary/[0.04] p-3 text-center text-[11px] text-muted">
+                  <div className="rounded-xl bg-white/60 px-2 py-2">
                     <dt>Topics</dt>
-                    <dd className="mt-1 text-sm font-semibold text-primary">{course.topic_count}</dd>
+                    <dd className="mt-1 text-base font-semibold text-primary">
+                      {course.topic_count}
+                    </dd>
                   </div>
-                  <div>
+                  <div className="rounded-xl bg-white/60 px-2 py-2">
                     <dt>Sections</dt>
-                    <dd className="mt-1 text-sm font-semibold text-primary">{course.section_count}</dd>
+                    <dd className="mt-1 text-base font-semibold text-primary">
+                      {course.section_count}
+                    </dd>
                   </div>
-                  <div>
+                  <div className="rounded-xl bg-white/60 px-2 py-2">
                     <dt>Lessons</dt>
-                    <dd className="mt-1 text-sm font-semibold text-primary">{course.lesson_count}</dd>
+                    <dd className="mt-1 text-base font-semibold text-primary">
+                      {course.lesson_count}
+                    </dd>
                   </div>
                 </dl>
-              </Link>
+
+                <Button
+                  href={`/student/lectures/${course.course_id}`}
+                  variant="primary"
+                  size="md"
+                  className="mt-5 w-full"
+                >
+                  Learn More
+                </Button>
+              </article>
             ))}
           </div>
         )}

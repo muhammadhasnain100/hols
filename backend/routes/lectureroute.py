@@ -9,6 +9,8 @@ from database_entities import UserRole
 from dependencies import CurrentUser, require_roles
 from models.common import success_response
 from models.lectures import (
+    CourseBundleData,
+    CourseBundleResponse,
     CourseDetailData,
     CourseDetailResponse,
     CourseListData,
@@ -56,6 +58,18 @@ async def get_course(
     _ = current_user
     course = await lectures_service.get_course(course_id)
     return success_response(CourseDetailData(course=course))
+
+
+@router.get("/courses/{course_id}/bundle", response_model=CourseBundleResponse)
+@handle_route_errors("get course bundle", log_prefix="Lectures")
+async def get_course_bundle(
+    course_id: str,
+    current_user: StudentUser,
+) -> CourseBundleResponse:
+    """Get static course topics, sections, and lessons in one cached payload."""
+    _ = current_user
+    bundle = await lectures_service.get_course_bundle(course_id)
+    return success_response(CourseBundleData(**bundle))
 
 
 @router.get("/courses/{course_id}/topics", response_model=TopicListResponse)

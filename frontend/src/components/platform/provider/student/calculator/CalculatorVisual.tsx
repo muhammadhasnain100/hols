@@ -70,7 +70,7 @@ export function CalculatorVisual({
           <div
             className={cn(
               "pointer-events-none absolute -inset-4 -z-10 rounded-[2.5rem] blur-2xl transition duration-500",
-              mode === "result" ? "bg-[#F9A8D4]/30" : "bg-[#9ED6D4]/20",
+              mode === "result" ? "bg-[#88D8E8]/30" : "bg-[#9ED6D4]/20",
             )}
           />
           <GlassSyringe

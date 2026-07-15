@@ -110,8 +110,16 @@ class LessonDetailData(BaseModel):
     lesson: LessonDetail
 
 
+class CourseBundleData(BaseModel):
+    course: CourseSummary
+    topics: list[TopicSummary]
+    sections: list[SectionSummary]
+    lessons: list[LessonDetail]
+
+
 CourseListResponse = ApiSuccessResponse[CourseListData]
 CourseDetailResponse = ApiSuccessResponse[CourseDetailData]
+CourseBundleResponse = ApiSuccessResponse[CourseBundleData]
 TopicListResponse = ApiSuccessResponse[TopicListData]
 SectionListResponse = ApiSuccessResponse[SectionListData]
 LessonListResponse = ApiSuccessResponse[LessonListData]

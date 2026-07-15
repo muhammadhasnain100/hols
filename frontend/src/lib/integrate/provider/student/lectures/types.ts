@@ -85,6 +85,13 @@ export type CourseDetailData = {
   course: CourseSummary;
 };
 
+export type CourseBundleData = {
+  course: CourseSummary;
+  topics: TopicSummary[];
+  sections: SectionSummary[];
+  lessons: LessonDetail[];
+};
+
 export type TopicListData = {
   course_id: string;
   items: TopicSummary[];

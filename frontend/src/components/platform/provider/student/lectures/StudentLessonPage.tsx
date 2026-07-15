@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { PortalShell } from "@/components/platform/provider/PortalShell";
+import { CourseOptionNav } from "@/components/platform/provider/student/lectures/CourseOptionNav";
 import { studentNav } from "@/components/platform/provider/student/studentNav";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
@@ -25,7 +26,7 @@ function VariantCard({ variant }: { variant: LessonVariant }) {
   const pairs = Array.isArray(content.matchingPairs) ? content.matchingPairs : null;
 
   return (
-    <div className="rounded-2xl border border-border/40 bg-white/60 p-4">
+    <div className="rounded-2xl border border-border/40 bg-white/65 p-4">
       <p className="text-xs font-semibold uppercase tracking-wide text-muted">
         {variant.variant_type.replaceAll("_", " ")}
       </p>
@@ -79,7 +80,8 @@ export function StudentLessonPage({ courseId, lessonId }: StudentLessonPageProps
         setLoading(false);
       }
     }
-    void load();
+    const timer = window.setTimeout(() => void load(), 0);
+    return () => window.clearTimeout(timer);
   }, [courseId, lessonId]);
 
   return (
@@ -90,14 +92,18 @@ export function StudentLessonPage({ courseId, lessonId }: StudentLessonPageProps
       nav={studentNav}
     >
       <div className="grid gap-6">
-        <Link
-          href={`/student/lectures/${courseId}/lessons${
-            lesson?.topic_id ? `?topic_id=${encodeURIComponent(lesson.topic_id)}` : ""
-          }`}
-          className="text-sm font-medium text-primary underline-offset-2 hover:underline"
-        >
-          ← Back to lessons
-        </Link>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <Link
+            href={`/student/lectures/${courseId}/lessons${
+              lesson?.topic_id ? `?topic_id=${encodeURIComponent(lesson.topic_id)}` : ""
+            }`}
+            className="text-sm font-medium text-primary underline-offset-2 hover:underline"
+          >
+            ← Back to lessons
+          </Link>
+        </div>
+
+        <CourseOptionNav courseId={courseId} active="lessons" />
 
         {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
 
@@ -106,7 +112,12 @@ export function StudentLessonPage({ courseId, lessonId }: StudentLessonPageProps
         ) : lesson ? (
           <>
             <section className="glass-panel rounded-3xl p-6 md:p-8">
-              <h2 className="font-sans text-xl font-semibold text-primary">{lesson.title}</h2>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary/35">
+                Lesson {lesson.order}
+              </p>
+              <h2 className="mt-2 font-sans text-2xl font-semibold text-primary">
+                {lesson.title}
+              </h2>
               {lesson.l1_name || lesson.l2_name ? (
                 <p className="mt-2 text-sm text-muted">
                   {[lesson.l1_name, lesson.l2_name].filter(Boolean).join(" · ")}
@@ -115,8 +126,23 @@ export function StudentLessonPage({ courseId, lessonId }: StudentLessonPageProps
 
               {lesson.fact ? (
                 <div className="mt-6">
-                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted">Fact</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-primary">{lesson.fact}</p>
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted">
+                    Lesson content
+                  </h3>
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-primary">
+                    {lesson.fact}
+                  </p>
+                </div>
+              ) : null}
+
+              {lesson.text_content ? (
+                <div className="mt-6">
+                  <h3 className="text-sm font-semibold uppercase tracking-wide text-muted">
+                    Full text
+                  </h3>
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-primary">
+                    {lesson.text_content}
+                  </p>
                 </div>
               ) : null}
 
@@ -125,9 +151,9 @@ export function StudentLessonPage({ courseId, lessonId }: StudentLessonPageProps
                   <h3 className="text-sm font-semibold uppercase tracking-wide text-muted">
                     Study bullets
                   </h3>
-                  <pre className="mt-2 whitespace-pre-wrap font-sans text-sm leading-relaxed text-primary">
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-primary">
                     {lesson.study_bullets}
-                  </pre>
+                  </p>
                 </div>
               ) : null}
 
@@ -136,10 +162,17 @@ export function StudentLessonPage({ courseId, lessonId }: StudentLessonPageProps
                   <h3 className="text-sm font-semibold uppercase tracking-wide text-muted">
                     Supporting content
                   </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-primary">
+                  <p className="mt-2 whitespace-pre-wrap text-sm leading-7 text-primary">
                     {lesson.supporting_content}
                   </p>
                 </div>
+              ) : null}
+
+              {!lesson.fact &&
+              !lesson.text_content &&
+              !lesson.study_bullets &&
+              !lesson.supporting_content ? (
+                <p className="mt-6 text-sm text-muted">No lesson content available yet.</p>
               ) : null}
             </section>
 
