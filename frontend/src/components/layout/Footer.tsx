@@ -1,82 +1,135 @@
 import Link from "next/link";
 import { brand } from "@/config/brand";
 import { Logo } from "@/components/brand/Logo";
+import { Button } from "@/components/ui/Button";
 import { footerNav } from "@/content/navigation";
 import { Container } from "@/components/ui/Container";
 
 type SocialLabel = (typeof footerNav.social)[number]["label"];
 
+const socialBrand: Record<
+  SocialLabel,
+  { color?: string; gradient?: string; label: string }
+> = {
+  LinkedIn: { color: "#0A66C2", label: "LinkedIn" },
+  Instagram: {
+    gradient: "linear-gradient(45deg, #f09433 0%, #e6683c 25%, #dc2743 50%, #cc2366 75%, #bc1888 100%)",
+    label: "Instagram",
+  },
+  Facebook: { color: "#1877F2", label: "Facebook" },
+  YouTube: { color: "#FF0000", label: "YouTube" },
+  TikTok: { color: "#69C9D0", label: "TikTok" },
+  X: { color: "#FFFFFF", label: "X" },
+};
+
 function SocialIcon({ label }: { label: SocialLabel }) {
-  const className = "h-4 w-4 shrink-0";
+  const className = "h-[18px] w-[18px]";
 
   switch (label) {
     case "LinkedIn":
       return (
         <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-          <path d="M4.98 3.5A2.5 2.5 0 1 1 0 3.5a2.5 2.5 0 0 1 4.98 0ZM.35 8.25h4.3V24H.35V8.25ZM8.17 8.25h4.12v2.16h.06c.57-1.08 1.98-2.22 4.07-2.22 4.35 0 5.16 2.86 5.16 6.58V24h-4.3v-8.18c0-1.95-.04-4.46-2.72-4.46-2.72 0-3.14 2.13-3.14 4.32V24H8.17V8.25Z" />
+          <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 1 1-.004-4.125 2.062 2.062 0 0 1 .004 4.125zM7.119 20.452H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
         </svg>
       );
     case "Instagram":
       return (
-        <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-          <rect x="3" y="3" width="18" height="18" rx="5" />
-          <circle cx="12" cy="12" r="4" />
-          <circle cx="17.2" cy="6.8" r="1" fill="currentColor" stroke="none" />
+        <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+          <path d="M12 2.163c3.204 0 3.584.012 4.85.07 3.252.148 4.771 1.691 4.919 4.919.058 1.265.069 1.645.069 4.849 0 3.205-.012 3.584-.069 4.849-.149 3.225-1.664 4.771-4.919 4.919-1.266.058-1.644.07-4.85.07-3.204 0-3.584-.012-4.849-.07-3.26-.149-4.771-1.699-4.919-4.92-.058-1.265-.07-1.644-.07-4.849 0-3.204.013-3.583.07-4.849.149-3.227 1.664-4.771 4.919-4.919 1.266-.057 1.645-.069 4.849-.069zM12 0C8.741 0 8.333.014 7.053.072 2.695.272.273 2.69.073 7.052.014 8.333 0 8.741 0 12c0 3.259.014 3.668.072 4.948.2 4.358 2.618 6.78 6.98 6.98C8.333 23.986 8.741 24 12 24c3.259 0 3.668-.014 4.948-.072 4.354-.2 6.782-2.618 6.979-6.98.059-1.28.073-1.689.073-4.948 0-3.259-.014-3.667-.072-4.947-.196-4.354-2.617-6.78-6.979-6.98C15.668.014 15.259 0 12 0zm0 5.838a6.162 6.162 0 1 0 0 12.324 6.162 6.162 0 0 0 0-12.324zM12 16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.406-11.845a1.44 1.44 0 1 0 0 2.881 1.44 1.44 0 0 0 0-2.881z" />
         </svg>
       );
     case "Facebook":
       return (
         <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-          <path d="M14.2 8.3V6.6c0-.8.54-1 1.03-1H18V1.1L14.2 1C10.08 1 9.15 4.08 9.15 6.05V8.3H6v4.65h3.15V23h5.05V12.95h3.42l.55-4.65H14.2Z" />
+          <path d="M24 12.073C24 5.405 18.627 0 12 0S0 5.405 0 12.073C0 18.1 4.388 23.094 10.125 24v-8.437H7.078v-3.49h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.49h-2.796V24C19.612 23.094 24 18.1 24 12.073z" />
         </svg>
       );
     case "YouTube":
       return (
         <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-          <path d="M23.5 6.2a3 3 0 0 0-2.1-2.12C19.52 3.58 12 3.58 12 3.58s-7.52 0-9.4.5A3 3 0 0 0 .5 6.2 31.4 31.4 0 0 0 0 12a31.4 31.4 0 0 0 .5 5.8 3 3 0 0 0 2.1 2.12c1.88.5 9.4.5 9.4.5s7.52 0 9.4-.5a3 3 0 0 0 2.1-2.12c.5-1.88.5-5.8.5-5.8s0-3.92-.5-5.8ZM9.6 15.55v-7.1L15.85 12 9.6 15.55Z" />
+          <path d="M23.498 6.186a3.016 3.016 0 0 0-2.122-2.136C19.505 3.545 12 3.545 12 3.545s-7.505 0-9.377.505A3.017 3.017 0 0 0 .502 6.186C0 8.07 0 12 0 12s0 3.93.502 5.814a3.016 3.016 0 0 0 2.122 2.136c1.871.505 9.376.505 9.376.505s7.505 0 9.377-.505a3.015 3.015 0 0 0 2.122-2.136C24 15.93 24 12 24 12s0-3.93-.502-5.814zM9.545 15.568V8.432L15.818 12l-6.273 3.568z" />
         </svg>
       );
     case "TikTok":
       return (
         <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-          <path d="M16.6 1.5c.33 2.83 1.92 4.52 4.7 4.7v4.03a8.03 8.03 0 0 1-4.63-1.45v6.95c0 4.43-2.76 6.77-6.46 6.77-3.48 0-6.13-2.42-6.13-5.86 0-3.77 2.9-6.17 6.95-5.9v4.1c-1.56-.24-2.86.49-2.86 1.8 0 1.08.86 1.78 1.96 1.78 1.28 0 2.2-.74 2.2-2.68V1.5h4.27Z" />
+          <path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.03-1.49.26 0 .51 0 .77.02 1.35.07 2.71-.16 3.9-.84 1.03-.58 1.86-1.54 2.27-2.66.18-.5.27-1.03.29-1.56.02-3.71.01-7.42.02-11.13z" />
         </svg>
       );
     case "X":
       return (
         <svg className={className} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-          <path d="M18.9 2h3.42l-7.47 8.54L23.64 22h-6.88l-5.38-7.04L5.2 22H1.78l7.99-9.13L1.34 2h7.05l4.87 6.43L18.9 2Zm-1.2 17.98h1.9L7.35 3.91H5.31l12.38 16.07Z" />
+          <path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z" />
         </svg>
       );
   }
 }
 
+function SocialLink({ href, label }: { href: string; label: SocialLabel }) {
+  const style = socialBrand[label];
+  const isX = label === "X";
+
+  return (
+    <Link
+      href={href}
+      target="_blank"
+      rel="noopener noreferrer"
+      aria-label={style.label}
+      title={style.label}
+      className="inline-flex h-11 w-11 items-center justify-center rounded-lg"
+      style={
+        style.gradient
+          ? { background: style.gradient, color: "#FFFFFF" }
+          : {
+              backgroundColor: isX ? "#141414" : style.color,
+              color: "#FFFFFF",
+              border: isX ? "1px solid rgba(255,255,255,0.14)" : undefined,
+            }
+      }
+    >
+      <SocialIcon label={label} />
+    </Link>
+  );
+}
+
 export function Footer() {
   return (
-    <footer className="border-t border-white/10 bg-black text-white">
-      <Container className="py-20 md:py-24 lg:py-28">
-        <div className="flex flex-col gap-14 lg:flex-row lg:items-start lg:justify-between lg:gap-20">
-          <div className="max-w-md">
-            <Logo variant="light" className="h-12 md:h-14" />
-            <p className="mt-6 font-sans text-lg font-semibold text-white md:text-xl">
+    <footer className="bg-black text-white">
+      <Container className="pt-24 pb-10 md:pt-28 md:pb-12 lg:pt-32">
+        {/* Main content — taller professional layout */}
+        <div className="grid gap-16 lg:grid-cols-12 lg:gap-12 xl:gap-16">
+          {/* Brand column */}
+          <div className="lg:col-span-5">
+            <Logo variant="light" className="h-11 md:h-12" />
+            {/* Google Sans Semibold */}
+            <p className="font-sans mt-8 text-xl font-semibold tracking-[0.01em] text-white md:text-2xl">
               {brand.name}
             </p>
-            <p className="mt-3 text-base leading-relaxed text-white/65 md:text-lg md:leading-relaxed">
+            {/* Body · Gilroy Light · 18px */}
+            <p className="font-body text-brand-body mt-5 max-w-md text-white/55">
               {brand.description}
             </p>
+
+            <div className="mt-10">
+              <p className="text-brand-caption text-white/40">Follow us</p>
+              <div className="mt-4 flex flex-wrap items-center gap-3">
+                {footerNav.social.map((item) => (
+                  <SocialLink key={item.href} href={item.href} label={item.label} />
+                ))}
+              </div>
+            </div>
           </div>
 
-          <div className="grid flex-1 gap-12 sm:grid-cols-2 sm:gap-14 lg:grid-cols-[minmax(120px,0.8fr)_minmax(120px,0.8fr)_minmax(260px,1.4fr)] lg:gap-16 lg:pl-16">
+          {/* Link columns */}
+          <div className="grid grid-cols-2 gap-10 sm:grid-cols-3 lg:col-span-7 lg:gap-8 xl:gap-12">
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/50">
-                Explore
-              </p>
+              <h3 className="text-brand-caption font-medium text-white">Explore</h3>
               <ul className="mt-6 space-y-4">
                 {footerNav.main.map((item) => (
                   <li key={item.href}>
                     <Link
                       href={item.href}
-                      className="text-base text-white/85 transition-colors hover:text-accent md:text-lg"
+                      className="font-sans text-base font-medium tracking-[0.01em] text-white/55 transition-colors hover:text-white"
                     >
                       {item.label}
                     </Link>
@@ -86,15 +139,13 @@ export function Footer() {
             </div>
 
             <div>
-              <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/50">
-                Legal
-              </p>
+              <h3 className="text-brand-caption font-medium text-white">Legal</h3>
               <ul className="mt-6 space-y-4">
                 {footerNav.legal.map((item) => (
                   <li key={item.href}>
                     <Link
                       href={item.href}
-                      className="text-base text-white/85 transition-colors hover:text-accent md:text-lg"
+                      className="font-sans text-base font-medium tracking-[0.01em] text-white/55 transition-colors hover:text-white"
                     >
                       {item.label}
                     </Link>
@@ -103,11 +154,12 @@ export function Footer() {
               </ul>
             </div>
 
-            <div className="sm:col-span-2 lg:col-span-1">
-              <p className="text-base text-white/70 md:text-lg">
-                Practical insights for your clinic.
+            <div className="col-span-2 sm:col-span-1">
+              <h3 className="text-brand-caption font-medium text-white">Newsletter</h3>
+              <p className="font-body text-brand-body mt-6 text-white/50">
+                Practical insights for your clinic. No spam.
               </p>
-              <form className="mt-6 grid gap-3" action="#" method="post">
+              <form className="mt-6 space-y-3" action="#" method="post">
                 <label htmlFor="footer-email" className="sr-only">
                   Email address
                 </label>
@@ -117,47 +169,28 @@ export function Footer() {
                   type="email"
                   autoComplete="email"
                   placeholder="Email address"
-                  className="w-full rounded-full border border-white/15 bg-white/5 px-5 py-3.5 text-base text-white placeholder:text-white/45 outline-none transition-colors focus:border-accent/60 focus:ring-1 focus:ring-accent/40 md:py-4"
+                  className="font-body h-12 w-full rounded-lg border border-white/12 bg-white/[0.04] px-4 text-base font-light tracking-[0.02em] text-white placeholder:text-white/35 outline-none focus:border-white/25"
                 />
-                <button
+                {/* Same Button component as hero / other sections */}
+                <Button
                   type="submit"
-                  className="w-full rounded-full bg-accent px-8 py-3.5 text-base font-medium text-primary transition-opacity hover:opacity-90 md:py-4"
+                  variant="primary"
+                  size="lg"
+                  className="w-full justify-center rounded-lg"
                 >
                   Join
-                </button>
+                </Button>
               </form>
-
-              <div className="mt-10">
-                <p className="text-sm font-semibold uppercase tracking-[0.2em] text-white/50">
-                  Social
-                </p>
-                <div className="mt-5 grid grid-cols-2 gap-3">
-                  {footerNav.social.map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex min-h-11 items-center gap-2 rounded-full border border-white/10 bg-white/[0.04] px-3.5 py-2.5 text-sm font-medium text-white/80 transition-colors hover:border-accent/35 hover:bg-accent/10 hover:text-accent"
-                    >
-                      <SocialIcon label={item.label} />
-                      {item.label}
-                    </Link>
-                  ))}
-                </div>
-              </div>
             </div>
           </div>
         </div>
 
-        <div className="mt-16 flex flex-col gap-4 border-t border-white/10 pt-10 text-sm text-white/50 md:mt-20 md:pt-12 md:text-base lg:flex-row lg:items-center lg:justify-between">
-          <p>
+        {/* Bottom bar */}
+        <div className="mt-20 flex flex-col gap-4 border-t border-white/10 pt-8 md:mt-24 md:flex-row md:items-center md:justify-between md:pt-10">
+          <p className="text-brand-caption text-white/40">
             © {new Date().getFullYear()} {brand.name}. All rights reserved.
           </p>
-          <p className="text-white/40">
-            {brand.name} · {footerNav.main.map((l) => l.label).join(" · ")} · Legal ·
-            Newsletter · Social
-          </p>
+          <p className="text-brand-caption text-white/30">{brand.tagline}</p>
         </div>
       </Container>
     </footer>

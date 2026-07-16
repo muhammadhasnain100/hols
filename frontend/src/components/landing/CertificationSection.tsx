@@ -14,26 +14,27 @@ export function CertificationSection() {
             <div className="grid items-center gap-10 md:grid-cols-2">
               {/* Left: text */}
               <div className="relative z-10 max-w-xl">
-                <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-primary">
+                <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-brand-caption uppercase tracking-[0.18em] text-primary">
                   Certification
                 </span>
-                <h2 className="mt-5 font-serif text-3xl font-semibold leading-tight text-primary md:text-4xl lg:text-[2.6rem]">
+                <h2 className="font-sans text-brand-subheading mt-5 text-primary">
                   {certification.headline}
                 </h2>
-                <p className="mt-5 max-w-lg text-base leading-relaxed text-primary/75 md:text-lg">
+                <p className="font-body text-brand-body mt-5 max-w-lg text-primary/75">
                   {certification.body}
                 </p>
               </div>
 
-              {/* Right: floating image */}
-              <div className="relative mt-4 md:mt-0 md:min-h-[16rem]">
-                <div className="relative mx-auto aspect-[4/5] w-64 overflow-hidden rounded-3xl border border-white/50 shadow-[0_30px_70px_rgba(15,33,64,0.35)] sm:w-72 md:absolute md:right-0 md:top-1/2 md:aspect-[4/5] md:w-80 md:-translate-y-1/2 md:-mt-0 lg:w-[22rem] lg:h-[28rem]">
+              {/* Right: transparent Photoroom image */}
+              <div className="relative mt-4 flex justify-center md:mt-0 md:min-h-[18rem] md:justify-end">
+                <div className="relative h-72 w-64 sm:h-80 sm:w-72 md:absolute md:right-0 md:top-1/2 md:h-[22rem] md:w-80 md:-translate-y-1/2 lg:h-[28rem] lg:w-[22rem]">
                   <Image
-                    src="/assets/images/hols-education-books-mockup.png"
+                    src="/assets/creatives/Give%20your%20team%20a%20credential%20that%20means%20something_-Photoroom.png"
                     alt={certification.headline}
                     fill
-                    className="object-cover"
+                    className="object-contain drop-shadow-[0_24px_48px_rgba(15,33,64,0.28)]"
                     sizes="(max-width: 768px) 18rem, 22rem"
+                    priority={false}
                   />
                 </div>
               </div>

@@ -33,15 +33,21 @@ function PillarCard({
       )}
     >
       <div className="flex flex-1 flex-col justify-center p-8 md:p-12 lg:p-16">
-        <h3 className="font-sans text-2xl font-semibold leading-tight text-primary md:text-3xl lg:text-4xl">
+        {/* Google Sans Semibold — card title */}
+        <h3 className="font-sans text-xl font-semibold leading-tight tracking-[0.005em] text-primary md:text-2xl">
           {title}
         </h3>
-        <p className="mt-5 max-w-xl text-base leading-relaxed text-muted md:text-lg lg:text-xl">
-          {description}
-        </p>
+        {/* Gilroy Light · 18px */}
+        <p className="font-body text-brand-body mt-5 max-w-xl text-muted">{description}</p>
       </div>
       <div className="relative w-full flex-1 shrink-0 border-t border-border/40 bg-primary/[0.02] md:w-[55%] md:flex-none md:self-stretch md:border-l md:border-t-0 lg:w-[58%]">
-        <Image src={image} alt={title} fill className="object-cover" sizes="(max-width: 768px) 100vw, 60vw" />
+        <Image
+          src={image}
+          alt={title}
+          fill
+          className="object-cover"
+          sizes="(max-width: 768px) 100vw, 60vw"
+        />
       </div>
     </article>
   );
@@ -53,7 +59,7 @@ function PillarsSectionStatic() {
   return (
     <section id="everything-inside" className="bg-background py-16 md:py-24">
       <Container>
-        <h2 className="text-brand-subheading text-center text-primary">{pillars.headline}</h2>
+        <h2 className="font-sans text-brand-subheading text-center text-primary">{pillars.headline}</h2>
         <div className="mt-12 grid grid-cols-1 gap-6 md:gap-8">
           {pillars.items.map((item) => (
             <PillarCard
@@ -168,7 +174,7 @@ export function PillarsSection() {
     <section ref={sectionRef} id="everything-inside" className="relative bg-background">
       <div ref={pinWrapRef} className="flex h-[100dvh] flex-col justify-center overflow-hidden bg-background py-6 md:py-8">
         <Container className="flex h-full flex-col">
-          <h2 className="text-brand-subheading shrink-0 pt-4 text-center text-primary md:pt-6">
+          <h2 className="font-sans text-brand-subheading shrink-0 pt-4 text-center text-primary md:pt-6">
             {pillars.headline}
           </h2>
 
@@ -212,7 +218,7 @@ export function PillarsSection() {
             ))}
           </div>
 
-          <p className="mt-3 shrink-0 pb-2 text-center font-sans text-xs font-medium uppercase tracking-[0.2em] text-primary-light">
+          <p className="text-brand-caption mt-3 shrink-0 pb-2 text-center uppercase tracking-[0.2em] text-primary-light">
             {activePage + 1} / {pageCount}
           </p>
         </Container>

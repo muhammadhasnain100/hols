@@ -56,7 +56,7 @@ export function HeroNavbarMobile() {
                 key={item.href}
                 href={item.href}
                 onClick={() => setOpen(false)}
-                className="text-base font-medium text-primary/85 transition-colors duration-300 hover:text-primary"
+                className="font-sans text-base font-medium text-primary/85 transition-colors duration-300 hover:text-primary"
               >
                 {item.label}
               </Link>

@@ -29,7 +29,11 @@ export function PricingTeaserSection() {
   const { pricingTeaser } = landingContent;
 
   return (
-    <section id="pricing" className="relative overflow-hidden bg-primary pt-20 text-white md:pt-28">
+    <section
+      id="pricing"
+      data-nav-surface="dark"
+      className="relative overflow-hidden bg-primary pt-20 text-white md:pt-28"
+    >
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0"
@@ -40,13 +44,16 @@ export function PricingTeaserSection() {
       />
       <Container>
         <ScrollReveal className="relative mx-auto max-w-2xl text-center">
-          <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-3 py-1 font-sans text-xs font-semibold uppercase tracking-[0.18em] text-accent">
+          {/* Caption · Google Sans Regular · 14px */}
+          <span className="text-brand-caption inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/[0.06] px-3 py-1 uppercase tracking-[0.18em] text-accent">
             {pricingTeaser.eyebrow}
           </span>
-          <h2 className="mt-5 text-brand-subheading text-white">{pricingTeaser.headline}</h2>
-          <p className="mt-4 text-base leading-relaxed text-white/75 md:text-lg">
-            {pricingTeaser.body}
-          </p>
+          {/* Sub-heading · Google Sans Regular · 34px */}
+          <h2 className="font-sans text-brand-subheading mt-5 text-white">
+            {pricingTeaser.headline}
+          </h2>
+          {/* Body · Gilroy Light · 18px */}
+          <p className="font-body text-brand-body mt-4 text-white/75">{pricingTeaser.body}</p>
         </ScrollReveal>
 
         <ScrollReveal
@@ -66,7 +73,7 @@ export function PricingTeaserSection() {
               {"badge" in plan && plan.badge ? (
                 <span
                   className={cn(
-                    "absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-1 font-sans text-[0.7rem] font-semibold uppercase tracking-[0.14em]",
+                    "text-brand-caption absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-1 uppercase tracking-[0.14em]",
                     plan.featured
                       ? "bg-accent text-primary"
                       : "border border-white/20 bg-primary text-accent",
@@ -76,17 +83,18 @@ export function PricingTeaserSection() {
                 </span>
               ) : null}
 
-              <p className="font-sans text-sm font-semibold uppercase tracking-[0.16em] text-white/55">
+              <p className="text-brand-caption uppercase tracking-[0.16em] text-white/55">
                 {plan.title}
               </p>
 
+              {/* Google Sans Bold */}
               <div className="mt-5 flex items-baseline gap-1">
-                <span className="font-serif text-4xl font-semibold tracking-tight text-white md:text-[2.75rem]">
+                <span className="font-sans text-4xl font-bold tracking-tight text-white md:text-[2.75rem]">
                   {plan.price}
                 </span>
               </div>
 
-              <p className="mt-3 flex items-center gap-2 text-sm text-white/70">
+              <p className="font-body mt-3 flex items-center gap-2 text-base font-light tracking-[0.02em] text-white/70">
                 <span className="h-1.5 w-1.5 rounded-full bg-accent" />
                 {plan.duration}
               </p>
@@ -95,7 +103,10 @@ export function PricingTeaserSection() {
 
               <ul className="flex flex-1 flex-col gap-3">
                 {SHARED_INCLUDES.map((feature) => (
-                  <li key={feature} className="flex items-start gap-3 text-sm text-white/80">
+                  <li
+                    key={feature}
+                    className="font-body flex items-start gap-3 text-base font-light tracking-[0.02em] text-white/80"
+                  >
                     <CheckIcon />
                     {feature}
                   </li>

@@ -20,7 +20,7 @@ export function ArticleTemplate({ post }: ArticleTemplateProps) {
               Back to blog
             </Link>
 
-            <h1 className="mt-8 font-serif text-3xl leading-tight text-primary md:text-4xl lg:text-5xl">
+            <h1 className="text-brand-subheading mt-8 font-bold text-primary md:text-[3.75rem] md:leading-[1.05]">
               {post.title}
             </h1>
 

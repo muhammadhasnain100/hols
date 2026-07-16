@@ -15,7 +15,7 @@ export function HeroTrustStrip() {
         {heroContent.trustStrip.map((item) => (
           <div
             key={item}
-            className="hero-reveal rounded-full border border-primary/10 bg-white/80 px-5 py-3 text-sm font-medium text-primary/80 shadow-[0_8px_32px_rgba(21,39,68,0.08)] backdrop-blur-md"
+            className="hero-reveal font-sans rounded-full border border-primary/10 bg-white/80 px-5 py-3 text-sm font-medium text-primary/80 shadow-[0_8px_32px_rgba(21,39,68,0.08)] backdrop-blur-md"
           >
             {item}
           </div>

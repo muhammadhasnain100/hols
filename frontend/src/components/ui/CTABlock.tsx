@@ -25,8 +25,8 @@ export function CTABlock({
         <h2
           className={
             isDark
-              ? "text-brand-subheading text-white"
-              : "text-brand-subheading text-primary"
+              ? "font-sans text-brand-subheading text-white"
+              : "font-sans text-brand-subheading text-primary"
           }
         >
           {headline}

@@ -55,7 +55,7 @@ export function AuthShell({
               <div className="absolute -top-3 left-8 h-32 w-32 rounded-full bg-cyan-200/10 blur-2xl" />
 
               <img
-                src="/asset/hols-auth-illustration.svg"
+                src="/assets/hols-auth-illustration.svg"
                 alt=""
                 aria-hidden="true"
                 className="relative z-10 h-full w-full object-contain drop-shadow-[0_34px_90px_rgba(0,0,0,0.28)]"
@@ -140,7 +140,7 @@ export function AuthShell({
               <p className="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-primary/50">
                 {eyebrow}
               </p>
-              <h2 className="mt-3 font-serif text-3xl font-semibold leading-tight text-primary md:text-[2.35rem]">
+              <h2 className="text-brand-subheading mt-3 font-bold text-primary md:text-[2.35rem]">
                 {title}
               </h2>
               {subtitle ? (

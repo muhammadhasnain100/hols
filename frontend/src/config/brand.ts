@@ -85,29 +85,42 @@ export const brand = {
   /** ── Typography ───────────────────────────────────────────── */
   fonts: {
     /**
-     * Brand specifies Google Sans (primary) and Gilroy (secondary).
-     * Swap these when custom font files are added to /public/fonts.
+     * Brand: Google Sans (primary) + Gilroy (secondary).
+     * Load real files from /public/fonts (see README there).
+     * Until then, DM Sans / Outfit stand in via next/font.
      */
     primary: {
-      family: "var(--font-primary)",
+      family: '"Google Sans", var(--font-primary)',
       fallback: '"DM Sans", system-ui, sans-serif',
-      googleFont: "DM Sans",
+      name: "Google Sans",
+      weights: {
+        regular: 400,
+        medium: 500,
+        semibold: 600,
+        bold: 700,
+      },
     },
     secondary: {
-      family: "var(--font-secondary)",
+      family: '"Gilroy", var(--font-secondary)',
       fallback: '"Outfit", system-ui, sans-serif',
-      googleFont: "Outfit",
+      name: "Gilroy",
+      weights: {
+        light: 300,
+        extraBold: 800,
+      },
     },
   },
 
   typography: {
+    /** Google Sans Bold · 60px · leading 100–110% */
     heading: {
       font: "primary",
       size: "3.75rem", // 60px
       weight: 700,
-      lineHeight: "1.05", // 100–110%
+      lineHeight: "1.05",
       letterSpacing: "0.01em",
     },
+    /** Google Sans Regular · 34px */
     subheading: {
       font: "primary",
       size: "2.125rem", // 34px
@@ -115,13 +128,15 @@ export const brand = {
       lineHeight: "1.1",
       letterSpacing: "0.005em",
     },
+    /** Gilroy Light · 18px · leading 110–120% · tracking up to +20 */
     body: {
       font: "secondary",
       size: "1.125rem", // 18px
       weight: 300,
-      lineHeight: "1.15", // 110–120%
+      lineHeight: "1.15",
       letterSpacing: "0.02em",
     },
+    /** Google Sans Regular · 14px */
     caption: {
       font: "primary",
       size: "0.875rem", // 14px

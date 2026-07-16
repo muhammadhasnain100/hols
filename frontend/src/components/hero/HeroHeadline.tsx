@@ -15,19 +15,19 @@ export function HeroHeadline() {
 
       <FadeIn className="relative text-center" stagger={0.12} y={36}>
         <div className="hero-reveal">
-          <p className="mb-5 font-sans text-xs font-semibold uppercase tracking-[0.32em] text-primary-light md:text-sm">
+          <p className="text-brand-caption mb-5 uppercase tracking-[0.32em] text-primary-light">
             {eyebrow}
           </p>
         </div>
 
         <div className="hero-reveal">
-          <h1 className="font-serif text-4xl leading-[1.08] text-primary md:text-6xl lg:text-7xl">
-            {headline}
-          </h1>
+          {/* Google Sans Bold · 60px */}
+          <h1 className="font-sans text-brand-heading text-primary">{headline}</h1>
         </div>
 
         <div className="hero-reveal">
-          <p className="mx-auto mt-8 max-w-2xl text-base leading-relaxed text-primary/75 md:text-lg">
+          {/* Gilroy Light · 18px */}
+          <p className="font-body text-brand-body mx-auto mt-8 max-w-2xl text-primary/75">
             {subhead}
           </p>
         </div>

@@ -45,7 +45,8 @@ function Callout({
           <h3 className="font-sans text-lg font-semibold text-white md:text-xl">{title}</h3>
           {side === "left" ? connector : null}
         </div>
-        <p className="mt-3 text-sm leading-relaxed text-white/70 md:text-base">{description}</p>
+        {/* Gilroy Light · 18px */}
+        <p className="font-body text-brand-body mt-3 text-white/70">{description}</p>
       </div>
     </div>
   );
@@ -62,7 +63,8 @@ export function WhatYouGetSection() {
       className="relative z-10 overflow-hidden bg-[#142644] py-20 md:py-28"
     >
       <ScrollReveal className="mx-auto max-w-3xl text-center">
-        <h2 className="text-brand-subheading text-white">{whatYouGet.headline}</h2>
+        {/* Google Sans Regular · 34px */}
+        <h2 className="font-sans text-brand-subheading text-white">{whatYouGet.headline}</h2>
       </ScrollReveal>
 
       <StaggerChildren
@@ -76,17 +78,15 @@ export function WhatYouGetSection() {
 
         <div data-stagger-item className="relative order-first mx-auto w-full max-w-sm lg:order-none">
           <div className="absolute -inset-6 rounded-full bg-accent/10 blur-3xl" aria-hidden />
-          <div className="relative overflow-hidden rounded-[2rem] border border-white/70 bg-white/70 shadow-[0_30px_80px_rgba(21,39,68,0.18)] backdrop-blur">
-            <div className="relative aspect-[4/5]">
-              <Image
-                src={dosing.image}
-                alt={whatYouGet.headline}
-                fill
-                className="object-cover"
-                sizes="(max-width: 1024px) 90vw, 22rem"
-                priority={false}
-              />
-            </div>
+          <div className="relative mx-auto aspect-[4/5] w-full max-w-[22rem]">
+            <Image
+              src="/assets/creatives/One%20place%20to%20train%20your%20team%20and%20run%20peptides%20properly_-Photoroom.png"
+              alt={whatYouGet.headline}
+              fill
+              className="object-contain drop-shadow-[0_24px_60px_rgba(0,0,0,0.35)]"
+              sizes="(max-width: 1024px) 90vw, 22rem"
+              priority={false}
+            />
           </div>
         </div>
 

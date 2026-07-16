@@ -49,22 +49,14 @@ export function PageHero({
           </div>
         )}
         <div className="hero-reveal">
-          <h1
-            className={cn(
-              isLandingStyle
-                ? "font-serif text-4xl leading-[1.08] text-primary md:text-5xl lg:text-6xl"
-                : "text-brand-heading text-primary",
-            )}
-          >
-            {headline}
-          </h1>
+          <h1 className="text-brand-heading text-primary">{headline}</h1>
         </div>
         {subhead && (
           <div className="hero-reveal">
             <p
               className={cn(
-                "mx-auto mt-8 max-w-2xl text-base leading-relaxed md:text-lg",
-                isLandingStyle ? "text-primary/75" : "text-brand-body text-muted",
+                "text-brand-body mx-auto mt-8 max-w-2xl",
+                isLandingStyle ? "text-primary/75" : "text-muted",
               )}
             >
               {subhead}

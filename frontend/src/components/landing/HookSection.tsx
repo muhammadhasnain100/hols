@@ -44,7 +44,7 @@ function HookImage({
       </div>
       <figcaption
         className={cn(
-          "px-5 py-3 font-sans text-xs font-semibold uppercase tracking-[0.16em]",
+          "px-5 py-3 text-brand-caption uppercase tracking-[0.16em]",
           dark ? "bg-primary/90 text-white" : "border-t border-primary/5 bg-white text-primary",
         )}
       >
@@ -75,12 +75,11 @@ function HookPanelContent({
 
   const copy = (
     <div className="flex flex-col justify-center px-1 lg:px-4">
-      <p className="font-sans text-xs font-semibold uppercase tracking-[0.22em] text-primary-light">
+      <p className="text-brand-caption uppercase tracking-[0.22em] text-primary-light">
         {label}
       </p>
-      <p className="mt-5 text-base leading-7 text-muted md:text-lg md:leading-8">
-        {text}
-      </p>
+      {/* Gilroy Light · 18px */}
+      <p className="font-body text-brand-body mt-5 text-muted">{text}</p>
     </div>
   );
 
@@ -109,7 +108,7 @@ function HookSectionStatic() {
       <Container>
         <SplitTitle
           text={hook.headline}
-          className="mx-auto max-w-4xl text-center font-serif text-3xl leading-[1.12] text-primary sm:text-4xl lg:text-[2.75rem]"
+          className="font-sans text-brand-subheading mx-auto max-w-4xl text-center text-primary"
         />
         <div className="mt-16 space-y-20">
           <HookPanelContent
@@ -256,7 +255,7 @@ export function HookSection() {
             <div ref={titleRef} className="mx-auto max-w-4xl text-center">
               <SplitTitle
                 text={hook.headline}
-                className="font-serif text-3xl leading-[1.12] text-primary sm:text-4xl lg:text-[2.75rem]"
+                className="font-sans text-brand-subheading text-primary"
               />
             </div>
 

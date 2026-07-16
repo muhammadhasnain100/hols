@@ -1,9 +1,14 @@
 import type { Metadata } from "next";
-import { Cormorant_Garamond, DM_Sans, Outfit } from "next/font/google";
+import { DM_Sans, Outfit } from "next/font/google";
 import { BrandStyles } from "@/components/BrandStyles";
 import { brand } from "@/config/brand";
 import "./globals.css";
 
+/**
+ * Brand fonts: Google Sans (primary) + Gilroy (secondary).
+ * These Google Fonts are temporary stand-ins until licensed files
+ * are added under /public/fonts (see public/fonts/README.md).
+ */
 const primaryFont = DM_Sans({
   variable: "--font-primary",
   subsets: ["latin"],
@@ -14,13 +19,6 @@ const secondaryFont = Outfit({
   variable: "--font-secondary",
   subsets: ["latin"],
   weight: ["300", "800"],
-});
-
-const displayFont = Cormorant_Garamond({
-  variable: "--font-display",
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700"],
-  style: ["normal", "italic"],
 });
 
 export const metadata: Metadata = {
@@ -36,7 +34,7 @@ export default function RootLayout({
   return (
     <html
       lang="en"
-      className={`${primaryFont.variable} ${secondaryFont.variable} ${displayFont.variable} h-full antialiased`}
+      className={`${primaryFont.variable} ${secondaryFont.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
         <BrandStyles />

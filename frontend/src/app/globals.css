@@ -5,6 +5,10 @@
  * Brand tokens are defined in src/config/brand.ts
  * and injected at runtime via <BrandStyles /> in layout.tsx.
  * Tailwind utilities below map to those CSS variables.
+ *
+ * Typography: Google Sans (primary) + Gilroy (secondary).
+ * Add licensed .woff2 files under /public/fonts (see README) and
+ * restore the @font-face block from git history / brand docs.
  */
 
 @theme inline {
@@ -20,9 +24,11 @@
   --color-accent-light: var(--brand-baby-blue);
   --color-neutral: var(--brand-charcoal);
 
+  /* Primary = Google Sans · Secondary = Gilroy */
   --font-sans: var(--font-primary-stack);
   --font-body: var(--font-secondary-stack);
-  --font-serif: var(--font-display), "Cormorant Garamond", Georgia, serif;
+  /* Headlines use primary (Google Sans), not a serif display face */
+  --font-serif: var(--font-primary-stack);
 }
 
 /* Responsive brand heading scale */
@@ -77,8 +83,10 @@ body {
   letter-spacing: var(--brand-tracking-caption);
 }
 
+/* Headlines / legacy font-serif → Google Sans (primary) */
 .font-serif {
-  font-family: var(--font-serif);
+  font-family: var(--font-primary-stack);
+  font-weight: 700;
 }
 
 /* ── Brand gradient utilities ───────────────────────────────── */

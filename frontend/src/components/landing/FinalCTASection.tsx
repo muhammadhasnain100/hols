@@ -11,7 +11,6 @@ export function FinalCTASection() {
       <Container>
         <ScrollReveal>
           <div className="relative mx-auto max-w-5xl overflow-hidden rounded-[2.5rem] border border-white/10 bg-gradient-to-br from-white/[0.09] via-white/[0.04] to-transparent px-8 py-16 text-center md:px-16 md:py-20">
-            {/* Decorative glow + grid */}
             <div
               aria-hidden
               className="pointer-events-none absolute inset-0"
@@ -33,7 +32,8 @@ export function FinalCTASection() {
             />
 
             <div className="relative">
-              <h2 className="mx-auto max-w-3xl font-serif text-3xl leading-[1.1] text-white sm:text-4xl md:text-[2.75rem]">
+              {/* Sub-heading · Google Sans Regular · 34px */}
+              <h2 className="font-sans text-brand-subheading mx-auto max-w-3xl text-white">
                 {finalCta.headline}
               </h2>
 
@@ -53,9 +53,23 @@ export function FinalCTASection() {
 
               <div className="mt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
                 {trustStrip.map((item) => (
-                  <span key={item} className="flex items-center gap-2 font-sans text-sm text-white/60">
-                    <svg className="h-4 w-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2" aria-hidden>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
+                  <span
+                    key={item}
+                    className="text-brand-caption flex items-center gap-2 text-white/60"
+                  >
+                    <svg
+                      className="h-4 w-4 text-accent"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                      strokeWidth="2.2"
+                      aria-hidden
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        d="m4.5 12.75 6 6 9-13.5"
+                      />
                     </svg>
                     {item}
                   </span>
