@@ -13,28 +13,18 @@ export const landingContent = {
     "Sources on everything",
   ],
   hook: {
-    headline:
-      "Demand for peptides is growing fast — and getting it right shouldn’t be left to guesswork.",
+    problemBadge: "The problem",
+    solutionBadge: "The solution",
+    headline: "Scattered info becomes one trusted system.",
     problem:
-      "Today the answers are scattered across forums, group chats, and unverified PDFs. That uncertainty becomes your clinic’s risk.",
-    resolutionHeadline:
-      "Everything your clinic needs, brought into one trusted system.",
-    resolution:
-      "Training, dosing tools, and patient paperwork in one place — so your team can move quickly and get it right.",
-    beforeLabel: "Scattered information",
-    afterLabel: "One trusted system",
-    featureImage: "/assets/images/hook-feature.jpg",
-    problemImage: "/assets/creatives/Scattered%20information.png",
-    solutionImage: "/assets/creatives/One%20trusted%20system.png",
-    problemCta: {
-      title: "See how HOLS fixes this",
-      subtitle: "Guesswork across forums, chats, and PDFs",
-      href: "/features",
-    },
-    solutionCta: {
-      title: "Step inside HOLS",
-      subtitle: "Training, dosing, and paperwork in one place",
-      href: "/register",
+      "Scattered forums, group chats, and unverified PDFs are inefficient. They slow your team, raise clinical risk, and leave dosing to guesswork.",
+    solution:
+      "Instead of bouncing between chats, PDFs, and guesswork, HOLS brings training, dosing, and patient paperwork into one trusted system.",
+    beforeLabel: "Scattered info",
+    afterLabel: "one trusted system",
+    cta: {
+      label: "Explore courses",
+      href: "#what-you-get",
     },
   },
   whatYouGet: {

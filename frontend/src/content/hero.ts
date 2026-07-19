@@ -4,7 +4,7 @@ export const heroContent = {
   subhead:
     "Train your team, keep dosing right, and hand patients clean branded materials — without becoming the peptide expert yourself.",
   primaryCta: { label: "Get Started", href: "/register" },
-  secondaryCta: { label: "Features", href: "/features" },
+  secondaryCta: { label: "Explore courses", href: "#what-you-get" },
   trustStrip: [
     "Trusted by clinics",
     "Reviewed by experts",
