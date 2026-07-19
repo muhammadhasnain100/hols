@@ -1,99 +1,318 @@
+"use client";
+
 import Image from "next/image";
-import { Section } from "@/components/ui/Section";
-import { ScrollReveal, StaggerChildren } from "@/components/animations/ScrollReveal";
+import { useEffect, useRef, useState } from "react";
+import { useGSAP } from "@gsap/react";
+import { gsap, registerGsap, ScrollTrigger } from "@/lib/gsap";
 import { landingContent } from "@/content/landing";
+import { prefersReducedMotion } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
-function Callout({
-  index,
-  title,
-  description,
-  side,
-}: {
-  index: number;
-  title: string;
-  description: string;
-  side: "left" | "right";
-}) {
-  const connector =
-    side === "left" ? (
-      <div className="relative hidden h-px w-16 shrink-0 bg-gradient-to-l from-accent to-transparent lg:block lg:-mr-6 xl:w-24">
-        <span className="absolute right-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-accent shadow-[0_0_0_4px_rgba(21,39,68,0.06)]" />
-      </div>
-    ) : (
-      <div className="relative hidden h-px w-16 shrink-0 bg-gradient-to-r from-accent to-transparent lg:block lg:-ml-6 xl:w-24">
-        <span className="absolute left-0 top-1/2 h-2.5 w-2.5 -translate-y-1/2 rounded-full bg-accent shadow-[0_0_0_4px_rgba(21,39,68,0.06)]" />
-      </div>
-    );
+type Card = (typeof landingContent.whatYouGet.cards)[number];
 
+const STEP_SIDES: Array<"left" | "right"> = ["right", "left", "right"];
+
+function StepMedia({
+  card,
+  showImage,
+  align,
+}: {
+  card: Card;
+  showImage: boolean;
+  align: "left" | "right" | "center";
+}) {
   return (
     <div
-      data-stagger-item
-      className={cn("flex items-start", side === "left" ? "lg:justify-end" : "lg:justify-start")}
+      className={cn(
+        "max-w-sm space-y-4",
+        align === "left" && "mr-auto text-left",
+        align === "right" && "ml-auto text-right",
+        align === "center" && "mx-auto text-center",
+      )}
     >
-      <div className={cn("flex-1", side === "left" ? "lg:text-right" : "lg:text-left")}>
+      {showImage ? (
         <div
           className={cn(
-            "flex items-center gap-3",
-            side === "left" ? "lg:justify-end" : "lg:justify-start",
+            "relative aspect-[16/10] w-full max-w-[14rem] overflow-hidden border border-white/20",
+            align === "right" && "ml-auto",
+            align === "left" && "mr-auto",
+            align === "center" && "mx-auto",
           )}
         >
-          {side === "right" ? connector : null}
-          <span className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 font-sans text-xs font-semibold text-accent">
-            0{index}
-          </span>
-          <h3 className="font-sans text-lg font-semibold text-white md:text-xl">{title}</h3>
-          {side === "left" ? connector : null}
+          <Image
+            src={card.image}
+            alt={card.title}
+            fill
+            className="object-cover"
+            sizes="224px"
+          />
         </div>
-        {/* Gilroy Light · 18px */}
-        <p className="font-body text-brand-body mt-3 text-white/70">{description}</p>
+      ) : null}
+      <p className="font-body text-sm leading-relaxed text-white/90 md:text-[0.95rem]">
+        {card.description}
+      </p>
+    </div>
+  );
+}
+
+function TimelineStep({
+  card,
+  side,
+  showImage = false,
+}: {
+  card: Card;
+  side: "left" | "right";
+  showImage?: boolean;
+}) {
+  const isLeft = side === "left";
+
+  return (
+    <div className="relative grid w-full grid-cols-1 items-center gap-5 lg:grid-cols-[1fr_auto_1fr] lg:gap-0">
+      <div className="hidden lg:block lg:pr-10">
+        {isLeft ? <StepMedia card={card} showImage={showImage} align="right" /> : null}
+      </div>
+
+      <div className="relative z-10 flex justify-center">
+        <div
+          className={cn(
+            "pointer-events-none absolute top-1/2 hidden h-px w-[min(26vw,10.5rem)] -translate-y-1/2 border-t border-dashed border-white/45 lg:block",
+            isLeft ? "right-full" : "left-full",
+          )}
+          aria-hidden
+        />
+        <span className="inline-flex min-w-[7.5rem] items-center justify-center bg-white px-4 py-2 font-sans text-[0.7rem] font-bold uppercase tracking-[0.18em] text-primary md:min-w-[8.5rem] md:text-xs">
+          {card.step}
+        </span>
+      </div>
+
+      <div className="hidden lg:block lg:pl-10">
+        {!isLeft ? <StepMedia card={card} showImage={showImage} align="left" /> : null}
+      </div>
+
+      <div className="lg:hidden">
+        <StepMedia card={card} showImage={showImage} align="center" />
       </div>
     </div>
   );
 }
 
-export function WhatYouGetSection() {
+function SectionBackground({ src }: { src: string }) {
+  return (
+    <div className="absolute inset-0 -z-10">
+      <Image
+        src={src}
+        alt=""
+        fill
+        className="object-cover object-center"
+        sizes="100vw"
+        priority={false}
+      />
+      <div className="absolute inset-0 bg-primary/55" />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(21,39,68,0.55)_0%,rgba(21,39,68,0.35)_40%,rgba(21,39,68,0.6)_100%)]" />
+    </div>
+  );
+}
+
+function SectionHeader({
+  headline,
+  label,
+}: {
+  headline: string;
+  label: string;
+}) {
+  return (
+    <div className="mx-auto max-w-3xl shrink-0 text-center">
+      <h2 className="font-sans text-2xl font-bold uppercase tracking-[0.04em] text-accent sm:text-3xl md:text-[2.15rem]">
+        {headline}
+      </h2>
+      <div className="mt-6 inline-flex items-center justify-center bg-accent px-5 py-2.5 font-sans text-xs font-bold uppercase tracking-[0.2em] text-primary md:mt-8 md:text-sm">
+        {label}
+      </div>
+    </div>
+  );
+}
+
+function WhatYouGetStatic() {
   const { whatYouGet } = landingContent;
-  const [courses, dosing, documents] = whatYouGet.cards;
 
   return (
-    <Section
-      id="what-you-get"
-      variant="primary"
-      className="relative z-10 overflow-hidden bg-[#142644] py-20 md:py-28"
-    >
-      <ScrollReveal className="mx-auto max-w-3xl text-center">
-        {/* Google Sans Regular · 34px */}
-        <h2 className="font-sans text-brand-subheading text-white">{whatYouGet.headline}</h2>
-      </ScrollReveal>
-
-      <StaggerChildren
-        className="mx-auto mt-16 grid max-w-6xl items-center gap-10 md:mt-20 lg:grid-cols-[1fr_minmax(0,22rem)_1fr] lg:gap-6"
-        stagger={0.12}
-      >
-        <div className="flex flex-col gap-14 lg:gap-28">
-          <Callout index={1} title={courses.title} description={courses.description} side="left" />
-          <Callout index={3} title={documents.title} description={documents.description} side="left" />
+    <section id="what-you-get" className="relative isolate overflow-hidden">
+      <SectionBackground src={whatYouGet.backgroundImage} />
+      <div className="relative mx-auto flex w-full max-w-5xl flex-col px-5 py-16 md:px-8 md:py-20 lg:py-24">
+        <SectionHeader headline={whatYouGet.headline} label={whatYouGet.label} />
+        <div className="relative mx-auto mt-8 w-full">
+          <div
+            className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-white/35"
+            aria-hidden
+          />
+          {whatYouGet.cards.map((card, index) => (
+            <div key={card.id} className="py-10 md:py-12">
+              <TimelineStep
+                card={card}
+                side={STEP_SIDES[index] ?? "right"}
+                showImage={index > 0}
+              />
+            </div>
+          ))}
         </div>
+      </div>
+    </section>
+  );
+}
 
-        <div data-stagger-item className="relative order-first mx-auto w-full max-w-sm lg:order-none">
-          <div className="absolute -inset-6 rounded-full bg-accent/10 blur-3xl" aria-hidden />
-          <div className="relative mx-auto aspect-[4/5] w-full max-w-[22rem]">
-            <Image
-              src="/assets/creatives/One%20place%20to%20train%20your%20team%20and%20run%20peptides%20properly_-Photoroom.png"
-              alt={whatYouGet.headline}
-              fill
-              className="object-contain drop-shadow-[0_24px_60px_rgba(0,0,0,0.35)]"
-              sizes="(max-width: 1024px) 90vw, 22rem"
-              priority={false}
-            />
+export function WhatYouGetSection() {
+  const { whatYouGet } = landingContent;
+  const [reduceMotion, setReduceMotion] = useState(false);
+
+  const sectionRef = useRef<HTMLElement>(null);
+  const pinWrapRef = useRef<HTMLDivElement>(null);
+  const lineFillRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    setReduceMotion(prefersReducedMotion());
+  }, []);
+
+  useGSAP(
+    () => {
+      if (reduceMotion) return;
+
+      registerGsap();
+
+      const pinWrap = pinWrapRef.current;
+      const lineFill = lineFillRef.current;
+
+      if (!pinWrap || !lineFill) return;
+
+      const steps = gsap.utils.toArray<HTMLElement>(
+        pinWrap.querySelectorAll("[data-wyg-step]"),
+      );
+
+      if (steps.length === 0) return;
+
+      const scrollDistance = () => window.innerHeight * Math.max(steps.length, 1) * 0.95;
+
+      gsap.set(steps, { autoAlpha: 0, y: 36 });
+      gsap.set(lineFill, { scaleY: 0, transformOrigin: "top center" });
+
+      const timeline = gsap.timeline({
+        scrollTrigger: {
+          id: "what-you-get-timeline",
+          trigger: pinWrap,
+          start: "top top",
+          end: () => `+=${scrollDistance()}`,
+          pin: pinWrap,
+          pinSpacing: true,
+          scrub: 0.8,
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
+        },
+      });
+
+      timeline.to(
+        lineFill,
+        {
+          scaleY: 1,
+          ease: "none",
+          duration: steps.length,
+        },
+        0,
+      );
+
+      steps.forEach((step, index) => {
+        const start = index;
+        timeline.fromTo(
+          step,
+          { autoAlpha: 0, y: 36 },
+          {
+            autoAlpha: 1,
+            y: 0,
+            duration: 0.55,
+            ease: "power2.out",
+          },
+          start,
+        );
+
+        if (index < steps.length - 1) {
+          timeline.to(
+            step,
+            {
+              autoAlpha: 0,
+              y: -28,
+              duration: 0.45,
+              ease: "power2.in",
+            },
+            start + 0.7,
+          );
+        }
+      });
+
+      // Keep final step visible through the end of the scrub
+      timeline.to({}, { duration: 0.35 });
+
+      requestAnimationFrame(() => ScrollTrigger.refresh());
+    },
+    { scope: sectionRef, dependencies: [reduceMotion, whatYouGet.cards.length] },
+  );
+
+  if (reduceMotion) {
+    return <WhatYouGetStatic />;
+  }
+
+  return (
+    <section
+      ref={sectionRef}
+      id="what-you-get"
+      className="relative isolate"
+    >
+      {/* Only this wrapper is pinned — pinSpacing keeps following sections undisturbed */}
+      <div
+        ref={pinWrapRef}
+        className="relative flex h-[100dvh] flex-col overflow-hidden"
+      >
+        <SectionBackground src={whatYouGet.backgroundImage} />
+
+        <div className="relative mx-auto flex h-full w-full max-w-5xl flex-col px-5 py-10 md:px-8 md:py-12 lg:py-14">
+          <SectionHeader headline={whatYouGet.headline} label={whatYouGet.label} />
+
+          <div className="relative mx-auto mt-6 flex w-full flex-1 items-center md:mt-8">
+            <div
+              className="absolute left-1/2 top-[8%] bottom-[8%] w-px -translate-x-1/2 overflow-hidden bg-white/20"
+              aria-hidden
+            >
+              <div
+                ref={lineFillRef}
+                className="h-full w-full bg-accent/80"
+              />
+            </div>
+
+            <div className="relative w-full">
+              {whatYouGet.cards.map((card, index) => (
+                <div
+                  key={card.id}
+                  className="absolute inset-0 flex items-center"
+                >
+                  <div data-wyg-step className="w-full will-change-transform">
+                    <TimelineStep
+                      card={card}
+                      side={STEP_SIDES[index] ?? "right"}
+                      showImage={index > 0}
+                    />
+                  </div>
+                </div>
+              ))}
+
+              {/* Reserve height so absolute steps have a stable stage */}
+              <div className="pointer-events-none invisible" aria-hidden>
+                <TimelineStep
+                  card={whatYouGet.cards[0]}
+                  side="right"
+                  showImage
+                />
+              </div>
+            </div>
           </div>
         </div>
-
-        <div className="flex flex-col justify-center">
-          <Callout index={2} title={dosing.title} description={dosing.description} side="right" />
-        </div>
-      </StaggerChildren>
-    </Section>
+      </div>
+    </section>
   );
 }

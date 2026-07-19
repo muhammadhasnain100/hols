@@ -1,47 +1,82 @@
 import Image from "next/image";
-import { Container } from "@/components/ui/Container";
-import { ScrollReveal } from "@/components/animations/ScrollReveal";
+import Link from "next/link";
 import { landingContent } from "@/content/landing";
 
 export function CertificationSection() {
   const { certification } = landingContent;
 
-  return (
-    <section className="relative overflow-hidden bg-white py-20 md:py-28">
-      <Container>
-        <ScrollReveal>
-          <div className="relative mx-auto max-w-6xl overflow-visible rounded-[2rem] bg-[#8DC3E1] px-8 py-12 md:px-14 md:py-16">
-            <div className="grid items-center gap-10 md:grid-cols-2">
-              {/* Left: text */}
-              <div className="relative z-10 max-w-xl">
-                <span className="inline-flex items-center gap-2 rounded-full bg-primary/10 px-3 py-1 text-brand-caption uppercase tracking-[0.18em] text-primary">
-                  Certification
-                </span>
-                <h2 className="font-sans text-brand-subheading mt-5 text-primary">
-                  {certification.headline}
-                </h2>
-                <p className="font-body text-brand-body mt-5 max-w-lg text-primary/75">
-                  {certification.body}
-                </p>
-              </div>
+  const accent = certification.headlineAccent;
+  const headlineParts = accent
+    ? certification.headline.split(new RegExp(`(${accent})`, "i"))
+    : [certification.headline];
 
-              {/* Right: transparent Photoroom image */}
-              <div className="relative mt-4 flex justify-center md:mt-0 md:min-h-[18rem] md:justify-end">
-                <div className="relative h-72 w-64 sm:h-80 sm:w-72 md:absolute md:right-0 md:top-1/2 md:h-[22rem] md:w-80 md:-translate-y-1/2 lg:h-[28rem] lg:w-[22rem]">
-                  <Image
-                    src="/assets/creatives/Give%20your%20team%20a%20credential%20that%20means%20something_-Photoroom.png"
-                    alt={certification.headline}
-                    fill
-                    className="object-contain drop-shadow-[0_24px_48px_rgba(15,33,64,0.28)]"
-                    sizes="(max-width: 768px) 18rem, 22rem"
-                    priority={false}
-                  />
-                </div>
-              </div>
-            </div>
+  return (
+    <section
+      id="certification"
+      className="relative flex min-h-svh w-full items-center overflow-hidden bg-black"
+    >
+      {/* Theme atmosphere — lemon lime + baby blue on black */}
+      <div
+        className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_78%_42%,rgba(141,195,225,0.14),transparent_52%),radial-gradient(ellipse_at_18%_75%,rgba(221,228,102,0.07),transparent_42%)]"
+        aria-hidden
+      />
+
+      <div className="relative grid w-full items-center gap-12 px-5 py-16 md:gap-16 md:px-8 md:py-20 lg:grid-cols-2 lg:gap-14 lg:px-10 lg:py-24">
+        {/* Left — text */}
+        <div className="order-1 w-full max-w-xl lg:max-w-none">
+          <p className="font-sans text-[0.7rem] font-semibold uppercase tracking-[0.3em] text-accent-light md:text-xs">
+            {certification.label}
+          </p>
+
+          <h2 className="mt-5 font-sans text-[2rem] font-bold leading-[1.12] tracking-[-0.02em] text-white sm:text-4xl md:text-[2.75rem] md:leading-[1.1]">
+            {headlineParts.map((part, index) =>
+              part.toLowerCase() === accent?.toLowerCase() ? (
+                <em key={`${part}-${index}`} className="italic text-accent">
+                  {part}
+                </em>
+              ) : (
+                <span key={`${part}-${index}`}>{part}</span>
+              ),
+            )}
+          </h2>
+
+          <p className="font-body mt-6 max-w-lg text-base leading-relaxed text-white/70 md:text-lg md:leading-[1.55]">
+            {certification.body}
+          </p>
+
+          <Link
+            href={certification.cta.href}
+            className="group mt-10 inline-flex items-center gap-3 font-sans text-sm font-semibold text-accent transition-colors duration-300 hover:text-white"
+          >
+            {certification.cta.label}
+            <span
+              aria-hidden
+              className="inline-block h-px w-10 bg-current transition-all duration-300 group-hover:w-14"
+            />
+            <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-1">
+              →
+            </span>
+          </Link>
+        </div>
+
+        {/* Right — image */}
+        <div className="relative order-2 flex min-h-[22rem] w-full items-center justify-center lg:min-h-[28rem] lg:justify-end">
+          <div
+            className="pointer-events-none absolute h-[65%] w-[65%] rounded-full bg-accent-light/15 blur-3xl"
+            aria-hidden
+          />
+          <div className="relative aspect-[4/5] w-full max-w-[18rem] rotate-[-8deg] transition-transform duration-700 hover:rotate-[-4deg] sm:max-w-[20rem] md:max-w-[22rem] lg:mr-4 lg:max-w-[24rem] xl:mr-8">
+            <Image
+              src={certification.image}
+              alt={certification.headline}
+              fill
+              className="object-contain drop-shadow-[0_30px_60px_rgba(0,0,0,0.55)]"
+              sizes="(max-width: 768px) 20rem, 24rem"
+              priority={false}
+            />
           </div>
-        </ScrollReveal>
-      </Container>
+        </div>
+      </div>
     </section>
   );
 }

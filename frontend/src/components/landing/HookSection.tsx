@@ -1,300 +1,112 @@
-"use client";
-
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
-import { useGSAP } from "@gsap/react";
-import { gsap, registerGsap, ScrollTrigger } from "@/lib/gsap";
-import { Container } from "@/components/ui/Container";
+import Link from "next/link";
 import { landingContent } from "@/content/landing";
-import { prefersReducedMotion } from "@/lib/motion";
-import { cn } from "@/lib/utils";
 
-function SplitTitle({ text, className }: { text: string; className?: string }) {
+type HookCta = {
+  title: string;
+  subtitle: string;
+  href: string;
+  thumb: string;
+};
+
+function HookMark() {
   return (
-    <h2 className={className} aria-label={text}>
-      {text.split(" ").map((word, index) => (
-        <span key={`${word}-${index}`} className="hook-title-word inline-block overflow-hidden pb-1">
-          <span className="hook-title-inner inline-block">{word}&nbsp;</span>
-        </span>
-      ))}
-    </h2>
+    <div className="mb-5 md:mb-6" aria-hidden>
+      <Image
+        src="/assets/logo/hols-logo-mark.png"
+        alt=""
+        width={36}
+        height={36}
+        className="h-9 w-9 object-contain"
+      />
+    </div>
   );
 }
 
-function HookImage({
-  src,
-  alt,
-  label,
-  dark = false,
-}: {
-  src: string;
-  alt: string;
-  label: string;
-  dark?: boolean;
-}) {
+function HookCtaCard({ title, subtitle, href, thumb }: HookCta) {
   return (
-    <figure
-      className={cn(
-        "overflow-hidden rounded-2xl border shadow-[0_20px_60px_rgba(21,39,68,0.10)]",
-        dark ? "border-white/20 bg-primary" : "border-primary/10 bg-white",
-      )}
+    <Link
+      href={href}
+      className="group flex w-full items-stretch overflow-hidden rounded-md bg-[#DCE3EA] transition-colors duration-300 hover:bg-[#D0D9E3] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
     >
-      <div className="relative aspect-[16/10] w-full">
-        <Image src={src} alt={alt} fill className="object-cover" sizes="(max-width: 1024px) 100vw, 50vw" />
-      </div>
-      <figcaption
-        className={cn(
-          "px-5 py-3 text-brand-caption uppercase tracking-[0.16em]",
-          dark ? "bg-primary/90 text-white" : "border-t border-primary/5 bg-white text-primary",
-        )}
-      >
-        {label}
-      </figcaption>
-    </figure>
-  );
-}
-
-function HookPanelContent({
-  imageLeft,
-  label,
-  text,
-  image,
-  imageAlt,
-  dark = false,
-}: {
-  imageLeft: boolean;
-  label: string;
-  text: string;
-  image: string;
-  imageAlt: string;
-  dark?: boolean;
-}) {
-  const imageBlock = (
-    <HookImage src={image} alt={imageAlt} label={label} dark={dark} />
-  );
-
-  const copy = (
-    <div className="flex flex-col justify-center px-1 lg:px-4">
-      <p className="text-brand-caption uppercase tracking-[0.22em] text-primary-light">
-        {label}
-      </p>
-      {/* Gilroy Light · 18px */}
-      <p className="font-body text-brand-body mt-5 text-muted">{text}</p>
-    </div>
-  );
-
-  return (
-    <div className="grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
-      {imageLeft ? (
-        <>
-          <div>{imageBlock}</div>
-          <div>{copy}</div>
-        </>
-      ) : (
-        <>
-          <div className="lg:order-1">{copy}</div>
-          <div className="lg:order-2">{imageBlock}</div>
-        </>
-      )}
-    </div>
-  );
-}
-
-function HookSectionStatic() {
-  const { hook } = landingContent;
-
-  return (
-    <section id="problem" className="bg-background py-24 md:py-32">
-      <Container>
-        <SplitTitle
-          text={hook.headline}
-          className="font-sans text-brand-subheading mx-auto max-w-4xl text-center text-primary"
+      <span className="relative w-20 shrink-0 self-stretch overflow-hidden bg-primary/10 sm:w-24">
+        <Image
+          src={thumb}
+          alt=""
+          fill
+          className="object-cover transition-transform duration-500 group-hover:scale-105"
+          sizes="96px"
         />
-        <div className="mt-16 space-y-20">
-          <HookPanelContent
-            imageLeft
-            label={hook.beforeLabel}
-            text={hook.problem}
-            image={hook.problemImage}
-            imageAlt={hook.beforeLabel}
-            dark
-          />
-          <HookPanelContent
-            imageLeft={false}
-            label={hook.afterLabel}
-            text={hook.resolution}
-            image={hook.solutionImage}
-            imageAlt={hook.afterLabel}
-            dark
-          />
-        </div>
-      </Container>
-    </section>
+      </span>
+      <span className="flex min-w-0 flex-1 flex-col justify-center px-3.5 py-3 text-left sm:px-4">
+        <span className="block font-sans text-sm font-semibold leading-snug text-primary sm:text-base">
+          {title}
+        </span>
+        <span className="mt-0.5 block font-body text-xs leading-snug text-muted sm:text-sm">
+          {subtitle}
+        </span>
+      </span>
+    </Link>
   );
 }
 
 export function HookSection() {
   const { hook } = landingContent;
-  const [reduceMotion, setReduceMotion] = useState(false);
 
-  const sectionRef = useRef<HTMLElement>(null);
-  const pinWrapRef = useRef<HTMLDivElement>(null);
-  const pinRef = useRef<HTMLDivElement>(null);
-  const titleRef = useRef<HTMLDivElement>(null);
-  const panel1Ref = useRef<HTMLDivElement>(null);
-  const panel2Ref = useRef<HTMLDivElement>(null);
-
-  useEffect(() => {
-    setReduceMotion(prefersReducedMotion());
-  }, []);
-
-  useGSAP(
-    () => {
-      if (reduceMotion) return;
-
-      registerGsap();
-
-      const pinWrap = pinWrapRef.current;
-      const pin = pinRef.current;
-      const panel1 = panel1Ref.current;
-      const panel2 = panel2Ref.current;
-      const title = titleRef.current;
-
-      if (!pinWrap || !pin || !panel1 || !panel2 || !title) return;
-
-      const titleWords = title.querySelectorAll(".hook-title-inner");
-      const scrollDistance = () => window.innerHeight * 2;
-
-      gsap.set(titleWords, { yPercent: 110 });
-      gsap.set(panel1, { autoAlpha: 0, y: 48, zIndex: 2 });
-      gsap.set(panel2, { autoAlpha: 0, y: 48, x: 0, zIndex: 1, pointerEvents: "none" });
-
-      const timeline = gsap.timeline({
-        scrollTrigger: {
-          trigger: pinWrap,
-          start: "top top",
-          end: () => `+=${scrollDistance()}`,
-          pin,
-          scrub: 0.85,
-          pinSpacing: true,
-          anticipatePin: 1,
-          invalidateOnRefresh: true,
-        },
-      });
-
-      timeline
-        .to(titleWords, {
-          yPercent: 0,
-          duration: 0.22,
-          stagger: 0.012,
-          ease: "power3.out",
-        })
-        .to(
-          panel1,
-          {
-            autoAlpha: 1,
-            y: 0,
-            duration: 0.24,
-            ease: "power3.out",
-          },
-          0.12,
-        )
-        .to(
-          title,
-          {
-            y: -12,
-            autoAlpha: 0.55,
-            duration: 0.18,
-            ease: "power2.inOut",
-          },
-          0.38,
-        )
-        .to(
-          panel1,
-          {
-            autoAlpha: 0,
-            x: -40,
-            pointerEvents: "none",
-            duration: 0.18,
-            ease: "power2.in",
-          },
-          0.48,
-        )
-        .set(panel1, { visibility: "hidden" }, 0.66)
-        .set(panel2, { visibility: "visible", zIndex: 2 }, 0.66)
-        .fromTo(
-          panel2,
-          { autoAlpha: 0, x: 40, y: 0 },
-          {
-            autoAlpha: 1,
-            x: 0,
-            pointerEvents: "auto",
-            duration: 0.22,
-            ease: "power2.out",
-          },
-          0.66,
-        );
-
-      requestAnimationFrame(() => ScrollTrigger.refresh());
+  const cards: HookCta[] = [
+    {
+      title: hook.beforeLabel,
+      subtitle: hook.problemCta.subtitle,
+      href: hook.problemCta.href,
+      thumb: hook.problemImage,
     },
-    { scope: sectionRef, dependencies: [reduceMotion] },
-  );
-
-  if (reduceMotion) {
-    return <HookSectionStatic />;
-  }
+    {
+      title: hook.afterLabel,
+      subtitle: hook.solutionCta.subtitle,
+      href: hook.solutionCta.href,
+      thumb: hook.solutionImage,
+    },
+  ];
 
   return (
-    <section ref={sectionRef} id="problem" className="relative isolate z-0 overflow-hidden bg-background">
-      <div ref={pinWrapRef} className="relative">
-        <div
-          ref={pinRef}
-          className="relative flex min-h-[100dvh] flex-col justify-center overflow-hidden bg-background py-24 md:py-28"
-        >
-          <Container className="relative">
-            <div ref={titleRef} className="mx-auto max-w-4xl text-center">
-              <SplitTitle
-                text={hook.headline}
-                className="font-sans text-brand-subheading text-primary"
-              />
+    <section
+      id="problem"
+      className="flex bg-[#F6F7F9] lg:h-svh lg:max-h-svh lg:overflow-hidden"
+    >
+      <div className="grid w-full flex-1 items-center gap-8 px-5 py-12 sm:px-6 md:px-8 lg:h-full lg:grid-cols-2 lg:items-center lg:gap-10 lg:px-8 lg:py-10 xl:gap-14 xl:px-10">
+        {/* Left — image */}
+        <div className="relative aspect-square w-full overflow-hidden bg-primary/5 shadow-[0_18px_50px_rgba(21,39,68,0.08)] lg:aspect-auto lg:h-[78%] lg:max-h-[78vh] lg:min-h-0 lg:self-center">
+          <Image
+            src={hook.featureImage}
+            alt="One trusted system for clinical peptide practice"
+            fill
+            className="object-cover object-center"
+            sizes="(max-width: 1024px) 100vw, 50vw"
+            priority
+          />
+        </div>
+
+        {/* Right — text flush to the right side */}
+        <div className="flex w-full items-center lg:h-full lg:min-h-0 lg:justify-end">
+          <div className="w-full max-w-[30rem] text-left lg:ml-auto xl:max-w-[32rem]">
+            <HookMark />
+            <p className="font-sans text-[0.7rem] font-medium uppercase tracking-[0.3em] text-primary/50 md:text-xs">
+              Clinical peptide practice
+            </p>
+            <h2 className="mt-4 font-sans text-[1.5rem] font-bold leading-[1.18] tracking-[-0.015em] text-primary sm:text-[1.85rem] lg:text-[2rem] lg:leading-[1.15]">
+              {hook.headline}
+            </h2>
+            <p className="font-body mt-4 text-sm leading-[1.6] text-muted md:text-[0.95rem] md:leading-[1.65]">
+              {hook.problem} HOLS brings training, dosing, and patient paperwork
+              into one place — so your team can move quickly and get it right.
+            </p>
+
+            <div className="mt-7 flex w-full flex-col gap-2.5">
+              {cards.map((card) => (
+                <HookCtaCard key={card.title} {...card} />
+              ))}
             </div>
-
-            <div className="relative mx-auto mt-12 w-full max-w-6xl md:mt-16">
-              <div ref={panel1Ref} className="absolute inset-0 z-[2] overflow-hidden">
-                <HookPanelContent
-                  imageLeft
-                  label={hook.beforeLabel}
-                  text={hook.problem}
-                  image={hook.problemImage}
-                  imageAlt={hook.beforeLabel}
-                  dark
-                />
-              </div>
-
-              <div ref={panel2Ref} className="absolute inset-0 z-[1] overflow-hidden invisible">
-                <HookPanelContent
-                  imageLeft={false}
-                  label={hook.afterLabel}
-                  text={hook.resolution}
-                  image={hook.solutionImage}
-                  imageAlt={hook.afterLabel}
-                  dark
-                />
-              </div>
-
-              {/* Reserve height so panels don't collapse or bleed into the next section */}
-              <div className="invisible pointer-events-none" aria-hidden>
-                <HookPanelContent
-                  imageLeft
-                  label={hook.beforeLabel}
-                  text={hook.problem}
-                  image={hook.problemImage}
-                  imageAlt={hook.beforeLabel}
-                  dark
-                />
-              </div>
-            </div>
-          </Container>
+          </div>
         </div>
       </div>
     </section>

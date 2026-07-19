@@ -1,84 +1,41 @@
-import { Button } from "@/components/ui/Button";
-import { ScrollReveal } from "@/components/animations/ScrollReveal";
-import { Container } from "@/components/ui/Container";
+import Link from "next/link";
 import { landingContent } from "@/content/landing";
 
 export function FinalCTASection() {
-  const { finalCta, trustStrip } = landingContent;
+  const { finalCta } = landingContent;
+
+  const accent = finalCta.headlineAccent;
+  const parts = accent
+    ? finalCta.headline.split(new RegExp(`(${accent})`, "i"))
+    : [finalCta.headline];
 
   return (
-    <section className="bg-primary pb-24 pt-16 text-white md:pb-28 md:pt-20">
-      <Container>
-        <ScrollReveal>
-          <div className="relative mx-auto max-w-5xl overflow-hidden rounded-[2.5rem] border border-white/10 bg-gradient-to-br from-white/[0.09] via-white/[0.04] to-transparent px-8 py-16 text-center md:px-16 md:py-20">
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-0"
-              style={{
-                backgroundImage:
-                  "radial-gradient(circle at 50% 0%, rgba(190,242,100,0.16), transparent 55%)",
-              }}
-            />
-            <div
-              aria-hidden
-              className="pointer-events-none absolute inset-0 opacity-[0.04]"
-              style={{
-                backgroundImage:
-                  "linear-gradient(rgba(255,255,255,0.6) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.6) 1px, transparent 1px)",
-                backgroundSize: "44px 44px",
-                maskImage: "radial-gradient(circle at 50% 40%, black, transparent 70%)",
-                WebkitMaskImage: "radial-gradient(circle at 50% 40%, black, transparent 70%)",
-              }}
-            />
+    <section className="bg-[#F4F5F7]">
+      {/* Full-bleed black block */}
+      <div className="flex w-full min-h-[32rem] flex-col items-center justify-center bg-black px-5 py-28 text-center md:min-h-[36rem] md:px-8 md:py-36 lg:min-h-[40rem] lg:px-10 lg:py-44">
+        <p className="font-sans text-lg italic tracking-[0.02em] text-white/90 md:text-xl">
+          {finalCta.eyebrow}
+        </p>
 
-            <div className="relative">
-              {/* Sub-heading · Google Sans Regular · 34px */}
-              <h2 className="font-sans text-brand-subheading mx-auto max-w-3xl text-white">
-                {finalCta.headline}
-              </h2>
+        <h2 className="mt-10 w-full max-w-6xl font-sans text-[2rem] font-medium leading-[1.15] tracking-[-0.01em] text-white sm:text-4xl md:text-5xl md:leading-[1.12] lg:text-[3.25rem]">
+          {parts.map((part, index) =>
+            part.toLowerCase() === accent?.toLowerCase() ? (
+              <span key={`${part}-${index}`} className="text-accent">
+                {part}
+              </span>
+            ) : (
+              <span key={`${part}-${index}`}>{part}</span>
+            ),
+          )}
+        </h2>
 
-              <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
-                <Button href={finalCta.primaryCta.href} variant="primary" size="lg">
-                  {finalCta.primaryCta.label}
-                </Button>
-                <Button
-                  href={finalCta.secondaryCta.href}
-                  variant="secondary"
-                  size="lg"
-                  className="border-white/30 bg-white/10 text-white hover:border-accent hover:bg-accent hover:text-primary"
-                >
-                  {finalCta.secondaryCta.label}
-                </Button>
-              </div>
-
-              <div className="mt-12 flex flex-wrap items-center justify-center gap-x-8 gap-y-3">
-                {trustStrip.map((item) => (
-                  <span
-                    key={item}
-                    className="text-brand-caption flex items-center gap-2 text-white/60"
-                  >
-                    <svg
-                      className="h-4 w-4 text-accent"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                      strokeWidth="2.2"
-                      aria-hidden
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        d="m4.5 12.75 6 6 9-13.5"
-                      />
-                    </svg>
-                    {item}
-                  </span>
-                ))}
-              </div>
-            </div>
-          </div>
-        </ScrollReveal>
-      </Container>
+        <Link
+          href={finalCta.primaryCta.href}
+          className="mt-14 inline-flex min-h-14 items-center justify-center rounded-full border border-white/85 px-10 font-sans text-xs font-semibold uppercase tracking-[0.22em] text-white transition-colors duration-300 hover:border-accent hover:bg-accent hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+        >
+          {finalCta.primaryCta.label}
+        </Link>
+      </div>
     </section>
   );
 }

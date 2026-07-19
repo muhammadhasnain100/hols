@@ -1,10 +1,15 @@
 "use client";
 
+import Image from "next/image";
 import { useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap, registerGsap } from "@/lib/gsap";
 import { HeroSceneCanvas } from "@/components/three/HeroSceneCanvas";
 import { prefersReducedMotion } from "@/lib/motion";
+
+type HeroBackgroundProps = {
+  variant?: "sky" | "photo";
+};
 
 function CloudSvg({ className }: { className?: string }) {
   return (
@@ -53,7 +58,56 @@ function FloatingParticles() {
   );
 }
 
-export function HeroBackground() {
+function PhotoBackground() {
+  const rootRef = useRef<HTMLDivElement>(null);
+
+  useGSAP(
+    () => {
+      registerGsap();
+      if (prefersReducedMotion() || !rootRef.current) return;
+
+      gsap.fromTo(
+        rootRef.current.querySelector("[data-hero-photo]"),
+        { scale: 1.08 },
+        { scale: 1, duration: 2.4, ease: "power2.out" },
+      );
+
+      gsap.fromTo(
+        rootRef.current.querySelector("[data-hero-overlay]"),
+        { opacity: 0.55 },
+        { opacity: 1, duration: 1.6, ease: "power2.out" },
+      );
+    },
+    { scope: rootRef },
+  );
+
+  return (
+    <div
+      ref={rootRef}
+      className="pointer-events-none absolute inset-0 overflow-hidden bg-primary"
+      aria-hidden
+    >
+      <div data-hero-photo className="absolute inset-0 will-change-transform">
+        <Image
+          src="/assets/images/hero-background.jpg"
+          alt=""
+          fill
+          priority
+          sizes="100vw"
+          className="object-cover object-center"
+        />
+      </div>
+
+      <div
+        data-hero-overlay
+        className="absolute inset-0 bg-[linear-gradient(105deg,rgba(21,39,68,0.78)_0%,rgba(21,39,68,0.55)_42%,rgba(21,39,68,0.72)_100%)]"
+      />
+      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(21,39,68,0.35)_0%,transparent_28%,transparent_55%,rgba(21,39,68,0.55)_100%)]" />
+    </div>
+  );
+}
+
+function SkyBackground() {
   const rootRef = useRef<HTMLDivElement>(null);
 
   useGSAP(
@@ -176,4 +230,9 @@ export function HeroBackground() {
       <div className="absolute inset-x-0 bottom-0 h-36 bg-gradient-to-t from-white via-white/85 to-transparent" />
     </div>
   );
+}
+
+export function HeroBackground({ variant = "sky" }: HeroBackgroundProps) {
+  if (variant === "photo") return <PhotoBackground />;
+  return <SkyBackground />;
 }

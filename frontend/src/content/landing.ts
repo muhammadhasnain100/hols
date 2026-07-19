@@ -14,36 +14,54 @@ export const landingContent = {
   ],
   hook: {
     headline:
-      "Demand for peptides is growing fast, and getting it right shouldn’t be left to guesswork.",
+      "Demand for peptides is growing fast — and getting it right shouldn’t be left to guesswork.",
     problem:
-      "Today the answers are scattered across forums, group chats, and unverified PDFs, and that uncertainty becomes your clinic’s risk.",
+      "Today the answers are scattered across forums, group chats, and unverified PDFs. That uncertainty becomes your clinic’s risk.",
+    resolutionHeadline:
+      "Everything your clinic needs, brought into one trusted system.",
     resolution:
-      "We bring everything your clinic needs into one place: the training, the dosing, and the patient paperwork, so your team can move quickly and get it right.",
+      "Training, dosing tools, and patient paperwork in one place — so your team can move quickly and get it right.",
     beforeLabel: "Scattered information",
     afterLabel: "One trusted system",
+    featureImage: "/assets/images/hook-feature.jpg",
     problemImage: "/assets/creatives/Scattered%20information.png",
     solutionImage: "/assets/creatives/One%20trusted%20system.png",
+    problemCta: {
+      title: "See how HOLS fixes this",
+      subtitle: "Guesswork across forums, chats, and PDFs",
+      href: "/features",
+    },
+    solutionCta: {
+      title: "Step inside HOLS",
+      subtitle: "Training, dosing, and paperwork in one place",
+      href: "/register",
+    },
   },
   whatYouGet: {
     headline: "One place to train your team and run peptides properly.",
+    label: "What you get",
+    backgroundImage: "/assets/images/what-you-get-bg.jpg",
     cards: [
       {
         id: "courses",
-        image: "/assets/images/hols-education-books-mockup.png",
+        step: "Train",
+        image: "/assets/creatives/Training%20that%20sticks.png",
         title: "Expert-Led Courses",
         description:
           "Training that actually teaches. Onboard your team quickly and ensure everyone operates at the highest clinical standard.",
       },
       {
         id: "dosing",
-        image: "/assets/images/hols-brand-cards-trio.png",
+        step: "Dose",
+        image: "/assets/creatives/Dosing%20tools%20that%20do%20the%20math.png",
         title: "Dosing Tools That Do the Math",
         description:
           "Eliminate human error. Get precise, instant calculations tailored to your patient protocols without the guesswork.",
       },
       {
         id: "documents",
-        image: "/assets/images/hols-business-cards-mockup.png",
+        step: "Document",
+        image: "/assets/creatives/Patient%20paperwork%2C%20done%20for%20you.png",
         title: "Ready-to-Use Patient Documents",
         description:
           "Fully compliant paperwork customized with your clinic’s branding. Ready to print or sign digitally from day one.",
@@ -51,12 +69,18 @@ export const landingContent = {
     ],
   },
   pillars: {
-    headline: "Everything inside",
+    headline: "The Pillars",
+    subhead:
+      "Everything inside HOLS — training, tools, and support for clinical peptide practice.",
     items: [
       {
         id: "training",
         image: "/assets/creatives/Training%20that%20sticks.png",
         title: "Training that sticks",
+        shortTitle: "Training",
+        category: "Courses",
+        units: "12 Units",
+        overviewLabel: "Module Overview",
         description:
           "Short, structured courses that take your staff from “new to peptides” to confident, with a certificate at the end.",
       },
@@ -64,6 +88,10 @@ export const landingContent = {
         id: "reference",
         image: "/assets/creatives/A%20peptide%20reference%20you%20can%20trust.png",
         title: "A peptide reference you can trust",
+        shortTitle: "Reference",
+        category: "Library",
+        units: "40+ Entries",
+        overviewLabel: "Module Overview",
         description:
           "Every peptide, explained the same clear way: what it does, how to dose it, what to watch for, and the sources behind it.",
       },
@@ -71,6 +99,10 @@ export const landingContent = {
         id: "dosing",
         image: "/assets/creatives/Dosing%20tools%20that%20do%20the%20math.png",
         title: "Dosing tools that do the math",
+        shortTitle: "Dosing",
+        category: "Tools",
+        units: "8 Tools",
+        overviewLabel: "Module Overview",
         description:
           "Reconstitution, titration, and full protocols worked out for you, no more manual calculations.",
       },
@@ -78,6 +110,10 @@ export const landingContent = {
         id: "paperwork",
         image: "/assets/creatives/Patient%20paperwork%2C%20done%20for%20you.png",
         title: "Patient paperwork, done for you",
+        shortTitle: "Paperwork",
+        category: "Documents",
+        units: "24 Templates",
+        overviewLabel: "Module Overview",
         description:
           "Handouts, consent forms, and dosing sheets with your clinic’s logo, ready to print and hand over.",
       },
@@ -85,6 +121,10 @@ export const landingContent = {
         id: "community",
         image: "/assets/creatives/A%20community%20that%20understands%20your%20work.png",
         title: "A community that understands your work",
+        shortTitle: "Community",
+        category: "Network",
+        units: "Live Q&As",
+        overviewLabel: "Module Overview",
         description:
           "A private forum, monthly live Q&As, and updates so you’re never figuring it out alone.",
       },
@@ -92,6 +132,10 @@ export const landingContent = {
         id: "assistant",
         image: "/assets/creatives/An%20assistant%20you%20can%20trust.png",
         title: "An assistant you can trust",
+        shortTitle: "Assistant",
+        category: "Support",
+        units: "Always on",
+        overviewLabel: "Module Overview",
         description:
           "Ask anything about peptides and get a clear answer, drawn only from our vetted content, with the source attached.",
       },
@@ -99,6 +143,7 @@ export const landingContent = {
   },
   whoItsFor: {
     headline: "Built for your whole practice.",
+    backgroundImage: "/assets/images/who-its-for-bg.jpg",
     audiences: [
       {
         id: "owners",
@@ -123,8 +168,13 @@ export const landingContent = {
     ],
   },
   certification: {
+    label: "Certification",
     headline: "Give your team a credential that means something.",
+    headlineAccent: "credential",
     body: "Finish the courses, pass the check, and earn a House of Life Sciences certification — proof your staff know what they’re doing, renewed as things change.",
+    cta: { label: "Get certified", href: "/register" },
+    image:
+      "/assets/creatives/Give%20your%20team%20a%20credential%20that%20means%20something_-Photoroom.png",
   },
   pricingTeaser: {
     eyebrow: "Pricing",
@@ -136,6 +186,7 @@ export const landingContent = {
         title: "Monthly",
         price: "$29.99",
         duration: "30 days access",
+        image: "/assets/creatives/Training%20that%20sticks.png",
         cta: { label: "Purchase", href: "/register" },
         featured: false,
       },
@@ -144,6 +195,7 @@ export const landingContent = {
         title: "Biannual",
         price: "$149.99",
         duration: "182 days access",
+        image: "/assets/creatives/One%20trusted%20system.png",
         cta: { label: "Purchase", href: "/register" },
         featured: true,
         badge: "Most popular",
@@ -153,6 +205,7 @@ export const landingContent = {
         title: "Annual",
         price: "$249.99",
         duration: "365 days access",
+        image: "/assets/creatives/Dosing%20tools%20that%20do%20the%20math.png",
         cta: { label: "Purchase", href: "/register" },
         featured: false,
         badge: "Best value",
@@ -160,9 +213,10 @@ export const landingContent = {
     ],
   },
   finalCta: {
-    eyebrow: "Ready when you are",
-    headline: "Get your clinic running peptides the right way.",
-    primaryCta: { label: "Get Started", href: "/contact" },
+    eyebrow: "The HOLS Approach",
+    headline: "Clinics go further when they practice with confidence.",
+    headlineAccent: "with confidence",
+    primaryCta: { label: "Get Started", href: "/register" },
     secondaryCta: { label: "Book a Demo", href: "/contact#demo" },
   },
 } as const;

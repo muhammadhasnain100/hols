@@ -46,7 +46,7 @@ export function Logo({
     <Link
       href={href}
       aria-label="House of Life Sciences home"
-      className="group inline-flex p-[0.35em] transition-opacity hover:opacity-90"
+      className="group inline-flex items-center p-0 transition-opacity hover:opacity-90"
     >
       {image}
     </Link>
