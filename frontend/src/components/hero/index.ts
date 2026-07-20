@@ -1,3 +1,4 @@
+export { HeroButton } from "./HeroButton";
 export { HeroNavbar } from "./HeroNavbar";
 export { HeroNavbarMobile } from "./HeroNavbarMobile";
 export { HeroNavCapsule } from "./HeroNavCapsule";

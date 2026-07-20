@@ -2,9 +2,13 @@ export const heroContent = {
   eyebrow: "HOUSE OF LIFE SCIENCES",
   headline: "Run peptides in your clinic with confidence.",
   subhead:
-    "Train your team, keep dosing right, and hand patients clean branded materials — without becoming the peptide expert yourself.",
+    "Get your whole team trained, keep the dosing right, and hand patients clean, branded materials — without becoming the peptide expert yourself.",
   primaryCta: { label: "Get Started", href: "/register" },
-  secondaryCta: { label: "Explore courses", href: "#what-you-get" },
+  secondaryCta: { label: "Book a Demo", href: "/contact#demo" },
+  navCtas: {
+    login: { label: "Log in", href: "/login" },
+    getStarted: { label: "Get Started", href: "/register" },
+  },
   trustStrip: [
     "Trusted by clinics",
     "Reviewed by experts",

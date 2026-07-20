@@ -1,11 +1,12 @@
 "use client";
 
-import Link from "next/link";
 import { FadeIn } from "@/components/animations/ScrollReveal";
+import { HeroButton } from "@/components/hero/HeroButton";
 import { heroContent } from "@/content/hero";
+import { heroCtaSeparator } from "@/lib/hero-styles";
 
 export function HeroHeadline() {
-  const { headline, subhead, secondaryCta } = heroContent;
+  const { headline, subhead, primaryCta, secondaryCta } = heroContent;
 
   return (
     <div className="relative w-full max-w-xl md:max-w-xl lg:max-w-[34rem] lg:shrink-0">
@@ -22,18 +23,16 @@ export function HeroHeadline() {
           </p>
         </div>
 
-        <div className="hero-reveal mt-8">
-          <Link
-            href={secondaryCta.href}
-            className="group inline-flex items-center gap-3 font-sans text-sm font-medium text-white transition-colors duration-300 hover:text-accent"
-          >
-            <span className="inline-flex h-10 w-10 items-center justify-center rounded-sm bg-accent text-primary transition-transform duration-300 group-hover:translate-x-0.5">
-              <span aria-hidden className="text-base leading-none">
-                →
-              </span>
-            </span>
+        <div className="hero-reveal mt-8 flex flex-wrap items-center gap-3">
+          <HeroButton href={primaryCta.href} variant="primary">
+            {primaryCta.label}
+          </HeroButton>
+          <span aria-hidden className={heroCtaSeparator}>
+            ·
+          </span>
+          <HeroButton href={secondaryCta.href} variant="secondary">
             {secondaryCta.label}
-          </Link>
+          </HeroButton>
         </div>
       </FadeIn>
     </div>

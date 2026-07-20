@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap, registerGsap, ScrollTrigger } from "@/lib/gsap";
 import { landingContent } from "@/content/landing";
+import { heroGlassPanel } from "@/lib/hero-styles";
 import { prefersReducedMotion } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
@@ -48,7 +49,12 @@ function StepMedia({
           />
         </div>
       ) : null}
-      <p className="font-body text-sm leading-relaxed text-white/90 md:text-[0.95rem]">
+      <p
+        className={cn(
+          "font-body text-sm leading-relaxed text-white/90 md:text-[0.95rem]",
+          "glass-capsule-overlay rounded-full px-5 py-3 md:px-6 md:py-4",
+        )}
+      >
         {card.description}
       </p>
     </div>
@@ -80,7 +86,7 @@ function TimelineStep({
           )}
           aria-hidden
         />
-        <span className="inline-flex min-w-[7.5rem] items-center justify-center bg-white px-4 py-2 font-sans text-[0.7rem] font-bold uppercase tracking-[0.18em] text-primary md:min-w-[8.5rem] md:text-xs">
+        <span className="inline-flex min-w-[7.5rem] items-center justify-center rounded-full bg-white px-5 py-2.5 font-sans text-[0.7rem] font-bold uppercase tracking-[0.18em] text-primary md:min-w-[8.5rem] md:px-6 md:text-xs">
           {card.step}
         </span>
       </div>
@@ -125,38 +131,15 @@ function SectionHeader({
       <h2 className="font-sans text-2xl font-bold uppercase tracking-[0.04em] text-accent sm:text-3xl md:text-[2.15rem]">
         {headline}
       </h2>
-      <div className="mt-6 inline-flex items-center justify-center bg-accent px-5 py-2.5 font-sans text-xs font-bold uppercase tracking-[0.2em] text-primary md:mt-8 md:text-sm">
+      <div
+        className={cn(
+          "mt-6 inline-flex items-center justify-center rounded-full px-6 py-2.5 font-sans text-xs font-bold uppercase tracking-[0.2em] text-white md:mt-8 md:px-7 md:text-sm",
+          heroGlassPanel,
+        )}
+      >
         {label}
       </div>
     </div>
-  );
-}
-
-function WhatYouGetStatic() {
-  const { whatYouGet } = landingContent;
-
-  return (
-    <section id="what-you-get" className="relative isolate overflow-hidden">
-      <SectionBackground src={whatYouGet.backgroundImage} />
-      <div className="relative mx-auto flex w-full max-w-5xl flex-col px-5 py-16 md:px-8 md:py-20 lg:py-24">
-        <SectionHeader headline={whatYouGet.headline} label={whatYouGet.label} />
-        <div className="relative mx-auto mt-8 w-full">
-          <div
-            className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 bg-white/35"
-            aria-hidden
-          />
-          {whatYouGet.cards.map((card, index) => (
-            <div key={card.id} className="py-10 md:py-12">
-              <TimelineStep
-                card={card}
-                side={STEP_SIDES[index] ?? "right"}
-                showImage={index > 0}
-              />
-            </div>
-          ))}
-        </div>
-      </div>
-    </section>
   );
 }
 
@@ -165,7 +148,7 @@ export function WhatYouGetSection() {
   const [reduceMotion, setReduceMotion] = useState(false);
 
   const sectionRef = useRef<HTMLElement>(null);
-  const pinWrapRef = useRef<HTMLDivElement>(null);
+  const timelineRef = useRef<HTMLDivElement>(null);
   const lineFillRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -178,37 +161,34 @@ export function WhatYouGetSection() {
 
       registerGsap();
 
-      const pinWrap = pinWrapRef.current;
+      const section = sectionRef.current;
+      const timeline = timelineRef.current;
       const lineFill = lineFillRef.current;
 
-      if (!pinWrap || !lineFill) return;
+      if (!section || !timeline || !lineFill) return;
 
       const steps = gsap.utils.toArray<HTMLElement>(
-        pinWrap.querySelectorAll("[data-wyg-step]"),
+        timeline.querySelectorAll("[data-wyg-step]"),
       );
 
       if (steps.length === 0) return;
 
-      const scrollDistance = () => window.innerHeight * Math.max(steps.length, 1) * 0.95;
-
-      gsap.set(steps, { autoAlpha: 0, y: 36 });
       gsap.set(lineFill, { scaleY: 0, transformOrigin: "top center" });
+      gsap.set(steps, { autoAlpha: 0, y: 48 });
 
-      const timeline = gsap.timeline({
+      const scrollTimeline = gsap.timeline({
         scrollTrigger: {
           id: "what-you-get-timeline",
-          trigger: pinWrap,
-          start: "top top",
-          end: () => `+=${scrollDistance()}`,
-          pin: pinWrap,
-          pinSpacing: true,
-          scrub: 0.8,
-          anticipatePin: 1,
+          trigger: timeline,
+          start: "top 72%",
+          end: "bottom 28%",
+          scrub: 0.65,
           invalidateOnRefresh: true,
         },
       });
 
-      timeline.to(
+      // Line draws downward through the full timeline height
+      scrollTimeline.to(
         lineFill,
         {
           scaleY: 1,
@@ -218,99 +198,64 @@ export function WhatYouGetSection() {
         0,
       );
 
+      // Each step reveals as the line reaches it — stays visible (no fade-out)
       steps.forEach((step, index) => {
-        const start = index;
-        timeline.fromTo(
+        scrollTimeline.fromTo(
           step,
-          { autoAlpha: 0, y: 36 },
+          { autoAlpha: 0, y: 48 },
           {
             autoAlpha: 1,
             y: 0,
-            duration: 0.55,
+            duration: 0.65,
             ease: "power2.out",
           },
-          start,
+          index * 0.85 + 0.15,
         );
-
-        if (index < steps.length - 1) {
-          timeline.to(
-            step,
-            {
-              autoAlpha: 0,
-              y: -28,
-              duration: 0.45,
-              ease: "power2.in",
-            },
-            start + 0.7,
-          );
-        }
       });
-
-      // Keep final step visible through the end of the scrub
-      timeline.to({}, { duration: 0.35 });
 
       requestAnimationFrame(() => ScrollTrigger.refresh());
     },
     { scope: sectionRef, dependencies: [reduceMotion, whatYouGet.cards.length] },
   );
 
-  if (reduceMotion) {
-    return <WhatYouGetStatic />;
-  }
-
   return (
     <section
       ref={sectionRef}
       id="what-you-get"
-      className="relative isolate"
+      className="relative isolate overflow-hidden"
     >
-      {/* Only this wrapper is pinned — pinSpacing keeps following sections undisturbed */}
-      <div
-        ref={pinWrapRef}
-        className="relative flex h-[100dvh] flex-col overflow-hidden"
-      >
-        <SectionBackground src={whatYouGet.backgroundImage} />
+      <SectionBackground src={whatYouGet.backgroundImage} />
 
-        <div className="relative mx-auto flex h-full w-full max-w-5xl flex-col px-5 py-10 md:px-8 md:py-12 lg:py-14">
-          <SectionHeader headline={whatYouGet.headline} label={whatYouGet.label} />
+      <div className="relative mx-auto flex w-full max-w-5xl flex-col px-5 py-16 md:px-8 md:py-20 lg:py-24">
+        <SectionHeader headline={whatYouGet.headline} label={whatYouGet.label} />
 
-          <div className="relative mx-auto mt-6 flex w-full flex-1 items-center md:mt-8">
+        <div ref={timelineRef} className="relative mx-auto mt-8 w-full md:mt-10">
+          {/* Vertical track — line grows top → bottom on scroll */}
+          <div
+            className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 overflow-hidden bg-white/20"
+            aria-hidden
+          >
             <div
-              className="absolute left-1/2 top-[8%] bottom-[8%] w-px -translate-x-1/2 overflow-hidden bg-white/20"
-              aria-hidden
+              ref={lineFillRef}
+              className="h-full w-full origin-top bg-accent/85"
+              style={reduceMotion ? { transform: "scaleY(1)" } : undefined}
+            />
+          </div>
+
+          {whatYouGet.cards.map((card, index) => (
+            <div
+              key={card.id}
+              data-wyg-step
+              className="relative py-10 will-change-transform md:py-14"
+              style={reduceMotion ? { opacity: 1 } : undefined}
             >
-              <div
-                ref={lineFillRef}
-                className="h-full w-full bg-accent/80"
+              <TimelineStep
+                card={card}
+                side={STEP_SIDES[index] ?? "right"}
+                showImage={index > 0}
               />
             </div>
-
-            <div className="relative w-full">
-              {whatYouGet.cards.map((card, index) => (
-                <div
-                  key={card.id}
-                  className="absolute inset-0 flex items-center"
-                >
-                  <div data-wyg-step className="w-full will-change-transform">
-                    <TimelineStep
-                      card={card}
-                      side={STEP_SIDES[index] ?? "right"}
-                      showImage={index > 0}
-                    />
-                  </div>
-                </div>
-              ))}
-
-              {/* Reserve height so absolute steps have a stable stage */}
-              <div className="pointer-events-none invisible" aria-hidden>
-                <TimelineStep
-                  card={whatYouGet.cards[0]}
-                  side="right"
-                  showImage
-                />
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
       </div>
     </section>

@@ -62,6 +62,7 @@ export const landingContent = {
     headline: "The Pillars",
     subhead:
       "Everything inside HOLS — training, tools, and support for clinical peptide practice.",
+    exploreCta: { label: "Explore Course", href: "#what-you-get" },
     items: [
       {
         id: "training",

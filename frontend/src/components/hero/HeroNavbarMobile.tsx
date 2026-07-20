@@ -2,10 +2,13 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { HeroButton } from "@/components/hero/HeroButton";
 import { Button } from "@/components/ui/Button";
 import { mainNav } from "@/content/navigation";
+import { heroContent } from "@/content/hero";
 import { useSmoothScroll } from "@/providers/SmoothScrollProvider";
 import { getButtonClassName } from "@/lib/button-styles";
+import { heroGlassPanel } from "@/lib/hero-styles";
 import { cn } from "@/lib/utils";
 
 type HeroNavbarMobileProps = {
@@ -23,35 +26,55 @@ export function HeroNavbarMobile({ tone = "default" }: HeroNavbarMobileProps) {
 
   return (
     <div className="relative z-50">
-      <button
-        type="button"
-        aria-expanded={open}
-        aria-label={open ? "Close menu" : "Open menu"}
-        onClick={() => setOpen((prev) => !prev)}
-        className={
-          isOverlay
-            ? cn(
-                "inline-flex h-11 w-11 items-center justify-center rounded-sm border border-white/25 bg-white/10 text-white backdrop-blur-sm transition-colors duration-300 hover:bg-white/20",
-              )
-            : getButtonClassName("glass", "h-10 w-10 p-0", "sm")
-        }
-      >
-        <svg
-          width="18"
-          height="18"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          aria-hidden
+      {isOverlay ? (
+        <HeroButton
+          type="button"
+          variant="icon"
+          aria-label={open ? "Close menu" : "Open menu"}
+          aria-expanded={open}
+          onClick={() => setOpen((prev) => !prev)}
         >
-          {open ? (
-            <path d="M6 6l12 12M18 6L6 18" />
-          ) : (
-            <path d="M4 7h16M4 12h16M4 17h16" />
-          )}
-        </svg>
-      </button>
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden
+          >
+            {open ? (
+              <path d="M6 6l12 12M18 6L6 18" />
+            ) : (
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            )}
+          </svg>
+        </HeroButton>
+      ) : (
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-label={open ? "Close menu" : "Open menu"}
+          onClick={() => setOpen((prev) => !prev)}
+          className={getButtonClassName("glass", "h-10 w-10 p-0", "sm")}
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            aria-hidden
+          >
+            {open ? (
+              <path d="M6 6l12 12M18 6L6 18" />
+            ) : (
+              <path d="M4 7h16M4 12h16M4 17h16" />
+            )}
+          </svg>
+        </button>
+      )}
 
       <div
         data-lenis-prevent
@@ -63,9 +86,7 @@ export function HeroNavbarMobile({ tone = "default" }: HeroNavbarMobileProps) {
         <div
           className={cn(
             "rounded-3xl px-6 py-6",
-            isOverlay
-              ? "border border-white/15 bg-primary/95 text-white shadow-xl backdrop-blur-md"
-              : "glass-capsule",
+            isOverlay ? cn("rounded-3xl px-6 py-6 text-white", heroGlassPanel) : "glass-capsule",
           )}
         >
           <nav className="flex flex-col gap-4" aria-label="Mobile">
@@ -90,24 +111,47 @@ export function HeroNavbarMobile({ tone = "default" }: HeroNavbarMobileProps) {
                 isOverlay ? "border-white/15" : "border-primary/10",
               )}
             >
-              <Button
-                href="/login"
-                variant={isOverlay ? "secondary" : "glass"}
-                size="lg"
-                className="w-full justify-center"
-                onClick={() => setOpen(false)}
-              >
-                Log in
-              </Button>
-              <Button
-                href="/register"
-                variant="primary"
-                size="lg"
-                className="w-full justify-center"
-                onClick={() => setOpen(false)}
-              >
-                Get Started
-              </Button>
+              {isOverlay ? (
+                <>
+                  <HeroButton
+                    href={heroContent.navCtas.login.href}
+                    variant="ghost"
+                    className="w-full"
+                    onClick={() => setOpen(false)}
+                  >
+                    {heroContent.navCtas.login.label}
+                  </HeroButton>
+                  <HeroButton
+                    href={heroContent.navCtas.getStarted.href}
+                    variant="primary"
+                    className="w-full"
+                    onClick={() => setOpen(false)}
+                  >
+                    {heroContent.navCtas.getStarted.label}
+                  </HeroButton>
+                </>
+              ) : (
+                <>
+                  <Button
+                    href={heroContent.navCtas.login.href}
+                    variant="glass"
+                    size="lg"
+                    className="w-full justify-center"
+                    onClick={() => setOpen(false)}
+                  >
+                    {heroContent.navCtas.login.label}
+                  </Button>
+                  <Button
+                    href={heroContent.navCtas.getStarted.href}
+                    variant="primary"
+                    size="lg"
+                    className="w-full justify-center"
+                    onClick={() => setOpen(false)}
+                  >
+                    {heroContent.navCtas.getStarted.label}
+                  </Button>
+                </>
+              )}
             </div>
           </nav>
         </div>

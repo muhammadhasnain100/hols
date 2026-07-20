@@ -24,26 +24,27 @@ function WhoItsForStatic() {
         <div className="absolute inset-0 bg-primary/70" />
       </div>
 
-      <div className="relative mx-auto w-full max-w-5xl px-5 py-20 md:px-8 md:py-28">
-        <p className="font-sans text-xs font-semibold uppercase tracking-[0.28em] text-accent">
-          Who it&apos;s for
-        </p>
-        <h2 className="mt-4 font-sans text-3xl font-bold text-white md:text-4xl">
+      <div className="relative mx-auto w-full max-w-3xl px-5 py-20 text-center md:px-8 md:py-28">
+        <h2 className="font-sans text-3xl font-bold text-white md:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
           {whoItsFor.headline}
         </h2>
 
-        <div className="mt-12 space-y-10">
+        <ul className="mt-12 space-y-10">
           {whoItsFor.audiences.map((audience) => (
-            <div key={audience.id} className="max-w-xl">
-              <h3 className="font-sans text-2xl font-bold text-white">
+            <li key={audience.id} className="flex flex-col items-center">
+              <span
+                className="mb-4 h-2 w-2 rounded-full bg-accent"
+                aria-hidden
+              />
+              <h3 className="font-sans text-2xl font-bold text-white md:text-3xl">
                 {audience.title}
               </h3>
-              <p className="font-body mt-3 text-base leading-relaxed text-white/75">
+              <p className="font-body mt-3 max-w-xl text-base leading-relaxed text-white/75 md:text-lg">
                 {audience.description}
               </p>
-            </div>
+            </li>
           ))}
-        </div>
+        </ul>
       </div>
     </section>
   );
@@ -163,7 +164,6 @@ export function WhoItsForSection() {
         ref={pinWrapRef}
         className="relative flex h-[100dvh] flex-col overflow-hidden"
       >
-        {/* Background layers — crossfade on scroll */}
         <div className="absolute inset-0 -z-10">
           <Image
             src={whoItsFor.backgroundImage}
@@ -174,11 +174,7 @@ export function WhoItsForSection() {
             priority={false}
           />
           {whoItsFor.audiences.map((audience) => (
-            <div
-              key={audience.id}
-              data-wif-bg
-              className="absolute inset-0"
-            >
+            <div key={audience.id} data-wif-bg className="absolute inset-0">
               <Image
                 src={audience.image}
                 alt=""
@@ -192,42 +188,38 @@ export function WhoItsForSection() {
           <div className="absolute inset-0 bg-[linear-gradient(105deg,rgba(21,39,68,0.82)_0%,rgba(21,39,68,0.45)_55%,rgba(21,39,68,0.55)_100%)]" />
         </div>
 
-        <div className="relative mx-auto flex h-full w-full max-w-6xl flex-col px-5 py-12 md:px-8 md:py-14 lg:px-10">
-          <div className="shrink-0">
-            <p className="font-sans text-xs font-semibold uppercase tracking-[0.28em] text-accent">
-              Who it&apos;s for
-            </p>
-            <h2 className="mt-3 max-w-2xl font-sans text-3xl font-bold tracking-[-0.02em] text-white md:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
+        <div className="relative mx-auto flex h-full w-full max-w-4xl flex-col px-5 py-12 md:px-8 md:py-14">
+          <div className="shrink-0 text-center">
+            <h2 className="font-sans text-3xl font-bold tracking-[-0.02em] text-white md:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
               {whoItsFor.headline}
             </h2>
           </div>
 
-          <div className="relative flex flex-1 items-center">
-            <div className="relative w-full max-w-xl">
-              {whoItsFor.audiences.map((audience, index) => (
+          <div className="relative flex flex-1 items-center justify-center">
+            <div className="relative w-full max-w-2xl text-center">
+              {whoItsFor.audiences.map((audience) => (
                 <div
                   key={audience.id}
-                  className="absolute inset-0 flex items-center"
+                  className="absolute inset-0 flex items-center justify-center"
                 >
                   <div data-wif-text className="w-full will-change-transform">
-                    <p className="font-sans text-sm font-semibold uppercase tracking-[0.2em] text-accent/90">
-                      {String(index + 1).padStart(2, "0")} /{" "}
-                      {String(whoItsFor.audiences.length).padStart(2, "0")}
-                    </p>
-                    <h3 className="mt-4 font-sans text-3xl font-bold text-white md:text-4xl lg:text-[2.75rem]">
+                    <span
+                      className="mx-auto mb-5 block h-2 w-2 rounded-full bg-accent"
+                      aria-hidden
+                    />
+                    <h3 className="font-sans text-3xl font-bold text-white md:text-4xl lg:text-[2.75rem]">
                       {audience.title}
                     </h3>
-                    <p className="font-body mt-5 text-base leading-relaxed text-white/80 md:text-lg md:leading-[1.55]">
+                    <p className="font-body mx-auto mt-5 max-w-xl text-base leading-relaxed text-white/80 md:text-lg md:leading-[1.55]">
                       {audience.description}
                     </p>
                   </div>
                 </div>
               ))}
 
-              {/* Height reserve */}
               <div className="pointer-events-none invisible" aria-hidden>
-                <p className="text-sm">00 / 00</p>
-                <h3 className="mt-4 text-3xl md:text-4xl lg:text-[2.75rem]">
+                <span className="mb-5 block h-2 w-2" />
+                <h3 className="text-3xl md:text-4xl lg:text-[2.75rem]">
                   {whoItsFor.audiences[0]?.title}
                 </h3>
                 <p className="mt-5 text-base md:text-lg">
@@ -237,7 +229,7 @@ export function WhoItsForSection() {
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center gap-2 pb-2">
+          <div className="flex shrink-0 items-center justify-center gap-2 pb-2">
             {whoItsFor.audiences.map((audience, index) => (
               <span
                 key={audience.id}

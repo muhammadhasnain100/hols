@@ -1,107 +1,239 @@
 "use client";
 
 import Image from "next/image";
-import { useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { landingContent } from "@/content/landing";
 import { cn } from "@/lib/utils";
 
 type PillarItem = (typeof landingContent.pillars.items)[number];
 
-function PillarCard({
+const AUTO_PLAY_MS = 4500;
+const VISIBLE_CARDS = 4;
+const CLONE_COUNT = 2;
+
+function buildExtendedItems(items: PillarItem[]) {
+  return [
+    ...items.slice(-CLONE_COUNT),
+    ...items,
+    ...items.slice(0, CLONE_COUNT),
+  ];
+}
+
+function PillarImage({
+  src,
+  alt,
+  blurred,
+}: {
+  src: string;
+  alt: string;
+  blurred: boolean;
+}) {
+  return (
+    <div className="relative aspect-square w-full overflow-hidden rounded-xl">
+      <Image
+        src={src}
+        alt={alt}
+        fill
+        className={cn("object-cover", blurred && "scale-105 blur-[2px]")}
+        sizes="(max-width: 768px) 85vw, 25vw"
+      />
+      {blurred ? (
+        <div
+          className="pointer-events-none absolute inset-0 bg-white/35"
+          aria-hidden
+        />
+      ) : null}
+    </div>
+  );
+}
+
+function PillarCardContent({
   item,
   isActive,
-  onActivate,
+  exploreLabel,
+  exploreHref,
+  onSelect,
 }: {
   item: PillarItem;
   isActive: boolean;
-  onActivate: () => void;
+  exploreLabel: string;
+  exploreHref: string;
+  onSelect: () => void;
 }) {
   return (
-    <article
-      role="button"
-      tabIndex={0}
-      aria-pressed={isActive}
-      aria-label={item.title}
-      onMouseEnter={onActivate}
-      onFocus={onActivate}
-      onClick={onActivate}
-      onKeyDown={(event) => {
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onActivate();
-        }
-      }}
-      className={cn(
-        "group relative flex h-[28rem] min-w-0 cursor-pointer flex-col overflow-hidden rounded-[1.15rem] bg-white outline-none transition-[flex,box-shadow,opacity] duration-500 ease-out sm:h-[30rem] lg:h-[32rem]",
-        "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-        isActive
-          ? "flex-[2.35] opacity-100 shadow-[0_16px_40px_rgba(21,39,68,0.12)]"
-          : "flex-[0.92] opacity-80 shadow-[0_8px_24px_rgba(21,39,68,0.06)] hover:opacity-95",
-      )}
-    >
+    <div className="flex h-full flex-col">
+      <button
+        type="button"
+        aria-pressed={isActive}
+        onClick={onSelect}
+        className={cn(
+          "w-full rounded-2xl bg-white p-4 text-left outline-none lg:p-5",
+          "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
+          isActive
+            ? "shadow-[0_12px_32px_rgba(21,39,68,0.1)]"
+            : "shadow-[0_4px_16px_rgba(21,39,68,0.05)]",
+        )}
+      >
+        <PillarImage src={item.image} alt={item.title} blurred={!isActive} />
+        <h3
+          className={cn(
+            "mt-4 font-sans text-base font-bold leading-snug lg:text-lg",
+            isActive ? "text-primary" : "text-primary/45",
+          )}
+        >
+          {isActive ? item.title : item.shortTitle}
+        </h3>
+      </button>
+
       {isActive ? (
-        <div className="flex h-full flex-col p-3 sm:p-3.5">
-          <div className="mb-2.5 flex shrink-0 items-center justify-between gap-3 px-1 text-[0.7rem] font-medium text-primary/55 sm:text-xs">
-            <span>{item.category}</span>
-            <span>{item.units}</span>
-          </div>
-
-          {/* Image ~60–65% of card — portrait reference proportion */}
-          <div className="relative min-h-0 w-full flex-[1.65] overflow-hidden rounded-xl">
-            <Image
-              src={item.image}
-              alt={item.title}
-              fill
-              className="object-cover"
-              sizes="(max-width: 1024px) 55vw, 38vw"
-            />
-          </div>
-
-          <div className="mt-3.5 flex shrink-0 flex-col px-1 pb-1">
-            <h3 className="font-sans text-[1.05rem] font-bold leading-tight text-primary sm:text-lg lg:text-xl">
-              {item.title}
-            </h3>
-            <p className="mt-3 font-sans text-[0.65rem] font-medium tracking-[0.02em] text-primary/45">
-              {item.overviewLabel}
-            </p>
-            <p className="font-body mt-1.5 line-clamp-3 text-[0.8rem] leading-relaxed text-primary/70 sm:text-sm">
-              {item.description}
-            </p>
-          </div>
+        <div className="mt-4 rounded-2xl bg-white p-5 shadow-[0_8px_24px_rgba(21,39,68,0.06)] lg:p-6">
+          <p className="font-sans text-[0.65rem] font-semibold uppercase tracking-[0.06em] text-primary/45">
+            {item.overviewLabel}
+          </p>
+          <p className="font-body mt-2 text-sm leading-relaxed text-primary/70 lg:text-base">
+            {item.description}
+          </p>
+          <Link
+            href={exploreHref}
+            className="mt-3 inline-flex font-sans text-sm font-semibold text-primary lg:text-base"
+          >
+            {exploreLabel}
+          </Link>
         </div>
-      ) : (
-        <>
-          <div className="absolute inset-0">
-            <Image
-              src={item.image}
-              alt=""
-              fill
-              className="object-cover opacity-60 grayscale-[40%] transition duration-500 group-hover:opacity-75 group-hover:grayscale-[20%]"
-              sizes="(max-width: 1024px) 20vw, 12vw"
+      ) : null}
+    </div>
+  );
+}
+
+function PillarsCarousel({
+  items,
+  exploreLabel,
+  exploreHref,
+}: {
+  items: PillarItem[];
+  exploreLabel: string;
+  exploreHref: string;
+}) {
+  const extendedItems = useMemo(() => buildExtendedItems(items), [items]);
+  const centerIndex = Math.floor((items.length - 1) / 2);
+  const startIndex = CLONE_COUNT + centerIndex;
+
+  const [trackIndex, setTrackIndex] = useState(startIndex);
+  const [translateX, setTranslateX] = useState(0);
+  const [slotWidth, setSlotWidth] = useState(0);
+  const [visibleCards, setVisibleCards] = useState(VISIBLE_CARDS);
+  const [enableTransition, setEnableTransition] = useState(true);
+
+  const viewportRef = useRef<HTMLDivElement>(null);
+
+  const updatePosition = useCallback(() => {
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+
+    const nextVisibleCards =
+      window.matchMedia("(min-width: 768px)").matches ? VISIBLE_CARDS : 1;
+
+    setVisibleCards(nextVisibleCards);
+
+    const width = viewport.clientWidth;
+    const cardSlot = width / nextVisibleCards;
+    const x = width / 2 - cardSlot / 2 - trackIndex * cardSlot;
+
+    setSlotWidth(cardSlot);
+    setTranslateX(x);
+  }, [trackIndex]);
+
+  useEffect(() => {
+    updatePosition();
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+
+    const observer = new ResizeObserver(updatePosition);
+    observer.observe(viewport);
+    return () => observer.disconnect();
+  }, [updatePosition]);
+
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setEnableTransition(true);
+      setTrackIndex((current) => current + 1);
+    }, AUTO_PLAY_MS);
+
+    return () => window.clearInterval(timer);
+  }, []);
+
+  const snapIfNeeded = useCallback(() => {
+    setTrackIndex((current) => {
+      if (current >= CLONE_COUNT + items.length) {
+        setEnableTransition(false);
+        return CLONE_COUNT + (current - CLONE_COUNT - items.length);
+      }
+
+      if (current < CLONE_COUNT) {
+        setEnableTransition(false);
+        return items.length + current;
+      }
+
+      return current;
+    });
+  }, [items.length]);
+
+  useEffect(() => {
+    if (!enableTransition) {
+      updatePosition();
+      const frame = window.requestAnimationFrame(() => {
+        window.requestAnimationFrame(() => setEnableTransition(true));
+      });
+      return () => window.cancelAnimationFrame(frame);
+    }
+  }, [enableTransition, updatePosition]);
+
+  return (
+    <div ref={viewportRef} className="mt-6 w-full overflow-hidden md:mt-8">
+      <div
+        className="flex will-change-transform"
+        onTransitionEnd={(event) => {
+          if (event.propertyName !== "transform") return;
+          snapIfNeeded();
+        }}
+        style={{
+          transform: `translateX(${translateX}px)`,
+          transition: enableTransition ? "transform 700ms ease-in-out" : "none",
+        }}
+      >
+        {extendedItems.map((item, index) => (
+          <div
+            key={`${item.id}-${index}`}
+            className="shrink-0 px-2 lg:px-2.5"
+            style={{ width: slotWidth || `${100 / visibleCards}%` }}
+          >
+            <PillarCardContent
+              item={item}
+              isActive={index === trackIndex}
+              exploreLabel={exploreLabel}
+              exploreHref={exploreHref}
+              onSelect={() => {
+                setEnableTransition(true);
+                setTrackIndex(index);
+              }}
             />
-            <div className="absolute inset-0 bg-gradient-to-t from-[#F3F4F6] via-[#F3F4F6]/35 to-transparent" />
           </div>
-          <div className="relative mt-auto p-4 sm:p-5">
-            <h3 className="font-sans text-sm font-semibold leading-snug text-primary/70 sm:text-[0.95rem]">
-              {item.shortTitle}
-            </h3>
-          </div>
-        </>
-      )}
-    </article>
+        ))}
+      </div>
+    </div>
   );
 }
 
 export function PillarsSection() {
   const { pillars } = landingContent;
-  const [activeIndex, setActiveIndex] = useState(0);
 
   return (
     <section
       id="everything-inside"
-      className="flex min-h-svh w-full flex-col justify-center bg-[#F3F4F6] py-12 md:py-14 lg:py-16"
+      className="flex min-h-svh w-full flex-col justify-center bg-[#E5E5E5] py-12 md:py-14 lg:py-16"
     >
-      <div className="flex w-full flex-col px-4 md:px-5 lg:px-6">
+      <div className="flex w-full flex-col px-2 md:px-3 lg:px-4">
         <div className="w-full max-w-4xl text-left">
           <h2 className="font-sans text-3xl font-bold tracking-[-0.02em] text-primary md:text-4xl lg:text-[2.65rem] lg:leading-[1.12]">
             {pillars.headline}
@@ -113,78 +245,11 @@ export function PillarsSection() {
           ) : null}
         </div>
 
-        {/* Full-width portrait card row — sized like the reference */}
-        <div className="mt-8 hidden w-full items-end gap-3 md:mt-10 md:flex lg:gap-4">
-          {pillars.items.map((item, index) => (
-            <PillarCard
-              key={item.id}
-              item={item}
-              isActive={index === activeIndex}
-              onActivate={() => setActiveIndex(index)}
-            />
-          ))}
-        </div>
-
-        {/* Mobile */}
-        <div className="mt-8 flex w-full flex-col gap-3 md:hidden">
-          {pillars.items.map((item, index) => {
-            const isActive = index === activeIndex;
-
-            return (
-              <button
-                key={item.id}
-                type="button"
-                aria-pressed={isActive}
-                onClick={() => setActiveIndex(index)}
-                className={cn(
-                  "w-full overflow-hidden rounded-[1.15rem] bg-white text-left shadow-[0_8px_24px_rgba(21,39,68,0.06)] transition-all duration-300",
-                  isActive ? "opacity-100" : "opacity-85",
-                )}
-              >
-                {isActive ? (
-                  <div className="p-3.5">
-                    <div className="mb-2.5 flex items-center justify-between px-0.5 text-[0.7rem] font-medium text-primary/55">
-                      <span>{item.category}</span>
-                      <span>{item.units}</span>
-                    </div>
-                    <div className="relative aspect-[4/3] overflow-hidden rounded-xl">
-                      <Image
-                        src={item.image}
-                        alt={item.title}
-                        fill
-                        className="object-cover"
-                        sizes="100vw"
-                      />
-                    </div>
-                    <h3 className="mt-3.5 font-sans text-lg font-bold text-primary">
-                      {item.title}
-                    </h3>
-                    <p className="mt-2.5 font-sans text-[0.65rem] font-medium text-primary/45">
-                      {item.overviewLabel}
-                    </p>
-                    <p className="font-body mt-1.5 text-sm leading-relaxed text-primary/70">
-                      {item.description}
-                    </p>
-                  </div>
-                ) : (
-                  <div className="relative flex h-32 items-end overflow-hidden">
-                    <Image
-                      src={item.image}
-                      alt=""
-                      fill
-                      className="object-cover opacity-55 grayscale-[35%]"
-                      sizes="100vw"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-[#F3F4F6] via-[#F3F4F6]/40 to-transparent" />
-                    <span className="relative z-10 p-4 font-sans text-sm font-semibold text-primary/75">
-                      {item.shortTitle}
-                    </span>
-                  </div>
-                )}
-              </button>
-            );
-          })}
-        </div>
+        <PillarsCarousel
+          items={pillars.items}
+          exploreLabel={pillars.exploreCta.label}
+          exploreHref={pillars.exploreCta.href}
+        />
       </div>
     </section>
   );

@@ -1,11 +1,15 @@
 "use client";
 
 import Image from "next/image";
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap, registerGsap } from "@/lib/gsap";
 import { HeroSceneCanvas } from "@/components/three/HeroSceneCanvas";
 import { prefersReducedMotion } from "@/lib/motion";
+
+const HERO_VIDEO_MP4 = "/assets/hero/herosection.mp4";
+const HERO_VIDEO_WMV = "/assets/hero/herosection.wmv";
+const HERO_POSTER = "/assets/images/hero-background.jpg";
 
 type HeroBackgroundProps = {
   variant?: "sky" | "photo";
@@ -59,50 +63,91 @@ function FloatingParticles() {
 }
 
 function PhotoBackground() {
-  const rootRef = useRef<HTMLDivElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [reduceMotion, setReduceMotion] = useState(false);
+  const [videoFailed, setVideoFailed] = useState(false);
 
-  useGSAP(
-    () => {
-      registerGsap();
-      if (prefersReducedMotion() || !rootRef.current) return;
+  useEffect(() => {
+    setReduceMotion(prefersReducedMotion());
+  }, []);
 
-      gsap.fromTo(
-        rootRef.current.querySelector("[data-hero-photo]"),
-        { scale: 1.08 },
-        { scale: 1, duration: 2.4, ease: "power2.out" },
-      );
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || reduceMotion || videoFailed) return;
 
-      gsap.fromTo(
-        rootRef.current.querySelector("[data-hero-overlay]"),
-        { opacity: 0.55 },
-        { opacity: 1, duration: 1.6, ease: "power2.out" },
-      );
-    },
-    { scope: rootRef },
-  );
+    video.loop = true;
+    video.muted = true;
+    video.defaultMuted = true;
+    video.setAttribute("playsinline", "");
+
+    const playVideo = () => {
+      const attempt = video.play();
+      if (attempt !== undefined) {
+        attempt.catch(() => {
+          /* autoplay can be blocked briefly; retry when data is ready */
+        });
+      }
+    };
+
+    const handleEnded = () => {
+      video.currentTime = 0;
+      playVideo();
+    };
+
+    const handleError = () => setVideoFailed(true);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible" && video.paused) {
+        playVideo();
+      }
+    };
+
+    video.addEventListener("ended", handleEnded);
+    video.addEventListener("error", handleError);
+    video.addEventListener("loadeddata", playVideo);
+    video.addEventListener("canplay", playVideo);
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    playVideo();
+
+    return () => {
+      video.removeEventListener("ended", handleEnded);
+      video.removeEventListener("error", handleError);
+      video.removeEventListener("loadeddata", playVideo);
+      video.removeEventListener("canplay", playVideo);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [reduceMotion, videoFailed]);
 
   return (
     <div
-      ref={rootRef}
-      className="pointer-events-none absolute inset-0 overflow-hidden bg-primary"
+      className="pointer-events-none absolute inset-0 size-full overflow-hidden bg-black"
       aria-hidden
     >
-      <div data-hero-photo className="absolute inset-0 will-change-transform">
+      {reduceMotion || videoFailed ? (
         <Image
-          src="/assets/images/hero-background.jpg"
+          src={HERO_POSTER}
           alt=""
           fill
           priority
           sizes="100vw"
-          className="object-cover object-center"
+          className="object-contain object-center"
         />
-      </div>
-
-      <div
-        data-hero-overlay
-        className="absolute inset-0 bg-[linear-gradient(105deg,rgba(21,39,68,0.78)_0%,rgba(21,39,68,0.55)_42%,rgba(21,39,68,0.72)_100%)]"
-      />
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(21,39,68,0.35)_0%,transparent_28%,transparent_55%,rgba(21,39,68,0.55)_100%)]" />
+      ) : (
+        <video
+          ref={videoRef}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          disablePictureInPicture
+          className="absolute inset-0 h-full w-full min-h-full min-w-full object-cover object-center"
+        >
+          <source src={HERO_VIDEO_MP4} type="video/mp4" />
+          <source src={HERO_VIDEO_WMV} type="video/x-ms-wmv" />
+        </video>
+      )}
     </div>
   );
 }

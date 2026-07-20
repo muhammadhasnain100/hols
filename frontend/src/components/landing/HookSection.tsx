@@ -1,12 +1,14 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useGSAP } from "@gsap/react";
+import { Button } from "@/components/ui/Button";
 import { gsap, registerGsap, ScrollTrigger } from "@/lib/gsap";
 import { landingContent } from "@/content/landing";
+import { heroLayout } from "@/lib/hero-styles";
 import { prefersReducedMotion } from "@/lib/motion";
+import { cn } from "@/lib/utils";
 
 const LINE = "#152744";
 const STROKE = 1.5;
@@ -57,26 +59,13 @@ function prepareStroke(path: SVGPathElement, hidden: boolean) {
   });
 }
 
-function ExploreCoursesLink({
-  href,
-  label,
-}: {
-  href: string;
-  label: string;
-}) {
+function HookCta({ href, label }: { href: string; label: string }) {
   return (
-    <Link
-      href={href}
-      data-hook-cta
-      className="group inline-flex items-center gap-3 font-sans text-sm font-medium text-primary transition-colors duration-300 hover:text-primary/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
-    >
-      <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-sm bg-accent text-primary transition-transform duration-300 group-hover:translate-x-0.5">
-        <span aria-hidden className="text-base leading-none">
-          →
-        </span>
-      </span>
-      {label}
-    </Link>
+    <div data-hook-cta>
+      <Button href={href} variant="primary" size="lg">
+        {label}
+      </Button>
+    </div>
   );
 }
 
@@ -152,7 +141,7 @@ function FlowDiagram() {
         </div>
 
         <div className="relative z-10 shrink-0 self-center pt-6 md:pt-7">
-          <ExploreCoursesLink href={hook.cta.href} label={hook.cta.label} />
+          <HookCta href={hook.cta.href} label={hook.cta.label} />
         </div>
       </div>
     </div>
@@ -170,30 +159,9 @@ function HookCopy({
 
   return (
     <div className="w-full max-w-3xl text-left lg:max-w-4xl">
-      <p
-        data-hook-eyebrow
-        className="inline-flex items-center gap-2 font-sans text-[0.7rem] font-medium uppercase tracking-[0.28em] text-primary/45 md:text-xs"
-      >
-        <span
-          data-hook-badge-problem
-          className="rounded-sm bg-primary/[0.06] px-2.5 py-1 text-primary/70"
-        >
-          {hook.problemBadge}
-        </span>
-        <span className="text-primary/25" aria-hidden>
-          →
-        </span>
-        <span
-          data-hook-badge-solution
-          className="rounded-sm bg-primary/[0.06] px-2.5 py-1 text-primary/70"
-        >
-          {hook.solutionBadge}
-        </span>
-      </p>
-
       <h2
         data-hook-headline
-        className="mt-5 font-sans text-[1.65rem] font-bold leading-[1.15] tracking-[-0.02em] text-primary sm:text-[2rem] md:text-[2.35rem] md:leading-[1.12] lg:text-[2.6rem]"
+        className="font-sans text-[1.65rem] font-bold leading-[1.15] tracking-[-0.02em] text-primary sm:text-[2rem] md:text-[2.35rem] md:leading-[1.12] lg:text-[2.6rem]"
       >
         {hook.headline}
       </h2>
@@ -229,15 +197,15 @@ function HookShell({
   };
 }) {
   return (
-    <div className="flex h-full w-full flex-col justify-center">
-      {/* Left-aligned title block — same edge padding as hero */}
-      <div className="w-full px-5 md:px-6 lg:px-8">
+    <div className="flex h-full w-full flex-col justify-start pt-28 md:pt-32">
+      {/* Heading at top — same horizontal padding as hero */}
+      <div className={cn("w-full", heroLayout.gutterX)}>
         <HookCopy {...copyProps} />
       </div>
 
       {/* Lines spread full width left → right across the screen */}
-      <div className="mt-10 w-full pl-5 md:mt-12 md:pl-6 lg:mt-14 lg:pl-8">
-        <div className="pr-5 md:pr-6 lg:pr-8">{children}</div>
+      <div className={cn("mt-10 w-full md:mt-12 lg:mt-14", heroLayout.gutterX)}>
+        {children}
       </div>
     </div>
   );
@@ -246,7 +214,7 @@ function HookShell({
 function HookStatic() {
   return (
     <section id="problem" className="bg-white">
-      <div className="flex min-h-[70vh] flex-col justify-center py-16 md:py-20 lg:py-24">
+      <div className="flex min-h-[70vh] flex-col justify-start pb-16 md:pb-20 lg:pb-24">
         <HookShell>
           <FlowDiagram />
         </HookShell>
@@ -292,12 +260,8 @@ export function HookSection() {
         pinWrap.querySelectorAll("[data-hook-after-label]"),
       );
 
-      const eyebrow = pinWrap.querySelector("[data-hook-eyebrow]");
-      const headline = pinWrap.querySelector("[data-hook-headline]");
       const problem = pinWrap.querySelector("[data-hook-problem]");
       const solution = pinWrap.querySelector("[data-hook-solution]");
-      const badgeProblem = pinWrap.querySelector("[data-hook-badge-problem]");
-      const badgeSolution = pinWrap.querySelector("[data-hook-badge-solution]");
 
       scatterPaths.forEach((p) => prepareStroke(p, true));
       singlePaths.forEach((p) => prepareStroke(p, true));
@@ -306,10 +270,7 @@ export function HookSection() {
       gsap.set(ctas, { autoAlpha: 0, x: 16 });
       gsap.set(beforeLabels, { autoAlpha: 0, x: -12 });
       gsap.set(afterLabels, { autoAlpha: 0, y: 8 });
-      gsap.set([eyebrow, headline], { autoAlpha: 0, y: 22 });
-      gsap.set(problem, { autoAlpha: 0, y: 16 });
       gsap.set(solution, { autoAlpha: 0, y: 16 });
-      gsap.set(badgeSolution, { opacity: 0.4 });
 
       const scrollDistance = () => window.innerHeight * 1.9;
 
@@ -327,11 +288,8 @@ export function HookSection() {
         },
       });
 
-      // 1 — Left copy enters
-      tl.to(eyebrow, { autoAlpha: 1, y: 0, duration: 0.55, ease: "none" }, 0)
-        .to(headline, { autoAlpha: 1, y: 0, duration: 0.65, ease: "none" }, 0.1)
-        .to(problem, { autoAlpha: 1, y: 0, duration: 0.6, ease: "none" }, 0.25)
-        .to(
+      // 1 — Before-labels enter
+      tl.to(
           beforeLabels,
           { autoAlpha: 1, x: 0, duration: 0.45, ease: "none" },
           0.4,
@@ -364,10 +322,8 @@ export function HookSection() {
       tl.to(ctas, { autoAlpha: 1, x: 0, duration: 0.5, ease: "none" }, 2.55);
 
       // 6 — Problem → solution
-      tl.to(badgeProblem, { opacity: 0.4, duration: 0.4, ease: "none" }, 3.1)
-        .to(badgeSolution, { opacity: 1, duration: 0.4, ease: "none" }, 3.1)
-        .to(problem, { autoAlpha: 0, y: -14, duration: 0.5, ease: "none" }, 3.15)
-        .to(solution, { autoAlpha: 1, y: 0, duration: 0.55, ease: "none" }, 3.3);
+      tl.to(problem, { autoAlpha: 0, y: -14, duration: 0.5, ease: "none" }, 3.1)
+        .to(solution, { autoAlpha: 1, y: 0, duration: 0.55, ease: "none" }, 3.25);
 
       tl.to({}, { duration: 0.6 });
 
@@ -387,7 +343,7 @@ export function HookSection() {
         className="relative flex h-[100dvh] flex-col overflow-hidden bg-white"
       >
         <HookShell
-          copyProps={{ problemVisible: false, solutionVisible: false }}
+          copyProps={{ problemVisible: true, solutionVisible: false }}
         >
           <FlowDiagram />
         </HookShell>
