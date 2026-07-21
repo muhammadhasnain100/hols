@@ -5,57 +5,189 @@ import { useEffect, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap, registerGsap, ScrollTrigger } from "@/lib/gsap";
 import { landingContent } from "@/content/landing";
+import { heroLayout } from "@/lib/hero-styles";
 import { prefersReducedMotion } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
-/** Source asset: /assets/whoitfor/background.png — 973×1616 portrait */
-const WHO_IT_FOR_BG = {
-  width: 973,
-  height: 1616,
-} as const;
+const WHO_IT_FOR_VIDEO = "/assets/whoitfor/background.mp4";
+const WHO_IT_FOR_POSTER = "/assets/whoitfor/background.png";
 
-/** Landscape aspect after a 90° rotation (1616 / 973 ≈ 1.661) */
-const WHO_IT_FOR_BG_ROTATED_ASPECT =
-  WHO_IT_FOR_BG.height / WHO_IT_FOR_BG.width;
+type WhoItsForSlide = (typeof landingContent.whoItsFor.slides)[number];
 
-/**
- * Portrait frame rotated 90° then scaled to cover the section.
- *
- * Pre-rotation width W must satisfy, once rotated:
- *   W × (H/W) ≥ container width  →  W ≥ container width / rotatedAspect
- *   W ≥ container height
- * Hence: W = max(container height, container width / rotatedAspect)
- */
-function WhoItsForBackgroundImage({
-  src,
-  priority = false,
-}: {
-  src: string;
-  priority?: boolean;
-}) {
+const WIF_RAW_TEXT =
+  "font-body text-[1.625rem] font-light leading-[1.5] tracking-[0.02em] text-white drop-shadow-[0_2px_14px_rgba(0,0,0,0.4)] sm:text-[1.875rem] md:text-[2.125rem] lg:text-[2.35rem] lg:leading-[1.45]";
+const WIF_BULLET_LABEL =
+  "font-body text-[1.375rem] font-light tracking-[0.02em] text-white/95 drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)] sm:text-[1.5rem] md:text-[1.75rem] lg:text-[2rem]";
+
+function StepCapsule({ step }: { step: number }) {
   return (
-    <div className="absolute inset-0 overflow-hidden [container-type:size]">
-      <div
-        className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rotate-90"
-        style={{
-          width: `max(100cqh, calc(100cqw / ${WHO_IT_FOR_BG_ROTATED_ASPECT}))`,
-          aspectRatio: `${WHO_IT_FOR_BG.width} / ${WHO_IT_FOR_BG.height}`,
-        }}
-      >
-        <Image
-          src={src}
-          alt=""
-          fill
-          className="object-cover object-center"
-          sizes="100vw"
-          priority={priority}
-        />
-      </div>
+    <div
+      aria-hidden
+      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/75 md:h-11 md:w-11"
+    >
+      <span className="font-sans text-base font-normal text-white md:text-lg">
+        {step}
+      </span>
     </div>
   );
 }
 
-/** Light scrim — keeps text readable without hiding the background art. */
+function ScrollProgressLine({
+  progress,
+  className,
+}: {
+  progress: number;
+  className?: string;
+}) {
+  return (
+    <div
+      className={cn("h-px w-40 overflow-hidden bg-white/25 md:w-56", className)}
+      aria-hidden
+    >
+      <div
+        className="h-full bg-white/70 transition-[width] duration-300 ease-out"
+        style={{ width: `${Math.max(8, progress * 100)}%` }}
+      />
+    </div>
+  );
+}
+
+function RawTextSlide({ lines }: { lines: readonly string[] }) {
+  return (
+    <div className="mx-auto max-w-4xl px-2 text-center">
+      {lines.map((line) => (
+        <p key={line} className={WIF_RAW_TEXT}>
+          {line}
+        </p>
+      ))}
+    </div>
+  );
+}
+
+function BulletSlide({ items }: { items: readonly string[] }) {
+  return (
+    <ul className="mx-auto flex max-w-4xl flex-wrap items-start justify-center gap-x-10 gap-y-10 px-2 md:gap-x-14 lg:gap-x-16">
+      {items.map((item) => (
+        <li key={item} className="flex flex-col items-center gap-4 md:gap-5">
+          <span data-wif-bullet className={WIF_BULLET_LABEL}>
+            {item}
+          </span>
+          <span
+            data-wif-dot
+            className="h-2.5 w-2.5 rounded-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.45)]"
+            aria-hidden
+          />
+        </li>
+      ))}
+    </ul>
+  );
+}
+
+function WhoItsForSlideContent({
+  slide,
+  dataAttr = false,
+}: {
+  slide: WhoItsForSlide;
+  dataAttr?: boolean;
+}) {
+  return (
+    <div
+      {...(dataAttr ? { "data-wif-text": true } : {})}
+      className="w-full will-change-transform"
+    >
+      {slide.type === "text" ? (
+        <RawTextSlide lines={slide.lines} />
+      ) : (
+        <BulletSlide items={slide.items} />
+      )}
+    </div>
+  );
+}
+
+function WhoItsForBackgroundVideo() {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const [reduceMotion, setReduceMotion] = useState(false);
+  const [videoFailed, setVideoFailed] = useState(false);
+
+  useEffect(() => {
+    setReduceMotion(prefersReducedMotion());
+  }, []);
+
+  useEffect(() => {
+    const video = videoRef.current;
+    if (!video || reduceMotion || videoFailed) return;
+
+    video.loop = true;
+    video.muted = true;
+    video.defaultMuted = true;
+    video.setAttribute("playsinline", "");
+
+    const playVideo = () => {
+      const attempt = video.play();
+      if (attempt !== undefined) {
+        attempt.catch(() => {});
+      }
+    };
+
+    const handleEnded = () => {
+      video.currentTime = 0;
+      playVideo();
+    };
+
+    const handleError = () => setVideoFailed(true);
+
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible" && video.paused) {
+        playVideo();
+      }
+    };
+
+    video.addEventListener("ended", handleEnded);
+    video.addEventListener("error", handleError);
+    video.addEventListener("loadeddata", playVideo);
+    video.addEventListener("canplay", playVideo);
+    document.addEventListener("visibilitychange", handleVisibility);
+
+    playVideo();
+
+    return () => {
+      video.removeEventListener("ended", handleEnded);
+      video.removeEventListener("error", handleError);
+      video.removeEventListener("loadeddata", playVideo);
+      video.removeEventListener("canplay", playVideo);
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [reduceMotion, videoFailed]);
+
+  return (
+    <div className="absolute inset-0 overflow-hidden bg-black">
+      {reduceMotion || videoFailed ? (
+        <Image
+          src={WHO_IT_FOR_POSTER}
+          alt=""
+          fill
+          sizes="100vw"
+          className="object-cover object-center"
+        />
+      ) : (
+        <video
+          ref={videoRef}
+          autoPlay
+          muted
+          loop
+          playsInline
+          preload="auto"
+          disablePictureInPicture
+          poster={WHO_IT_FOR_POSTER}
+          className="absolute inset-0 h-full w-full object-cover object-center"
+        >
+          <source src={WHO_IT_FOR_VIDEO} type="video/mp4" />
+        </video>
+      )}
+    </div>
+  );
+}
+
 function WhoItsForScrim() {
   return (
     <div
@@ -66,11 +198,9 @@ function WhoItsForScrim() {
 }
 
 function WhoItsForBackground() {
-  const { whoItsFor } = landingContent;
-
   return (
     <div className="absolute inset-0 -z-10">
-      <WhoItsForBackgroundImage src={whoItsFor.backgroundImage} />
+      <WhoItsForBackgroundVideo />
       <WhoItsForScrim />
     </div>
   );
@@ -83,27 +213,18 @@ function WhoItsForStatic() {
     <section id="who-its-for" className="relative isolate overflow-hidden">
       <WhoItsForBackground />
 
-      <div className="relative mx-auto w-full max-w-3xl px-5 py-20 text-center md:px-8 md:py-28">
-        <h2 className="font-sans text-3xl font-bold text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)] md:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
-          {whoItsFor.headline}
-        </h2>
-
-        <ul className="mt-12 space-y-10">
-          {whoItsFor.audiences.map((audience) => (
-            <li key={audience.id} className="flex flex-col items-center">
-              <span
-                className="mb-4 h-2 w-2 rounded-full bg-accent"
-                aria-hidden
-              />
-              <h3 className="font-sans text-2xl font-bold text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.3)] md:text-3xl">
-                {audience.title}
-              </h3>
-              <p className="font-body mt-3 max-w-xl text-base leading-relaxed text-white/90 drop-shadow-[0_1px_8px_rgba(0,0,0,0.35)] md:text-lg">
-                {audience.description}
-              </p>
-            </li>
-          ))}
-        </ul>
+      <div
+        className={cn(
+          "relative mx-auto flex w-full max-w-4xl flex-col items-center gap-16 py-20 md:py-28",
+          heroLayout.gutterX,
+        )}
+      >
+        {whoItsFor.slides.map((slide, index) => (
+          <div key={slide.id} className="flex w-full flex-col items-center gap-10">
+            <StepCapsule step={index + 1} />
+            <WhoItsForSlideContent slide={slide} />
+          </div>
+        ))}
       </div>
     </section>
   );
@@ -116,6 +237,10 @@ export function WhoItsForSection() {
 
   const sectionRef = useRef<HTMLElement>(null);
   const pinWrapRef = useRef<HTMLDivElement>(null);
+
+  const slideCount = whoItsFor.slides.length;
+  const progress =
+    slideCount <= 1 ? 1 : activeIndex / Math.max(slideCount - 1, 1);
 
   useEffect(() => {
     setReduceMotion(prefersReducedMotion());
@@ -139,8 +264,15 @@ export function WhoItsForSection() {
       const scrollDistance = () =>
         window.innerHeight * Math.max(texts.length, 1) * 0.9;
 
-      gsap.set(texts, { autoAlpha: 0, y: 32 });
+      gsap.set(texts, { autoAlpha: 0, y: 28 });
       gsap.set(texts[0], { autoAlpha: 1, y: 0 });
+
+      texts.forEach((text) => {
+        const bullets = text.querySelectorAll("[data-wif-bullet]");
+        const dots = text.querySelectorAll("[data-wif-dot]");
+        gsap.set(bullets, { autoAlpha: 0, y: 16 });
+        gsap.set(dots, { autoAlpha: 0, scale: 0.4 });
+      });
 
       const timeline = gsap.timeline({
         scrollTrigger: {
@@ -165,22 +297,51 @@ export function WhoItsForSection() {
 
       texts.forEach((text, index) => {
         const start = index;
+        const bullets = text.querySelectorAll("[data-wif-bullet]");
+        const dots = text.querySelectorAll("[data-wif-dot]");
 
         if (index === 0) {
           timeline.to(text, { autoAlpha: 1, y: 0, duration: 0.35 }, 0);
         } else {
           timeline.fromTo(
             text,
-            { autoAlpha: 0, y: 32 },
+            { autoAlpha: 0, y: 28 },
             { autoAlpha: 1, y: 0, duration: 0.5, ease: "power2.out" },
             start,
+          );
+        }
+
+        if (bullets.length > 0) {
+          timeline.fromTo(
+            bullets,
+            { autoAlpha: 0, y: 16 },
+            {
+              autoAlpha: 1,
+              y: 0,
+              duration: 0.35,
+              stagger: 0.12,
+              ease: "power2.out",
+            },
+            start + 0.12,
+          );
+          timeline.fromTo(
+            dots,
+            { autoAlpha: 0, scale: 0.4 },
+            {
+              autoAlpha: 1,
+              scale: 1,
+              duration: 0.3,
+              stagger: 0.12,
+              ease: "back.out(2)",
+            },
+            start + 0.2,
           );
         }
 
         if (index < texts.length - 1) {
           timeline.to(
             text,
-            { autoAlpha: 0, y: -24, duration: 0.4, ease: "power2.in" },
+            { autoAlpha: 0, y: -20, duration: 0.4, ease: "power2.in" },
             start + 0.65,
           );
         }
@@ -190,7 +351,7 @@ export function WhoItsForSection() {
 
       requestAnimationFrame(() => ScrollTrigger.refresh());
     },
-    { scope: sectionRef, dependencies: [reduceMotion, whoItsFor.audiences.length] },
+    { scope: sectionRef, dependencies: [reduceMotion, slideCount] },
   );
 
   if (reduceMotion) {
@@ -205,60 +366,35 @@ export function WhoItsForSection() {
       >
         <WhoItsForBackground />
 
-        <div className="relative mx-auto flex h-full w-full max-w-4xl flex-col px-5 py-12 md:px-8 md:py-14">
-          <div className="shrink-0 text-center">
-            <h2 className="font-sans text-3xl font-bold tracking-[-0.02em] text-white drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)] md:text-4xl lg:text-[2.75rem] lg:leading-[1.1]">
-              {whoItsFor.headline}
-            </h2>
+        <div
+          className={cn(
+            "relative mx-auto flex h-full w-full max-w-5xl flex-col items-center",
+            heroLayout.gutterX,
+          )}
+        >
+          <div className="flex shrink-0 justify-center pt-10 md:pt-12">
+            <StepCapsule step={activeIndex + 1} />
           </div>
 
-          <div className="relative flex flex-1 items-center justify-center">
-            <div className="relative w-full max-w-2xl text-center">
-              {whoItsFor.audiences.map((audience) => (
+          <div className="relative flex w-full flex-1 items-center justify-center py-10 md:py-12">
+            <div className="relative w-full">
+              {whoItsFor.slides.map((slide) => (
                 <div
-                  key={audience.id}
+                  key={slide.id}
                   className="absolute inset-0 flex items-center justify-center"
                 >
-                  <div data-wif-text className="w-full will-change-transform">
-                    <span
-                      className="mx-auto mb-5 block h-2 w-2 rounded-full bg-accent"
-                      aria-hidden
-                    />
-                    <h3 className="font-sans text-3xl font-bold text-white drop-shadow-[0_2px_10px_rgba(0,0,0,0.3)] md:text-4xl lg:text-[2.75rem]">
-                      {audience.title}
-                    </h3>
-                    <p className="font-body mx-auto mt-5 max-w-xl text-base leading-relaxed text-white/90 drop-shadow-[0_1px_8px_rgba(0,0,0,0.35)] md:text-lg md:leading-[1.55]">
-                      {audience.description}
-                    </p>
-                  </div>
+                  <WhoItsForSlideContent slide={slide} dataAttr />
                 </div>
               ))}
 
               <div className="pointer-events-none invisible" aria-hidden>
-                <span className="mb-5 block h-2 w-2" />
-                <h3 className="text-3xl md:text-4xl lg:text-[2.75rem]">
-                  {whoItsFor.audiences[0]?.title}
-                </h3>
-                <p className="mt-5 text-base md:text-lg">
-                  {whoItsFor.audiences[0]?.description}
-                </p>
+                <WhoItsForSlideContent slide={whoItsFor.slides[1]} />
               </div>
             </div>
           </div>
 
-          <div className="flex shrink-0 items-center justify-center gap-2 pb-2">
-            {whoItsFor.audiences.map((audience, index) => (
-              <span
-                key={audience.id}
-                aria-hidden
-                className={cn(
-                  "h-1.5 rounded-full transition-all duration-300",
-                  index === activeIndex
-                    ? "w-10 bg-accent"
-                    : "w-1.5 bg-white/35",
-                )}
-              />
-            ))}
+          <div className="flex shrink-0 flex-col items-center gap-6 pb-10 md:pb-12">
+            <ScrollProgressLine progress={progress} />
           </div>
         </div>
       </div>

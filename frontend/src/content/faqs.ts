@@ -5,6 +5,9 @@ export const faqsContent = {
     subhead:
       "Straight answers on training, dosing, patient paperwork, certification, and getting your clinic started with HOLS.",
   },
+  landing: {
+    maxItems: 5,
+  },
   intro:
     "Everything you need to know about HOLS — the same training, tools, and support shown on our homepage.",
   items: [

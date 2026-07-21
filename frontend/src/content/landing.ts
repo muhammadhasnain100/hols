@@ -28,11 +28,14 @@ export const landingContent = {
     ballImage: "/assets/ball/ball.png",
     cta: {
       label: "Explore courses",
-      href: "#what-you-get",
+      href: "#everything-inside",
     },
   },
   whatYouGet: {
-    headline: "One place to train your team and run peptides properly.",
+    headlineLines: [
+      "One place to train your team",
+      "and run peptides properly.",
+    ],
     label: "What you get",
     cards: [
       {
@@ -62,10 +65,8 @@ export const landingContent = {
     ],
   },
   pillars: {
-    headline: "The Pillars",
-    subhead:
-      "Everything inside HOLS — training, tools, and support for clinical peptide practice.",
-    exploreCta: { label: "Explore Course", href: "#what-you-get" },
+    headlinePrefix: "Everything inside HOLS,",
+    headlineSuffix: "for clinical peptide practice.",
     items: [
       {
         id: "training",
@@ -136,28 +137,28 @@ export const landingContent = {
     ],
   },
   whoItsFor: {
-    headline: "Built for your whole practice.",
-    backgroundImage: "/assets/whoitfor/background.png",
-    audiences: [
+    slides: [
       {
-        id: "owners",
-        image: "/assets/creatives/01%20Clinic%20owners.png",
-        title: "Clinic owners",
-        description:
-          "Train everyone to the same standard, lower your risk, and present your practice professionally.",
+        id: "doubt",
+        type: "text",
+        lines: [
+          "Running peptides in a clinic can feel",
+          "like second guessing every decision.",
+          "You're not alone in that.",
+        ],
       },
       {
-        id: "providers",
-        image: "/assets/creatives/02%20Your%20providers.png",
-        title: "Your providers",
-        description:
-          "Dosing and protocols they can rely on, plus a credential worth showing.",
+        id: "roles",
+        type: "bullets",
+        items: ["Clinic owners", "Your providers", "Serious learners"],
       },
       {
-        id: "learners",
-        image: "/assets/creatives/03%20Anyone%20serious%20about%20learning.png",
-        title: "Anyone serious about learning",
-        description: "Clear, evidence based peptide education.",
+        id: "promise",
+        type: "text",
+        lines: [
+          "Training, dosing tools, and patient materials",
+          "in one trusted place for your whole practice.",
+        ],
       },
     ],
   },
@@ -165,7 +166,7 @@ export const landingContent = {
     label: "Certification",
     headline: "Give your team a credential that means something.",
     headlineAccent: "credential",
-    body: "Finish the courses, pass the check, and earn a House of Life Sciences certification — proof your staff know what they’re doing, renewed as things change.",
+    body: "Finish the courses, pass the check, and earn a House of Life Sciences certification, proof your staff know what they’re doing, renewed as things change.",
     cta: { label: "Get certified", href: "/register" },
     image:
       "/assets/creatives/Give%20your%20team%20a%20credential%20that%20means%20something_-Photoroom.png",

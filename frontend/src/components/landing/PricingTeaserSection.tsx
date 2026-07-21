@@ -1,6 +1,7 @@
 import Image from "next/image";
 import { HeroButton } from "@/components/hero/HeroButton";
 import { landingContent } from "@/content/landing";
+import { heroLayout } from "@/lib/hero-styles";
 import { cn } from "@/lib/utils";
 
 export function PricingTeaserSection() {
@@ -10,27 +11,24 @@ export function PricingTeaserSection() {
     <section
       id="pricing"
       data-nav-surface="light"
-      className="relative w-full overflow-hidden bg-[#F4F5F7] py-16 md:py-20 lg:py-24"
+      className="relative w-full overflow-hidden bg-[#F4F5F7] pt-12 pb-8 md:pt-14 md:pb-10 lg:pt-16 lg:pb-10"
     >
-      <div className="relative w-full px-4 md:px-5 lg:px-6">
-        <div className="w-full max-w-3xl text-left">
-          <p className="font-sans text-[0.7rem] font-semibold uppercase tracking-[0.28em] text-primary/50 md:text-xs">
-            {pricingTeaser.eyebrow}
-          </p>
-          <h2 className="mt-4 font-sans text-3xl font-bold tracking-[-0.02em] text-primary md:text-4xl lg:text-[2.65rem] lg:leading-[1.12]">
+      <div className={cn("relative w-full", heroLayout.gutterX)}>
+        <div className="w-full max-w-3xl text-left lg:max-w-4xl">
+          <h2 className="font-sans text-[1.875rem] font-bold leading-[1.05] tracking-[0.01em] text-primary sm:text-[2.25rem] md:text-[3.75rem]">
             {pricingTeaser.headline}
           </h2>
-          <p className="font-body mt-4 max-w-xl text-base text-muted md:text-lg">
+          <p className="text-brand-body mt-4 max-w-xl text-primary/75 md:mt-5">
             {pricingTeaser.body}
           </p>
         </div>
 
-        <div className="mt-10 grid w-full gap-3 md:mt-12 md:grid-cols-3 md:gap-4 lg:gap-5">
+        <div className="mt-8 grid w-full gap-4 md:mt-10 md:grid-cols-3 lg:gap-5">
           {pricingTeaser.plans.map((plan) => (
             <article
               key={plan.id}
               className={cn(
-                "group relative flex min-h-[28rem] flex-col overflow-hidden rounded-2xl shadow-[0_8px_24px_rgba(21,39,68,0.08)] sm:min-h-[30rem] lg:min-h-[32rem]",
+                "group relative mx-auto aspect-[4/5] w-full max-w-[22rem] overflow-hidden rounded-2xl shadow-[0_8px_24px_rgba(21,39,68,0.08)] md:max-w-none",
                 plan.featured &&
                   "ring-2 ring-accent ring-offset-2 ring-offset-[#F4F5F7]",
               )}
@@ -50,7 +48,7 @@ export function PricingTeaserSection() {
               {"badge" in plan && plan.badge ? (
                 <span
                   className={cn(
-                    "absolute left-4 top-4 z-10 rounded-full px-3 py-1 font-sans text-[0.65rem] font-semibold uppercase tracking-[0.14em]",
+                    "text-brand-caption absolute left-4 top-4 z-10 rounded-full px-3 py-1.5 font-semibold uppercase tracking-[0.08em]",
                     plan.featured
                       ? "bg-accent text-primary"
                       : "border border-white/35 bg-black/35 text-white backdrop-blur-sm",
@@ -60,20 +58,20 @@ export function PricingTeaserSection() {
                 </span>
               ) : null}
 
-              <div className="relative z-10 flex h-full flex-col items-center px-6 pb-8 pt-14 text-center sm:px-7 sm:pb-9 sm:pt-16">
-                <p className="font-sans text-[0.7rem] font-semibold uppercase tracking-[0.28em] text-white/80 md:text-xs">
-                  {plan.title}
-                </p>
+              <div className="relative z-10 flex h-full flex-col justify-end gap-4 px-5 pb-5 pt-12 text-center sm:px-6 sm:pb-6">
+                <div className="space-y-2">
+                  <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-white/85">
+                    {plan.title}
+                  </p>
 
-                <h3 className="mt-5 font-sans text-4xl font-bold tracking-[-0.02em] text-white md:text-5xl">
-                  {plan.price}
-                </h3>
+                  <h3 className="font-sans text-3xl font-bold tracking-[0.01em] text-white sm:text-4xl">
+                    {plan.price}
+                  </h3>
 
-                <p className="font-body mt-3 text-sm text-white/70 md:text-base">
-                  {plan.duration}
-                </p>
+                  <p className="text-brand-body text-white/70">{plan.duration}</p>
+                </div>
 
-                <div className="mt-auto flex justify-center pt-10">
+                <div className="flex justify-center pt-1">
                   <HeroButton
                     href={plan.cta.href}
                     variant={plan.featured ? "primary" : "secondary"}

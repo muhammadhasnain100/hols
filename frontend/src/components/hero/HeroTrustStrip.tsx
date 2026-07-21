@@ -2,7 +2,7 @@
 
 import { FadeIn } from "@/components/animations/ScrollReveal";
 import { heroContent } from "@/content/hero";
-import { heroLayout } from "@/lib/hero-styles";
+import { heroLayout, heroTypography } from "@/lib/hero-styles";
 import { cn } from "@/lib/utils";
 
 type HeroTrustStripProps = {
@@ -21,9 +21,9 @@ export function HeroTrustStrip({ variant = "default" }: HeroTrustStripProps) {
     >
       <FadeIn
         className={cn(
-          "mx-auto",
+          "mx-auto w-full",
           isOverlay
-            ? "max-w-4xl text-left md:text-center"
+            ? "max-w-4xl text-left sm:text-center"
             : "flex max-w-4xl flex-col items-center justify-center gap-3 sm:flex-row sm:gap-4",
         )}
         stagger={0.08}
@@ -31,7 +31,7 @@ export function HeroTrustStrip({ variant = "default" }: HeroTrustStripProps) {
         duration={0.7}
       >
         {isOverlay ? (
-          <p className="hero-reveal font-sans text-sm font-medium tracking-[0.01em] text-white/65">
+          <p className={cn("hero-reveal", heroTypography.trustStrip)}>
             {heroContent.trustStrip.join(" · ")}
           </p>
         ) : (

@@ -41,16 +41,7 @@ export function PageHero({
         {eyebrow && (
           <div className="hero-reveal">
             {isOverlayStyle ? (
-              <p
-                className={cn(
-                  heroWelcome.eyebrow,
-                  "mb-5",
-                  centered && "justify-center",
-                )}
-              >
-                <span className={heroWelcome.eyebrowDot} />
-                {eyebrow}
-              </p>
+              <p className={cn(heroWelcome.eyebrow, "mb-5")}>{eyebrow}</p>
             ) : (
               <p
                 className={cn(

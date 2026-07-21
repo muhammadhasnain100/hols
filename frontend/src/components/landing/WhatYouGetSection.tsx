@@ -56,7 +56,7 @@ function StepDescription({
   return (
     <p
       className={cn(
-        "font-body text-sm leading-relaxed text-white/90 md:text-[0.95rem]",
+        "text-brand-body text-white/90",
         "glass-capsule-overlay rounded-full px-5 py-3 md:px-6 md:py-4",
         align === "left" && "text-left",
         align === "right" && "text-right",
@@ -95,7 +95,7 @@ function StepMedia({
 
 function StepBadge({ label }: { label: string }) {
   return (
-    <span className="relative inline-flex min-w-[7.5rem] items-center justify-center rounded-full bg-white px-5 py-2.5 font-sans text-[0.7rem] font-bold uppercase tracking-[0.18em] text-primary md:min-w-[8.5rem] md:px-6 md:text-xs">
+    <span className="relative inline-flex min-w-[7.5rem] items-center justify-center rounded-full bg-accent px-5 py-2.5 text-brand-caption font-semibold uppercase tracking-[0.12em] text-primary md:min-w-[8.5rem] md:px-6">
       {label}
     </span>
   );
@@ -200,20 +200,21 @@ function SectionBackground() {
 }
 
 function SectionHeader({
-  headline,
+  headlineLines,
   label,
 }: {
-  headline: string;
+  headlineLines: readonly [string, string];
   label: string;
 }) {
   return (
-    <div className="mx-auto max-w-3xl shrink-0 text-center">
-      <h2 className="font-sans text-2xl font-bold uppercase tracking-[0.04em] text-accent sm:text-3xl md:text-[2.15rem]">
-        {headline}
+    <div className="mx-auto max-w-4xl shrink-0 text-center">
+      <h2 className="font-sans text-[1.75rem] font-bold leading-[1.08] tracking-[0.01em] text-accent sm:text-[2.25rem] md:text-[3.75rem] md:leading-[1.05]">
+        <span className="block">{headlineLines[0]}</span>
+        <span className="block">{headlineLines[1]}</span>
       </h2>
       <div
         className={cn(
-          "mt-6 inline-flex items-center justify-center rounded-full px-6 py-2.5 font-sans text-xs font-bold uppercase tracking-[0.2em] text-white md:mt-8 md:px-7 md:text-sm",
+          "text-brand-caption mt-6 inline-flex items-center justify-center rounded-full px-6 py-2.5 font-medium uppercase tracking-[0.08em] text-white md:mt-8 md:px-7",
           heroGlassPanel,
         )}
       >
@@ -307,7 +308,7 @@ export function WhatYouGetSection() {
       <SectionBackground />
 
       <div className="relative mx-auto flex w-full max-w-6xl flex-col px-5 py-16 md:px-8 md:py-20 lg:max-w-7xl lg:py-24">
-        <SectionHeader headline={whatYouGet.headline} label={whatYouGet.label} />
+        <SectionHeader headlineLines={whatYouGet.headlineLines} label={whatYouGet.label} />
 
         <div ref={timelineRef} className="relative mx-auto mt-8 w-full overflow-visible md:mt-10">
           {/* Vertical spine — sits behind step badges */}

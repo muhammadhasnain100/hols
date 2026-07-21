@@ -1,23 +1,132 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useGSAP } from "@gsap/react";
 import { landingContent } from "@/content/landing";
+import { brand } from "@/config/brand";
+import { heroLayout } from "@/lib/hero-styles";
+import { gsap, registerGsap } from "@/lib/gsap";
+import { prefersReducedMotion } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 type PillarItem = (typeof landingContent.pillars.items)[number];
 
-const AUTO_PLAY_MS = 4500;
+const AUTO_PLAY_HOLD_MS = 3000;
+const SLIDE_DURATION_S = 0.85;
 const VISIBLE_CARDS = 4;
-const CLONE_COUNT = 2;
+const WORD_ROTATE_MS = 1800;
+const PILLARS_WORD_COLOR = brand.colors.primary.duskBlue;
+
+function PillarsHeadline({
+  prefix,
+  suffix,
+  words,
+  isActive,
+  reduceMotion,
+}: {
+  prefix: string;
+  suffix: string;
+  words: readonly string[];
+  isActive: boolean;
+  reduceMotion: boolean;
+}) {
+  const wordRef = useRef<HTMLSpanElement>(null);
+  const animatedIndexRef = useRef<number | null>(null);
+  const [wordIndex, setWordIndex] = useState(0);
+  const [displayWord, setDisplayWord] = useState(words[0] ?? "");
+
+  useEffect(() => {
+    if (!isActive || reduceMotion || words.length <= 1) return;
+
+    const id = window.setInterval(() => {
+      setWordIndex((current) => (current + 1) % words.length);
+    }, WORD_ROTATE_MS);
+
+    return () => window.clearInterval(id);
+  }, [isActive, reduceMotion, words.length]);
+
+  useGSAP(
+    () => {
+      registerGsap();
+      const el = wordRef.current;
+      if (!el) return;
+
+      const nextWord = words[wordIndex] ?? words[0] ?? "";
+
+      if (reduceMotion) {
+        setDisplayWord(nextWord);
+        gsap.set(el, { yPercent: 0, autoAlpha: 1, scale: 1, rotateX: 0 });
+        return;
+      }
+
+      if (animatedIndexRef.current === wordIndex) return;
+
+      const isFirstReveal = animatedIndexRef.current === null;
+      animatedIndexRef.current = wordIndex;
+
+      if (isFirstReveal) {
+        setDisplayWord(nextWord);
+        gsap.fromTo(
+          el,
+          { yPercent: 90, autoAlpha: 0, scale: 0.68, rotateX: 38 },
+          {
+            yPercent: 0,
+            autoAlpha: 1,
+            scale: 1,
+            rotateX: 0,
+            duration: 0.72,
+            ease: "power4.out",
+          },
+        );
+        return;
+      }
+
+      gsap
+        .timeline()
+        .to(el, {
+          yPercent: -135,
+          autoAlpha: 0,
+          scale: 0.65,
+          rotateX: -48,
+          duration: 0.48,
+          ease: "power3.in",
+        })
+        .call(() => {
+          setDisplayWord(nextWord);
+        })
+        .set(el, { yPercent: 135, autoAlpha: 0, scale: 0.65, rotateX: 48 })
+        .to(el, {
+          yPercent: 0,
+          autoAlpha: 1,
+          scale: 1,
+          rotateX: 0,
+          duration: 0.72,
+          ease: "power4.out",
+        });
+    },
+    { dependencies: [wordIndex, reduceMotion, words] },
+  );
+
+  return (
+    <h2 className="font-sans text-[1.875rem] font-bold leading-[1.05] tracking-[0.01em] text-primary sm:text-[2.25rem] md:text-[3.75rem]">
+      {prefix}{" "}
+      <span className="relative inline-block h-[1.08em] overflow-hidden align-bottom [perspective:900px]">
+        <span
+          ref={wordRef}
+          className="inline-block origin-bottom whitespace-nowrap will-change-transform"
+          style={{ color: PILLARS_WORD_COLOR }}
+        >
+          {displayWord}
+        </span>
+      </span>{" "}
+      {suffix}
+    </h2>
+  );
+}
 
 function buildExtendedItems(items: readonly PillarItem[]) {
-  return [
-    ...items.slice(-CLONE_COUNT),
-    ...items,
-    ...items.slice(0, CLONE_COUNT),
-  ];
+  return [...items, ...items, ...items];
 }
 
 function PillarImage({
@@ -48,178 +157,256 @@ function PillarImage({
   );
 }
 
-function PillarCardContent({
+function PillarCardFace({
   item,
   isActive,
-  exploreLabel,
-  exploreHref,
-  onSelect,
 }: {
   item: PillarItem;
   isActive: boolean;
-  exploreLabel: string;
-  exploreHref: string;
-  onSelect: () => void;
 }) {
   return (
-    <div className="flex h-full flex-col">
-      <button
-        type="button"
-        aria-pressed={isActive}
-        onClick={onSelect}
+    <div
+      aria-hidden={!isActive}
+      className={cn(
+        "h-full w-full cursor-default rounded-2xl bg-white p-4 text-left select-none lg:p-5",
+        isActive
+          ? "shadow-[0_12px_32px_rgba(21,39,68,0.1)]"
+          : "shadow-[0_4px_16px_rgba(21,39,68,0.05)]",
+      )}
+    >
+      <PillarImage src={item.image} alt={item.title} blurred={!isActive} />
+      <h3
         className={cn(
-          "w-full rounded-2xl bg-white p-4 text-left outline-none lg:p-5",
-          "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
-          isActive
-            ? "shadow-[0_12px_32px_rgba(21,39,68,0.1)]"
-            : "shadow-[0_4px_16px_rgba(21,39,68,0.05)]",
+          "mt-4 font-sans text-lg font-bold leading-[1.15] tracking-[0.005em] md:text-[1.375rem]",
+          isActive ? "text-primary" : "text-primary/45",
         )}
       >
-        <PillarImage src={item.image} alt={item.title} blurred={!isActive} />
-        <h3
-          className={cn(
-            "mt-4 font-sans text-base font-bold leading-snug lg:text-lg",
-            isActive ? "text-primary" : "text-primary/45",
-          )}
-        >
-          {isActive ? item.title : item.shortTitle}
-        </h3>
-      </button>
+        {isActive ? item.title : item.shortTitle}
+      </h3>
+    </div>
+  );
+}
 
-      {isActive ? (
-        <div className="mt-4 rounded-2xl bg-white p-5 shadow-[0_8px_24px_rgba(21,39,68,0.06)] lg:p-6">
-          <p className="font-sans text-[0.65rem] font-semibold uppercase tracking-[0.06em] text-primary/45">
-            {item.overviewLabel}
-          </p>
-          <p className="font-body mt-2 text-sm leading-relaxed text-primary/70 lg:text-base">
-            {item.description}
-          </p>
-          <Link
-            href={exploreHref}
-            className="mt-3 inline-flex font-sans text-sm font-semibold text-primary lg:text-base"
-          >
-            {exploreLabel}
-          </Link>
-        </div>
-      ) : null}
+function PillarDetailPanel({
+  item,
+  className,
+}: {
+  item: PillarItem;
+  className?: string;
+}) {
+  return (
+    <div className={cn("glass-panel rounded-2xl p-5 lg:p-6", className)}>
+      <span className="glass-capsule-accent inline-flex items-center rounded-full px-4 py-1.5 text-brand-caption font-semibold uppercase tracking-[0.08em] text-primary">
+        {item.overviewLabel}
+      </span>
+      <p className="text-brand-body mt-3 text-primary/75">{item.description}</p>
     </div>
   );
 }
 
 function PillarsCarousel({
   items,
-  exploreLabel,
-  exploreHref,
+  pauseAutoplay = false,
 }: {
   items: readonly PillarItem[];
-  exploreLabel: string;
-  exploreHref: string;
+  pauseAutoplay?: boolean;
 }) {
+  const itemCount = items.length;
   const extendedItems = useMemo(() => buildExtendedItems(items), [items]);
-  const centerIndex = Math.floor((items.length - 1) / 2);
-  const startIndex = CLONE_COUNT + centerIndex;
+  const centerIndex = Math.floor((itemCount - 1) / 2);
+  const startIndex = itemCount + centerIndex;
 
   const [trackIndex, setTrackIndex] = useState(startIndex);
-  const [translateX, setTranslateX] = useState(0);
   const [slotWidth, setSlotWidth] = useState(0);
   const [visibleCards, setVisibleCards] = useState(VISIBLE_CARDS);
-  const [enableTransition, setEnableTransition] = useState(true);
 
   const viewportRef = useRef<HTMLDivElement>(null);
-
-  const updatePosition = useCallback(() => {
-    const viewport = viewportRef.current;
-    if (!viewport) return;
-
-    const nextVisibleCards =
-      window.matchMedia("(min-width: 768px)").matches ? VISIBLE_CARDS : 1;
-
-    setVisibleCards(nextVisibleCards);
-
-    const width = viewport.clientWidth;
-    const cardSlot = width / nextVisibleCards;
-    const x = width / 2 - cardSlot / 2 - trackIndex * cardSlot;
-
-    setSlotWidth(cardSlot);
-    setTranslateX(x);
-  }, [trackIndex]);
+  const trackRef = useRef<HTMLDivElement>(null);
+  const trackIndexRef = useRef(startIndex);
+  const autoplayTimerRef = useRef<number | null>(null);
+  const slideTweenRef = useRef<gsap.core.Tween | null>(null);
+  const isAnimatingRef = useRef(false);
+  const pauseAutoplayRef = useRef(pauseAutoplay);
 
   useEffect(() => {
-    updatePosition();
-    const viewport = viewportRef.current;
-    if (!viewport) return;
+    pauseAutoplayRef.current = pauseAutoplay;
+  }, [pauseAutoplay]);
 
-    const observer = new ResizeObserver(updatePosition);
-    observer.observe(viewport);
-    return () => observer.disconnect();
-  }, [updatePosition]);
+  const activeItem = extendedItems[trackIndex] ?? items[centerIndex];
 
-  useEffect(() => {
-    const timer = window.setInterval(() => {
-      setEnableTransition(true);
-      setTrackIndex((current) => current + 1);
-    }, AUTO_PLAY_MS);
+  const getVisibleCards = useCallback(
+    () => (window.matchMedia("(min-width: 768px)").matches ? VISIBLE_CARDS : 1),
+    [],
+  );
 
-    return () => window.clearInterval(timer);
+  const getTranslateX = useCallback(
+    (index: number) => {
+      const viewport = viewportRef.current;
+      if (!viewport) return 0;
+
+      const nextVisibleCards = getVisibleCards();
+      const width = viewport.clientWidth;
+      const cardSlot = width / nextVisibleCards;
+
+      return width / 2 - cardSlot / 2 - index * cardSlot;
+    },
+    [getVisibleCards],
+  );
+
+  const snapTrackIfNeeded = useCallback(() => {
+    const current = trackIndexRef.current;
+    let snapped = current;
+
+    if (current >= itemCount * 2) {
+      snapped = current - itemCount;
+    } else if (current < itemCount) {
+      snapped = current + itemCount;
+    }
+
+    if (snapped === current) return;
+
+    trackIndexRef.current = snapped;
+    setTrackIndex(snapped);
+
+    const track = trackRef.current;
+    if (track) {
+      gsap.set(track, { x: getTranslateX(snapped) });
+    }
+  }, [getTranslateX, itemCount]);
+
+  const clearAutoplay = useCallback(() => {
+    if (autoplayTimerRef.current !== null) {
+      window.clearTimeout(autoplayTimerRef.current);
+      autoplayTimerRef.current = null;
+    }
   }, []);
 
-  const snapIfNeeded = useCallback(() => {
-    setTrackIndex((current) => {
-      if (current >= CLONE_COUNT + items.length) {
-        setEnableTransition(false);
-        return CLONE_COUNT + (current - CLONE_COUNT - items.length);
+  const scheduleAutoplay = useCallback(
+    (delay = AUTO_PLAY_HOLD_MS) => {
+      clearAutoplay();
+      if (pauseAutoplayRef.current) return;
+
+      autoplayTimerRef.current = window.setTimeout(() => {
+        autoplayTimerRef.current = null;
+        advanceRef.current();
+      }, delay);
+    },
+    [clearAutoplay],
+  );
+
+  const advanceRef = useRef<() => void>(() => {});
+
+  const applyTransform = useCallback(
+    (index: number, animate: boolean) => {
+      const viewport = viewportRef.current;
+      const track = trackRef.current;
+      if (!viewport || !track) return;
+
+      registerGsap();
+
+      const nextVisibleCards = getVisibleCards();
+      const cardSlot = viewport.clientWidth / nextVisibleCards;
+      const x = getTranslateX(index);
+
+      setVisibleCards(nextVisibleCards);
+      setSlotWidth(cardSlot);
+
+      slideTweenRef.current?.kill();
+
+      if (!animate) {
+        gsap.set(track, { x });
+        isAnimatingRef.current = false;
+        return;
       }
 
-      if (current < CLONE_COUNT) {
-        setEnableTransition(false);
-        return items.length + current;
-      }
+      isAnimatingRef.current = true;
+      slideTweenRef.current = gsap.to(track, {
+        x,
+        duration: SLIDE_DURATION_S,
+        ease: "power2.inOut",
+        overwrite: true,
+        onComplete: () => {
+          isAnimatingRef.current = false;
+          snapTrackIfNeeded();
+          scheduleAutoplay();
+        },
+      });
+    },
+    [getTranslateX, getVisibleCards, scheduleAutoplay, snapTrackIfNeeded],
+  );
 
-      return current;
-    });
-  }, [items.length]);
+  const advance = useCallback(() => {
+    if (isAnimatingRef.current || pauseAutoplayRef.current) return;
+
+    const nextIndex = trackIndexRef.current + 1;
+    trackIndexRef.current = nextIndex;
+    setTrackIndex(nextIndex);
+    applyTransform(nextIndex, true);
+  }, [applyTransform]);
+
+  advanceRef.current = advance;
 
   useEffect(() => {
-    if (!enableTransition) {
-      updatePosition();
-      const frame = window.requestAnimationFrame(() => {
-        window.requestAnimationFrame(() => setEnableTransition(true));
-      });
-      return () => window.cancelAnimationFrame(frame);
+    if (pauseAutoplay) {
+      clearAutoplay();
+      slideTweenRef.current?.kill();
+      return;
     }
-  }, [enableTransition, updatePosition]);
+
+    if (!isAnimatingRef.current) {
+      scheduleAutoplay();
+    }
+  }, [pauseAutoplay, clearAutoplay, scheduleAutoplay]);
+
+  useEffect(() => {
+    registerGsap();
+    trackIndexRef.current = startIndex;
+    setTrackIndex(startIndex);
+    applyTransform(startIndex, false);
+    scheduleAutoplay();
+
+    const viewport = viewportRef.current;
+    if (!viewport) return;
+
+    const observer = new ResizeObserver(() => {
+      slideTweenRef.current?.kill();
+      isAnimatingRef.current = false;
+      applyTransform(trackIndexRef.current, false);
+    });
+    observer.observe(viewport);
+
+    return () => {
+      observer.disconnect();
+      clearAutoplay();
+      slideTweenRef.current?.kill();
+    };
+  }, [applyTransform, clearAutoplay, scheduleAutoplay, startIndex]);
 
   return (
-    <div ref={viewportRef} className="mt-6 w-full overflow-hidden md:mt-8">
-      <div
-        className="flex will-change-transform"
-        onTransitionEnd={(event) => {
-          if (event.propertyName !== "transform") return;
-          snapIfNeeded();
-        }}
-        style={{
-          transform: `translateX(${translateX}px)`,
-          transition: enableTransition ? "transform 700ms ease-in-out" : "none",
-        }}
-      >
-        {extendedItems.map((item, index) => (
+    <div className="mt-6 md:mt-8">
+      <div ref={viewportRef} className="w-full cursor-default select-none">
+        <div className="overflow-hidden">
+          <div ref={trackRef} className="flex will-change-transform">
+            {extendedItems.map((item, index) => (
+              <div
+                key={`${item.id}-${index}`}
+                className="shrink-0 px-2 lg:px-2.5"
+                style={{ width: slotWidth || `${100 / visibleCards}%` }}
+              >
+                <PillarCardFace item={item} isActive={index === trackIndex} />
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-4 flex justify-center">
           <div
-            key={`${item.id}-${index}`}
-            className="shrink-0 px-2 lg:px-2.5"
+            className="px-2 lg:px-2.5"
             style={{ width: slotWidth || `${100 / visibleCards}%` }}
           >
-            <PillarCardContent
-              item={item}
-              isActive={index === trackIndex}
-              exploreLabel={exploreLabel}
-              exploreHref={exploreHref}
-              onSelect={() => {
-                setEnableTransition(true);
-                setTrackIndex(index);
-              }}
-            />
+            <PillarDetailPanel item={activeItem} />
           </div>
-        ))}
+        </div>
       </div>
     </div>
   );
@@ -227,29 +414,48 @@ function PillarsCarousel({
 
 export function PillarsSection() {
   const { pillars } = landingContent;
+  const sectionRef = useRef<HTMLElement>(null);
+  const [reduceMotion, setReduceMotion] = useState(false);
+  const [sectionInView, setSectionInView] = useState(false);
+  const rotatingWords = useMemo(
+    () => pillars.items.map((item) => item.shortTitle),
+    [pillars.items],
+  );
+
+  useEffect(() => {
+    setReduceMotion(prefersReducedMotion());
+  }, []);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    if (!section) return;
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setSectionInView(entry.isIntersecting),
+      { threshold: 0.25 },
+    );
+    observer.observe(section);
+    return () => observer.disconnect();
+  }, []);
 
   return (
     <section
+      ref={sectionRef}
       id="everything-inside"
       className="flex min-h-svh w-full flex-col justify-center bg-[#E5E5E5] py-12 md:py-14 lg:py-16"
     >
-      <div className="flex w-full flex-col px-2 md:px-3 lg:px-4">
-        <div className="w-full max-w-4xl text-left">
-          <h2 className="font-sans text-3xl font-bold tracking-[-0.02em] text-primary md:text-4xl lg:text-[2.65rem] lg:leading-[1.12]">
-            {pillars.headline}
-          </h2>
-          {pillars.subhead ? (
-            <p className="font-body mt-4 max-w-2xl text-base text-muted md:text-lg">
-              {pillars.subhead}
-            </p>
-          ) : null}
+      <div className={cn("flex w-full flex-col", heroLayout.gutterX)}>
+        <div className="w-full max-w-3xl text-left lg:max-w-4xl">
+          <PillarsHeadline
+            prefix={pillars.headlinePrefix}
+            suffix={pillars.headlineSuffix}
+            words={rotatingWords}
+            isActive={sectionInView}
+            reduceMotion={reduceMotion}
+          />
         </div>
 
-        <PillarsCarousel
-          items={pillars.items}
-          exploreLabel={pillars.exploreCta.label}
-          exploreHref={pillars.exploreCta.href}
-        />
+        <PillarsCarousel items={pillars.items} pauseAutoplay={!sectionInView} />
       </div>
     </section>
   );

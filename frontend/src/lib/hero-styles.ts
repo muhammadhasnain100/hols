@@ -18,11 +18,11 @@ export const heroLayout = {
   },
   content: {
     shell:
-      "px-5 pb-8 pt-28 md:px-6 md:pb-10 lg:px-8 lg:pb-12",
-    gap: "gap-10 md:gap-12",
+      "px-5 pb-6 pt-24 sm:px-5 sm:pb-8 sm:pt-28 md:px-6 md:pb-10 lg:px-8 lg:pb-12",
+    gap: "gap-6 sm:gap-8 md:gap-10 lg:gap-12",
   },
   trustStrip: {
-    shell: "px-5 pb-10 md:px-6 md:pb-14 lg:px-8",
+    shell: "px-5 pb-8 sm:pb-10 md:px-6 md:pb-14 lg:px-8",
   },
 } as const;
 
@@ -110,10 +110,20 @@ export function getHeroNavLinkClass(isActive: boolean, className?: string) {
 }
 
 export const heroWelcome = {
-  eyebrow:
-    "flex items-center gap-3 text-xs font-medium uppercase tracking-[0.28em] text-white/90",
-  eyebrowDot: "inline-block h-1.5 w-1.5 rounded-[1px] bg-white",
-  tagline: "font-body mt-4 text-sm leading-relaxed text-white/65 md:text-[0.95rem]",
+  eyebrow: "text-brand-caption uppercase tracking-[0.08em] text-white/90",
+  tagline:
+    "mt-2 font-sans text-[1.125rem] font-normal leading-[1.15] tracking-[0.005em] text-white/90 sm:text-xl md:mt-3 md:text-[2.125rem] md:leading-[1.1]",
+  motto: "text-brand-caption mt-2 hidden text-white/65 md:block",
+} as const;
+
+/** Brand guideline typography for hero headline block */
+export const heroTypography = {
+  headline:
+    "font-sans text-[1.875rem] font-bold leading-[1.05] tracking-[0.01em] text-white sm:text-[2.25rem] md:text-[3.75rem]",
+  subhead:
+    "font-sans mt-3 text-lg font-normal leading-[1.12] tracking-[0.005em] text-white/90 sm:text-xl md:mt-5 md:max-w-xl md:text-[2.125rem] md:leading-[1.1] lg:max-w-2xl",
+  body: "text-brand-body mt-3 max-w-xl text-white/85 sm:mt-4 md:mt-5 lg:max-w-2xl",
+  trustStrip: "text-brand-caption leading-relaxed text-white/70 sm:leading-normal",
 } as const;
 
 export const heroGlassPanel = "glass-capsule-overlay";

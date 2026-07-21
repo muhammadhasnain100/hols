@@ -1,12 +1,19 @@
 "use client";
 
 import Image from "next/image";
-import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useGSAP } from "@gsap/react";
+import { HeroButton } from "@/components/hero/HeroButton";
 import { gsap, registerGsap, ScrollTrigger } from "@/lib/gsap";
 import { landingContent } from "@/content/landing";
+import { heroLayout } from "@/lib/hero-styles";
 import { prefersReducedMotion } from "@/lib/motion";
+import { cn } from "@/lib/utils";
+
+const FINAL_CTA_EYEBROW =
+  "text-brand-caption uppercase tracking-[0.08em] text-white/80";
+const FINAL_CTA_HEADLINE =
+  "font-sans text-[1.875rem] font-bold leading-[1.05] tracking-[0.01em] text-white sm:text-[2.25rem] md:text-[3.75rem]";
 
 function FinalCtaCopy({
   showHeadline = true,
@@ -22,10 +29,8 @@ function FinalCtaCopy({
     : [finalCta.headline];
 
   return (
-    <div className="relative z-10 flex w-full max-w-6xl flex-col items-center text-center">
-      <p className="font-sans text-lg italic tracking-[0.02em] text-white/90 md:text-xl">
-        {finalCta.eyebrow}
-      </p>
+    <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col items-center text-center">
+      <p className={FINAL_CTA_EYEBROW}>{finalCta.eyebrow}</p>
 
       <div className="relative mt-8 md:mt-10">
         <div
@@ -43,7 +48,7 @@ function FinalCtaCopy({
       </div>
 
       <h2
-        className="mt-10 w-full font-sans text-[2rem] font-medium leading-[1.15] tracking-[-0.01em] text-white sm:text-4xl md:text-5xl md:leading-[1.12] lg:text-[3.25rem]"
+        className={cn("mt-10 w-full", FINAL_CTA_HEADLINE)}
         style={{ opacity: showHeadline ? 1 : 0 }}
       >
         {parts.map((part, index) =>
@@ -57,26 +62,27 @@ function FinalCtaCopy({
         )}
       </h2>
 
-      <Link
-        href={finalCta.primaryCta.href}
-        className="mt-14 inline-flex min-h-14 items-center justify-center rounded-full border border-white/85 px-10 font-sans text-xs font-semibold uppercase tracking-[0.22em] text-white transition-colors duration-300 hover:border-accent hover:bg-accent hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
+      <div
+        className="mt-14"
         style={{ opacity: showCta ? 1 : 0, pointerEvents: showCta ? "auto" : "none" }}
       >
-        {finalCta.primaryCta.label}
-      </Link>
+        <HeroButton href={finalCta.primaryCta.href} variant="primary">
+          {finalCta.primaryCta.label}
+        </HeroButton>
+      </div>
     </div>
   );
 }
 
 function FinalCtaShell({ children }: { children: ReactNode }) {
   return (
-    <section className="bg-[#F4F5F7]">
-      <div className="relative flex w-full min-h-[32rem] flex-col items-center justify-center overflow-hidden bg-black px-5 py-28 text-center md:min-h-[36rem] md:px-8 md:py-36 lg:min-h-[40rem] lg:px-10 lg:py-44">
+    <section className="relative w-full overflow-hidden bg-black">
+      <div className="relative flex w-full min-h-[32rem] flex-col items-center justify-center overflow-hidden py-24 text-center md:min-h-[36rem] md:py-28 lg:min-h-[40rem] lg:py-32">
         <div
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_28%,rgba(141,195,225,0.16),transparent_55%),radial-gradient(ellipse_at_50%_72%,rgba(221,228,102,0.06),transparent_45%)]"
           aria-hidden
         />
-        {children}
+        <div className={cn("relative z-10 w-full", heroLayout.gutterX)}>{children}</div>
       </div>
     </section>
   );
@@ -177,21 +183,23 @@ export function FinalCTASection() {
   }
 
   return (
-    <section ref={sectionRef} className="bg-[#F4F5F7]">
+    <section ref={sectionRef} className="relative w-full overflow-hidden bg-black">
       <div
         ref={pinWrapRef}
-        className="relative flex min-h-[100dvh] w-full flex-col items-center justify-center overflow-hidden bg-black px-5 py-20 text-center md:px-8 md:py-24 lg:px-10"
+        className="relative flex min-h-[100dvh] w-full flex-col items-center justify-center overflow-hidden py-20 text-center md:py-24"
       >
         <div
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_28%,rgba(141,195,225,0.16),transparent_55%),radial-gradient(ellipse_at_50%_72%,rgba(221,228,102,0.06),transparent_45%)]"
           aria-hidden
         />
 
-        <div className="relative z-10 flex w-full max-w-6xl flex-col items-center">
-          <p
-            data-final-eyebrow
-            className="font-sans text-lg italic tracking-[0.02em] text-white/90 md:text-xl"
-          >
+        <div
+          className={cn(
+            "relative z-10 mx-auto flex w-full max-w-6xl flex-col items-center",
+            heroLayout.gutterX,
+          )}
+        >
+          <p data-final-eyebrow className={FINAL_CTA_EYEBROW}>
             {finalCta.eyebrow}
           </p>
 
@@ -217,7 +225,7 @@ export function FinalCTASection() {
 
           <h2
             data-final-headline
-            className="invisible mt-10 w-full font-sans text-[2rem] font-medium leading-[1.15] tracking-[-0.01em] text-white sm:text-4xl md:text-5xl md:leading-[1.12] lg:text-[3.25rem]"
+            className={cn("invisible mt-10 w-full", FINAL_CTA_HEADLINE)}
           >
             {parts.map((part, index) =>
               part.toLowerCase() === accent?.toLowerCase() ? (
@@ -230,13 +238,11 @@ export function FinalCTASection() {
             )}
           </h2>
 
-          <Link
-            data-final-cta
-            href={finalCta.primaryCta.href}
-            className="invisible mt-14 inline-flex min-h-14 items-center justify-center rounded-full border border-white/85 px-10 font-sans text-xs font-semibold uppercase tracking-[0.22em] text-white transition-colors duration-300 hover:border-accent hover:bg-accent hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent"
-          >
-            {finalCta.primaryCta.label}
-          </Link>
+          <div data-final-cta className="invisible mt-14">
+            <HeroButton href={finalCta.primaryCta.href} variant="primary">
+              {finalCta.primaryCta.label}
+            </HeroButton>
+          </div>
         </div>
       </div>
     </section>

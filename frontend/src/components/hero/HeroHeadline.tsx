@@ -3,34 +3,43 @@
 import { FadeIn } from "@/components/animations/ScrollReveal";
 import { HeroButton } from "@/components/hero/HeroButton";
 import { heroContent } from "@/content/hero";
-import { heroCtaSeparator } from "@/lib/hero-styles";
+import { heroCtaSeparator, heroTypography } from "@/lib/hero-styles";
+import { cn } from "@/lib/utils";
 
 export function HeroHeadline() {
-  const { headline, subhead, primaryCta, secondaryCta } = heroContent;
+  const { headline, subheading, body, primaryCta, secondaryCta } = heroContent;
 
   return (
-    <div className="relative w-full max-w-xl md:max-w-xl lg:max-w-[34rem] lg:shrink-0">
+    <div className="relative w-full">
       <FadeIn className="relative text-left" stagger={0.14} y={40}>
         <div className="hero-reveal">
-          <h1 className="font-sans text-[2rem] font-bold leading-[1.08] tracking-[-0.01em] text-white sm:text-4xl md:text-[2.75rem] lg:text-[3.1rem]">
-            {headline}
-          </h1>
+          <h1 className={heroTypography.headline}>{headline}</h1>
         </div>
 
         <div className="hero-reveal">
-          <p className="font-body mt-5 max-w-lg text-base leading-relaxed text-white/80 md:text-lg">
-            {subhead}
-          </p>
+          <p className={heroTypography.subhead}>{subheading}</p>
         </div>
 
-        <div className="hero-reveal mt-8 flex flex-wrap items-center gap-3">
-          <HeroButton href={primaryCta.href} variant="primary">
+        <div className="hero-reveal">
+          <p className={heroTypography.body}>{body}</p>
+        </div>
+
+        <div className="hero-reveal mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap sm:items-center md:mt-10">
+          <HeroButton
+            href={primaryCta.href}
+            variant="primary"
+            className="w-full justify-center sm:w-auto"
+          >
             {primaryCta.label}
           </HeroButton>
-          <span aria-hidden className={heroCtaSeparator}>
+          <span aria-hidden className={cn(heroCtaSeparator, "hidden sm:inline")}>
             ·
           </span>
-          <HeroButton href={secondaryCta.href} variant="secondary">
+          <HeroButton
+            href={secondaryCta.href}
+            variant="secondary"
+            className="w-full justify-center sm:w-auto"
+          >
             {secondaryCta.label}
           </HeroButton>
         </div>

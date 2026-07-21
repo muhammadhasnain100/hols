@@ -56,7 +56,7 @@ export function FAQItem({
         )}
         aria-expanded={open}
       >
-        <span className="font-sans text-sm font-bold leading-snug text-primary md:text-base">
+        <span className="font-sans text-base font-semibold leading-[1.25] tracking-[0.005em] text-primary md:text-[1.125rem]">
           {question}
         </span>
         <span
@@ -80,7 +80,7 @@ export function FAQItem({
       {open ? (
         <p
           className={cn(
-            "font-body text-sm leading-relaxed text-primary/70 md:text-base md:leading-[1.55]",
+            "text-brand-body text-primary/75",
             isCard ? "px-5 pb-5 pt-0 md:px-6 md:pb-6" : "pb-5",
           )}
         >
