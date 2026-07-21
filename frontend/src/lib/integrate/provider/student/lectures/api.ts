@@ -3,12 +3,16 @@ import type {
   CourseBundleData,
   CourseDetailData,
   CourseListData,
+  CourseTestResultsData,
+  CourseTestResultsParams,
   LessonDetailData,
   LessonListData,
   LessonListParams,
+  LessonQuizResult,
   PaginationParams,
   SectionListData,
   SectionListParams,
+  SubmitLessonQuizRequest,
   TopicListData,
 } from "@/lib/integrate/provider/student/lectures/types";
 
@@ -17,17 +21,25 @@ export type {
   CourseDetailData,
   CourseListData,
   CourseSummary,
+  CourseTestResultsData,
+  CourseTestResultsParams,
+  CourseTestSummary,
+  GradedQuizAnswer,
   LessonDetail,
   LessonDetailData,
   LessonListData,
   LessonListParams,
+  LessonQuizResult,
+  LessonQuizResultSummary,
   LessonSummary,
   LessonVariant,
   PaginationMeta,
   PaginationParams,
+  QuizAnswerSubmission,
   SectionListData,
   SectionListParams,
   SectionSummary,
+  SubmitLessonQuizRequest,
   TopicListData,
   TopicSummary,
 } from "@/lib/integrate/provider/student/lectures/types";
@@ -188,4 +200,27 @@ export function getCachedLesson(courseId: string, lessonId: string): LessonDetai
   const bundle = getCachedCourseBundle(courseId);
   const bundleLesson = bundle?.lessons.find((lesson) => lesson.lesson_id === lessonId);
   return bundleLesson ? { lesson: bundleLesson } : null;
+}
+
+export function submitLessonQuiz(courseId: string, lessonId: string, payload: SubmitLessonQuizRequest) {
+  return apiRequest<LessonQuizResult>(
+    `/api/lectures/courses/${courseId}/lessons/${lessonId}/quiz/submit`,
+    {
+      method: "POST",
+      auth: true,
+      body: payload,
+    },
+  );
+}
+
+export function getCourseTestResults(courseId: string, params: CourseTestResultsParams = {}) {
+  const query = toQuery({
+    page: params.page,
+    limit: params.limit,
+    cursor: params.cursor,
+  });
+  return apiRequest<CourseTestResultsData>(
+    `/api/lectures/courses/${courseId}/test-results${query}`,
+    { auth: true },
+  );
 }

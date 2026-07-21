@@ -1,11 +1,10 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
-import { PortalShell } from "@/components/platform/provider/PortalShell";
-import { CourseOptionNav } from "@/components/platform/provider/student/lectures/CourseOptionNav";
-import { studentNav } from "@/components/platform/provider/student/studentNav";
+import { PortalStatCard } from "@/components/platform/provider/PortalStatCard";
+import { CoursePageLayout } from "@/components/platform/provider/student/lectures/CoursePageLayout";
 import { Button } from "@/components/ui/Button";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
@@ -13,11 +12,15 @@ import {
   type CourseSummary,
   type SectionSummary,
   type TopicSummary,
-  type LessonDetail,
 } from "@/lib/integrate/provider/student/lectures";
+import { cn } from "@/lib/utils";
 
 type StudentCoursePageProps = {
   courseId: string;
+};
+
+type TopicGroup = TopicSummary & {
+  sections: SectionSummary[];
 };
 
 export function StudentCoursePage({ courseId }: StudentCoursePageProps) {
@@ -26,8 +29,7 @@ export function StudentCoursePage({ courseId }: StudentCoursePageProps) {
   const [course, setCourse] = useState<CourseSummary | null>(null);
   const [topics, setTopics] = useState<TopicSummary[]>([]);
   const [sections, setSections] = useState<SectionSummary[]>([]);
-  const [lessons, setLessons] = useState<LessonDetail[]>([]);
-  const [selectedL1, setSelectedL1] = useState<string | null>(null);
+  const [expandedTopic, setExpandedTopic] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -37,7 +39,7 @@ export function StudentCoursePage({ courseId }: StudentCoursePageProps) {
       setCourse(bundle.course);
       setTopics(bundle.topics);
       setSections(bundle.sections);
-      setLessons(bundle.lessons);
+      setExpandedTopic((current) => current ?? bundle.topics[0]?.l1_name ?? null);
     } catch (err) {
       setError(err instanceof ApiRequestError ? err.message : "Failed to load course.");
     } finally {
@@ -50,209 +52,268 @@ export function StudentCoursePage({ courseId }: StudentCoursePageProps) {
     return () => window.clearTimeout(timer);
   }, [load]);
 
-  const filteredSections = selectedL1
-    ? sections.filter((section) => section.l1_name === selectedL1)
-    : sections;
+  const topicGroups = useMemo<TopicGroup[]>(() => {
+    return [...topics]
+      .sort((a, b) => a.order - b.order)
+      .map((topic) => ({
+        ...topic,
+        sections: sections
+          .filter((section) => section.l1_name === topic.l1_name)
+          .sort((a, b) => a.order - b.order),
+      }));
+  }, [sections, topics]);
+
+  const fullDescription =
+    course?.description?.trim() ||
+    "Explore topics and sections below, then start lessons when you are ready.";
+
+  const heroDescription = course
+    ? `${course.topic_count} topics · ${course.section_count} sections · ${course.lesson_count} lessons`
+    : "Browse topics, sections, and lessons.";
 
   return (
-    <PortalShell
-      role="student"
+    <CoursePageLayout
       title={course?.title ?? "Course"}
-      subtitle="Topics, sections, and lessons for this course."
-      nav={studentNav}
+      description={heroDescription}
+      courseId={courseId}
+      courseNavActive="overview"
+      backHref="/student/lectures"
+      backLabel="All lectures"
     >
-      <div className="grid gap-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <Link
-            href="/student/lectures"
-            className="text-sm font-medium text-primary underline-offset-2 hover:underline"
-          >
-            ← All lectures
-          </Link>
+      {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
+
+      {loading && !course ? (
+        <div className="rounded-2xl bg-white p-10 text-center shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
+          <div className="mx-auto h-8 w-8 animate-pulse rounded-full bg-primary/10" />
+          <p className="mt-3 text-[13px] text-primary/45">Loading course…</p>
         </div>
+      ) : null}
 
-        <CourseOptionNav courseId={courseId} active="overview" />
-
-        {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
-
-        {loading && !course ? (
-          <div className="glass-panel rounded-3xl p-8 text-sm text-muted">Loading course…</div>
-        ) : course ? (
-          <section className="glass-panel rounded-3xl p-6 md:p-8">
+      {course ? (
+        <>
+          <section className="rounded-2xl bg-white p-5 shadow-[0_1px_3px_rgba(21,39,68,0.06)] md:p-6">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
-              <div className="max-w-3xl">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary/35">
-                  Course overview
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary/40">
+                  About this course
                 </p>
-                <h2 className="mt-2 font-sans text-2xl font-semibold text-primary">
+                <h2 className="mt-1 text-lg font-semibold tracking-tight text-primary md:text-xl">
                   {course.title}
                 </h2>
-                <p className="mt-4 text-sm leading-7 text-muted">
-                  {course.description || "Course overview and lesson structure."}
-                </p>
+                <p className="mt-3 max-w-3xl text-[13px] leading-relaxed text-primary/45">{fullDescription}</p>
               </div>
 
-              <Button href={`/student/lectures/${courseId}/lessons`} variant="primary" size="md">
-                Start Lessons
-              </Button>
-            </div>
-
-            <dl className="mt-6 grid gap-3 text-sm sm:grid-cols-3">
-              <div className="rounded-2xl bg-primary/[0.04] p-4">
-                <dt className="text-muted">Topics</dt>
-                <dd className="mt-1 text-2xl font-semibold text-primary">{course.topic_count}</dd>
-              </div>
-              <div className="rounded-2xl bg-primary/[0.04] p-4">
-                <dt className="text-muted">Sections</dt>
-                <dd className="mt-1 text-2xl font-semibold text-primary">
-                  {course.section_count}
-                </dd>
-              </div>
-              <div className="rounded-2xl bg-primary/[0.04] p-4">
-                <dt className="text-muted">Lessons</dt>
-                <dd className="mt-1 text-2xl font-semibold text-primary">{course.lesson_count}</dd>
-              </div>
-            </dl>
-          </section>
-        ) : null}
-
-        <section className="glass-panel rounded-3xl p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary/35">
-                Browse by topic
-              </p>
-              <h2 className="mt-1 font-sans text-lg font-semibold text-primary">Course topics</h2>
-            </div>
-            {selectedL1 ? (
               <Button
-                type="button"
-                variant="secondary"
-                size="sm"
-                onClick={() => {
-                  setSelectedL1(null);
-                }}
+                href={`/student/lectures/${courseId}/lessons`}
+                variant="primary"
+                size="md"
+                className="shrink-0"
               >
-                Clear topic filter
+                Start lessons
               </Button>
-            ) : null}
-          </div>
-          <div className="mt-4 grid gap-3">
-            {topics.map((topic) => (
-              <div
-                key={`${topic.topic_key}-${topic.order}`}
-                className={`rounded-2xl border px-4 py-3 text-left transition ${
-                  selectedL1 === topic.l1_name
-                    ? "border-primary/40 bg-primary/5"
-                    : "border-border/40 bg-white/50 hover:bg-white/80"
-                }`}
-              >
-                <button
-                  type="button"
-                  onClick={() => {
-                    const isOpen = selectedL1 === topic.l1_name;
-                    setSelectedL1(isOpen ? null : topic.l1_name);
-                  }}
-                  className="flex w-full items-center justify-between gap-4 text-left"
-                  aria-expanded={selectedL1 === topic.l1_name}
-                >
-                  <span>
-                    <span className="font-medium text-primary">{topic.l1_name}</span>
-                    <span className="mt-1 block text-xs text-muted">
-                      {topic.section_count} sections · {topic.lesson_count} lessons total
-                    </span>
-                  </span>
-                  <span className="shrink-0 text-xs font-semibold text-primary">
-                    {selectedL1 === topic.l1_name ? "Close" : "Open"}
-                  </span>
-                </button>
-
-                {selectedL1 === topic.l1_name ? (
-                  <div className="mt-4 rounded-2xl bg-white/65 p-4">
-                    <div className="flex flex-wrap items-center justify-between gap-2">
-                      <p className="text-sm font-semibold text-primary">
-                        {topic.lesson_count} lessons in this topic
-                      </p>
-                      <Button
-                        href={`/student/lectures/${courseId}/lessons?l1_name=${encodeURIComponent(topic.l1_name)}`}
-                        variant="secondary"
-                        size="sm"
-                      >
-                        View topic lessons
-                      </Button>
-                    </div>
-
-                    {lessons.filter((lesson) => lesson.l1_name === topic.l1_name).length > 0 ? (
-                      <div className="mt-3 grid gap-2">
-                        {lessons
-                          .filter((lesson) => lesson.l1_name === topic.l1_name)
-                          .map((lesson) => (
-                            <div
-                              key={lesson.lesson_id}
-                              className="flex flex-col gap-3 rounded-xl border border-black/[0.05] bg-white px-3 py-3 sm:flex-row sm:items-center sm:justify-between"
-                            >
-                              <div>
-                                <p className="text-[11px] font-semibold uppercase tracking-wide text-muted">
-                                  Lesson {lesson.order}
-                                </p>
-                                <h3 className="mt-1 text-sm font-semibold text-primary">
-                                  {lesson.title}
-                                </h3>
-                              </div>
-                              <Button
-                                href={`/student/lectures/${courseId}/lessons/${lesson.lesson_id}`}
-                                variant="primary"
-                                size="sm"
-                                className="sm:shrink-0"
-                              >
-                                View Lesson
-                              </Button>
-                            </div>
-                          ))}
-                      </div>
-                    ) : (
-                      <p className="mt-3 text-sm text-muted">No lessons found in this topic.</p>
-                    )}
-                  </div>
-                ) : null}
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="glass-panel rounded-3xl p-6">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-primary/35">
-                Lesson groups
-              </p>
-              <h2 className="mt-1 font-sans text-lg font-semibold text-primary">
-                Sections{selectedL1 ? ` · ${selectedL1}` : ""}
-              </h2>
             </div>
-            <Button href={`/student/lectures/${courseId}/lessons`} variant="secondary" size="sm">
-              View all lessons
+
+            <div className="mt-6 grid gap-3 sm:grid-cols-3">
+              <PortalStatCard
+                label="Topics"
+                value={String(course.topic_count)}
+                hint="Main subject areas"
+                className="shadow-none"
+              />
+              <PortalStatCard
+                label="Sections"
+                value={String(course.section_count)}
+                hint="Lesson groups within topics"
+                className="shadow-none"
+              />
+              <PortalStatCard
+                label="Lessons"
+                value={String(course.lesson_count)}
+                hint="Total lessons available"
+                className="shadow-none"
+              />
+            </div>
+          </section>
+
+          <section>
+            <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary/40">
+              Course structure
+            </p>
+            <h2 className="mt-1 text-[15px] font-semibold text-primary">Topics and sections</h2>
+            <p className="mt-1 max-w-2xl text-[13px] text-primary/45">
+              Each topic contains sections. Open a topic to see its sections, then jump straight into
+              the lessons you need.
+            </p>
+
+            {topicGroups.length === 0 ? (
+              <div className="mt-5 rounded-2xl bg-white p-8 text-center shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
+                <p className="text-[13px] text-primary/45">No topics available for this course yet.</p>
+              </div>
+            ) : (
+              <div className="mt-5 grid gap-3">
+                {topicGroups.map((topic, index) => (
+                  <TopicCard
+                    key={`${topic.topic_key}-${topic.order}`}
+                    courseId={courseId}
+                    topic={topic}
+                    index={index}
+                    expanded={expandedTopic === topic.l1_name}
+                    onToggle={() =>
+                      setExpandedTopic((current) =>
+                        current === topic.l1_name ? null : topic.l1_name,
+                      )
+                    }
+                  />
+                ))}
+              </div>
+            )}
+          </section>
+        </>
+      ) : null}
+    </CoursePageLayout>
+  );
+}
+
+function TopicCard({
+  courseId,
+  topic,
+  index,
+  expanded,
+  onToggle,
+}: {
+  courseId: string;
+  topic: TopicGroup;
+  index: number;
+  expanded: boolean;
+  onToggle: () => void;
+}) {
+  const topicLessonsHref = `/student/lectures/${courseId}/lessons?l1_name=${encodeURIComponent(topic.l1_name)}`;
+
+  return (
+    <article
+      className={cn(
+        "overflow-hidden rounded-2xl border transition-all duration-200",
+        expanded
+          ? "border-[#8DC3E1]/55 bg-[#eef6fb] shadow-[0_6px_22px_rgba(21,39,68,0.08)]"
+          : "border-transparent bg-white shadow-[0_1px_3px_rgba(21,39,68,0.06)] hover:shadow-[0_4px_14px_rgba(21,39,68,0.08)]",
+      )}
+    >
+      <button
+        type="button"
+        onClick={onToggle}
+        className={cn(
+          "flex w-full items-center gap-4 p-5 text-left md:p-6",
+          expanded && "border-b border-[#8DC3E1]/35 bg-white/55",
+        )}
+        aria-expanded={expanded}
+      >
+        <span
+          className={cn(
+            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-semibold transition-colors",
+            expanded ? "bg-primary text-white shadow-[0_2px_8px_rgba(21,39,68,0.15)]" : "bg-primary/[0.06] text-primary",
+          )}
+        >
+          {index + 1}
+        </span>
+
+        <span className="min-w-0 flex-1">
+          <span className={cn("block text-[15px] font-semibold", expanded ? "text-primary" : "text-primary")}>
+            {topic.l1_name}
+          </span>
+          <span className="mt-2 flex flex-wrap gap-2">
+            <TopicBadge active={expanded}>{topic.section_count} sections</TopicBadge>
+            <TopicBadge active={expanded}>{topic.lesson_count} lessons</TopicBadge>
+          </span>
+        </span>
+
+        <span
+          className={cn(
+            "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium transition",
+            expanded
+              ? "bg-primary text-white"
+              : "bg-primary/[0.06] text-primary/70 hover:bg-primary/[0.1] hover:text-primary",
+          )}
+        >
+          {expanded ? "Hide" : "Show"}
+          <svg
+            width="14"
+            height="14"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            className={cn("transition-transform duration-200", expanded && "rotate-180")}
+            aria-hidden
+          >
+            <path d="m6 9 6 6 6-6" />
+          </svg>
+        </span>
+      </button>
+
+      {expanded ? (
+        <div className="bg-white/45 px-5 pb-5 pt-4 md:px-6 md:pb-6">
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-[13px] font-medium text-primary/55">
+              {topic.sections.length} section{topic.sections.length === 1 ? "" : "s"} in this topic
+            </p>
+            <Button href={topicLessonsHref} variant="secondary" size="sm">
+              View all topic lessons
             </Button>
           </div>
-          <div className="mt-4 grid gap-3">
-            {filteredSections.map((section) => (
-              <Link
-                key={section.topic_id}
-                href={`/student/lectures/${courseId}/lessons?topic_id=${encodeURIComponent(section.topic_id)}`}
-                className="rounded-2xl border border-border/40 bg-white/50 px-4 py-3 transition hover:bg-white/80"
-              >
-                <p className="font-medium text-primary">{section.l2_name}</p>
-                <p className="mt-1 text-xs text-muted">
-                  {section.l1_name} · {section.item_count} lessons
-                </p>
-              </Link>
-            ))}
-            {!loading && filteredSections.length === 0 ? (
-              <p className="text-sm text-muted">No sections found.</p>
-            ) : null}
-          </div>
-        </section>
-      </div>
-    </PortalShell>
+
+          {topic.sections.length === 0 ? (
+            <p className="rounded-xl border border-[#8DC3E1]/25 bg-white/70 px-4 py-3 text-[13px] text-primary/45">
+              No sections listed for this topic yet.
+            </p>
+          ) : (
+            <div className="grid gap-2">
+              {topic.sections.map((section) => (
+                <SectionRow key={section.topic_id} courseId={courseId} section={section} />
+              ))}
+            </div>
+          )}
+        </div>
+      ) : null}
+    </article>
+  );
+}
+
+function SectionRow({ courseId, section }: { courseId: string; section: SectionSummary }) {
+  const href = `/student/lectures/${courseId}/lessons?topic_id=${encodeURIComponent(section.topic_id)}`;
+
+  return (
+    <Link
+      href={href}
+      className="group flex items-center justify-between gap-4 rounded-xl border border-white/80 bg-white px-4 py-3.5 shadow-[0_1px_3px_rgba(21,39,68,0.04)] transition hover:border-[#8DC3E1]/40 hover:bg-[#f8fcfe] hover:shadow-[0_3px_12px_rgba(21,39,68,0.06)]"
+    >
+      <span className="min-w-0 flex-1">
+        <span className="line-clamp-2 text-[13px] font-semibold text-primary" title={section.l2_name}>
+          {section.l2_name}
+        </span>
+        <span className="mt-0.5 block text-[12px] text-primary/45">
+          Section {section.order} · {section.item_count} lesson{section.item_count === 1 ? "" : "s"}
+        </span>
+      </span>
+
+      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/[0.06] px-2.5 py-1 text-[12px] font-medium text-primary/60 transition group-hover:bg-accent group-hover:text-primary">
+        Open
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+          <path d="m9 18 6-6-6-6" />
+        </svg>
+      </span>
+    </Link>
+  );
+}
+
+function TopicBadge({ children, active = false }: { children: React.ReactNode; active?: boolean }) {
+  return (
+    <span
+      className={cn(
+        "inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium",
+        active ? "bg-[#8DC3E1]/25 text-primary" : "bg-primary/[0.06] text-primary/65",
+      )}
+    >
+      {children}
+    </span>
   );
 }

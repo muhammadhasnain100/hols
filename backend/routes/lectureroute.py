@@ -15,16 +15,22 @@ from models.lectures import (
     CourseDetailResponse,
     CourseListData,
     CourseListResponse,
+    CourseTestResultsData,
+    CourseTestResultsResponse,
     LessonDetailData,
     LessonDetailResponse,
     LessonListData,
     LessonListResponse,
+    LessonQuizResult,
+    LessonQuizResultResponse,
     SectionListData,
     SectionListResponse,
+    SubmitLessonQuizRequest,
     TopicListData,
     TopicListResponse,
 )
 from services.routes.lectures import service as lectures_service
+from services.routes.lectures import quiz_service
 
 router = APIRouter(prefix="/lectures", tags=["lectures"])
 
@@ -156,3 +162,45 @@ async def get_lesson(
     _ = current_user
     lesson = await lectures_service.get_lesson(course_id, lesson_id)
     return success_response(LessonDetailData(lesson=lesson))
+
+
+@router.post(
+    "/courses/{course_id}/lessons/{lesson_id}/quiz/submit",
+    response_model=LessonQuizResultResponse,
+)
+@handle_route_errors("submit lesson quiz", log_prefix="Lectures")
+async def submit_lesson_quiz(
+    course_id: str,
+    lesson_id: str,
+    payload: SubmitLessonQuizRequest,
+    current_user: StudentUser,
+) -> LessonQuizResultResponse:
+    """Submit lesson quiz answers, score them, and store the test result."""
+    result = await quiz_service.submit_lesson_quiz(
+        user_id=current_user.user_id,
+        course_id=course_id,
+        lesson_id=lesson_id,
+        answers=[answer.model_dump() for answer in payload.answers],
+    )
+    return success_response(LessonQuizResult(**result))
+
+
+@router.get(
+    "/courses/{course_id}/test-results",
+    response_model=CourseTestResultsResponse,
+)
+@handle_route_errors("list course test results", log_prefix="Lectures")
+async def list_course_test_results(
+    course_id: str,
+    current_user: StudentUser,
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=10, ge=1, le=100),
+) -> CourseTestResultsResponse:
+    """List stored quiz results for the current student in a course."""
+    result = await quiz_service.list_course_test_results(
+        current_user.user_id,
+        course_id,
+        page=page,
+        limit=limit,
+    )
+    return success_response(CourseTestResultsData(**result))

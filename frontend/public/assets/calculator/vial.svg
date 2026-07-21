@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+<svg
+    xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+    xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+    xmlns="http://www.w3.org/2000/svg"
+    xmlns:cc="http://creativecommons.org/ns#"
+    xmlns:dc="http://purl.org/dc/elements/1.1/"
+    xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+    xmlns:svg="http://www.w3.org/2000/svg"
+    xmlns:ns1="http://sozi.baierouge.fr"
+    xmlns:xlink="http://www.w3.org/1999/xlink"
+    id="svg2903"
+    sodipodi:docname="vial.svg"
+    viewBox="0 0 50.765 100.13"
+    version="1.1"
+    inkscape:version="0.47 r22583"
+  >
+  <title
+      id="title2826"
+    >Vial</title
+  >
+  <sodipodi:namedview
+      id="base"
+      bordercolor="#666666"
+      inkscape:pageshadow="2"
+      inkscape:window-y="-4"
+      pagecolor="#ffffff"
+      inkscape:window-height="968"
+      inkscape:window-maximized="1"
+      inkscape:zoom="2.6292347"
+      inkscape:window-x="-4"
+      showgrid="false"
+      borderopacity="1.0"
+      inkscape:current-layer="layer1"
+      inkscape:cx="40.971885"
+      inkscape:cy="56.6332"
+      inkscape:window-width="1280"
+      inkscape:pageopacity="0.0"
+      inkscape:document-units="px"
+  />
+  <g
+      id="layer1"
+      inkscape:label="Layer 1"
+      inkscape:groupmode="layer"
+      transform="translate(-123.19 -568.01)"
+    >
+    <g
+        id="g3536"
+        transform="matrix(1.9787 0 0 1.9787 -781.92 -128.83)"
+      >
+      <g
+          id="g2406"
+          transform="matrix(.26864 0 0 .26864 402.63 317.88)"
+        >
+        <rect
+            id="rect2393"
+            style="fill:#d3d7cf"
+            rx="0"
+            ry="0"
+            height="129.08"
+            width="95.501"
+            y="147.73"
+            x="203.96"
+        />
+        <path
+            id="path2399"
+            sodipodi:rx="82.544823"
+            sodipodi:ry="45.15905"
+            style="fill:#eeeeec"
+            sodipodi:type="arc"
+            d="m375.34 279.48c0 24.941-36.957 45.159-82.545 45.159s-82.545-20.218-82.545-45.159 36.957-45.159 82.545-45.159 82.545 20.218 82.545 45.159z"
+            transform="matrix(.57848 0 0 .26313 82.332 74.161)"
+            sodipodi:cy="279.47614"
+            sodipodi:cx="292.79352"
+        />
+      </g
+      >
+      <path
+          id="path2412"
+          sodipodi:rx="82.544823"
+          sodipodi:ry="45.15905"
+          style="fill:#d3d7cf"
+          sodipodi:type="arc"
+          d="m375.34 279.48c0 24.941-36.957 45.159-82.545 45.159s-82.545-20.218-82.545-45.159 36.957-45.159 82.545-45.159 82.545 20.218 82.545 45.159z"
+          transform="matrix(.079572 0 0 .028918 446.95 349.6)"
+          sodipodi:cy="279.47614"
+          sodipodi:cx="292.79352"
+      />
+      <path
+          id="path2645"
+          sodipodi:rx="82.544823"
+          sodipodi:ry="45.15905"
+          style="fill:#eeeeec"
+          sodipodi:type="arc"
+          d="m375.34 279.48c0 24.941-36.957 45.159-82.545 45.159s-82.545-20.218-82.545-45.159 36.957-45.159 82.545-45.159 82.545 20.218 82.545 45.159z"
+          transform="matrix(.079572 0 0 .028917 446.97 345.39)"
+          sodipodi:cy="279.47614"
+          sodipodi:cx="292.79352"
+      />
+      <path
+          id="rect2414"
+          sodipodi:nodetypes="ccccsc"
+          style="opacity:.9;fill:#d3d7cf"
+          d="m463.7 353.52-0.029 4.1575h13.125l0.029-4.143c-0.10156 0.6106-2.9513 1.2488-6.577 1.2488s-6.4029-0.6092-6.548-1.2633z"
+      />
+      <path
+          id="path3200"
+          style="opacity:.8;fill:#eeeeec"
+          d="m460.62 365.17v34.015c1.0844 0.3031 2.3106 0.54863 3.6351 0.71737v-34.015c-1.3245-0.16885-2.5505-0.41476-3.6351-0.71736z"
+      />
+    </g
+    >
+  </g
+  >
+  <metadata
+    >
+    <rdf:RDF
+      >
+      <cc:Work
+        >
+        <dc:format
+          >image/svg+xml</dc:format
+        >
+        <dc:type
+            rdf:resource="http://purl.org/dc/dcmitype/StillImage"
+        />
+        <cc:license
+            rdf:resource="http://creativecommons.org/licenses/publicdomain/"
+        />
+        <dc:publisher
+          >
+          <cc:Agent
+              rdf:about="http://openclipart.org/"
+            >
+            <dc:title
+              >Openclipart</dc:title
+            >
+          </cc:Agent
+          >
+        </dc:publisher
+        >
+        <dc:title
+          >Vial</dc:title
+        >
+        <dc:date
+          >2010-10-01T13:35:39</dc:date
+        >
+        <dc:description
+          >A simple and fast-made chromatography vial</dc:description
+        >
+        <dc:source
+          >https://openclipart.org/detail/88021/vial-by-mev</dc:source
+        >
+        <dc:creator
+          >
+          <cc:Agent
+            >
+            <dc:title
+              >MeV</dc:title
+            >
+          </cc:Agent
+          >
+        </dc:creator
+        >
+        <dc:subject
+          >
+          <rdf:Bag
+            >
+            <rdf:li
+              >chemistry</rdf:li
+            >
+            <rdf:li
+              >chromatography</rdf:li
+            >
+            <rdf:li
+              >glassware</rdf:li
+            >
+            <rdf:li
+              >hplc</rdf:li
+            >
+            <rdf:li
+              >science</rdf:li
+            >
+            <rdf:li
+              >scientific</rdf:li
+            >
+            <rdf:li
+              >vial</rdf:li
+            >
+          </rdf:Bag
+          >
+        </dc:subject
+        >
+      </cc:Work
+      >
+      <cc:License
+          rdf:about="http://creativecommons.org/licenses/publicdomain/"
+        >
+        <cc:permits
+            rdf:resource="http://creativecommons.org/ns#Reproduction"
+        />
+        <cc:permits
+            rdf:resource="http://creativecommons.org/ns#Distribution"
+        />
+        <cc:permits
+            rdf:resource="http://creativecommons.org/ns#DerivativeWorks"
+        />
+      </cc:License
+      >
+    </rdf:RDF
+    >
+  </metadata
+  >
+</svg
+>

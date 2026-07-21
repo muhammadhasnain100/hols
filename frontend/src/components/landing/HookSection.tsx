@@ -15,41 +15,85 @@ const STROKE = 1.5;
 const MERGE_STROKE = 2.15;
 
 /**
- * Parallel lines → smooth funnel → single line.
- * Logo sits on the merge point so lines visually enter the ball.
+ * Scattered lines originate from the left ball, fan out, converge at the right ball,
+ * then one line exits to the CTA.
  */
 function buildConvergePaths(viewW: number, viewH: number) {
   const count = 9;
   const padY = 16;
   const gap = (viewH - padY * 2) / (count - 1);
-  const mergeY = viewH / 2;
+  const originY = viewH / 2;
+  const ballRadius = viewW * 0.038;
+  const originX = ballRadius;
+  const startX = originX;
 
-  // Keep parallel longer, then curve into the logo
-  const curveStart = viewW * 0.48;
+  const mergeY = viewH / 2;
   const mergeX = viewW * 0.68;
-  // Tip stops under the logo (logo ~72px ≈ 7% of wide svg)
-  const tipX = mergeX - viewW * 0.028;
-  const singleStart = mergeX + viewW * 0.028;
+  const spreadEnd = viewW * 0.34;
+  const convergeStart = viewW * 0.5;
+  const tipX = mergeX - ballRadius;
+  const singleStart = mergeX + ballRadius;
   const endX = viewW;
 
   const paths = Array.from({ length: count }, (_, i) => {
     const y = padY + i * gap;
-    // Ease-in toward center — outer lines bend more
-    const c1x = curveStart + (tipX - curveStart) * 0.35;
-    const c2x = curveStart + (tipX - curveStart) * 0.72;
+    const fanC1x = startX + (spreadEnd - startX) * 0.32;
+    const fanC2x = startX + (spreadEnd - startX) * 0.68;
+    const fanC1y = originY + (y - originY) * 0.12;
+    const fanC2y = originY + (y - originY) * 0.88;
+    const c1x = convergeStart + (tipX - convergeStart) * 0.35;
+    const c2x = convergeStart + (tipX - convergeStart) * 0.72;
     const c1y = y;
     const c2y = y + (mergeY - y) * 0.72;
-    return `M 0 ${y.toFixed(2)} L ${curveStart.toFixed(2)} ${y.toFixed(2)} C ${c1x.toFixed(2)} ${c1y.toFixed(2)}, ${c2x.toFixed(2)} ${c2y.toFixed(2)}, ${tipX.toFixed(2)} ${mergeY.toFixed(2)}`;
+
+    return `M ${startX.toFixed(2)} ${originY.toFixed(2)} C ${fanC1x.toFixed(2)} ${fanC1y.toFixed(2)}, ${fanC2x.toFixed(2)} ${fanC2y.toFixed(2)}, ${spreadEnd.toFixed(2)} ${y.toFixed(2)} L ${convergeStart.toFixed(2)} ${y.toFixed(2)} C ${c1x.toFixed(2)} ${c1y.toFixed(2)}, ${c2x.toFixed(2)} ${c2y.toFixed(2)}, ${tipX.toFixed(2)} ${mergeY.toFixed(2)}`;
   });
 
   const single = `M ${singleStart.toFixed(2)} ${mergeY.toFixed(2)} L ${endX.toFixed(2)} ${mergeY.toFixed(2)}`;
-  return { paths, single, mergeX, mergeY };
+  return { paths, single, originX, mergeX, mergeY, ballRadius };
 }
 
 const VIEW_W = 1200;
 const VIEW_H = 240;
 const { paths: CONVERGE_PATHS, single: SINGLE_PATH, mergeX } =
   buildConvergePaths(VIEW_W, VIEW_H);
+
+const BALL_CLASS =
+  "h-14 w-14 object-contain drop-shadow-[0_8px_24px_rgba(21,39,68,0.18)] sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24";
+
+function HookBall({
+  src,
+  dataAttr,
+  leftPct,
+  align = "center",
+}: {
+  src: string;
+  dataAttr: "data-hook-ball-origin" | "data-hook-ball-merge";
+  leftPct?: number;
+  align?: "center" | "start";
+}) {
+  return (
+    <div
+      {...{ [dataAttr]: true }}
+      aria-hidden
+      className={cn(
+        "absolute top-1/2 z-10 -translate-y-1/2",
+        align === "center" ? "-translate-x-1/2" : "translate-x-0",
+      )}
+      style={{ left: align === "start" ? 0 : `${leftPct}%` }}
+    >
+      <Image
+        src={src}
+        alt=""
+        width={96}
+        height={96}
+        className={BALL_CLASS}
+        sizes="(max-width: 640px) 3.5rem, 6rem"
+        priority
+      />
+    </div>
+  );
+}
 
 function prepareStroke(path: SVGPathElement, hidden: boolean) {
   const length = path.getTotalLength();
@@ -71,12 +115,13 @@ function HookCta({ href, label }: { href: string; label: string }) {
 
 function FlowDiagram() {
   const { hook } = landingContent;
-  const logoPct = (mergeX / VIEW_W) * 100;
+  const mergePct = (mergeX / VIEW_W) * 100;
 
   return (
     <div data-hook-diagram className="relative w-full">
       <div className="relative flex w-full items-center gap-4 md:gap-5 lg:gap-6">
         <div className="relative min-w-0 flex-1">
+          {/* Label + origin ball share the same left edge as the headline */}
           <p
             data-hook-before-label
             className="font-sans text-sm font-semibold tracking-[-0.01em] text-primary md:text-base"
@@ -84,12 +129,11 @@ function FlowDiagram() {
             {hook.beforeLabel}
           </p>
 
-          {/* SVG + logo share one box so merge point stays aligned */}
           <div className="relative mt-5 w-full md:mt-6">
             <p
               data-hook-after-label
               className="pointer-events-none absolute z-20 -translate-y-full whitespace-nowrap pb-2 font-sans text-sm font-medium italic tracking-[-0.01em] text-primary/75 md:text-[0.95rem]"
-              style={{ left: `calc(${logoPct}% + 2.75rem)`, top: "50%" }}
+              style={{ left: `calc(${mergePct}% + 2.75rem)`, top: "50%" }}
             >
               {hook.afterLabel}
             </p>
@@ -121,22 +165,16 @@ function FlowDiagram() {
               />
             </svg>
 
-            {/* Logo centered exactly on the merge point */}
-            <div
-              data-hook-logo
-              aria-hidden
-              className="absolute top-1/2 z-10 flex h-12 w-12 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white sm:h-14 sm:w-14 md:h-16 md:w-16 lg:h-[4.25rem] lg:w-[4.25rem]"
-              style={{ left: `${logoPct}%` }}
-            >
-              <Image
-                src="/assets/logo/hols-logo-mark.png"
-                alt=""
-                width={68}
-                height={68}
-                className="h-full w-full object-contain"
-                priority
-              />
-            </div>
+            <HookBall
+              src={hook.ballImage}
+              dataAttr="data-hook-ball-origin"
+              align="start"
+            />
+            <HookBall
+              src={hook.ballImage}
+              dataAttr="data-hook-ball-merge"
+              leftPct={mergePct}
+            />
           </div>
         </div>
 
@@ -203,7 +241,7 @@ function HookShell({
         <HookCopy {...copyProps} />
       </div>
 
-      {/* Lines spread full width left → right across the screen */}
+      {/* Diagram — same horizontal inset as headline */}
       <div className={cn("mt-10 w-full md:mt-12 lg:mt-14", heroLayout.gutterX)}>
         {children}
       </div>
@@ -247,8 +285,11 @@ export function HookSection() {
       const singlePaths = gsap.utils.toArray<SVGPathElement>(
         pinWrap.querySelectorAll("[data-hook-single]"),
       );
-      const logos = gsap.utils.toArray<HTMLElement>(
-        pinWrap.querySelectorAll("[data-hook-logo]"),
+      const originBalls = gsap.utils.toArray<HTMLElement>(
+        pinWrap.querySelectorAll("[data-hook-ball-origin]"),
+      );
+      const mergeBalls = gsap.utils.toArray<HTMLElement>(
+        pinWrap.querySelectorAll("[data-hook-ball-merge]"),
       );
       const ctas = gsap.utils.toArray<HTMLElement>(
         pinWrap.querySelectorAll("[data-hook-cta]"),
@@ -266,7 +307,8 @@ export function HookSection() {
       scatterPaths.forEach((p) => prepareStroke(p, true));
       singlePaths.forEach((p) => prepareStroke(p, true));
 
-      gsap.set(logos, { scale: 0.7, autoAlpha: 0 });
+      gsap.set(originBalls, { scale: 0.85, autoAlpha: 0 });
+      gsap.set(mergeBalls, { scale: 0.85, autoAlpha: 0 });
       gsap.set(ctas, { autoAlpha: 0, x: 16 });
       gsap.set(beforeLabels, { autoAlpha: 0, x: -12 });
       gsap.set(afterLabels, { autoAlpha: 0, y: 8 });
@@ -288,40 +330,50 @@ export function HookSection() {
         },
       });
 
-      // 1 — Before-labels enter
+      // 1 — Before-label + origin ball enter
       tl.to(
           beforeLabels,
           { autoAlpha: 1, x: 0, duration: 0.45, ease: "none" },
           0.4,
+        )
+        .fromTo(
+          originBalls,
+          { scale: 0.85, autoAlpha: 0 },
+          { scale: 1, autoAlpha: 1, duration: 0.45, ease: "none" },
+          0.4,
         );
 
-      // 2 — Lines draw left → funnel into the logo
+      // 2 — Scattered lines draw outward from the origin ball, then converge
       scatterPaths.forEach((path, i) => {
         tl.to(
           path,
           { strokeDashoffset: 0, duration: 1.55, ease: "none" },
-          0.5 + i * 0.045,
+          0.55 + i * 0.045,
         );
       });
 
-      // 3 — Logo appears as lines meet (near end of funnel)
-      tl.to(logos, { scale: 1, autoAlpha: 1, duration: 0.55, ease: "none" }, 1.75);
+      // 3 — Merge ball + label, then single line exits right
+      tl.fromTo(
+        mergeBalls,
+        { scale: 0.85, autoAlpha: 0 },
+        { scale: 1, autoAlpha: 1, duration: 0.45, ease: "none" },
+        2.0,
+      )
+        .to(
+          afterLabels,
+          { autoAlpha: 1, y: 0, duration: 0.4, ease: "none" },
+          2.05,
+        )
+        .to(
+          singlePaths,
+          { strokeDashoffset: 0, duration: 0.85, ease: "none" },
+          2.1,
+        );
 
-      // 4 — Single line continues right out of the logo
-      tl.to(
-        afterLabels,
-        { autoAlpha: 1, y: 0, duration: 0.4, ease: "none" },
-        2.05,
-      ).to(
-        singlePaths,
-        { strokeDashoffset: 0, duration: 0.85, ease: "none" },
-        2.1,
-      );
+      // 4 — Explore courses on the right
+      tl.to(ctas, { autoAlpha: 1, x: 0, duration: 0.5, ease: "none" }, 2.65);
 
-      // 5 — Explore courses on the right
-      tl.to(ctas, { autoAlpha: 1, x: 0, duration: 0.5, ease: "none" }, 2.55);
-
-      // 6 — Problem → solution
+      // 5 — Problem → solution
       tl.to(problem, { autoAlpha: 0, y: -14, duration: 0.5, ease: "none" }, 3.1)
         .to(solution, { autoAlpha: 1, y: 0, duration: 0.55, ease: "none" }, 3.25);
 

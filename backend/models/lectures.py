@@ -79,6 +79,66 @@ class LessonDetail(LessonSummary):
     raw_data_s3_key: Optional[str] = None
 
 
+class QuizAnswerSubmission(BaseModel):
+    variant_id: str
+    answer: Any
+
+
+class SubmitLessonQuizRequest(BaseModel):
+    answers: list[QuizAnswerSubmission]
+
+
+class GradedQuizAnswer(BaseModel):
+    variant_id: str
+    variant_type: Optional[str] = None
+    question: Optional[str] = None
+    user_answer: Any = None
+    correct_answer: Any = None
+    is_correct: bool
+
+
+class LessonQuizResult(BaseModel):
+    course_id: str
+    lesson_id: str
+    lesson_title: str
+    lesson_order: int = 0
+    attempt_id: str
+    total_questions: int
+    correct_count: int
+    score_percent: float
+    passed: bool
+    answers: list[GradedQuizAnswer] = Field(default_factory=list)
+    created_at: str
+    updated_at: str
+
+
+class LessonQuizResultSummary(BaseModel):
+    course_id: str
+    lesson_id: str
+    lesson_title: str
+    lesson_order: int = 0
+    attempt_id: str
+    total_questions: int
+    correct_count: int
+    score_percent: float
+    passed: bool
+    updated_at: str
+
+
+class CourseTestSummary(BaseModel):
+    lessons_quizzed: int
+    total_lessons: int
+    average_score: float
+    passed_count: int
+
+
+class CourseTestResultsData(BaseModel):
+    course_id: str
+    summary: CourseTestSummary
+    items: list[LessonQuizResultSummary]
+    pagination: PaginationMeta
+
+
 class CourseListData(BaseModel):
     items: list[CourseSummary]
     pagination: PaginationMeta
@@ -124,3 +184,5 @@ TopicListResponse = ApiSuccessResponse[TopicListData]
 SectionListResponse = ApiSuccessResponse[SectionListData]
 LessonListResponse = ApiSuccessResponse[LessonListData]
 LessonDetailResponse = ApiSuccessResponse[LessonDetailData]
+LessonQuizResultResponse = ApiSuccessResponse[LessonQuizResult]
+CourseTestResultsResponse = ApiSuccessResponse[CourseTestResultsData]

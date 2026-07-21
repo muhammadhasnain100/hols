@@ -10,6 +10,8 @@ type HeroShellProps = {
   fullHeight?: boolean;
   contained?: boolean;
   variant?: "page" | "landing";
+  backgroundVariant?: "sky" | "photo";
+  navbarVariant?: "landing" | "overlay" | "page";
   showNavbar?: boolean;
 };
 
@@ -20,9 +22,13 @@ export function HeroShell({
   fullHeight = false,
   contained = true,
   variant = "page",
+  backgroundVariant = "sky",
+  navbarVariant,
   showNavbar = true,
 }: HeroShellProps) {
   const isLandingStyle = variant === "landing";
+  const resolvedNavbarVariant =
+    navbarVariant ?? (backgroundVariant === "photo" ? "overlay" : "landing");
 
   if (isLandingStyle) {
     return (
@@ -33,8 +39,14 @@ export function HeroShell({
           className,
         )}
       >
-        <HeroBackground />
-        {showNavbar ? <HeroNavbar variant="landing" /> : null}
+        <HeroBackground variant={backgroundVariant} />
+        {backgroundVariant === "photo" ? (
+          <div
+            className="pointer-events-none absolute inset-0 z-[1] bg-[linear-gradient(180deg,rgba(21,39,68,0.62)_0%,rgba(21,39,68,0.38)_42%,rgba(21,39,68,0.65)_100%)]"
+            aria-hidden
+          />
+        ) : null}
+        {showNavbar ? <HeroNavbar variant={resolvedNavbarVariant} /> : null}
 
         <div
           className={cn(

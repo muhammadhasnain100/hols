@@ -8,7 +8,7 @@ type LoginPageProps = {
 
 function LoginFormFallback() {
   return (
-    <div className="rounded-[1.75rem] border border-white/60 bg-white/80 p-6 shadow-[0_24px_80px_rgba(21,39,68,0.12)] backdrop-blur-xl md:p-8">
+    <div className="w-full">
       <div className="h-56 animate-pulse rounded-2xl bg-primary/5" />
     </div>
   );

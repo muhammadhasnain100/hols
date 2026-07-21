@@ -1,0 +1,404 @@
+﻿Frontier BioMed
+Peptide Recommendation Chatbot
+Final Patient Questionnaire Flow & Peptide Mapping
+Provider-facing intake · v1.0 · July 2026
+1. Purpose & Design Principles
+This document defines the end-to-end questionnaire the chatbot runs with a provider who is seeking peptides for a patient. The bot collects structured answers, applies safety filters, then returns a ranked shortlist of the most relevant peptides with a reasoning trace. All output is a recommendation for the provider’s clinical judgment — never a prescription or instruction to use.
+* Adaptive, not flat: a goal router opens only the relevant branch, so a typical patient answers ~15–18 questions, not 40.
+* Safety-first: a red-flag gate runs before recommendations and can suppress an entire category (non-overridable).
+* Evidence-honest: every peptide carries an evidence tier so FDA-approved options and early-stage research compounds never read the same.
+* Traceable: each recommendation states which answers drove it, so the provider can audit the logic.
+Flow Architecture
+STAGE 0  Consent / framing
+STAGE 1  Patient snapshot        (always — 5 Qs)
+STAGE 2  Safety gate             (always — red-flag screen)
+STAGE 3  Goal router             (1 Q — selects branch)
+STAGE 4  Goal-specific deep dive (1 branch loads — 4–6 Qs)
+STAGE 5  Meds / history / labs   (always)
+STAGE 6  Preferences             (route, tolerance, prior response)
+STAGE 7  OUTPUT: ranked peptides + reasoning + safety flags + labs
+________________
+
+
+2. Stage 0 — Consent & Framing
+Before any clinical question, the bot displays a one-time acknowledgement:
+“This tool provides peptide recommendations to support your clinical decision-making. It does not prescribe, diagnose, or replace professional judgment. You confirm you are a licensed provider entering information about a patient.”
+* Provider confirms: “I understand — continue.”
+3. Stage 1 — Patient Snapshot (always asked)
+#
+	Question
+	Answer type
+	Branching / logic
+	1
+	Patient age
+	Number
+	<18 → hard stop. ≥65 → conservative-dosing flag.
+	2
+	Biological sex
+	M / F / Intersex
+	Feeds dosing, PT-141 & GH-axis logic.
+	3
+	Pregnant, trying, or breastfeeding?
+	Yes / No / N/A
+	Yes → blocks nearly all peptides (see gate).
+	4
+	Height & weight
+	Number → BMI
+	Routes weight-loss eligibility & GH dosing.
+	5
+	Activity / training level
+	Sedentary / Recreational / Athlete
+	Weights recovery & GH branches.
+	4. Stage 2 — Safety Gate (always asked — non-overridable filter)
+Runs before the deep dive so a red flag suppresses unsafe categories rather than recommending then retracting.
+#
+	Question
+	Trigger → Action
+	6
+	Active or recent (≤5 yr) cancer / malignancy?
+	Active → suppress all growth-promoting peptides (GH secretagogues, BPC-157, TB-500); refer to oncology. Remission → caution flag + provider confirm.
+	7
+	Personal/family history of medullary thyroid carcinoma or MEN2?
+	Yes → hard block on GLP-1s (semaglutide, tirzepatide).
+	8
+	Known allergy/reaction to peptides or excipients?
+	Yes → exclude the implicated agent(s).
+	9
+	Diagnosed conditions (multi-select)
+	Pancreatitis hx → GLP-1 caution. Severe renal/hepatic → conservative dosing. CVD / uncontrolled HTN → PT-141 caution/block.
+	10
+	Current medications & supplements
+	Nitrates → block PT-141. Insulin/GLP-1 → stacking/interaction check.
+	If a hard stop fires, the bot explains why that category is excluded and continues with the eligible remainder.
+________________
+
+
+5. Stage 3 — Goal Router
+Q11. What is the primary goal for this patient? (Select one primary; one optional secondary can queue a second branch for stack suggestions.)
+Option
+	Opens branch
+	Headline peptides
+	A. Weight loss / metabolic health
+	Branch A
+	Semaglutide, Tirzepatide, Tesamorelin, MOTS-c
+	B. Injury recovery / pain / tissue repair
+	Branch B
+	BPC-157, TB-500, GHK-Cu, KPV
+	C. Energy, vitality & healthy aging (GH)
+	Branch C
+	Sermorelin, Ipamorelin, CJC-1295, Tesamorelin
+	D. Sexual health / libido
+	Branch D
+	PT-141 (bremelanotide)
+	E. Cognitive performance, focus & mood
+	Branch E
+	Semax, Selank, Dihexa
+	F. Immune support / recovery from illness
+	Branch F
+	Thymosin alpha-1, LL-37, KPV
+	G. Skin, hair & aesthetics
+	Branch G
+	GHK-Cu
+	H. Sleep quality
+	Branch H
+	DSIP, Epitalon, GH-axis peptides
+	6. Stage 4 — Goal-Specific Branches
+Only the selected branch loads. Each ends by producing a ranked peptide shortlist for Stage 7.
+Branch A — Weight Loss / Metabolic
+Questions:
+* Current BMI (auto) and target weight / % loss goal
+* Prior weight-loss meds tried — GLP-1 before? tolerated? response?
+* Appetite / craving pattern (constant hunger / emotional / large portions)
+* GI tolerance concerns (history of nausea)
+* Metabolic labs on file? (HbA1c, fasting glucose/insulin)
+* Primary phenotype: overall weight vs. visceral/belly fat
+Peptide mapping:
+Peptide
+	Best fit when
+	Evidence tier
+	Tirzepatide
+	Highest weight loss needed (≥20% target), eligible
+	FDA-approved (GIP/GLP-1)
+	Semaglutide
+	First-line appetite/weight, GLP-1 candidate
+	FDA-approved
+	Tesamorelin
+	Visceral/trunk fat focus
+	FDA-approved (GHRH)
+	MOTS-c
+	Metabolic/mitochondrial adjunct, fat oxidation
+	Early-stage research
+	AOD-9604
+	Mild lipolysis adjunct
+	Early-stage research
+	
+
+Branch B — Injury Recovery / Tissue Repair
+Questions:
+* Injury type (tendon/ligament / muscle / joint / gut-GI / post-surgical / bone)
+* Acute (<6 wk) vs. chronic
+* Location — localized vs. systemic need
+* Prior imaging/diagnosis? Pain level (0–10)
+Peptide mapping:
+Peptide
+	Best fit when
+	Evidence tier
+	BPC-157
+	Tendon/ligament, gut/GI, systemic repair
+	Research (503A change 2026)
+	TB-500 (Thymosin β4)
+	Muscle, systemic recovery, flexibility
+	Research (503A change 2026)
+	BPC-157 + TB-500
+	Most common recovery stack — soft-tissue injury
+	Research — synergistic
+	GHK-Cu
+	Skin/wound, scar, connective tissue
+	Research (topical/injectable)
+	KPV
+	Add when inflammation is the main driver
+	Early-stage research
+	
+
+Branch C — Energy / Vitality / GH Optimization
+Questions:
+* Main symptoms (fatigue / poor recovery / low muscle / poor sleep / low libido)
+* IGF-1 baseline available? (required before GH secretagogues)
+* Age band (GH response differs)
+* Goal emphasis: body composition vs. recovery vs. anti-aging
+Peptide mapping:
+Peptide
+	Best fit when
+	Evidence tier
+	Ipamorelin + CJC-1295
+	Modern default stack — clean GH pulse, recovery/body comp
+	Research — common stack
+	Sermorelin
+	Gentler GHRH, closer to natural pulsatility
+	Rx pathway
+	Tesamorelin
+	Strongest visceral-fat + IGF-1 evidence
+	FDA-approved
+	Ipamorelin (solo)
+	Low-noise bedtime pulse, less hunger
+	Research
+	
+
+Branch D — Sexual Health
+Questions:
+* Concern (low desire / arousal / erectile function / mixed)
+* Relevant hormone context (known low testosterone?)
+* Cardiovascular status / blood pressure
+* On nitrates or nitric-oxide donors? (interaction)
+Peptide mapping:
+Peptide
+	Best fit when
+	Evidence / safety
+	PT-141 (Bremelanotide)
+	Central low desire/arousal, both sexes; on-demand
+	Rx pathway — flag BP; contraindicated with CVD/uncontrolled HTN & nitrates
+	
+
+Branch E — Cognitive / Mood / Focus
+Questions:
+* Primary target (focus/memory / anxiety/mood / mental fatigue / neuroprotection)
+* Existing anxiety/depression dx or psych meds? (interaction flag)
+Peptide mapping:
+Peptide
+	Best fit when
+	Evidence tier
+	Semax
+	Focus, mental fatigue, neuroprotection
+	Research (503A change 2026)
+	Selank
+	Anxiety/clarity without sedation
+	Early-stage research
+	Dihexa
+	Potent synaptogenesis — last-line, caution
+	Early-stage / limited human data
+	
+
+Branch F — Immune Support
+Questions:
+* Context (frequent infections / post-viral recovery / autoimmune / general)
+* Autoimmune disease present? (caution with immune modulation)
+Peptide mapping:
+Peptide
+	Best fit when
+	Evidence tier
+	Thymosin alpha-1
+	T-cell support, immune surveillance, post-illness
+	Approved some regions / research
+	LL-37
+	Broad antimicrobial + wound support
+	Early-stage research
+	KPV
+	Inflammatory / gut-mediated immune modulation
+	Early-stage research
+	
+
+Branch G — Skin, Hair & Aesthetics
+Questions:
+* Target (skin remodeling/collagen / wound-scar / hair thinning)
+* Topical vs. injectable preference
+Peptide mapping:
+Peptide
+	Best fit when
+	Evidence tier
+	GHK-Cu
+	Collagen/skin remodeling, wound repair, hair follicle
+	Strongest visible-skin evidence
+	
+
+Branch H — Sleep
+Questions:
+* Issue (onset / maintenance / quality / circadian shift)
+Peptide mapping:
+Peptide
+	Best fit when
+	Evidence tier
+	DSIP
+	Sleep onset / quality
+	Early-stage research
+	Epitalon
+	Circadian regulation, longevity marker
+	Early-stage research
+	GH-axis peptides
+	Deep-sleep improvement (secondary to Branch C)
+	Research
+	
+
+________________
+
+
+7. Stage 5 — History & Labs (always)
+* Q12. Prior peptide/hormone therapy? Which, response, side effects — avoids re-suggesting failures and personalizes.
+* Q13. Relevant labs on file? Surfaces the branch-specific baseline the bot will recommend obtaining before initiation.
+Goal branch
+	Recommended baseline labs
+	Weight / metabolic (A)
+	HbA1c, fasting glucose, fasting insulin, lipid panel
+	GH / vitality (C)
+	IGF-1 (required), consider thyroid panel
+	Immune (F)
+	CBC, inflammatory markers (CRP)
+	Sexual health (D)
+	Blood pressure, testosterone (context)
+	All
+	Comprehensive metabolic panel, age-appropriate screening
+	Labs are recommended, not blocking — the bot flags what to obtain rather than halting the flow.
+8. Stage 6 — Preferences
+* Q14. Injection tolerance — daily subcutaneous OK / prefer less frequent / prefer oral or topical. (Filters delivery route.)
+* Q15. Complexity — single peptide vs. open to a validated stack.
+* Q16. Timeline / commitment — short cycle vs. ongoing.
+9. Stage 7 — Output
+The recommendation card returns, in order:
+* Ranked shortlist (2–4 peptides) for the primary goal — scored on goal-fit + evidence strength + safety.
+* Reasoning trace per suggestion — which answers drove it.
+* Suggested validated stack when a secondary goal or established combo applies (e.g., BPC-157 + TB-500; CJC-1295 + Ipamorelin).
+* Safety flags fired — contraindications caught and monitoring notes (e.g., “confirm BP for PT-141,” “IGF-1 baseline needed”).
+* Recommended baseline labs before initiation.
+* Standing disclaimer — recommendation for provider judgment, not a prescription.
+Ranking logic (composite score)
+score = goalFit(0.5) + evidenceTier(0.3) + safetyFit(0.2)
+Safety filters are applied first as hard gates; the composite score only ranks the surviving eligible peptides. A red flag can empty a category entirely — in which case the bot explains the exclusion instead of forcing a suggestion.
+________________
+
+
+10. Master Peptide Reference
+Peptide
+	Category
+	Primary use
+	Evidence tier
+	Semaglutide
+	Metabolic
+	Weight loss, appetite
+	FDA-approved
+	Tirzepatide
+	Metabolic
+	Highest weight loss
+	FDA-approved
+	Tesamorelin
+	Metabolic / GH
+	Visceral fat, IGF-1
+	FDA-approved
+	MOTS-c
+	Metabolic / longevity
+	Fat oxidation, mitochondria
+	Early-stage
+	AOD-9604
+	Metabolic
+	Lipolysis adjunct
+	Early-stage
+	BPC-157
+	Recovery
+	Tendon/gut/systemic repair
+	Research
+	TB-500 (Thymosin β4)
+	Recovery
+	Muscle/systemic recovery
+	Research
+	GHK-Cu
+	Skin / recovery
+	Collagen, skin, hair, wound
+	Research (best skin evidence)
+	KPV
+	Immune / recovery
+	Anti-inflammatory, gut
+	Early-stage
+	Sermorelin
+	GH axis
+	Gentle GH support
+	Rx pathway
+	Ipamorelin
+	GH axis
+	Clean GH pulse, recovery
+	Research
+	CJC-1295
+	GH axis
+	Sustained GH/IGF-1
+	Research
+	PT-141 (Bremelanotide)
+	Sexual health
+	Libido/arousal (both sexes)
+	Rx pathway
+	Semax
+	Cognitive
+	Focus, neuroprotection
+	Research
+	Selank
+	Cognitive / mood
+	Anxiety, clarity
+	Early-stage
+	Dihexa
+	Cognitive
+	Synaptogenesis (potent)
+	Early-stage
+	Thymosin alpha-1
+	Immune
+	T-cell / immune support
+	Approved some regions
+	LL-37
+	Immune
+	Antimicrobial, wound
+	Early-stage
+	DSIP
+	Sleep
+	Sleep onset/quality
+	Early-stage
+	Epitalon
+	Longevity / sleep
+	Circadian, telomere marker
+	Early-stage
+	11. Regulatory Note (2026)
+On April 23, 2026 the FDA removed twelve peptides — including BPC-157, TB-500, KPV, MOTS-c, Epitalon, Semax, DSIP and injectable GHK-Cu — from the Section 503A Category 2 list that had restricted compounding. Sermorelin, tesamorelin and PT-141 (bremelanotide) already have established prescription pathways. The Pharmacy Compounding Advisory Committee (PCAC) was scheduled to meet July 23–24, 2026 to discuss the 503A bulk-substance list. Availability and legal status shift — the bot should carry a current-status tag per peptide and defer to Frontier BioMed’s legal/regulatory guidance before finalizing any recommendation.
+12. Sources
+* FDA-Approved Peptides — Optmzd: optmzd.app/blog/fda-approved-peptides
+* FDA Peptide Reclassification 2026 — Amanecia Health
+* Peptide Therapy Screening Questionnaire — GuppyMeds
+* AOD-9604 vs MOTS-c vs Tesamorelin vs Semaglutide vs Tirzepatide — Edward Rubin MD
+* GH secretagogue comparison (Sermorelin/Ipamorelin/CJC-1295/Tesamorelin) — Tydes / PeptideFox
+* BPC-157 + TB-500 + KPV + GHK-Cu healing stack — PeptideDeck / Rite Aid
+* PT-141 (Bremelanotide) dosing & contraindications — Meto / Medsbase
+* Nootropic peptides (Semax, Selank, Dihexa) — PeptidesExplorer / Spartan Peptides
+Frontier BioMed — Peptide Chatbot Questionnaire FlowPage

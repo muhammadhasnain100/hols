@@ -4,7 +4,7 @@ import { RegisterForm } from "@/components/platform/auth/register";
 
 function RegisterFormFallback() {
   return (
-    <div className="rounded-3xl border border-primary/8 bg-white p-7 shadow-sm md:p-8">
+    <div className="w-full">
       <div className="h-48 animate-pulse rounded-2xl bg-primary/5" />
     </div>
   );

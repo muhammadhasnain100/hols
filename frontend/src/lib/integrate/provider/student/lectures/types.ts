@@ -124,3 +124,65 @@ export type LessonListParams = PaginationParams & {
   l1_name?: string;
   l2_name?: string;
 };
+
+export type QuizAnswerSubmission = {
+  variant_id: string;
+  answer: unknown;
+};
+
+export type SubmitLessonQuizRequest = {
+  answers: QuizAnswerSubmission[];
+};
+
+export type GradedQuizAnswer = {
+  variant_id: string;
+  variant_type?: string;
+  question?: string;
+  user_answer?: unknown;
+  correct_answer?: unknown;
+  is_correct: boolean;
+};
+
+export type LessonQuizResult = {
+  course_id: string;
+  lesson_id: string;
+  lesson_title: string;
+  lesson_order: number;
+  attempt_id: string;
+  total_questions: number;
+  correct_count: number;
+  score_percent: number;
+  passed: boolean;
+  answers: GradedQuizAnswer[];
+  created_at: string;
+  updated_at: string;
+};
+
+export type LessonQuizResultSummary = {
+  course_id: string;
+  lesson_id: string;
+  lesson_title: string;
+  lesson_order: number;
+  attempt_id: string;
+  total_questions: number;
+  correct_count: number;
+  score_percent: number;
+  passed: boolean;
+  updated_at: string;
+};
+
+export type CourseTestSummary = {
+  lessons_quizzed: number;
+  total_lessons: number;
+  average_score: number;
+  passed_count: number;
+};
+
+export type CourseTestResultsData = {
+  course_id: string;
+  summary: CourseTestSummary;
+  items: LessonQuizResultSummary[];
+  pagination: PaginationMeta;
+};
+
+export type CourseTestResultsParams = PaginationParams;

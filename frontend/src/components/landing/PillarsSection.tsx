@@ -12,7 +12,7 @@ const AUTO_PLAY_MS = 4500;
 const VISIBLE_CARDS = 4;
 const CLONE_COUNT = 2;
 
-function buildExtendedItems(items: PillarItem[]) {
+function buildExtendedItems(items: readonly PillarItem[]) {
   return [
     ...items.slice(-CLONE_COUNT),
     ...items,
@@ -111,7 +111,7 @@ function PillarsCarousel({
   exploreLabel,
   exploreHref,
 }: {
-  items: PillarItem[];
+  items: readonly PillarItem[];
   exploreLabel: string;
   exploreHref: string;
 }) {

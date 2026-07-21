@@ -66,7 +66,7 @@ export function NavbarMobile() {
               <Button href="/login" variant="glass" onClick={() => setOpen(false)}>
                 Log in
               </Button>
-              <Button href="/contact" variant="primary" onClick={() => setOpen(false)}>
+              <Button href="/register" variant="primary" onClick={() => setOpen(false)}>
                 Get Started
               </Button>
             </div>

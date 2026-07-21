@@ -6,6 +6,7 @@ import {
   WhoItsForSection,
   CertificationSection,
   PricingTeaserSection,
+  FAQsSection,
   FinalCTASection,
 } from "@/components/landing";
 
@@ -25,6 +26,7 @@ export default function HomePage() {
       <WhoItsForSection />
       <CertificationSection />
       <PricingTeaserSection />
+      <FAQsSection />
       <FinalCTASection />
     </>
   );

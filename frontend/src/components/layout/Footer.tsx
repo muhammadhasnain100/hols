@@ -68,7 +68,7 @@ export function Footer() {
                   </FooterLink>
                 </div>
                 <div>
-                  <FooterLink href={footerNav.contact.href}>Contact Us</FooterLink>
+                  <FooterLink href={footerNav.contact.href}>Email us</FooterLink>
                 </div>
               </div>
             </div>
@@ -95,12 +95,6 @@ export function Footer() {
                   <FooterLink href={item.href}>{item.label}</FooterLink>
                 </li>
               ))}
-              <li>
-                <FooterLink href="/faqs">FAQs</FooterLink>
-              </li>
-              <li>
-                <FooterLink href="/blog">Blog</FooterLink>
-              </li>
             </ul>
           </div>
 

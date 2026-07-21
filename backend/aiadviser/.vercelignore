@@ -1,0 +1,14 @@
+chunks.json
+courses_complete.json
+courses/
+prepare.py
+upload_to_vectordb.py
+.env
+__pycache__/
+*.pyc
+.venv/
+venv/
+.git/
+.idea/
+.vscode/
+*.log

@@ -13,10 +13,10 @@ type CourseOptionNavProps = {
 const OPTIONS: Array<{ id: CourseOption; label: string; href: (courseId: string) => string }> = [
   { id: "overview", label: "Overview", href: (courseId) => `/student/lectures/${courseId}` },
   { id: "lessons", label: "Lessons", href: (courseId) => `/student/lectures/${courseId}/lessons` },
-  { id: "calculator", label: "Peptide Calculator", href: () => "/student/calculator" },
+  { id: "calculator", label: "Calculator", href: () => "/student/calculator" },
   {
     id: "test-result",
-    label: "Test Result",
+    label: "Test result",
     href: (courseId) => `/student/lectures/${courseId}/test-result`,
   },
 ];
@@ -25,7 +25,7 @@ export function CourseOptionNav({ courseId, active }: CourseOptionNavProps) {
   return (
     <nav
       aria-label="Course sections"
-      className="grid overflow-hidden rounded-2xl border border-black/[0.06] bg-[#E8EEF2] text-sm font-semibold text-primary/70 sm:grid-cols-4"
+      className="flex flex-wrap gap-1.5 rounded-2xl bg-primary/[0.04] p-1.5"
     >
       {OPTIONS.map((option) => {
         const isActive = option.id === active;
@@ -34,8 +34,10 @@ export function CourseOptionNav({ courseId, active }: CourseOptionNavProps) {
             key={option.id}
             href={option.href(courseId)}
             className={cn(
-              "px-4 py-3 text-center transition hover:bg-white/70 hover:text-primary",
-              isActive && "bg-primary text-white hover:bg-primary hover:text-white",
+              "rounded-xl px-4 py-2 text-[13px] font-medium transition",
+              isActive
+                ? "bg-white text-primary shadow-[0_1px_3px_rgba(21,39,68,0.08)]"
+                : "text-primary/50 hover:bg-white/70 hover:text-primary",
             )}
             aria-current={isActive ? "page" : undefined}
           >

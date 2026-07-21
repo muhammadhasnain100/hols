@@ -2,9 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
-import { PortalShell } from "@/components/platform/provider/PortalShell";
-import { PaymentSubnav } from "@/components/platform/provider/student/payment/PaymentSubnav";
-import { studentNav } from "@/components/platform/provider/student/studentNav";
+import { PaymentPageLayout } from "@/components/platform/provider/student/payment/PaymentPageLayout";
 import { Button } from "@/components/ui/Button";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
@@ -17,6 +15,25 @@ import {
   formatMoney,
   planLabels,
 } from "@/lib/integrate/provider/student/payment/types";
+
+function OrderRow({ order }: { order: Order }) {
+  return (
+    <div className="rounded-2xl bg-white p-4 shadow-[0_1px_3px_rgba(21,39,68,0.06)] md:p-5">
+      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-primary/40">Order</p>
+      <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+        <div className="min-w-0">
+          <p className="text-[15px] font-semibold text-primary">
+            {planLabels[order.plan_type]} · {formatMoney(order.amount, order.currency)}
+          </p>
+          <p className="mt-1 text-[13px] text-primary/50">{formatDate(order.created_at)}</p>
+        </div>
+        <span className="inline-flex w-fit shrink-0 rounded-full bg-primary/[0.06] px-2.5 py-1 text-xs font-medium capitalize text-primary/70">
+          {order.status}
+        </span>
+      </div>
+    </div>
+  );
+}
 
 export function StudentOrdersPage() {
   const cachedFirstPage = getCachedOrders({ page: 1, limit: 10 });
@@ -51,73 +68,60 @@ export function StudentOrdersPage() {
       window.clearTimeout(timer);
       controller.abort();
     };
-    // Intentionally only refetch when page changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
   return (
-    <PortalShell role="student" title="Orders" nav={studentNav}>
-      <div className="mx-auto grid w-full max-w-3xl gap-5">
-        <PaymentSubnav />
+    <PaymentPageLayout
+      title="Orders"
+      description="Review your purchase history and membership receipts."
+      visual="orders"
+    >
+      {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
 
-        {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
+      <section>
+        <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary/40">History</p>
+        <h2 className="mt-1 text-[15px] font-semibold text-primary">Order history</h2>
+        <p className="mt-1 text-[13px] text-primary/45">Membership purchases on this account.</p>
 
-        <section className="rounded-2xl border border-black/[0.06] bg-white p-5 md:p-6">
-          <h2 className="text-[15px] font-semibold text-primary">Order history</h2>
-          <p className="mt-1 text-[13px] text-primary/45">Membership purchases on this account.</p>
-
-          {loading ? (
-            <div className="mt-8 flex justify-center py-6">
-              <div className="h-8 w-8 animate-pulse rounded-full bg-primary/10" />
-            </div>
-          ) : orders.length === 0 ? (
-            <p className="mt-8 text-[13px] text-primary/45">No orders yet.</p>
-          ) : (
-            <div className="mt-5 space-y-2.5">
-              {orders.map((order) => (
-                <div
-                  key={order.order_id}
-                  className="flex flex-wrap items-center justify-between gap-3 rounded-xl border border-black/[0.05] bg-[#F5F7FA] px-4 py-3"
-                >
-                  <div className="min-w-0">
-                    <p className="text-[13px] font-medium text-primary">
-                      {planLabels[order.plan_type]} · {formatMoney(order.amount, order.currency)}
-                    </p>
-                    <p className="mt-0.5 truncate text-[11px] text-primary/40">
-                      {formatDate(order.created_at)} · {order.status}
-                    </p>
-                  </div>
-                  <span className="rounded-full bg-white px-2.5 py-1 text-[11px] font-medium capitalize text-primary/55">
-                    {order.status}
-                  </span>
-                </div>
-              ))}
-            </div>
-          )}
-
-          <div className="mt-5 flex items-center justify-between gap-3">
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              disabled={page <= 1 || loading}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-            >
-              Previous
-            </Button>
-            <span className="text-[12px] text-primary/40">Page {page}</span>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              disabled={!hasNext || loading}
-              onClick={() => setPage((p) => p + 1)}
-            >
-              Next
-            </Button>
+        {loading ? (
+          <div className="mt-6 flex justify-center py-8">
+            <div className="h-8 w-8 animate-pulse rounded-full bg-primary/10" />
           </div>
-        </section>
-      </div>
-    </PortalShell>
+        ) : orders.length === 0 ? (
+          <p className="mt-6 rounded-2xl bg-white px-5 py-8 text-center text-[13px] text-primary/45 shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
+            No orders yet.
+          </p>
+        ) : (
+          <div className="mt-5 grid gap-3">
+            {orders.map((order) => (
+              <OrderRow key={order.order_id} order={order} />
+            ))}
+          </div>
+        )}
+
+        <div className="mt-5 flex items-center justify-between gap-3 border-t border-primary/[0.06] pt-5">
+          <Button
+            type="button"
+            variant="secondary"
+            size="md"
+            disabled={page <= 1 || loading}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+          >
+            Previous
+          </Button>
+          <span className="text-[12px] text-primary/40">Page {page}</span>
+          <Button
+            type="button"
+            variant="secondary"
+            size="md"
+            disabled={!hasNext || loading}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            Next
+          </Button>
+        </div>
+      </section>
+    </PaymentPageLayout>
   );
 }

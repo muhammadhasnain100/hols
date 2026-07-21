@@ -2,7 +2,7 @@ export const SYRINGE_SIZES_ML = [0.25, 0.5, 1, 2, 3] as const;
 
 export type SyringeSizeMl = (typeof SYRINGE_SIZES_ML)[number];
 
-export type MassUnit = "mg" | "mcg";
+export type MassUnit = "g" | "mg" | "mcg";
 export type VolumeUnit = "ml";
 
 export type PeptideCalculatorInput = {
@@ -25,6 +25,7 @@ export type PeptideCalculatorResult = {
 };
 
 export function toMcg(amount: number, unit: MassUnit): number {
+  if (unit === "g") return amount * 1_000_000;
   if (unit === "mg") return amount * 1000;
   return amount;
 }

@@ -12,6 +12,7 @@ from core.async_io import run_sync
 from database import get_table
 from database_entities import Course, CourseSection, CourseTopic, Lesson
 from services.common.pagination import build_pagination, decode_cursor, encode_cursor, normalize_value
+from services.routes.lectures.quiz_utils import public_variants
 
 logger = logging.getLogger(__name__)
 
@@ -242,7 +243,11 @@ def _lesson_summary(item: dict[str, Any]) -> dict[str, Any]:
 
 def _lesson_detail(item: dict[str, Any]) -> dict[str, Any]:
     detail = _lesson_summary(item)
-    detail["variants"] = normalize_value(item.get("variants") or [])
+    raw_variants = item.get("variants") or []
+    if isinstance(raw_variants, list):
+        detail["variants"] = public_variants(raw_variants)
+    else:
+        detail["variants"] = []
     detail["text_content"] = item.get("text_content")
     detail["raw_data_s3_key"] = item.get("raw_data_s3_key")
     return detail

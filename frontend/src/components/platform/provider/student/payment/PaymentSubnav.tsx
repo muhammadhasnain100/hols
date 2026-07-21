@@ -13,7 +13,7 @@ type PaymentSubnavLink = {
 const LINKS: readonly PaymentSubnavLink[] = [
   { href: "/student/payment", label: "Membership", exact: true },
   { href: "/student/payment/orders", label: "Orders" },
-  { href: "/student/payment/card", label: "Card" },
+  { href: "/student/payment/card", label: "Payment card" },
 ];
 
 export function PaymentSubnav() {
@@ -22,7 +22,7 @@ export function PaymentSubnav() {
   return (
     <nav
       aria-label="Payment sections"
-      className="flex flex-wrap gap-1 rounded-xl border border-black/[0.06] bg-white p-1"
+      className="flex flex-wrap gap-1.5 rounded-2xl bg-primary/[0.04] p-1.5"
     >
       {LINKS.map((link) => {
         const active = link.exact
@@ -33,10 +33,10 @@ export function PaymentSubnav() {
             key={link.href}
             href={link.href}
             className={cn(
-              "rounded-lg px-3.5 py-2 text-[13px] font-medium transition",
+              "rounded-xl px-4 py-2 text-[13px] font-medium transition",
               active
-                ? "bg-primary text-white"
-                : "text-primary/50 hover:bg-black/[0.03] hover:text-primary",
+                ? "bg-white text-primary shadow-[0_1px_3px_rgba(21,39,68,0.08)]"
+                : "text-primary/50 hover:bg-white/70 hover:text-primary",
             )}
           >
             {link.label}

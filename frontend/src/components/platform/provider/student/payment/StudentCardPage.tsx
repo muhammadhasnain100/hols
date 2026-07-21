@@ -2,9 +2,9 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
-import { PortalShell } from "@/components/platform/provider/PortalShell";
-import { PaymentSubnav } from "@/components/platform/provider/student/payment/PaymentSubnav";
-import { studentNav } from "@/components/platform/provider/student/studentNav";
+import { AuthField } from "@/components/platform/auth/AuthField";
+import { authFieldClass } from "@/components/platform/auth/auth-styles";
+import { PaymentPageLayout } from "@/components/platform/provider/student/payment/PaymentPageLayout";
 import { Button } from "@/components/ui/Button";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
@@ -14,9 +14,9 @@ import {
   updateCard,
   type PaymentCard,
 } from "@/lib/integrate/provider/student/payment/api";
+import { cn } from "@/lib/utils";
 
-const fieldClass =
-  "w-full rounded-xl border border-black/[0.08] bg-white px-3.5 py-3 text-sm text-primary outline-none transition placeholder:text-primary/35 focus:border-primary/30 focus:ring-4 focus:ring-primary/5";
+const labelClass = "font-sans text-sm font-medium text-primary";
 
 type CardFormState = {
   card_number: string;
@@ -103,113 +103,124 @@ export function StudentCardPage() {
   }
 
   return (
-    <PortalShell role="student" title="Payment card" nav={studentNav}>
-      <div className="mx-auto grid w-full max-w-xl gap-5">
-        <PaymentSubnav />
+    <PaymentPageLayout
+      title="Payment card"
+      description="Add or update the card used for membership purchases."
+      visual="card"
+    >
+      {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
+      {success ? <AuthAlert variant="success">{success}</AuthAlert> : null}
 
-        {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
-        {success ? <AuthAlert variant="success">{success}</AuthAlert> : null}
+      {loading ? (
+        <div className="flex justify-center py-10">
+          <div className="h-8 w-8 animate-pulse rounded-full bg-primary/10" />
+        </div>
+      ) : (
+        <section className="mx-auto w-full max-w-lg">
+          <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary/40">Billing</p>
+          <h2 className="mt-1 text-[15px] font-semibold text-primary">
+            {card ? "Update payment card" : "Add payment card"}
+          </h2>
+          <p className="mt-1 text-[13px] text-primary/45">
+            One card per account. Required to purchase membership.
+          </p>
 
-        <section className="rounded-2xl border border-black/[0.06] bg-white p-5 md:p-6">
-          {loading ? (
-            <div className="flex justify-center py-10">
-              <div className="h-8 w-8 animate-pulse rounded-full bg-primary/10" />
-            </div>
-          ) : (
-            <>
-              <h2 className="text-[15px] font-semibold text-primary">
-                {card ? "Update card" : "Add card"}
-              </h2>
-              <p className="mt-1 text-[13px] text-primary/45">
-                One card per account. Required to purchase membership.
+          {card ? (
+            <div className="mt-4 rounded-2xl bg-white p-4 shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
+              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-primary/40">
+                Saved card
               </p>
-
-              {card ? (
-                <div className="mt-4 rounded-xl border border-black/[0.05] bg-[#F5F7FA] px-4 py-3 text-[13px] text-primary">
-                  {card.card_number_masked}
-                  {card.card_holder_name ? ` · ${card.card_holder_name}` : ""}
-                  <span className="mt-0.5 block text-[11px] text-primary/40">
-                    Expires {card.exp_month}/{card.exp_year}
-                  </span>
-                </div>
+              <p className="mt-2 text-[15px] font-semibold text-primary">{card.card_number_masked}</p>
+              {card.card_holder_name ? (
+                <p className="mt-1 text-sm text-primary/55">{card.card_holder_name}</p>
               ) : null}
+              <p className="mt-1 text-xs text-primary/40">
+                Expires {card.exp_month}/{card.exp_year}
+              </p>
+            </div>
+          ) : null}
 
-              <form className="mt-5 grid gap-3.5" onSubmit={handleSubmit}>
+          <form className="mt-5 grid gap-4" onSubmit={handleSubmit}>
+            <AuthField
+              id="card_holder_name"
+              label="Cardholder name"
+              value={form.card_holder_name}
+              onChange={(value) => setForm((prev) => ({ ...prev, card_holder_name: value }))}
+              placeholder="Name on card"
+              autoComplete="cc-name"
+            />
+            <AuthField
+              id="card_number"
+              label="Card number"
+              value={form.card_number}
+              onChange={(value) => setForm((prev) => ({ ...prev, card_number: value }))}
+              placeholder="1234 5678 9012 3456"
+              autoComplete="cc-number"
+              required
+            />
+            <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-2">
+                <label htmlFor="exp_month" className={labelClass}>
+                  Expiry month
+                </label>
                 <input
-                  aria-label="Cardholder name"
-                  placeholder="Cardholder name"
-                  value={form.card_holder_name}
-                  onChange={(e) => setForm((prev) => ({ ...prev, card_holder_name: e.target.value }))}
-                  className={fieldClass}
-                />
-                <input
+                  id="exp_month"
                   required
-                  aria-label="Card number"
-                  inputMode="numeric"
-                  placeholder="Card number"
-                  value={form.card_number}
-                  onChange={(e) => setForm((prev) => ({ ...prev, card_number: e.target.value }))}
-                  className={fieldClass}
+                  type="number"
+                  min={1}
+                  max={12}
+                  placeholder="MM"
+                  value={form.exp_month}
+                  onChange={(e) => setForm((prev) => ({ ...prev, exp_month: e.target.value }))}
+                  className={cn(authFieldClass, "px-4")}
                 />
-                <div className="grid grid-cols-2 gap-3.5">
-                  <input
-                    required
-                    type="number"
-                    min={1}
-                    max={12}
-                    aria-label="Expiry month"
-                    placeholder="MM"
-                    value={form.exp_month}
-                    onChange={(e) => setForm((prev) => ({ ...prev, exp_month: e.target.value }))}
-                    className={fieldClass}
-                  />
-                  <input
-                    required
-                    type="number"
-                    min={2024}
-                    max={2100}
-                    aria-label="Expiry year"
-                    placeholder="YYYY"
-                    value={form.exp_year}
-                    onChange={(e) => setForm((prev) => ({ ...prev, exp_year: e.target.value }))}
-                    className={fieldClass}
-                  />
-                </div>
-                <div className="grid grid-cols-2 gap-3.5">
-                  <input
-                    required
-                    inputMode="numeric"
-                    maxLength={4}
-                    aria-label="CVC"
-                    placeholder="CVC"
-                    value={form.cvc}
-                    onChange={(e) => setForm((prev) => ({ ...prev, cvc: e.target.value }))}
-                    className={fieldClass}
-                  />
-                  <input
-                    inputMode="numeric"
-                    maxLength={6}
-                    aria-label="PIN optional"
-                    placeholder="PIN (optional)"
-                    value={form.pin}
-                    onChange={(e) => setForm((prev) => ({ ...prev, pin: e.target.value }))}
-                    className={fieldClass}
-                  />
-                </div>
-                <Button
-                  type="submit"
-                  variant="primary"
-                  size="lg"
-                  disabled={saving}
-                  className="mt-1 w-full justify-center"
-                >
-                  {saving ? "Saving…" : card ? "Update card" : "Save card"}
-                </Button>
-              </form>
-            </>
-          )}
+              </div>
+              <div className="grid gap-2">
+                <label htmlFor="exp_year" className={labelClass}>
+                  Expiry year
+                </label>
+                <input
+                  id="exp_year"
+                  required
+                  type="number"
+                  min={2024}
+                  max={2100}
+                  placeholder="YYYY"
+                  value={form.exp_year}
+                  onChange={(e) => setForm((prev) => ({ ...prev, exp_year: e.target.value }))}
+                  className={cn(authFieldClass, "px-4")}
+                />
+              </div>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-2">
+              <AuthField
+                id="cvc"
+                label="CVC"
+                value={form.cvc}
+                onChange={(value) => setForm((prev) => ({ ...prev, cvc: value }))}
+                placeholder="123"
+                required
+              />
+              <AuthField
+                id="pin"
+                label="PIN (optional)"
+                value={form.pin}
+                onChange={(value) => setForm((prev) => ({ ...prev, pin: value }))}
+                placeholder="Optional"
+              />
+            </div>
+            <Button
+              type="submit"
+              variant="primary"
+              size="lg"
+              disabled={saving}
+              className="mt-1 w-full justify-center sm:w-auto sm:min-w-[10rem]"
+            >
+              {saving ? "Saving…" : card ? "Update card" : "Save card"}
+            </Button>
+          </form>
         </section>
-      </div>
-    </PortalShell>
+      )}
+    </PaymentPageLayout>
   );
 }

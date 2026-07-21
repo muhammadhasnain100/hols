@@ -13,6 +13,62 @@ type Card = (typeof landingContent.whatYouGet.cards)[number];
 
 const STEP_SIDES: Array<"left" | "right"> = ["right", "left", "right"];
 
+/** Reliable horizontal dashes — avoids clipped border-dashed on 1px boxes. */
+function DashedConnector({ className }: { className?: string }) {
+  return (
+    <div
+      aria-hidden
+      className={cn("h-px min-h-px min-w-[1.25rem] flex-1 self-center", className)}
+      style={{
+        backgroundImage:
+          "repeating-linear-gradient(90deg, rgba(255,255,255,0.58) 0 5px, transparent 5px 10px)",
+      }}
+    />
+  );
+}
+
+const IMAGE_FRAME =
+  "relative aspect-[16/10] w-full max-w-[14rem] shrink-0 overflow-hidden border border-white/20";
+
+function StepImage({ card }: { card: Card }) {
+  return (
+    <div className={IMAGE_FRAME}>
+      <Image
+        src={card.image}
+        alt={card.title}
+        fill
+        className="object-cover"
+        sizes="224px"
+      />
+    </div>
+  );
+}
+
+function StepDescription({
+  card,
+  align,
+  className,
+}: {
+  card: Card;
+  align: "left" | "right" | "center";
+  className?: string;
+}) {
+  return (
+    <p
+      className={cn(
+        "font-body text-sm leading-relaxed text-white/90 md:text-[0.95rem]",
+        "glass-capsule-overlay rounded-full px-5 py-3 md:px-6 md:py-4",
+        align === "left" && "text-left",
+        align === "right" && "text-right",
+        align === "center" && "mx-auto max-w-sm text-center",
+        className,
+      )}
+    >
+      {card.description}
+    </p>
+  );
+}
+
 function StepMedia({
   card,
   showImage,
@@ -25,41 +81,28 @@ function StepMedia({
   return (
     <div
       className={cn(
-        "max-w-sm space-y-4",
+        "max-w-[17rem] shrink-0 space-y-4 sm:max-w-xs md:max-w-sm",
         align === "left" && "mr-auto text-left",
         align === "right" && "ml-auto text-right",
-        align === "center" && "mx-auto text-center",
+        align === "center" && "mx-auto max-w-sm text-center",
       )}
     >
-      {showImage ? (
-        <div
-          className={cn(
-            "relative aspect-[16/10] w-full max-w-[14rem] overflow-hidden border border-white/20",
-            align === "right" && "ml-auto",
-            align === "left" && "mr-auto",
-            align === "center" && "mx-auto",
-          )}
-        >
-          <Image
-            src={card.image}
-            alt={card.title}
-            fill
-            className="object-cover"
-            sizes="224px"
-          />
-        </div>
-      ) : null}
-      <p
-        className={cn(
-          "font-body text-sm leading-relaxed text-white/90 md:text-[0.95rem]",
-          "glass-capsule-overlay rounded-full px-5 py-3 md:px-6 md:py-4",
-        )}
-      >
-        {card.description}
-      </p>
+      {showImage ? <StepImage card={card} /> : null}
+      <StepDescription card={card} align={align} />
     </div>
   );
 }
+
+function StepBadge({ label }: { label: string }) {
+  return (
+    <span className="relative inline-flex min-w-[7.5rem] items-center justify-center rounded-full bg-white px-5 py-2.5 font-sans text-[0.7rem] font-bold uppercase tracking-[0.18em] text-primary md:min-w-[8.5rem] md:px-6 md:text-xs">
+      {label}
+    </span>
+  );
+}
+
+/** Image-row height matches StepImage aspect box so the badge sits on the same axis. */
+const IMAGE_ROW_HEIGHT = "h-[8.75rem]";
 
 function TimelineStep({
   card,
@@ -71,50 +114,87 @@ function TimelineStep({
   showImage?: boolean;
 }) {
   const isLeft = side === "left";
+  const rowHeight = showImage ? IMAGE_ROW_HEIGHT : "min-h-[3rem]";
 
   return (
-    <div className="relative grid w-full grid-cols-1 items-center gap-5 lg:grid-cols-[1fr_auto_1fr] lg:gap-0">
-      <div className="hidden lg:block lg:pr-10">
-        {isLeft ? <StepMedia card={card} showImage={showImage} align="right" /> : null}
-      </div>
+    <>
+      <div className="hidden w-full lg:flex lg:items-stretch">
+        {/* Left zone */}
+        <div className="flex min-w-0 flex-1 flex-col">
+          {isLeft ? (
+            <>
+              <div className={cn("flex items-center justify-end", rowHeight)}>
+                {showImage ? (
+                  <>
+                    <StepImage card={card} />
+                    <DashedConnector />
+                  </>
+                ) : (
+                  <>
+                    <StepMedia card={card} showImage={false} align="left" />
+                    <DashedConnector />
+                  </>
+                )}
+              </div>
+              {showImage ? (
+                <StepDescription
+                  card={card}
+                  align="left"
+                  className="mt-4 max-w-sm self-end"
+                />
+              ) : null}
+            </>
+          ) : null}
+        </div>
 
-      <div className="relative z-10 flex justify-center">
-        <div
-          className={cn(
-            "pointer-events-none absolute top-1/2 hidden h-px w-[min(26vw,10.5rem)] -translate-y-1/2 border-t border-dashed border-white/45 lg:block",
-            isLeft ? "right-full" : "left-full",
-          )}
-          aria-hidden
-        />
-        <span className="inline-flex min-w-[7.5rem] items-center justify-center rounded-full bg-white px-5 py-2.5 font-sans text-[0.7rem] font-bold uppercase tracking-[0.18em] text-primary md:min-w-[8.5rem] md:px-6 md:text-xs">
-          {card.step}
-        </span>
-      </div>
+        {/* Center badge — on the vertical spine */}
+        <div className={cn("relative z-20 flex shrink-0 items-center px-1", rowHeight)}>
+          <StepBadge label={card.step} />
+        </div>
 
-      <div className="hidden lg:block lg:pl-10">
-        {!isLeft ? <StepMedia card={card} showImage={showImage} align="left" /> : null}
+        {/* Right zone */}
+        <div className="flex min-w-0 flex-1 flex-col">
+          {!isLeft ? (
+            <>
+              <div className={cn("flex items-center justify-start", rowHeight)}>
+                {showImage ? (
+                  <>
+                    <DashedConnector />
+                    <StepImage card={card} />
+                  </>
+                ) : (
+                  <>
+                    <DashedConnector />
+                    <StepMedia card={card} showImage={false} align="right" />
+                  </>
+                )}
+              </div>
+              {showImage ? (
+                <StepDescription
+                  card={card}
+                  align="right"
+                  className="mt-4 max-w-sm self-start"
+                />
+              ) : null}
+            </>
+          ) : null}
+        </div>
       </div>
 
       <div className="lg:hidden">
         <StepMedia card={card} showImage={showImage} align="center" />
       </div>
-    </div>
+    </>
   );
 }
 
-function SectionBackground({ src }: { src: string }) {
+function SectionBackground() {
   return (
-    <div className="absolute inset-0 -z-10">
-      <Image
-        src={src}
-        alt=""
-        fill
-        className="object-cover object-center"
-        sizes="100vw"
-        priority={false}
-      />
-      <div className="absolute inset-0 bg-primary/55" />
-      <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(21,39,68,0.55)_0%,rgba(21,39,68,0.35)_40%,rgba(21,39,68,0.6)_100%)]" />
+    <div
+      className="pointer-events-none absolute inset-0 -z-10 bg-primary"
+      aria-hidden
+    >
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_18%_12%,rgba(141,195,225,0.14),transparent_52%),radial-gradient(ellipse_at_82%_88%,rgba(221,228,102,0.08),transparent_48%)]" />
     </div>
   );
 }
@@ -224,15 +304,15 @@ export function WhatYouGetSection() {
       id="what-you-get"
       className="relative isolate overflow-hidden"
     >
-      <SectionBackground src={whatYouGet.backgroundImage} />
+      <SectionBackground />
 
-      <div className="relative mx-auto flex w-full max-w-5xl flex-col px-5 py-16 md:px-8 md:py-20 lg:py-24">
+      <div className="relative mx-auto flex w-full max-w-6xl flex-col px-5 py-16 md:px-8 md:py-20 lg:max-w-7xl lg:py-24">
         <SectionHeader headline={whatYouGet.headline} label={whatYouGet.label} />
 
-        <div ref={timelineRef} className="relative mx-auto mt-8 w-full md:mt-10">
-          {/* Vertical track — line grows top → bottom on scroll */}
+        <div ref={timelineRef} className="relative mx-auto mt-8 w-full overflow-visible md:mt-10">
+          {/* Vertical spine — sits behind step badges */}
           <div
-            className="absolute left-1/2 top-0 h-full w-px -translate-x-1/2 overflow-hidden bg-white/20"
+            className="pointer-events-none absolute left-1/2 top-0 z-0 h-full w-px -translate-x-1/2 bg-white/20"
             aria-hidden
           >
             <div

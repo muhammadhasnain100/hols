@@ -1,12 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
-import { PortalShell } from "@/components/platform/provider/PortalShell";
 import { PortalStatCard } from "@/components/platform/provider/PortalStatCard";
-import { PaymentSubnav } from "@/components/platform/provider/student/payment/PaymentSubnav";
-import { studentNav } from "@/components/platform/provider/student/studentNav";
+import { PaymentPageLayout } from "@/components/platform/provider/student/payment/PaymentPageLayout";
 import { Button } from "@/components/ui/Button";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
@@ -108,111 +105,91 @@ export function StudentPaymentPage() {
   }
 
   return (
-    <PortalShell role="student" title="Membership" nav={studentNav}>
-      <div className="mx-auto grid w-full max-w-4xl gap-5">
-        <PaymentSubnav />
+    <PaymentPageLayout
+      title="Membership"
+      description="View plans, manage your subscription, and purchase access."
+      visual="membership"
+    >
+      {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
+      {success ? <AuthAlert variant="success">{success}</AuthAlert> : null}
 
-        {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
-        {success ? <AuthAlert variant="success">{success}</AuthAlert> : null}
-
-        {loading ? (
-          <div className="rounded-2xl border border-black/[0.06] bg-white p-10 text-center">
-            <div className="mx-auto h-8 w-8 animate-pulse rounded-full bg-primary/10" />
+      {loading ? (
+        <div className="rounded-2xl bg-white p-10 text-center shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
+          <div className="mx-auto h-8 w-8 animate-pulse rounded-full bg-primary/10" />
+        </div>
+      ) : (
+        <>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <PortalStatCard
+              label="Current plan"
+              value={membership ? planLabels[membership.plan_type] : "None"}
+              hint={
+                membership
+                  ? `${membership.status} · until ${formatDate(membership.end_date)}`
+                  : "No active membership"
+              }
+            />
+            <PortalStatCard
+              label="Payment card"
+              value={card ? card.card_number_masked : "Not added"}
+              hint={
+                card
+                  ? `Expires ${card.exp_month}/${card.exp_year}`
+                  : "Add a card before purchasing"
+              }
+            />
           </div>
-        ) : (
-          <>
-            <div className="grid gap-3 sm:grid-cols-2">
-              <PortalStatCard
-                label="Current plan"
-                value={membership ? planLabels[membership.plan_type] : "None"}
-                hint={
-                  membership
-                    ? `${membership.status} · until ${formatDate(membership.end_date)}`
-                    : "No active membership"
-                }
-              />
-              <PortalStatCard
-                label="Payment card"
-                value={card ? card.card_number_masked : "Not added"}
-                hint={
-                  card
-                    ? `Expires ${card.exp_month}/${card.exp_year}`
-                    : "Add a card before purchasing"
-                }
-              />
-            </div>
 
-            <section className="rounded-2xl border border-black/[0.06] bg-white p-5 md:p-6">
-              <h2 className="text-[15px] font-semibold text-primary">Available plans</h2>
-              <p className="mt-1 text-[13px] text-primary/45">
-                Your saved card will be charged on purchase.
-              </p>
+          <section>
+            <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary/40">
+              Plans
+            </p>
+            <h2 className="mt-1 text-[15px] font-semibold text-primary">Available membership</h2>
+            <p className="mt-1 text-[13px] text-primary/45">
+              Your saved card will be charged on purchase.
+            </p>
 
-              <div className="mt-5 grid gap-3 md:grid-cols-3">
-                {plans.map((plan) => {
-                  const current = membership?.plan_type === plan.plan_type;
-                  return (
-                    <div
-                      key={plan.plan_type}
-                      className={cn(
-                        "rounded-xl border p-4",
-                        current
-                          ? "border-primary/30 bg-primary/[0.03]"
-                          : "border-black/[0.06] bg-[#F5F7FA]",
-                      )}
+            <div className="mt-5 grid gap-3 lg:grid-cols-3">
+              {plans.map((plan) => {
+                const current = membership?.plan_type === plan.plan_type;
+                return (
+                  <div
+                    key={plan.plan_type}
+                    className={cn(
+                      "rounded-2xl border p-5 shadow-[0_1px_3px_rgba(21,39,68,0.05)]",
+                      current
+                        ? "border-primary/25 bg-primary/[0.04]"
+                        : "border-primary/[0.08] bg-white",
+                    )}
+                  >
+                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary/40">
+                      {planLabels[plan.plan_type]}
+                    </p>
+                    <p className="mt-2 text-2xl font-semibold tracking-tight text-primary">
+                      {formatMoney(plan.price, plan.currency)}
+                    </p>
+                    <p className="mt-1 text-[13px] text-primary/45">{plan.duration_days} days access</p>
+                    <Button
+                      type="button"
+                      variant={current ? "secondary" : "primary"}
+                      size="md"
+                      className="mt-4 w-full justify-center"
+                      disabled={purchasingPlan !== null || current}
+                      onClick={() => handlePurchase(plan.plan_type)}
                     >
-                      <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-primary/40">
-                        {planLabels[plan.plan_type]}
-                      </p>
-                      <p className="mt-2 text-2xl font-semibold text-primary">
-                        {formatMoney(plan.price, plan.currency)}
-                      </p>
-                      <p className="mt-1 text-[13px] text-primary/45">
-                        {plan.duration_days} days access
-                      </p>
-                      <Button
-                        type="button"
-                        variant={current ? "secondary" : "primary"}
-                        size="md"
-                        className="mt-4 w-full justify-center"
-                        disabled={purchasingPlan !== null || current}
-                        onClick={() => handlePurchase(plan.plan_type)}
-                      >
-                        {current
-                          ? "Current"
-                          : purchasingPlan === plan.plan_type
-                            ? "Processing…"
-                            : "Purchase"}
-                      </Button>
-                    </div>
-                  );
-                })}
-              </div>
-            </section>
-
-            <div className="flex flex-wrap gap-4 text-[13px]">
-              <Link
-                href="/student/payment/orders"
-                className="font-medium text-primary/55 transition hover:text-primary"
-              >
-                View orders
-              </Link>
-              <Link
-                href="/student/payment/card"
-                className="font-medium text-primary/55 transition hover:text-primary"
-              >
-                Manage card
-              </Link>
-              <Link
-                href="/student/profile"
-                className="font-medium text-primary/55 transition hover:text-primary"
-              >
-                Profile settings
-              </Link>
+                      {current
+                        ? "Current plan"
+                        : purchasingPlan === plan.plan_type
+                          ? "Processing…"
+                          : "Purchase"}
+                    </Button>
+                  </div>
+                );
+              })}
             </div>
-          </>
-        )}
-      </div>
-    </PortalShell>
+          </section>
+        </>
+      )}
+    </PaymentPageLayout>
   );
 }

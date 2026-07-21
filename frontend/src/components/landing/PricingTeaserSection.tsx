@@ -1,5 +1,5 @@
 import Image from "next/image";
-import Link from "next/link";
+import { HeroButton } from "@/components/hero/HeroButton";
 import { landingContent } from "@/content/landing";
 import { cn } from "@/lib/utils";
 
@@ -25,14 +25,14 @@ export function PricingTeaserSection() {
           </p>
         </div>
 
-        {/* Brighton-style image plan cards — full-width row */}
         <div className="mt-10 grid w-full gap-3 md:mt-12 md:grid-cols-3 md:gap-4 lg:gap-5">
           {pricingTeaser.plans.map((plan) => (
             <article
               key={plan.id}
               className={cn(
-                "group relative flex min-h-[28rem] flex-col overflow-hidden sm:min-h-[30rem] lg:min-h-[32rem]",
-                plan.featured && "ring-2 ring-accent ring-offset-2 ring-offset-[#F4F5F7]",
+                "group relative flex min-h-[28rem] flex-col overflow-hidden rounded-2xl shadow-[0_8px_24px_rgba(21,39,68,0.08)] sm:min-h-[30rem] lg:min-h-[32rem]",
+                plan.featured &&
+                  "ring-2 ring-accent ring-offset-2 ring-offset-[#F4F5F7]",
               )}
             >
               <Image
@@ -73,19 +73,13 @@ export function PricingTeaserSection() {
                   {plan.duration}
                 </p>
 
-                <div className="mt-auto pt-10">
-                  <Link
+                <div className="mt-auto flex justify-center pt-10">
+                  <HeroButton
                     href={plan.cta.href}
-                    className={cn(
-                      "inline-flex min-h-11 items-center justify-center gap-2 border px-6 font-sans text-[0.7rem] font-semibold uppercase tracking-[0.2em] transition-colors duration-300",
-                      plan.featured
-                        ? "border-accent bg-accent text-primary hover:bg-white hover:border-white"
-                        : "border-white/85 bg-transparent text-white hover:border-accent hover:bg-accent hover:text-primary",
-                    )}
+                    variant={plan.featured ? "primary" : "secondary"}
                   >
                     {plan.cta.label}
-                    <span aria-hidden>→</span>
-                  </Link>
+                  </HeroButton>
                 </div>
               </div>
             </article>

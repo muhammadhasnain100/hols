@@ -3,10 +3,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
-import { PortalShell } from "@/components/platform/provider/PortalShell";
+import { authFieldClass } from "@/components/platform/auth/auth-styles";
+import { CalculatorPageLayout } from "@/components/platform/provider/student/calculator/CalculatorPageLayout";
 import { CalculatorVisual } from "@/components/platform/provider/student/calculator/CalculatorVisual";
+import { SyringeSizeOption } from "@/components/platform/provider/student/calculator/CalculatorAssetIllustrations";
 import { InjectionAnimation } from "@/components/platform/provider/student/calculator/InjectionAnimation";
-import { studentNav } from "@/components/platform/provider/student/studentNav";
 import { Button } from "@/components/ui/Button";
 import { gsap, registerGsap } from "@/lib/gsap";
 import { prefersReducedMotion } from "@/lib/motion";
@@ -23,13 +24,12 @@ type Step = "syringe" | "peptide" | "water" | "dose" | "animating" | "result";
 
 const PROGRESS_STEPS: Array<{ id: Exclude<Step, "animating" | "result">; label: string }> = [
   { id: "syringe", label: "Syringe" },
-  { id: "peptide", label: "Peptide" },
+  { id: "peptide", label: "Medication" },
   { id: "water", label: "Water" },
   { id: "dose", label: "Dose" },
 ];
 
-const fieldClass =
-  "w-full max-w-[9.5rem] rounded-xl border border-black/[0.08] bg-white px-3 py-3 text-center text-lg font-semibold text-primary outline-none transition focus:border-primary/30 focus:ring-4 focus:ring-primary/5";
+const fieldClass = cn(authFieldClass, "max-w-[9.5rem] px-3 text-center text-lg font-semibold");
 
 const selectClass = cn(
   fieldClass,
@@ -180,190 +180,171 @@ export function StudentPeptideCalculatorPage() {
   }
 
   return (
-    <PortalShell role="student" title="Peptide Calculator" nav={studentNav}>
-      <div className="mx-auto grid w-full max-w-4xl gap-5">
-        <ol className="flex items-center gap-1.5 overflow-x-auto pb-1">
-          {PROGRESS_STEPS.map((item, index) => {
-            const done = progressIndex > index;
-            const active = progressIndex === index && step !== "animating" && step !== "result";
-            const complete = step === "result" || progressIndex > index;
-            return (
-              <li key={item.id} className="flex items-center gap-1.5">
-                <span
-                  className={cn(
-                    "inline-flex h-8 items-center gap-2 rounded-full px-3 text-[12px] font-medium transition",
-                    complete || done
-                      ? "bg-primary text-white"
-                      : active
-                        ? "bg-primary/[0.1] text-primary"
-                        : "bg-white text-primary/40",
-                  )}
-                >
-                  <span className="flex h-4 w-4 items-center justify-center rounded-full bg-white/20 text-[10px]">
-                    {index + 1}
-                  </span>
-                  {item.label}
-                </span>
-                {index < PROGRESS_STEPS.length - 1 ? (
-                  <span className="h-px w-4 bg-black/10 sm:w-6" />
-                ) : null}
-              </li>
-            );
-          })}
-        </ol>
-
-        {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
-
-        <div
-          ref={panelRef}
-          className="rounded-2xl border border-black/[0.06] bg-white p-5 shadow-[0_8px_30px_rgba(21,39,68,0.04)] md:p-8"
-        >
-          {step === "syringe" ? (
-            <StepHeader title="Syringe size">
-              <div className="mx-auto mt-8 max-w-lg">
-                <div className="relative flex items-center justify-between px-2">
-                  <div className="absolute inset-x-6 top-5 h-0.5 bg-primary/10" />
-                  {SYRINGE_SIZES_ML.map((size) => {
-                    const selected = syringeMl === size;
-                    return (
-                      <button
-                        key={size}
-                        type="button"
-                        onClick={() => setSyringeMl(size)}
-                        className="relative z-10 flex flex-col items-center gap-2.5"
-                        aria-pressed={selected}
-                      >
-                        <span
-                          className={cn(
-                            "flex h-10 w-10 items-center justify-center rounded-full border-2 transition duration-200",
-                            selected
-                              ? "scale-110 border-accent bg-accent shadow-[0_0_0_6px_rgba(221,228,102,0.25)]"
-                              : "border-primary/20 bg-white hover:border-primary/40",
-                          )}
-                        />
-                        <span
-                          className={cn(
-                            "text-[13px] font-medium",
-                            selected ? "text-primary" : "text-primary/40",
-                          )}
-                        >
-                          {size} ml
-                        </span>
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </StepHeader>
-          ) : null}
-
-          {step === "peptide" ? (
-            <StepHeader title="Dry peptide in vial">
-              <AmountRow
-                value={peptideAmount}
-                onValueChange={setPeptideAmount}
-                unit={peptideUnit}
-                onUnitChange={setPeptideUnit}
-                units={["mg", "mcg"]}
-              />
-            </StepHeader>
-          ) : null}
-
-          {step === "water" ? (
-            <StepHeader title="Bacteriostatic water">
-              <AmountRow value={waterMl} onValueChange={setWaterMl} unitLabel="ml" />
-            </StepHeader>
-          ) : null}
-
-          {step === "dose" ? (
-            <StepHeader title="Desired dose">
-              <AmountRow
-                value={doseAmount}
-                onValueChange={setDoseAmount}
-                unit={doseUnit}
-                onUnitChange={setDoseUnit}
-                units={["mcg", "mg"]}
-              />
-            </StepHeader>
-          ) : null}
-
-          {step === "animating" ? (
-            <div className="text-center">
-              <h2 className="text-xl font-semibold text-primary md:text-2xl">Preparing your dose</h2>
-              <p className="mt-1.5 text-[13px] text-primary/45">
-                Watch the 3D reconstitution sequence
-              </p>
-              <div className="mt-5">
-                <InjectionAnimation onComplete={finishAnimation} />
-              </div>
-            </div>
-          ) : null}
-
-          {step === "result" && result ? (
-            <div className="text-center">
-              <h2 className="text-xl font-semibold text-primary md:text-2xl">Results</h2>
-              <div className="mt-7 grid gap-3 sm:grid-cols-2">
-                <div className="rounded-2xl border border-black/[0.05] bg-[#F5F7FA] px-5 py-6">
-                  <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-primary/40">
-                    Units per dose
-                  </p>
-                  <p className="mt-2 font-sans text-4xl font-semibold text-primary">
-                    <span ref={unitsRef}>{result.unitsPerDose.toFixed(2)}</span>
-                  </p>
-                </div>
-                <div className="rounded-2xl border border-black/[0.05] bg-[#F5F7FA] px-5 py-6">
-                  <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-primary/40">
-                    Total doses in vial
-                  </p>
-                  <p className="mt-2 font-sans text-4xl font-semibold text-primary">
-                    <span ref={dosesRef}>{result.totalDoses.toFixed(2)}</span>
-                  </p>
-                </div>
-              </div>
-              <p className="mx-auto mt-4 max-w-md text-[13px] text-primary/50">
-                Draw to {result.unitsPerDose.toFixed(2)} units ({result.doseVolumeMl} ml) on your{" "}
-                {syringeMl} ml syringe.
-              </p>
-              <Button type="button" variant="primary" size="lg" className="mt-6" onClick={restart}>
-                Restart
-              </Button>
-            </div>
-          ) : null}
-
-          {step !== "result" && step !== "animating" ? (
-            <div className="mt-8 flex justify-end gap-2">
-              <Button
-                type="button"
-                variant="ghost"
-                size="lg"
-                onClick={goBack}
-                disabled={step === "syringe"}
+    <CalculatorPageLayout>
+      <nav
+        aria-label="Calculator steps"
+        className="flex flex-wrap gap-1.5 rounded-2xl bg-primary/[0.04] p-1.5"
+      >
+        {PROGRESS_STEPS.map((item, index) => {
+          const done = progressIndex > index || step === "result";
+          const active = progressIndex === index && step !== "animating" && step !== "result";
+          return (
+            <span
+              key={item.id}
+              className={cn(
+                "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-[13px] font-medium transition",
+                done
+                  ? "bg-primary text-white shadow-[0_1px_3px_rgba(21,39,68,0.12)]"
+                  : active
+                    ? "bg-white text-primary shadow-[0_1px_3px_rgba(21,39,68,0.08)]"
+                    : "text-primary/45",
+              )}
+            >
+              <span
+                className={cn(
+                  "flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-semibold",
+                  done ? "bg-white/20" : active ? "bg-primary/10 text-primary" : "bg-primary/[0.06]",
+                )}
               >
-                Back
-              </Button>
-              <Button type="button" variant="primary" size="lg" onClick={goNext}>
-                {step === "dose" ? "Calculate" : "Next"}
-              </Button>
+                {index + 1}
+              </span>
+              {item.label}
+            </span>
+          );
+        })}
+      </nav>
+
+      {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
+
+      <div ref={panelRef}>
+        {step === "syringe" ? (
+          <StepHeader title="Syringe size">
+            <div className="mx-auto mt-8 max-w-3xl">
+              <div className="flex flex-wrap items-center justify-center gap-2.5 px-2 sm:gap-3">
+                {SYRINGE_SIZES_ML.map((size) => (
+                  <SyringeSizeOption
+                    key={size}
+                    size={size}
+                    selected={syringeMl === size}
+                    onSelect={() => setSyringeMl(size)}
+                  />
+                ))}
+              </div>
             </div>
-          ) : null}
+          </StepHeader>
+        ) : null}
 
-          {step !== "animating" ? (
-            <CalculatorVisual
-              mode={visualMode}
-              syringeMl={syringeMl}
-              unitsPerDose={result?.unitsPerDose ?? 0}
-              maxUnits={result?.maxUnitsOnSyringe ?? syringeMl * 100}
-              waterFilled={step !== "syringe"}
-              medicationFilled={step === "water" || step === "dose" || step === "result"}
+        {step === "peptide" ? (
+          <StepHeader title="Total amount of dry medication in your vial:">
+            <AmountRow
+              value={peptideAmount}
+              onValueChange={setPeptideAmount}
+              unit={peptideUnit}
+              onUnitChange={setPeptideUnit}
+              units={["g", "mg", "mcg"]}
             />
-          ) : null}
-        </div>
+          </StepHeader>
+        ) : null}
 
-        <p className="text-center text-[11px] leading-relaxed text-primary/35">
-          Research-use education tool only. Follow peptide documentation and institutional protocols.
-        </p>
+        {step === "water" ? (
+          <StepHeader title="Bacteriostatic water">
+            <AmountRow value={waterMl} onValueChange={setWaterMl} unitLabel="ml" />
+          </StepHeader>
+        ) : null}
+
+        {step === "dose" ? (
+          <StepHeader title="Desired dose">
+            <AmountRow
+              value={doseAmount}
+              onValueChange={setDoseAmount}
+              unit={doseUnit}
+              onUnitChange={setDoseUnit}
+              units={["mcg", "mg"]}
+            />
+          </StepHeader>
+        ) : null}
+
+        {step === "animating" ? (
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-primary md:text-2xl">Preparing your dose</h2>
+            <p className="mt-1.5 text-[13px] text-primary/45">
+              Watch the reconstitution sequence
+            </p>
+            <div className="mt-5">
+              <InjectionAnimation
+                onComplete={finishAnimation}
+                syringeMl={syringeMl}
+                peptideUnit={peptideUnit}
+              />
+            </div>
+          </div>
+        ) : null}
+
+        {step === "result" && result ? (
+          <div className="text-center">
+            <h2 className="text-xl font-semibold text-primary md:text-2xl">Results</h2>
+            <div className="mt-7 grid gap-3 sm:grid-cols-2">
+              <div className="rounded-2xl bg-primary/[0.04] px-5 py-6">
+                <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-primary/40">
+                  Units per dose
+                </p>
+                <p className="mt-2 font-sans text-4xl font-semibold text-primary">
+                  <span ref={unitsRef}>{result.unitsPerDose.toFixed(2)}</span>
+                </p>
+              </div>
+              <div className="rounded-2xl bg-primary/[0.04] px-5 py-6">
+                <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-primary/40">
+                  Total doses in vial
+                </p>
+                <p className="mt-2 font-sans text-4xl font-semibold text-primary">
+                  <span ref={dosesRef}>{result.totalDoses.toFixed(2)}</span>
+                </p>
+              </div>
+            </div>
+            <p className="mx-auto mt-4 max-w-md text-[13px] text-primary/50">
+              Draw to {result.unitsPerDose.toFixed(2)} units ({result.doseVolumeMl} ml) on your{" "}
+              {syringeMl} ml syringe.
+            </p>
+            <Button type="button" variant="primary" size="lg" className="mt-6" onClick={restart}>
+              Restart
+            </Button>
+          </div>
+        ) : null}
+
+        {step !== "result" && step !== "animating" ? (
+          <div className="mt-8 flex justify-end gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              size="lg"
+              onClick={goBack}
+              disabled={step === "syringe"}
+            >
+              Back
+            </Button>
+            <Button type="button" variant="primary" size="lg" onClick={goNext}>
+              {step === "dose" ? "Calculate" : "Next"}
+            </Button>
+          </div>
+        ) : null}
+
+        {step !== "animating" ? (
+          <CalculatorVisual
+            mode={visualMode}
+            syringeMl={syringeMl}
+            unitsPerDose={result?.unitsPerDose ?? 0}
+            maxUnits={result?.maxUnitsOnSyringe ?? syringeMl * 100}
+            waterFilled={step !== "syringe"}
+            medicationFilled={step === "water" || step === "dose" || step === "result"}
+            peptideUnit={peptideUnit}
+          />
+        ) : null}
       </div>
-    </PortalShell>
+
+      <p className="text-center text-[11px] leading-relaxed text-primary/35">
+        Research-use education tool only. Follow peptide documentation and institutional protocols.
+      </p>
+    </CalculatorPageLayout>
   );
 }
 

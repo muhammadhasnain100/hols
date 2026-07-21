@@ -1,0 +1,974 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Frontier BioMed — Clinical Peptide Adviser</title>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/dompurify@3/dist/purify.min.js"></script>
+  <style>
+    @font-face {
+      font-family: 'Aspekta Variable';
+      src: url('/static/AspektaVF.woff2') format('woff2');
+      font-weight: 100 900;
+      font-style: normal;
+      font-display: swap;
+    }
+
+    :root {
+      --bg: #080d14;
+      --panel: #0f1623;
+      --panel-2: #151e2e;
+      --panel-3: #1a2538;
+      --border: #243044;
+      --text: #eef2f8;
+      --muted: #8b9bb8;
+      --accent: #2a9d8f;
+      --accent-soft: rgba(42, 157, 143, 0.12);
+      --gold: #c9a962;
+      --gold-soft: rgba(201, 169, 98, 0.15);
+      --user-bubble: #1a4d47;
+      --bot-bubble: #1a2332;
+      --danger: #e57373;
+
+      /* Typography — Aspekta Variable (compact app UI) */
+      --font: 'Aspekta Variable', sans-serif;
+      --body-size: 14px;
+      --body-sm-size: 12px;
+      --body-lg-size: 15px;
+      --h1-size: 17px;
+      --h2-size: 22px;
+      --h3-size: 18px;
+      --h4-size: 14px;
+      --micro-size: 10px;
+      --btn-size: 13px;
+      --legal-size: 12px;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; margin: 0; }
+    body {
+      font-family: 'Aspekta Variable', sans-serif;
+      font-size: var(--body-size);
+      font-weight: 400;
+      line-height: 1.5;
+      background: var(--bg);
+      color: var(--text);
+      overflow: hidden;
+      -webkit-font-smoothing: antialiased;
+      -moz-osx-font-smoothing: grayscale;
+    }
+    *, *::before, *::after { font-family: inherit; }
+
+    h1, h2, h3, h4, h5, h6, p, label, input, textarea, select, button {
+      font-family: 'Aspekta Variable', sans-serif;
+    }
+
+    /* ---- Type utilities (optional) ---- */
+    .type-body-lg { font-size: var(--body-lg-size); line-height: 1.55; }
+    .type-body { font-size: var(--body-size); line-height: 1.5; }
+    .type-body-sm { font-size: var(--body-sm-size); line-height: 1.45; }
+    .type-micro {
+      font-weight: 500;
+      font-size: var(--micro-size);
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+    }
+
+    .app {
+      display: grid;
+      grid-template-columns: 252px 1fr;
+      height: 100vh;
+    }
+
+    /* ---- Sidebar ---- */
+    .sidebar {
+      background: linear-gradient(180deg, #0c121c 0%, #0a0f18 100%);
+      border-right: 1px solid var(--border);
+      padding: 18px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .brand-lockup { margin-bottom: 2px; }
+    .brand-name {
+      font-weight: 600;
+      font-size: 17px;
+      line-height: 1.25;
+      letter-spacing: -0.01em;
+      color: var(--text);
+    }
+    .brand-tag {
+      font-weight: 500;
+      font-size: var(--micro-size);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--gold);
+      margin-top: 2px;
+    }
+    .practitioner-card {
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px;
+    }
+    .practitioner-card .label {
+      font-weight: 500;
+      font-size: var(--micro-size);
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      color: var(--muted);
+      margin-bottom: 6px;
+    }
+    .practitioner-card .name {
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.35;
+      color: var(--text);
+    }
+    .practitioner-card .meta {
+      font-size: var(--body-sm-size);
+      line-height: 1.45;
+      color: var(--muted);
+      margin-top: 4px;
+    }
+    .side-title {
+      font-weight: 500;
+      font-size: var(--micro-size);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      margin-bottom: 8px;
+    }
+    .stage-list { list-style: none; padding: 0; margin: 0; }
+    .stage-list li {
+      font-size: var(--body-sm-size);
+      line-height: 1.4;
+      padding: 6px 8px;
+      margin-bottom: 1px;
+      border-radius: 7px;
+      color: var(--muted);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .stage-list li .num {
+      width: 20px; height: 20px;
+      border-radius: 5px;
+      background: var(--panel-3);
+      font-size: 10px;
+      font-weight: 600;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .stage-list li.active {
+      background: var(--accent-soft);
+      color: var(--text);
+      font-weight: 600;
+    }
+    .stage-list li.active .num { background: var(--accent); color: #fff; }
+    .stage-list li.done { color: var(--text); opacity: 0.65; }
+    .stage-list li.done .num { background: transparent; border: 1px solid var(--accent); color: var(--accent); }
+
+    .status {
+      margin-top: auto;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+      font-size: var(--body-sm-size);
+      font-weight: 400;
+      line-height: 1.7;
+      color: var(--muted);
+    }
+    .status .row { display: flex; justify-content: space-between; padding: 4px 0; }
+    .pill-online {
+      color: var(--accent);
+      font-weight: 600;
+      font-size: var(--body-sm-size);
+    }
+
+    /* ---- Main ---- */
+    .main { display: flex; flex-direction: column; height: 100vh; min-width: 0; }
+
+    .topbar {
+      padding: 12px 24px;
+      border-bottom: 1px solid var(--border);
+      background: rgba(15, 22, 35, 0.85);
+      backdrop-filter: blur(12px);
+    }
+    .topbar h1 {
+      margin: 0;
+      font-weight: 600;
+      font-size: var(--h1-size);
+      line-height: 1.3;
+      letter-spacing: -0.01em;
+    }
+    .topbar .sub {
+      font-size: var(--body-sm-size);
+      line-height: 1.45;
+      color: var(--muted);
+      margin-top: 2px;
+    }
+
+    /* ---- Intake ---- */
+    .intake-wrap {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 24px;
+      background:
+        radial-gradient(ellipse 80% 50% at 50% -20%, rgba(42,157,143,0.08), transparent),
+        var(--bg);
+    }
+    .intake-inner { max-width: 560px; margin: 0 auto; }
+    .intake-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 22px 24px;
+      box-shadow: 0 16px 32px rgba(0,0,0,0.2);
+    }
+    .stage-badge {
+      display: inline-block;
+      font-weight: 500;
+      font-size: var(--micro-size);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--gold);
+      background: var(--gold-soft);
+      padding: 3px 8px;
+      border-radius: 5px;
+      margin-bottom: 8px;
+    }
+    .intake-card h2 {
+      margin: 0 0 6px;
+      font-weight: 600;
+      font-size: var(--h2-size);
+      line-height: 1.25;
+      letter-spacing: -0.01em;
+    }
+    .stage-desc {
+      color: var(--muted);
+      font-size: var(--body-sm-size);
+      line-height: 1.5;
+      margin-bottom: 18px;
+    }
+    .consent-box {
+      background: rgba(201, 169, 98, 0.06);
+      border: 1px solid rgba(201, 169, 98, 0.25);
+      border-radius: 10px;
+      padding: 14px;
+      font-size: var(--body-size);
+      line-height: 1.55;
+      margin-bottom: 16px;
+      color: #d4dce8;
+    }
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 20px 0;
+    }
+
+    .q-field { margin-bottom: 14px; }
+    .q-field label {
+      display: block;
+      font-size: var(--body-sm-size);
+      font-weight: 600;
+      line-height: 1.35;
+      margin-bottom: 6px;
+      color: #c8d4e4;
+    }
+    .q-field input, .q-field textarea, .q-field select {
+      width: 100%;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      padding: 9px 12px;
+      font: inherit;
+      font-size: var(--body-size);
+      line-height: 1.45;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+    .q-field input:focus, .q-field textarea:focus, .q-field select:focus {
+      outline: none;
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px var(--accent-soft);
+    }
+    .q-field textarea { min-height: 72px; resize: vertical; }
+    .q-options { display: flex; flex-direction: column; gap: 6px; }
+    .q-option {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 12px;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: var(--body-size);
+      line-height: 1.45;
+      transition: all 0.15s;
+    }
+    .q-option:hover { border-color: rgba(42,157,143,0.4); }
+    .q-option.selected { border-color: var(--accent); background: var(--accent-soft); }
+
+    .intake-nav {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 20px;
+      padding-top: 16px;
+      border-top: 1px solid var(--border);
+    }
+    .btn {
+      padding: 9px 18px;
+      border-radius: 8px;
+      font-weight: 600;
+      font-size: var(--btn-size);
+      line-height: 1;
+      letter-spacing: -0.01em;
+      cursor: pointer;
+      border: 1px solid var(--border);
+      background: var(--panel-2);
+      color: var(--text);
+      transition: all 0.15s;
+    }
+    .btn:hover { border-color: var(--muted); }
+    .btn.primary {
+      background: linear-gradient(135deg, #2a9d8f, #238b7e);
+      color: #fff;
+      border: none;
+      box-shadow: 0 4px 14px rgba(42,157,143,0.25);
+    }
+    .btn.primary:hover { filter: brightness(1.06); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .hidden { display: none !important; }
+
+    /* ---- Chat (professional messenger) ---- */
+    .chat-view {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      min-height: 0;
+      background: #0a0e14;
+    }
+    .chat-header {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 24px;
+      background: var(--panel);
+      border-bottom: 1px solid var(--border);
+    }
+    .chat-avatar {
+      width: 44px; height: 44px;
+      border-radius: 12px;
+      background: linear-gradient(135deg, var(--accent), #1f6b62);
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 700;
+      font-size: var(--body-sm-size);
+      color: #fff;
+      flex-shrink: 0;
+    }
+    .chat-header-info { flex: 1; min-width: 0; }
+    .chat-header-title {
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+    .chat-header-sub {
+      font-size: var(--body-sm-size);
+      line-height: 1.4;
+      color: var(--muted);
+      margin-top: 2px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+    .chat-header-sub strong { color: var(--gold); font-weight: 600; }
+    .btn-ghost {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--muted);
+      padding: 7px 12px;
+      border-radius: 7px;
+      font-size: var(--body-sm-size);
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .btn-ghost:hover { border-color: var(--accent); color: var(--text); }
+
+    .chat-thread {
+      flex: 1;
+      overflow-y: auto;
+      padding: 20px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      background:
+        url("data:image/svg+xml,%3Csvg width='40' height='40' viewBox='0 0 40 40' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='%23ffffff' fill-opacity='0.015'%3E%3Cpath d='M0 0h40v40H0z'/%3E%3C/g%3E%3C/svg%3E"),
+        #0a0e14;
+    }
+
+    .chat-date-divider {
+      text-align: center;
+      margin: 12px 0;
+    }
+    .chat-date-divider span {
+      font-size: var(--body-sm-size);
+      font-weight: 500;
+      color: var(--muted);
+      background: var(--panel-2);
+      padding: 5px 16px;
+      border-radius: 999px;
+      border: 1px solid var(--border);
+    }
+
+    .wa-msg {
+      display: flex;
+      max-width: 78%;
+      animation: msgIn 0.25s ease-out;
+    }
+    @keyframes msgIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .wa-msg.out { align-self: flex-end; }
+    .wa-msg.in { align-self: flex-start; }
+
+    .wa-bubble {
+      padding: 9px 12px 5px;
+      border-radius: 10px;
+      font-size: var(--body-size);
+      line-height: 1.5;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    }
+    .wa-msg.out .wa-bubble {
+      background: var(--user-bubble);
+      border-bottom-right-radius: 4px;
+    }
+    .wa-msg.in .wa-bubble {
+      background: var(--bot-bubble);
+      border: 1px solid var(--border);
+      border-bottom-left-radius: 4px;
+    }
+    .wa-msg.in.rec-card .wa-bubble {
+      border-color: rgba(201, 169, 98, 0.35);
+      background: linear-gradient(180deg, #1a2332 0%, #151c28 100%);
+      max-width: 100%;
+    }
+    .rec-label {
+      font-weight: 600;
+      font-size: var(--micro-size);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--gold);
+      margin-bottom: 6px;
+    }
+    .wa-bubble .md h3 {
+      font-size: 15px;
+      font-weight: 600;
+      line-height: 1.3;
+      color: var(--accent);
+      margin: 10px 0 4px;
+    }
+    .wa-bubble .md p, .wa-bubble .md li {
+      font-size: var(--body-size);
+      line-height: 1.5;
+      margin: 3px 0;
+    }
+    .wa-bubble .md ul { margin: 4px 0 4px 16px; padding: 0; }
+    .wa-bubble .md strong { color: #fff; font-weight: 600; }
+    .wa-time {
+      font-size: 10px;
+      color: rgba(255,255,255,0.35);
+      text-align: right;
+      margin-top: 3px;
+    }
+
+    .chat-composer {
+      padding: 14px 24px 18px;
+      background: var(--panel);
+      border-top: 1px solid var(--border);
+      display: flex;
+      gap: 12px;
+      align-items: center;
+    }
+    .chat-composer input {
+      flex: 1;
+      background: var(--panel-2);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 11px 14px;
+      color: var(--text);
+      font: inherit;
+      font-size: var(--body-size);
+      line-height: 1.45;
+      outline: none;
+      transition: border-color 0.15s;
+    }
+    .chat-composer input:focus { border-color: var(--accent); }
+    .chat-composer input::placeholder { color: var(--muted); }
+    .chat-send {
+      width: 48px; height: 48px;
+      border-radius: 12px;
+      border: none;
+      background: linear-gradient(135deg, #2a9d8f, #238b7e);
+      color: #fff;
+      cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      box-shadow: 0 4px 12px rgba(42,157,143,0.3);
+      transition: filter 0.15s;
+    }
+    .chat-send:hover { filter: brightness(1.08); }
+    .chat-send:disabled { opacity: 0.45; cursor: not-allowed; }
+    .chat-send svg { width: 20px; height: 20px; }
+
+    .typing { display: inline-flex; gap: 4px; padding: 6px 0; }
+    .typing span {
+      width: 7px; height: 7px; border-radius: 50%;
+      background: var(--muted);
+      animation: blink 1.2s infinite;
+    }
+    .typing span:nth-child(2) { animation-delay: 0.15s; }
+    .typing span:nth-child(3) { animation-delay: 0.3s; }
+    @keyframes blink {
+      0%, 60%, 100% { opacity: 0.3; transform: scale(0.85); }
+      30% { opacity: 1; transform: scale(1); }
+    }
+
+    @media (max-width: 860px) {
+      .app { grid-template-columns: 1fr; }
+      .sidebar { display: none; }
+      .intake-wrap { padding: 16px; }
+      .intake-card { padding: 18px 16px; }
+    }
+  </style>
+</head>
+<body>
+  <div class="app">
+    <aside class="sidebar">
+      <div class="brand-lockup">
+        <div class="brand-name">Frontier BioMed</div>
+        <div class="brand-tag">Clinical Peptide Adviser</div>
+      </div>
+
+      <div class="practitioner-card" id="sidebar-practitioner">
+        <div class="label">Registered practitioner</div>
+        <div class="name" id="sidebar-practitioner-name">Dr. Sarah Mitchell, MD</div>
+        <div class="meta" id="sidebar-practitioner-meta">NPI 1847293056 · Frontier BioMed Clinical Network</div>
+      </div>
+
+      <div>
+        <div class="side-title">Intake progress</div>
+        <ul class="stage-list" id="stage-list"></ul>
+      </div>
+
+      <div class="status">
+        <div class="row"><span>System</span><span class="pill-online" id="be-status">connecting…</span></div>
+        <div class="row"><span>Knowledge base</span><span id="be-vectors">—</span></div>
+      </div>
+    </aside>
+
+    <main class="main">
+      <div class="topbar" id="topbar">
+        <h1 id="page-title">Patient Intake Questionnaire</h1>
+        <div class="sub" id="page-sub">Structured clinical assessment · safety-gated peptide recommendations</div>
+      </div>
+
+      <div class="intake-wrap" id="intake-view">
+        <div class="intake-inner">
+          <div class="intake-card" id="intake-card">
+            <div class="typing"><span></span><span></span><span></span></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="chat-view hidden" id="chat-view">
+        <div class="chat-header">
+          <div class="chat-avatar">FB</div>
+          <div class="chat-header-info">
+            <div class="chat-header-title">Peptide Recommendation Adviser</div>
+            <div class="chat-header-sub">Registered practitioner · <strong id="chat-practitioner">Dr. Sarah Mitchell, MD</strong></div>
+          </div>
+          <button type="button" class="btn-ghost" id="btn-new-intake">New case</button>
+        </div>
+        <div class="chat-thread" id="chat-thread"></div>
+        <div class="chat-composer">
+          <input type="text" id="chat-input" placeholder="Ask a follow-up about this recommendation…" autocomplete="off" disabled />
+          <button class="chat-send" id="chat-send" title="Send" disabled>
+            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+          </button>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <script>
+    const API_BASE = window.location.origin;
+    const STAGES = [
+      "Provider & Consent", "Patient Snapshot", "Safety Gate", "Goal Selection",
+      "Clinical Deep Dive", "History & Labs", "Preferences", "Recommendation"
+    ];
+    // Display-only — not collected from user
+    const PRACTITIONER = {
+      name: "Dr. Sarah Mitchell, MD",
+      meta: "NPI 1847293056 · Frontier BioMed Clinical Network",
+    };
+
+    if (window.marked) marked.setOptions({ breaks: true, gfm: true, headerIds: false, mangle: false });
+
+    const intakeCard = document.getElementById("intake-card");
+    const stageList = document.getElementById("stage-list");
+    const intakeView = document.getElementById("intake-view");
+    const chatView = document.getElementById("chat-view");
+    const chatThread = document.getElementById("chat-thread");
+    const chatInput = document.getElementById("chat-input");
+    const chatSend = document.getElementById("chat-send");
+
+    let flowData = null;
+    let intakeStep = 0;
+    let intakeAnswers = {};
+    let session = null;
+    let inChat = false;
+
+    function renderMarkdown(t) {
+      const raw = window.marked ? marked.parse(t || "") : (t || "");
+      return window.DOMPurify ? DOMPurify.sanitize(raw) : raw;
+    }
+    function esc(s) {
+      return String(s ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+    }
+    function escA(s) { return esc(s).replace(/'/g,"&#39;"); }
+
+    function updatePractitionerUI() {
+      document.getElementById("sidebar-practitioner-name").textContent = PRACTITIONER.name;
+      document.getElementById("sidebar-practitioner-meta").textContent = PRACTITIONER.meta;
+      document.getElementById("chat-practitioner").textContent = PRACTITIONER.name;
+    }
+    updatePractitionerUI();
+
+    function buildStageList() {
+      stageList.innerHTML = STAGES.map((label, i) =>
+        `<li data-step="${i}"><span class="num">${i + 1}</span>${esc(label)}</li>`
+      ).join("");
+    }
+    buildStageList();
+
+    function updateStages() {
+      stageList.querySelectorAll("li").forEach(li => {
+        const s = +li.dataset.step;
+        li.classList.remove("active", "done");
+        if (inChat && s === 7) li.classList.add("active");
+        else if (!inChat && s === intakeStep) li.classList.add("active");
+        else if (inChat || s < intakeStep) li.classList.add("done");
+      });
+    }
+
+    (async () => {
+      try {
+        const [, healthRes, flowRes] = await Promise.all([
+          fetch(`${API_BASE}/api/info`).then(r => r.json()),
+          fetch(`${API_BASE}/health`).then(r => r.json()),
+          fetch(`${API_BASE}/questionnaire/flow`).then(r => r.json()),
+        ]);
+        document.getElementById("be-status").textContent = "online";
+        document.getElementById("be-vectors").textContent =
+          (healthRes.vectors ?? 0).toLocaleString() + " vectors";
+        flowData = flowRes;
+        renderIntakeStep();
+      } catch (e) {
+        intakeCard.innerHTML = `<p style="color:var(--danger)">System unavailable: ${esc(e.message)}</p>`;
+      }
+    })();
+
+    function nowTime() {
+      return new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    }
+
+    function appendBubble(role, text, opts = {}) {
+      const wrap = document.createElement("div");
+      wrap.className = `wa-msg ${role === "user" ? "out" : "in"}${opts.recCard ? " rec-card" : ""}`;
+      const bubble = document.createElement("div");
+      bubble.className = "wa-bubble";
+      if (opts.recCard) {
+        const lbl = document.createElement("div");
+        lbl.className = "rec-label";
+        lbl.textContent = "Clinical Recommendation Card";
+        bubble.appendChild(lbl);
+      }
+      if (opts.markdown && role === "assistant") {
+        const md = document.createElement("div");
+        md.className = "md";
+        md.innerHTML = renderMarkdown(text);
+        bubble.appendChild(md);
+      } else {
+        const p = document.createElement("div");
+        p.textContent = text;
+        bubble.appendChild(p);
+      }
+      const t = document.createElement("div");
+      t.className = "wa-time";
+      t.textContent = nowTime();
+      bubble.appendChild(t);
+      wrap.appendChild(bubble);
+      chatThread.appendChild(wrap);
+      chatThread.scrollTop = chatThread.scrollHeight;
+    }
+
+    function showTyping() {
+      const el = document.createElement("div");
+      el.className = "wa-msg in";
+      el.id = "chat-typing";
+      el.innerHTML = `<div class="wa-bubble"><div class="typing"><span></span><span></span><span></span></div></div>`;
+      chatThread.appendChild(el);
+      chatThread.scrollTop = chatThread.scrollHeight;
+    }
+    function hideTyping() { document.getElementById("chat-typing")?.remove(); }
+
+    function enterChatMode() {
+      inChat = true;
+      intakeView.classList.add("hidden");
+      chatView.classList.remove("hidden");
+      document.getElementById("page-title").textContent = "Clinical Consultation";
+      document.getElementById("page-sub").textContent = "Recommendation delivered · continue the conversation below";
+      document.getElementById("topbar").classList.add("hidden");
+      updatePractitionerUI();
+      updateStages();
+    }
+
+    function exitChatMode() {
+      inChat = false;
+      session = null;
+      chatView.classList.add("hidden");
+      intakeView.classList.remove("hidden");
+      document.getElementById("topbar").classList.remove("hidden");
+      document.getElementById("page-title").textContent = "Patient Intake Questionnaire";
+      document.getElementById("page-sub").textContent = "Structured clinical assessment · safety-gated peptide recommendations";
+      chatThread.innerHTML = "";
+      chatInput.disabled = true;
+      chatSend.disabled = true;
+      intakeStep = 0;
+      intakeAnswers = {};
+      updatePractitionerUI();
+      updateStages();
+      renderIntakeStep();
+    }
+
+    async function startRecommendationInChat() {
+      enterChatMode();
+      chatThread.innerHTML = "";
+      const div = document.createElement("div");
+      div.className = "chat-date-divider";
+      div.innerHTML = `<span>Intake complete · ${new Date().toLocaleDateString(undefined, { weekday:"short", month:"short", day:"numeric" })}</span>`;
+      chatThread.appendChild(div);
+      showTyping();
+
+      try {
+        const res = await fetch(`${API_BASE}/questionnaire/recommend`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ answers: intakeAnswers }),
+        });
+        const data = await res.json();
+        hideTyping();
+        if (!res.ok) {
+          appendBubble("assistant", `Unable to generate recommendation: ${data.detail || res.statusText}`);
+          return;
+        }
+        session = {
+          answers: { ...intakeAnswers },
+          evaluation: data.evaluation,
+          recommendation: data.answer,
+          messages: [{ role: "assistant", content: data.answer }],
+        };
+        appendBubble("assistant", data.answer, { markdown: true, recCard: true });
+        chatInput.disabled = false;
+        chatSend.disabled = false;
+        chatInput.focus();
+        chatInput.placeholder = "Ask about dosing education, alternatives, safety, labs…";
+      } catch (e) {
+        hideTyping();
+        appendBubble("assistant", "Network error: " + e.message);
+      }
+    }
+
+    async function sendChat() {
+      const q = chatInput.value.trim();
+      if (!q || !session || chatSend.disabled) return;
+      chatInput.value = "";
+      session.messages.push({ role: "user", content: q });
+      appendBubble("user", q);
+      chatSend.disabled = true;
+      showTyping();
+      try {
+        const res = await fetch(`${API_BASE}/questionnaire/followup`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            answers: session.answers,
+            evaluation: session.evaluation,
+            recommendation: session.recommendation,
+            messages: session.messages.slice(0, -1),
+            question: q,
+          }),
+        });
+        const data = await res.json();
+        hideTyping();
+        if (!res.ok) {
+          appendBubble("assistant", `Error: ${data.detail || res.statusText}`);
+          return;
+        }
+        session.messages.push({ role: "assistant", content: data.answer });
+        appendBubble("assistant", data.answer, { markdown: true });
+      } catch (e) {
+        hideTyping();
+        appendBubble("assistant", "Network error: " + e.message);
+      } finally {
+        chatSend.disabled = false;
+        chatInput.focus();
+      }
+    }
+
+    chatSend.addEventListener("click", sendChat);
+    chatInput.addEventListener("keydown", e => { if (e.key === "Enter") { e.preventDefault(); sendChat(); } });
+    document.getElementById("btn-new-intake").addEventListener("click", exitChatMode);
+
+    function getBranchQuestions() {
+      const g = intakeAnswers.primary_goal;
+      if (!g || !flowData) return [];
+      return flowData.stages.find(s => s.id === "branch")?.branches?.[g] || [];
+    }
+
+    function renderField(q) {
+      const val = intakeAnswers[q.id];
+      const req = q.required ? ' <span style="color:var(--accent)">*</span>' : "";
+      const ph = q.placeholder ? ` placeholder="${escA(q.placeholder)}"` : "";
+      if (q.type === "select") {
+        const opts = (q.options || []).map(o => {
+          const v = typeof o === "object" ? o.value : o;
+          const l = typeof o === "object" ? o.label : o;
+          return `<option value="${escA(v)}" ${String(val) === String(v) ? "selected" : ""}>${esc(l)}</option>`;
+        }).join("");
+        return `<div class="q-field"><label>${esc(q.text)}${req}</label><select data-id="${q.id}">${opts}</select></div>`;
+      }
+      if (q.type === "multiselect") {
+        const sel = Array.isArray(val) ? val : [];
+        return `<div class="q-field"><label>${esc(q.text)}${req}</label><div class="q-options">${(q.options||[]).map(o =>
+          `<label class="q-option ${sel.includes(o)?"selected":""}"><input type="checkbox" data-id="${q.id}" value="${escA(o)}" ${sel.includes(o)?"checked":""}/> ${esc(o)}</label>`
+        ).join("")}</div></div>`;
+      }
+      if (q.type === "textarea") {
+        return `<div class="q-field"><label>${esc(q.text)}${req}</label><textarea data-id="${q.id}">${esc(val||"")}</textarea></div>`;
+      }
+      if (q.type === "number") {
+        return `<div class="q-field"><label>${esc(q.text)}${req}</label><input type="number" data-id="${q.id}" value="${escA(val??"")}" ${q.min!=null?`min="${q.min}"`:""} ${q.max!=null?`max="${q.max}"`:""}/></div>`;
+      }
+      return `<div class="q-field"><label>${esc(q.text)}${req}</label><input type="text" data-id="${q.id}" value="${escA(val||"")}"${ph}/></div>`;
+    }
+
+    function collectFields() {
+      const ms = new Set();
+      intakeCard.querySelectorAll(".q-options input[type=checkbox]").forEach(el => ms.add(el.dataset.id));
+      ms.forEach(id => {
+        intakeAnswers[id] = [...intakeCard.querySelectorAll(`input[data-id="${id}"]:checked`)].map(c => c.value);
+      });
+      intakeCard.querySelectorAll("[data-id]").forEach(el => {
+        if (el.type === "checkbox") return;
+        if (["SELECT","TEXTAREA","INPUT"].includes(el.tagName)) intakeAnswers[el.dataset.id] = el.value;
+      });
+    }
+
+    function validateStep() {
+      collectFields();
+      if (intakeStep === 0) return intakeAnswers.consent === true;
+      if (intakeStep === 1) {
+        return ["age","sex","pregnancy","height_cm","weight_kg","activity"].every(k => intakeAnswers[k] !== "" && intakeAnswers[k] != null);
+      }
+      if (intakeStep === 2) {
+        if (!["cancer","mtc_men2","peptide_allergy","medications"].every(k => intakeAnswers[k])) return false;
+        return Array.isArray(intakeAnswers.conditions) && intakeAnswers.conditions.length > 0;
+      }
+      if (intakeStep === 3) return !!intakeAnswers.primary_goal;
+      if (intakeStep === 6) {
+        return ["injection_tolerance","complexity","timeline"].every(k => intakeAnswers[k]);
+      }
+      return true;
+    }
+
+    function renderIntakeStep() {
+      if (!flowData) return;
+      updateStages();
+      const nav = (back, label) => `<div class="intake-nav">
+        <button class="btn" id="intake-back" ${back?"":"disabled"}>Back</button>
+        <button class="btn primary" id="intake-next">${label}</button></div>`;
+      let html = "";
+
+      if (intakeStep === 0) {
+        html = `<div class="stage-badge">Stage 0 · Provider verification</div>
+          <h2>Consent & framing</h2>
+          <p class="stage-desc">This session is conducted under registered practitioner <strong>${esc(PRACTITIONER.name)}</strong>. Confirm before entering patient information.</p>
+          <div class="consent-box">${esc(flowData.consent.text)}</div>
+          <label class="q-option ${intakeAnswers.consent?"selected":""}" style="cursor:pointer;margin-top:8px">
+          <input type="checkbox" id="consent-check" ${intakeAnswers.consent?"checked":""}/>
+          ${esc(flowData.consent.confirm_label)}</label>${nav(false,"Continue")}`;
+      } else if (intakeStep === 1) {
+        const st = flowData.stages.find(s => s.id === "snapshot");
+        html = `<div class="stage-badge">Stage 1</div><h2>${st.title}</h2><p class="stage-desc">Baseline patient demographics and activity level.</p>`;
+        st.questions.forEach(q => { html += renderField(q); });
+        html += nav(true, "Continue");
+      } else if (intakeStep === 2) {
+        const st = flowData.stages.find(s => s.id === "safety");
+        html = `<div class="stage-badge">Stage 2 · Safety gate</div><h2>${st.title}</h2><p class="stage-desc">${esc(st.description||"")}</p>`;
+        st.questions.forEach(q => {
+          if (q.show_if && !Object.entries(q.show_if).every(([k,v]) => intakeAnswers[k]===v)) return;
+          html += renderField(q);
+        });
+        html += nav(true, "Continue");
+      } else if (intakeStep === 3) {
+        const st = flowData.stages.find(s => s.id === "goal");
+        html = `<div class="stage-badge">Stage 3</div><h2>${st.title}</h2><p class="stage-desc">Select the primary therapeutic goal for this patient.</p>`;
+        st.questions.forEach(q => { html += renderField(q); });
+        html += nav(true, "Continue");
+      } else if (intakeStep === 4) {
+        const b = flowData.goal_branches[intakeAnswers.primary_goal];
+        html = `<div class="stage-badge">Stage 4 · Branch ${intakeAnswers.primary_goal}</div>
+          <h2>Clinical deep dive</h2><p class="stage-desc">${esc(b?.label||"")}</p>`;
+        getBranchQuestions().forEach(q => { html += renderField(q); });
+        html += nav(true, "Continue");
+      } else if (intakeStep === 5) {
+        const st = flowData.stages.find(s => s.id === "history");
+        html = `<div class="stage-badge">Stage 5</div><h2>${st.title}</h2><p class="stage-desc">Prior peptide therapy and available laboratory data.</p>`;
+        st.questions.forEach(q => { html += renderField(q); });
+        html += nav(true, "Continue");
+      } else if (intakeStep === 6) {
+        const st = flowData.stages.find(s => s.id === "preferences");
+        html = `<div class="stage-badge">Stage 6 · Final step</div><h2>${st.title}</h2>
+          <p class="stage-desc">Your recommendation will appear in the consultation chat immediately after submission.</p>`;
+        st.questions.forEach(q => { html += renderField(q); });
+        html += nav(true, "Generate recommendation");
+      }
+
+      intakeCard.innerHTML = html;
+      bindIntakeEvents();
+    }
+
+    function bindIntakeEvents() {
+      document.getElementById("consent-check")?.addEventListener("change", e => { intakeAnswers.consent = e.target.checked; });
+      document.getElementById("intake-back")?.addEventListener("click", () => { collectFields(); intakeStep--; renderIntakeStep(); });
+      document.getElementById("intake-next")?.addEventListener("click", () => {
+        if (document.getElementById("consent-check")) intakeAnswers.consent = document.getElementById("consent-check").checked;
+        collectFields();
+        if (!validateStep()) { alert("Please complete all required fields."); return; }
+        if (intakeStep === 6) {
+          startRecommendationInChat();
+          return;
+        }
+        intakeStep++;
+        renderIntakeStep();
+      });
+      intakeCard.querySelectorAll(".q-option input[type=checkbox]").forEach(cb => {
+        cb.addEventListener("change", () => cb.closest(".q-option").classList.toggle("selected", cb.checked));
+      });
+    }
+  </script>
+</body>
+</html>

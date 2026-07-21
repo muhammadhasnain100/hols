@@ -8,6 +8,7 @@ import {
 } from "@/lib/integrate/auth/storage";
 import type { UserRole } from "@/lib/integrate/auth/types";
 import { listCourses } from "@/lib/integrate/provider/student/lectures";
+import { prefetchAdviserBootstrap } from "@/lib/integrate/provider/student/chat/api";
 import { getStudentProfile } from "@/lib/integrate/provider/student/profile/api";
 import {
   getCard,
@@ -44,6 +45,8 @@ async function prefetchStudentData() {
     getCard(),
     // Static lecture catalog is session-cached, so refreshes reuse it without a network call.
     listCourses({ page: 1, limit: 12 }),
+    // Peptide adviser bootstrap (patients + active chat history) preloads on portal login.
+    prefetchAdviserBootstrap(),
   ]);
 }
 

@@ -15,11 +15,13 @@ from routes import (
     affiliate_portal_router,
     affiliates_router,
     auth_router,
+    chat_router,
     health_router,
     lectures_router,
     payment_router,
     users_router,
 )
+from services.routes.chat import service as chat_service
 from services.routes.payment.service import ensure_default_plans
 
 logger = logging.getLogger(__name__)
@@ -31,6 +33,7 @@ async def lifespan(app: FastAPI):
     logger.info("Starting HOLS API")
     await create_table_async()
     await ensure_default_plans()
+    chat_service.ensure_initialized()
     logger.info("Startup complete")
     yield
     logger.info("Shutting down HOLS API")
@@ -73,6 +76,7 @@ app.include_router(affiliates_router, prefix="/api")
 app.include_router(affiliate_portal_router, prefix="/api")
 app.include_router(payment_router, prefix="/api")
 app.include_router(lectures_router, prefix="/api")
+app.include_router(chat_router, prefix="/api")
 
 
 @app.get("/")

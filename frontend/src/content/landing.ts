@@ -4,8 +4,11 @@ export const landingContent = {
     headline: "Run peptides in your clinic with confidence.",
     subhead:
       "Get your whole team trained, keep the dosing right, and hand patients clean, branded materials without becoming the peptide expert yourself.",
-    primaryCta: { label: "Get Started", href: "/contact" },
-    secondaryCta: { label: "Book a Demo", href: "/contact#demo" },
+    primaryCta: { label: "Get Started", href: "/register" },
+    secondaryCta: {
+      label: "Book a Demo",
+      href: "mailto:hello@houseoflifesciences.com",
+    },
   },
   trustStrip: [
     "Trusted by clinics",
@@ -22,6 +25,7 @@ export const landingContent = {
       "Instead of bouncing between chats, PDFs, and guesswork, HOLS brings training, dosing, and patient paperwork into one trusted system.",
     beforeLabel: "Scattered info",
     afterLabel: "one trusted system",
+    ballImage: "/assets/ball/ball.png",
     cta: {
       label: "Explore courses",
       href: "#what-you-get",
@@ -30,7 +34,6 @@ export const landingContent = {
   whatYouGet: {
     headline: "One place to train your team and run peptides properly.",
     label: "What you get",
-    backgroundImage: "/assets/images/what-you-get-bg.jpg",
     cards: [
       {
         id: "courses",
@@ -134,7 +137,7 @@ export const landingContent = {
   },
   whoItsFor: {
     headline: "Built for your whole practice.",
-    backgroundImage: "/assets/images/who-its-for-bg.jpg",
+    backgroundImage: "/assets/whoitfor/background.png",
     audiences: [
       {
         id: "owners",
@@ -207,7 +210,11 @@ export const landingContent = {
     eyebrow: "The HOLS Approach",
     headline: "Clinics go further when they practice with confidence.",
     headlineAccent: "with confidence",
+    image: "/assets/ball/ball.png",
     primaryCta: { label: "Get Started", href: "/register" },
-    secondaryCta: { label: "Book a Demo", href: "/contact#demo" },
+    secondaryCta: {
+      label: "Book a Demo",
+      href: "mailto:hello@houseoflifesciences.com",
+    },
   },
 } as const;

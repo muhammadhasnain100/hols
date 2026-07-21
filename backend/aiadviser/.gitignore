@@ -1,0 +1,50 @@
+# ---- Secrets ----
+.env
+.env.local
+.env.*.local
+
+# ---- Large data (already in Chroma Cloud; not needed at runtime) ----
+chunks.json
+courses_complete.json
+courses/
+
+# ---- Python ----
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+env/
+*.egg-info/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# ---- Deploy tooling (local only) ----
+.vercel/
+
+# ---- Railway (legacy — production uses Vercel) ----
+Procfile
+railway.json
+runtime.txt
+.railwayignore
+
+# ---- Duplicate frontend (public/ is canonical for deploy + local) ----
+static/
+
+# ---- IDE / editor ----
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ---- OS / misc ----
+*.log
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# ---- Cursor (local agent state) ----
+.cursor/

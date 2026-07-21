@@ -1,10 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
-import { PortalShell } from "@/components/platform/provider/PortalShell";
+import { PortalCardButtonDisplay, usePortalCardButtonHover } from "@/components/platform/provider/PortalCardButton";
 import { PortalStatCard } from "@/components/platform/provider/PortalStatCard";
-import { studentNav } from "@/components/platform/provider/student/studentNav";
-import { Button } from "@/components/ui/Button";
+import { DashboardPageLayout } from "@/components/platform/provider/student/dashboard/DashboardPageLayout";
 import { ApiRequestError } from "@/lib/integrate/client";
 import { getStoredUser } from "@/lib/integrate/auth/storage";
 import {
@@ -16,6 +16,70 @@ import {
   formatDate,
   planLabels,
 } from "@/lib/integrate/provider/student/payment/types";
+import { cn } from "@/lib/utils";
+
+type QuickAction = {
+  title: string;
+  description: string;
+  href: string;
+  cta: string;
+  variant: "primary" | "secondary";
+};
+
+const BILLING_ACTIONS: readonly QuickAction[] = [
+  {
+    title: "Membership",
+    description: "View plans and purchase access.",
+    href: "/student/payment",
+    cta: "Open membership",
+    variant: "primary",
+  },
+  {
+    title: "Orders",
+    description: "Review purchase history.",
+    href: "/student/payment/orders",
+    cta: "View orders",
+    variant: "secondary",
+  },
+  {
+    title: "Payment card",
+    description: "Add or update your saved card.",
+    href: "/student/payment/card",
+    cta: "Manage card",
+    variant: "secondary",
+  },
+];
+
+const LEARNING_ACTIONS: readonly QuickAction[] = [
+  {
+    title: "Lectures",
+    description: "Browse courses and lessons.",
+    href: "/student/lectures",
+    cta: "Open lectures",
+    variant: "primary",
+  },
+  {
+    title: "Calculator",
+    description: "Peptide dosing helper.",
+    href: "/student/calculator",
+    cta: "Open calculator",
+    variant: "secondary",
+  },
+  {
+    title: "Peptide Adviser",
+    description: "Patient intake and peptide recommendations.",
+    href: "/student/adviser",
+    cta: "Open adviser",
+    variant: "secondary",
+  },
+  {
+    title: "Profile",
+    description: "Name, address, and photo.",
+    href: "/student/profile",
+    cta: "Open profile",
+    variant: "secondary",
+  },
+];
 
 export function StudentPortal() {
   const user = getStoredUser();
@@ -60,73 +124,88 @@ export function StudentPortal() {
     void loadSummary();
   }, []);
 
+  const firstName =
+    typeof user?.profile?.first_name === "string" ? user.profile.first_name : "";
+  const lastName = typeof user?.profile?.last_name === "string" ? user.profile.last_name : "";
   const displayName =
-    user?.profile?.first_name && user?.profile?.last_name
-      ? `${user.profile.first_name} ${user.profile.last_name}`
-      : "Student";
+    firstName && lastName ? `${firstName} ${lastName}` : firstName || "Student";
 
   return (
-    <PortalShell
-      role="student"
-      title={`Welcome, ${displayName}`}
-      subtitle="Your learning hub for courses, membership, and account settings."
-      nav={studentNav}
-    >
-      <div className="grid gap-6">
-        <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
-          <PortalStatCard label="Membership" value={membershipLabel} hint={membershipHint} />
-          <PortalStatCard label="Saved card" value={cardLabel} hint="Used for plan purchases" />
-          <PortalStatCard label="Orders" value={orderCount} hint="Total purchases" />
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-black/[0.06] bg-white p-5">
-            <h2 className="text-[15px] font-semibold text-primary">Membership</h2>
-            <p className="mt-2 text-[13px] text-primary/45">View plans and purchase access.</p>
-            <Button href="/student/payment" variant="primary" size="md" className="mt-4">
-              Open membership
-            </Button>
-          </div>
-          <div className="rounded-2xl border border-black/[0.06] bg-white p-5">
-            <h2 className="text-[15px] font-semibold text-primary">Orders</h2>
-            <p className="mt-2 text-[13px] text-primary/45">Review purchase history.</p>
-            <Button href="/student/payment/orders" variant="secondary" size="md" className="mt-4">
-              View orders
-            </Button>
-          </div>
-          <div className="rounded-2xl border border-black/[0.06] bg-white p-5">
-            <h2 className="text-[15px] font-semibold text-primary">Payment card</h2>
-            <p className="mt-2 text-[13px] text-primary/45">Add or update your saved card.</p>
-            <Button href="/student/payment/card" variant="secondary" size="md" className="mt-4">
-              Manage card
-            </Button>
-          </div>
-        </div>
-
-        <div className="grid gap-4 md:grid-cols-3">
-          <div className="rounded-2xl border border-black/[0.06] bg-white p-5">
-            <h2 className="text-[15px] font-semibold text-primary">Profile</h2>
-            <p className="mt-2 text-[13px] text-primary/45">Name, address, and photo.</p>
-            <Button href="/student/profile" variant="secondary" size="md" className="mt-4">
-              Open profile
-            </Button>
-          </div>
-          <div className="rounded-2xl border border-black/[0.06] bg-white p-5">
-            <h2 className="text-[15px] font-semibold text-primary">Lectures</h2>
-            <p className="mt-2 text-[13px] text-primary/45">Browse courses and lessons.</p>
-            <Button href="/student/lectures" variant="primary" size="md" className="mt-4">
-              Open lectures
-            </Button>
-          </div>
-          <div className="rounded-2xl border border-black/[0.06] bg-white p-5">
-            <h2 className="text-[15px] font-semibold text-primary">Calculator</h2>
-            <p className="mt-2 text-[13px] text-primary/45">Reconstitution dosing helper.</p>
-            <Button href="/student/calculator" variant="secondary" size="md" className="mt-4">
-              Open calculator
-            </Button>
-          </div>
-        </div>
+    <DashboardPageLayout displayName={displayName}>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
+        <PortalStatCard label="Membership" value={membershipLabel} hint={membershipHint} />
+        <PortalStatCard label="Saved card" value={cardLabel} hint="Used for plan purchases" />
+        <PortalStatCard label="Orders" value={orderCount} hint="Total purchases" />
       </div>
-    </PortalShell>
+
+      <DashboardSection
+        eyebrow="Billing"
+        title="Quick actions"
+        description="Manage membership, orders, and payment details."
+        actions={BILLING_ACTIONS}
+      />
+
+      <DashboardSection
+        eyebrow="Learning"
+        title="Continue learning"
+        description="Access lectures, tools, and your profile."
+        actions={LEARNING_ACTIONS}
+      />
+    </DashboardPageLayout>
+  );
+}
+
+function DashboardSection({
+  eyebrow,
+  title,
+  description,
+  actions,
+}: {
+  eyebrow: string;
+  title: string;
+  description: string;
+  actions: readonly QuickAction[];
+}) {
+  return (
+    <section>
+      <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary/40">{eyebrow}</p>
+      <h2 className="mt-1 text-[15px] font-semibold text-primary">{title}</h2>
+      <p className="mt-1 text-[13px] text-primary/45">{description}</p>
+
+      <div className="mt-5 grid gap-3 md:grid-cols-3">
+        {actions.map((action) => (
+          <DashboardActionCard key={action.href} action={action} />
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function DashboardActionCard({ action }: { action: QuickAction }) {
+  const { onMouseEnter, onMouseLeave, containerRef, fillRef, labelRef } =
+    usePortalCardButtonHover(action.variant);
+
+  return (
+    <Link
+      href={action.href}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
+      className={cn(
+        "group flex h-full flex-col rounded-2xl bg-white p-5 shadow-[0_1px_3px_rgba(21,39,68,0.06)] transition",
+        "hover:shadow-[0_4px_14px_rgba(21,39,68,0.08)]",
+      )}
+    >
+      <h3 className="text-[15px] font-semibold text-primary">{action.title}</h3>
+      <p className="mt-2 flex-1 text-[13px] leading-relaxed text-primary/45">{action.description}</p>
+      <PortalCardButtonDisplay
+        variant={action.variant}
+        className="mt-4"
+        containerRef={containerRef}
+        fillRef={fillRef}
+        labelRef={labelRef}
+      >
+        {action.cta}
+      </PortalCardButtonDisplay>
+    </Link>
   );
 }

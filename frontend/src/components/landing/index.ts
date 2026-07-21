@@ -6,3 +6,4 @@ export { WhoItsForSection } from "./WhoItsForSection";
 export { CertificationSection } from "./CertificationSection";
 export { PricingTeaserSection } from "./PricingTeaserSection";
 export { FinalCTASection } from "./FinalCTASection";
+export { FAQsSection } from "@/components/faqs/FAQsSection";

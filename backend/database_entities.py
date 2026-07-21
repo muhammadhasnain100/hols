@@ -23,6 +23,9 @@ Course metadata     PK=COURSE#<courseId>    SK=METADATA
 Course topic (L1)   PK=COURSE#<courseId>    SK=TOPIC#<order:03d>#<topicKey>
 Course section (L2) PK=COURSE#<courseId>    SK=SECTION#<topicId>
 Lesson / lecture    PK=COURSE#<courseId>    SK=LESSON#<order:05d>#<lessonId>
+Lesson test result  PK=USER#<userId>        SK=TEST_RESULT#<courseId>#<lessonId>
+Adviser patient     PK=USER#<userId>        SK=PATIENT#<patientId>
+Adviser patient chat PK=USER#<userId>       SK=PATIENT#<patientId>#CHAT
 Glossary term       PK=GLOSSARY             SK=TERM#<termId>
 Dosing guide        PK=DOSING               SK=GUIDE#<guideId>
 """
@@ -83,6 +86,12 @@ class OrderStatus(str, Enum):
     PAID = "paid"
     FAILED = "failed"
     REFUNDED = "refunded"
+
+
+class AdviserPatientStatus(str, Enum):
+    DRAFT = "draft"
+    RECOMMENDED = "recommended"
+    CHATTING = "chatting"
 
 
 # --------------------------------------------------------------------------- #
@@ -700,6 +709,144 @@ class DosingGuide(BaseEntity):
                 "title": self.title,
                 "content": self.content,
                 "created_by": self.created_by,
+                "updated_at": self.updated_at,
+            }
+        )
+
+
+# --------------------------------------------------------------------------- #
+# LESSON TEST RESULT  (student quiz attempts)
+# --------------------------------------------------------------------------- #
+class LessonTestResult(BaseEntity):
+    """Latest scored quiz attempt for one lesson by one student."""
+
+    user_id: str
+    course_id: str
+    lesson_id: str
+    lesson_title: str
+    lesson_order: int = 0
+    attempt_id: str
+    total_questions: int
+    correct_count: int
+    score_percent: float
+    passed: bool
+    answers: list[dict[str, Any]] = Field(default_factory=list)
+    created_at: str = Field(default_factory=now_iso)
+    updated_at: str = Field(default_factory=now_iso)
+
+    ENTITY: ClassVar[str] = "LESSON_TEST_RESULT"
+
+    @staticmethod
+    def pk(user_id: str) -> str:
+        return f"USER#{user_id}"
+
+    @staticmethod
+    def sk(course_id: str, lesson_id: str) -> str:
+        return f"TEST_RESULT#{course_id}#{lesson_id}"
+
+    def to_item(self) -> dict[str, Any]:
+        return self._clean(
+            {
+                "PK": self.pk(self.user_id),
+                "SK": self.sk(self.course_id, self.lesson_id),
+                "entity": self.ENTITY,
+                "user_id": self.user_id,
+                "course_id": self.course_id,
+                "lesson_id": self.lesson_id,
+                "lesson_title": self.lesson_title,
+                "lesson_order": self.lesson_order,
+                "attempt_id": self.attempt_id,
+                "total_questions": self.total_questions,
+                "correct_count": self.correct_count,
+                "score_percent": self.score_percent,
+                "passed": self.passed,
+                "answers": self.answers,
+                "created_at": self.created_at,
+                "updated_at": self.updated_at,
+            }
+        )
+
+
+# --------------------------------------------------------------------------- #
+# ADVISER PATIENT + CHAT  (student peptide adviser cases)
+# --------------------------------------------------------------------------- #
+class AdviserPatient(BaseEntity):
+    """One clinical patient case owned by a student user."""
+
+    user_id: str
+    patient_id: str
+    display_name: str
+    status: AdviserPatientStatus = AdviserPatientStatus.DRAFT
+    intake_answers: dict[str, Any] = Field(default_factory=dict)
+    evaluation: Optional[dict[str, Any]] = None
+    recommendation: Optional[str] = None
+    sources: list[dict[str, Any]] = Field(default_factory=list)
+    primary_goal: Optional[str] = None
+    message_count: int = 0
+    created_at: str = Field(default_factory=now_iso)
+    updated_at: str = Field(default_factory=now_iso)
+
+    ENTITY: ClassVar[str] = "ADVISER_PATIENT"
+
+    @staticmethod
+    def pk(user_id: str) -> str:
+        return f"USER#{user_id}"
+
+    @staticmethod
+    def sk(patient_id: str) -> str:
+        return f"PATIENT#{patient_id}"
+
+    def to_item(self) -> dict[str, Any]:
+        return self._clean(
+            {
+                "PK": self.pk(self.user_id),
+                "SK": self.sk(self.patient_id),
+                "entity": self.ENTITY,
+                "user_id": self.user_id,
+                "patient_id": self.patient_id,
+                "display_name": self.display_name,
+                "status": self.status,
+                "intake_answers": self.intake_answers,
+                "evaluation": self.evaluation,
+                "recommendation": self.recommendation,
+                "sources": self.sources,
+                "primary_goal": self.primary_goal,
+                "message_count": self.message_count,
+                "created_at": self.created_at,
+                "updated_at": self.updated_at,
+            }
+        )
+
+
+class AdviserPatientChat(BaseEntity):
+    """Singleton chat thread for one adviser patient case."""
+
+    user_id: str
+    patient_id: str
+    messages: list[dict[str, Any]] = Field(default_factory=list)
+    created_at: str = Field(default_factory=now_iso)
+    updated_at: str = Field(default_factory=now_iso)
+
+    ENTITY: ClassVar[str] = "ADVISER_PATIENT_CHAT"
+
+    @staticmethod
+    def pk(user_id: str) -> str:
+        return f"USER#{user_id}"
+
+    @staticmethod
+    def sk(patient_id: str) -> str:
+        return f"PATIENT#{patient_id}#CHAT"
+
+    def to_item(self) -> dict[str, Any]:
+        return self._clean(
+            {
+                "PK": self.pk(self.user_id),
+                "SK": self.sk(self.patient_id),
+                "entity": self.ENTITY,
+                "user_id": self.user_id,
+                "patient_id": self.patient_id,
+                "messages": self.messages,
+                "created_at": self.created_at,
                 "updated_at": self.updated_at,
             }
         )
