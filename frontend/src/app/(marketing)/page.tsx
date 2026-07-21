@@ -5,7 +5,6 @@ import {
   PillarsSection,
   WhoItsForSection,
   CertificationSection,
-  PricingTeaserSection,
   FAQsSection,
   FinalCTASection,
 } from "@/components/landing";
@@ -24,9 +23,8 @@ export default function HomePage() {
       <WhatYouGetSection />
       <PillarsSection />
       <WhoItsForSection />
-      <CertificationSection />
-      <PricingTeaserSection />
       <FAQsSection />
+      <CertificationSection />
       <FinalCTASection />
     </>
   );

@@ -1,7 +1,14 @@
 "use client";
 
 import { useMemo } from "react";
-import { authFieldClass } from "@/components/platform/auth/auth-styles";
+import { authFieldClass, authLabelClass } from "@/components/platform/auth/auth-styles";
+import {
+  portalRowValueClass,
+  portalSectionDescClass,
+  portalSectionEyebrowClass,
+  portalSectionTitleClass,
+  portalSubnavItemClass,
+} from "@/components/platform/provider/portal-styles";
 import { Button } from "@/components/ui/Button";
 import type {
   FlowQuestion,
@@ -100,14 +107,14 @@ export function IntakeWizard({
     if (question.type === "select") {
       return (
         <label key={question.id} className="block space-y-2">
-          <span className="text-[13px] font-medium text-primary">
+          <span className={authLabelClass}>
             {question.text}
             {required}
           </span>
           <select
             value={String(value ?? "")}
             onChange={(event) => updateAnswer(question.id, event.target.value)}
-            className={cn(authFieldClass, "w-full px-3 text-[13px]")}
+            className={cn(authFieldClass, "w-full px-4")}
           >
             <option value="">Select…</option>
             {(question.options ?? []).map((option) => {
@@ -128,7 +135,7 @@ export function IntakeWizard({
       const selected = Array.isArray(value) ? (value as string[]) : [];
       return (
         <fieldset key={question.id} className="space-y-2">
-          <legend className="text-[13px] font-medium text-primary">
+          <legend className={authLabelClass}>
             {question.text}
             {required}
           </legend>
@@ -140,7 +147,7 @@ export function IntakeWizard({
                 <label
                   key={optionValue}
                   className={cn(
-                    "flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-[13px]",
+                    "text-brand-body flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2",
                     checked
                       ? "border-[#3853A4]/30 bg-[#3853A4]/[0.06] text-primary"
                       : "border-primary/10 text-primary/70",
@@ -168,7 +175,7 @@ export function IntakeWizard({
     if (question.type === "textarea") {
       return (
         <label key={question.id} className="block space-y-2">
-          <span className="text-[13px] font-medium text-primary">
+          <span className={authLabelClass}>
             {question.text}
             {required}
           </span>
@@ -176,7 +183,7 @@ export function IntakeWizard({
             value={String(value ?? "")}
             onChange={(event) => updateAnswer(question.id, event.target.value)}
             rows={4}
-            className={cn(authFieldClass, "w-full px-3 py-2 text-[13px]")}
+            className={cn(authFieldClass, "w-full px-4 py-2")}
           />
         </label>
       );
@@ -185,7 +192,7 @@ export function IntakeWizard({
     if (question.type === "number") {
       return (
         <label key={question.id} className="block space-y-2">
-          <span className="text-[13px] font-medium text-primary">
+          <span className={authLabelClass}>
             {question.text}
             {required}
           </span>
@@ -195,7 +202,7 @@ export function IntakeWizard({
             min={question.min}
             max={question.max}
             onChange={(event) => updateAnswer(question.id, event.target.value)}
-            className={cn(authFieldClass, "w-full px-3 text-[13px]")}
+            className={cn(authFieldClass, "w-full px-4")}
           />
         </label>
       );
@@ -203,7 +210,7 @@ export function IntakeWizard({
 
     return (
       <label key={question.id} className="block space-y-2">
-        <span className="text-[13px] font-medium text-primary">
+        <span className={authLabelClass}>
           {question.text}
           {required}
         </span>
@@ -212,7 +219,7 @@ export function IntakeWizard({
           value={String(value ?? "")}
           placeholder={question.placeholder}
           onChange={(event) => updateAnswer(question.id, event.target.value)}
-          className={cn(authFieldClass, "w-full px-3 text-[13px]")}
+          className={cn(authFieldClass, "w-full px-4")}
         />
       </label>
     );
@@ -230,15 +237,13 @@ export function IntakeWizard({
       {step === 0 ? (
         <div className="space-y-4">
           <div>
-            <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary/40">
-              Stage 0 · Provider verification
-            </p>
-            <h2 className="mt-1 text-[18px] font-semibold text-primary">Consent & framing</h2>
-            <p className="mt-2 text-[13px] leading-relaxed text-primary/55">
+            <p className={portalSectionEyebrowClass}>Stage 0 · Provider verification</p>
+            <h2 className={portalSectionTitleClass}>Consent & framing</h2>
+            <p className={portalSectionDescClass}>
               This session is conducted under registered practitioner Dr. Sarah Mitchell. Confirm before entering patient information.
             </p>
           </div>
-          <div className="rounded-xl border border-primary/10 bg-primary/[0.02] p-4 text-[13px] leading-relaxed text-primary/75">
+          <div className={cn("rounded-xl border border-primary/10 bg-primary/[0.02] p-4 leading-relaxed", portalRowValueClass)}>
             {flow.consent.text}
           </div>
           <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-primary/10 px-3 py-3">
@@ -248,7 +253,7 @@ export function IntakeWizard({
               onChange={(event) => updateAnswer("consent", event.target.checked)}
               className="mt-1"
             />
-            <span className="text-[13px] text-primary/80">{flow.consent.confirm_label}</span>
+            <span className={portalRowValueClass}>{flow.consent.confirm_label}</span>
           </label>
         </div>
       ) : null}
@@ -337,9 +342,9 @@ function StageBlock({
   return (
     <div className="space-y-4">
       <div>
-        <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary/40">{badge}</p>
-        <h2 className="mt-1 text-[18px] font-semibold text-primary">{title}</h2>
-        {description ? <p className="mt-2 text-[13px] leading-relaxed text-primary/55">{description}</p> : null}
+        <p className={portalSectionEyebrowClass}>{badge}</p>
+        <h2 className={portalSectionTitleClass}>{title}</h2>
+        {description ? <p className={portalSectionDescClass}>{description}</p> : null}
       </div>
       {children}
     </div>
@@ -362,7 +367,8 @@ export function IntakeStageList({
           <li
             key={label}
             className={cn(
-              "flex items-center gap-2 rounded-lg px-2 py-1.5 text-[12px]",
+              "flex items-center gap-2 rounded-lg px-2 py-1.5",
+              portalSubnavItemClass,
               active && "bg-[#3853A4]/[0.08] font-semibold text-primary",
               !active && done && "text-primary/55",
               !active && !done && "text-primary/35",
@@ -370,7 +376,7 @@ export function IntakeStageList({
           >
             <span
               className={cn(
-                "flex h-5 w-5 shrink-0 items-center justify-center rounded-md text-[10px] font-semibold",
+                "text-brand-caption flex h-5 w-5 shrink-0 items-center justify-center rounded-md font-semibold",
                 active && "bg-[#3853A4] text-white",
                 !active && done && "border border-[#3853A4]/30 text-[#3853A4]",
                 !active && !done && "bg-primary/[0.06] text-primary/45",

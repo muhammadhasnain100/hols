@@ -3,6 +3,11 @@
 import Link from "next/link";
 import { PortalShell } from "@/components/platform/provider/PortalShell";
 import {
+  portalPageDescClass,
+  portalPageTitleClass,
+  portalUnitLabelClass,
+} from "@/components/platform/provider/portal-styles";
+import {
   CourseOptionNav,
   type CourseOption,
 } from "@/components/platform/provider/student/lectures/CourseOptionNav";
@@ -36,7 +41,10 @@ export function CoursePageLayout({
           {backHref && backLabel ? (
             <Link
               href={backHref}
-              className="portal-back-link mb-4 inline-flex items-center gap-2 rounded-xl bg-white/70 px-3.5 py-2 text-[13px] font-medium text-primary/70 shadow-[0_1px_3px_rgba(21,39,68,0.06)] transition hover:bg-white hover:text-primary"
+              className={cn(
+                "portal-back-link mb-4 inline-flex items-center gap-2 rounded-xl bg-white/70 px-3.5 py-2 shadow-[0_1px_3px_rgba(21,39,68,0.06)] transition hover:bg-white hover:text-primary",
+                portalUnitLabelClass,
+              )}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                 <path d="m15 18-6-6 6-6" />
@@ -48,10 +56,8 @@ export function CoursePageLayout({
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
             <header className="min-w-0 flex-1">
               <p className="portal-page-eyebrow">HOLS · Learning</p>
-              <h1 className="mt-1 text-xl font-bold leading-tight tracking-tight text-primary md:text-[1.65rem]">
-                {title}
-              </h1>
-              <p className="mt-1 max-w-lg text-[13px] leading-snug text-muted md:text-sm">{description}</p>
+              <h1 className={cn("mt-2", portalPageTitleClass)}>{title}</h1>
+              <p className={cn("mt-2 max-w-lg", portalPageDescClass)}>{description}</p>
             </header>
 
             <ProfileLearningVisual className="mx-auto sm:mx-0 sm:justify-self-end" />

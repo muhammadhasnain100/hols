@@ -3,6 +3,12 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
+import {
+  portalEmptyStateClass,
+  portalInlineMetaClass,
+  portalSectionDescClass,
+  portalSectionEyebrowClass,
+} from "@/components/platform/provider/portal-styles";
 import { AdviserPageLayout } from "@/components/platform/provider/student/adviser/AdviserPageLayout";
 import { CreatePatientDialog } from "@/components/platform/provider/student/adviser/CreatePatientDialog";
 import { IntakeStageList, IntakeWizard } from "@/components/platform/provider/student/adviser/IntakeWizard";
@@ -24,6 +30,7 @@ import {
   type PatientSummary,
   type QuestionnaireFlow,
 } from "@/lib/integrate/provider/student/chat";
+import { cn } from "@/lib/utils";
 
 function resolveStep(patient: PatientDetail): number {
   if (patient.recommendation) return 7;
@@ -245,7 +252,7 @@ export function StudentPeptideAdviserHubPage() {
             {actionError ? <AuthAlert variant="error">{actionError}</AuthAlert> : null}
 
             {!activePatient ? (
-              <div className="rounded-2xl border border-primary/10 bg-white p-8 text-center text-[13px] text-primary/50">
+              <div className={cn("rounded-2xl border border-primary/10 bg-white p-8 text-center", portalEmptyStateClass)}>
                 Select a patient or create a new one to begin intake.
               </div>
             ) : null}
@@ -266,14 +273,14 @@ export function StudentPeptideAdviserHubPage() {
             ) : null}
 
             {isSavingIntake ? (
-              <div className="rounded-2xl border border-primary/10 bg-white p-8 text-center text-[13px] text-primary/50">
+              <div className={cn("rounded-2xl border border-primary/10 bg-white p-8 text-center", portalEmptyStateClass)}>
                 Saving intake…
               </div>
             ) : null}
 
             {showRecommendPrompt ? (
               <div className="rounded-2xl border border-primary/10 bg-white p-8 text-center">
-                <p className="text-[14px] text-primary/60">
+                <p className={portalSectionDescClass}>
                   Intake saved for <span className="font-semibold">{activePatient.display_name}</span>.
                   Generate the recommendation card to open the consultation chat.
                 </p>
@@ -289,16 +296,14 @@ export function StudentPeptideAdviserHubPage() {
             ) : null}
 
             {isGenerating ? (
-              <div className="rounded-2xl border border-primary/10 bg-white p-8 text-center text-[13px] text-primary/50">
+              <div className={cn("rounded-2xl border border-primary/10 bg-white p-8 text-center", portalEmptyStateClass)}>
                 Generating recommendation…
               </div>
             ) : null}
           </div>
 
           <aside className="rounded-2xl border border-primary/10 bg-white p-4 shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
-            <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary/40">
-              Intake progress
-            </p>
+            <p className={portalSectionEyebrowClass}>Intake progress</p>
             <div className="mt-3">
               <IntakeStageList
                 step={step}
@@ -306,7 +311,7 @@ export function StudentPeptideAdviserHubPage() {
               />
             </div>
 
-            <div className="mt-5 space-y-2 border-t border-primary/8 pt-4 text-[12px] text-primary/55">
+            <div className={cn("mt-5 space-y-2 border-t border-primary/8 pt-4", portalInlineMetaClass)}>
               <div className="flex items-center justify-between gap-2">
                 <span>System</span>
                 <span className="font-semibold text-emerald-600">{info ? "online" : "connecting…"}</span>

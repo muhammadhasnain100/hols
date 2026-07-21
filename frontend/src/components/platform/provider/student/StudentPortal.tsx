@@ -3,6 +3,13 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { PortalCardButtonDisplay, usePortalCardButtonHover } from "@/components/platform/provider/PortalCardButton";
+import {
+  portalCardBodyClass,
+  portalCardTitleClass,
+  portalSectionDescClass,
+  portalSectionEyebrowClass,
+  portalSectionTitleClass,
+} from "@/components/platform/provider/portal-styles";
 import { PortalStatCard } from "@/components/platform/provider/PortalStatCard";
 import { DashboardPageLayout } from "@/components/platform/provider/student/dashboard/DashboardPageLayout";
 import { ApiRequestError } from "@/lib/integrate/client";
@@ -168,9 +175,9 @@ function DashboardSection({
 }) {
   return (
     <section>
-      <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary/40">{eyebrow}</p>
-      <h2 className="mt-1 text-[15px] font-semibold text-primary">{title}</h2>
-      <p className="mt-1 text-[13px] text-primary/45">{description}</p>
+      <p className={portalSectionEyebrowClass}>{eyebrow}</p>
+      <h2 className={portalSectionTitleClass}>{title}</h2>
+      <p className={portalSectionDescClass}>{description}</p>
 
       <div className="mt-5 grid gap-3 md:grid-cols-3">
         {actions.map((action) => (
@@ -195,8 +202,8 @@ function DashboardActionCard({ action }: { action: QuickAction }) {
         "hover:shadow-[0_4px_14px_rgba(21,39,68,0.08)]",
       )}
     >
-      <h3 className="text-[15px] font-semibold text-primary">{action.title}</h3>
-      <p className="mt-2 flex-1 text-[13px] leading-relaxed text-primary/45">{action.description}</p>
+      <h3 className={portalCardTitleClass}>{action.title}</h3>
+      <p className={portalCardBodyClass}>{action.description}</p>
       <PortalCardButtonDisplay
         variant={action.variant}
         className="mt-4"

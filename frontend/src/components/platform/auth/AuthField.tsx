@@ -1,7 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
-import { authFieldClass } from "@/components/platform/auth/auth-styles";
+import { authFieldClass, authLabelClass } from "@/components/platform/auth/auth-styles";
 import { cn } from "@/lib/utils";
 
 type AuthFieldIcon = "user" | "email" | "password";
@@ -60,7 +60,7 @@ export function AuthField({
 }: AuthFieldProps) {
   return (
     <div className="grid gap-2">
-      <label htmlFor={id} className="font-sans text-sm font-medium text-primary">
+      <label htmlFor={id} className={authLabelClass}>
         {label}
       </label>
 

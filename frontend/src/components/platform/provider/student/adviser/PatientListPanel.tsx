@@ -1,5 +1,11 @@
 "use client";
 
+import {
+  portalEmptyStateClass,
+  portalInlineMetaClass,
+  portalNavItemClass,
+  portalSectionEyebrowClass,
+} from "@/components/platform/provider/portal-styles";
 import { cn } from "@/lib/utils";
 import type { PatientSummary } from "@/lib/integrate/provider/student/chat";
 import { Button } from "@/components/ui/Button";
@@ -22,7 +28,7 @@ export function PatientListPanel({
   return (
     <aside className="rounded-2xl border border-primary/10 bg-white p-4 shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary/40">Patients</p>
+        <p className={portalSectionEyebrowClass}>Patients</p>
         <Button type="button" size="sm" onClick={onCreate} disabled={isCreating}>
           {isCreating ? "Creating…" : "New"}
         </Button>
@@ -30,7 +36,7 @@ export function PatientListPanel({
 
       <div className="mt-3 space-y-1">
         {patients.length === 0 ? (
-          <p className="rounded-xl bg-primary/[0.03] px-3 py-4 text-[12px] leading-relaxed text-primary/50">
+          <p className={cn("rounded-xl bg-primary/[0.03] px-3 py-4 leading-relaxed", portalEmptyStateClass)}>
             No patients yet. Create one to start a new intake and recommendation case.
           </p>
         ) : (
@@ -46,8 +52,8 @@ export function PatientListPanel({
                   : "hover:bg-primary/[0.03]",
               )}
             >
-              <p className="truncate text-[13px] font-semibold text-primary">{patient.display_name}</p>
-              <p className="mt-1 truncate text-[11px] text-primary/45">
+              <p className={cn("truncate font-semibold", portalNavItemClass)}>{patient.display_name}</p>
+              <p className={cn("mt-1 truncate", portalInlineMetaClass)}>
                 {patient.primary_goal || "Draft intake"}
                 {patient.has_recommendation
                   ? ` · ${patient.message_count} messages · Open chat`

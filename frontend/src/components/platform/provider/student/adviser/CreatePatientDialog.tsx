@@ -2,7 +2,11 @@
 
 import { useEffect, useId, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
-import { authFieldClass } from "@/components/platform/auth/auth-styles";
+import { authFieldClass, authLabelClass } from "@/components/platform/auth/auth-styles";
+import {
+  portalSectionDescClass,
+  portalSectionTitleClass,
+} from "@/components/platform/provider/portal-styles";
 import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 
@@ -58,10 +62,10 @@ export function CreatePatientDialog({
       >
         <div className="mb-5 flex items-start justify-between gap-4">
           <div>
-            <h2 id={titleId} className="text-[15px] font-semibold text-primary">
+            <h2 id={titleId} className={portalSectionTitleClass}>
               New patient
             </h2>
-            <p className="mt-1 text-[13px] text-primary/45">
+            <p className={portalSectionDescClass}>
               Enter a name for this case. You can run intake and chat separately for each patient.
             </p>
           </div>
@@ -79,7 +83,7 @@ export function CreatePatientDialog({
         </div>
 
         <label className="block space-y-2">
-          <span className="text-[13px] font-medium text-primary">Patient name</span>
+          <span className={authLabelClass}>Patient name</span>
           <input
             type="text"
             required
@@ -89,7 +93,7 @@ export function CreatePatientDialog({
             disabled={isSubmitting}
             placeholder="e.g. Patient A"
             onChange={(event) => setName(event.target.value)}
-            className={cn(authFieldClass, "w-full px-3 text-[13px]")}
+            className={cn(authFieldClass, "w-full px-4")}
           />
         </label>
 

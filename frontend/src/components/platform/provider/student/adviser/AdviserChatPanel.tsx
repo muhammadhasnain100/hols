@@ -3,6 +3,15 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { MarkdownContent } from "@/components/platform/provider/student/adviser/MarkdownContent";
+import {
+  portalDisclaimerClass,
+  portalInlineMetaClass,
+  portalNavItemClass,
+  portalRowCategoryClass,
+  portalSectionDescClass,
+  portalSectionTitleClass,
+  portalSubnavItemClass,
+} from "@/components/platform/provider/portal-styles";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
   getPatientMessages,
@@ -188,15 +197,19 @@ export function AdviserChatPanel({ patient, onPatientChange, onNewCase }: Advise
     <div className="flex h-[min(78vh,52rem)] flex-col overflow-hidden rounded-2xl border border-primary/10 bg-[#f7f8fb] shadow-[0_8px_30px_rgba(21,39,68,0.06)]">
       <header className="flex shrink-0 items-center justify-between gap-3 border-b border-primary/8 bg-white px-4 py-3 md:px-6">
         <div className="min-w-0">
-          <p className="truncate text-[14px] font-semibold text-primary">{patient.display_name}</p>
-          <p className="text-[12px] text-primary/45">
+          <p className={cn("truncate font-semibold", portalNavItemClass)}>{patient.display_name}</p>
+          <p className={portalInlineMetaClass}>
             Clinical consultation · {messageCount} message{messageCount === 1 ? "" : "s"}
           </p>
         </div>
         <button
           type="button"
           onClick={onNewCase}
-          className="shrink-0 rounded-full border border-primary/10 bg-white px-3 py-1.5 text-[12px] font-medium text-primary/70 transition hover:border-primary/20 hover:text-primary"
+          className={cn(
+            "shrink-0 rounded-full border border-primary/10 bg-white px-3 py-1.5 transition hover:border-primary/20 hover:text-primary",
+            portalSubnavItemClass,
+            "text-primary/70",
+          )}
         >
           New patient
         </button>
@@ -214,7 +227,11 @@ export function AdviserChatPanel({ patient, onPatientChange, onNewCase }: Advise
                 type="button"
                 onClick={() => void loadOlderMessages()}
                 disabled={isLoadingOlder}
-                className="rounded-full bg-white px-4 py-1.5 text-[12px] font-medium text-primary/55 shadow-sm transition hover:text-primary disabled:opacity-60"
+                className={cn(
+                  "rounded-full bg-white px-4 py-1.5 shadow-sm transition hover:text-primary disabled:opacity-60",
+                  portalSubnavItemClass,
+                  "text-primary/55",
+                )}
               >
                 {isLoadingOlder ? "Loading earlier messages…" : "Load earlier messages"}
               </button>
@@ -224,14 +241,14 @@ export function AdviserChatPanel({ patient, onPatientChange, onNewCase }: Advise
           {isLoadingMessages ? (
             <div className="flex flex-col items-center justify-center gap-3 py-16 text-primary/45">
               <span className="h-8 w-8 animate-spin rounded-full border-2 border-primary/15 border-t-[#3853A4]" />
-              <p className="text-[13px]">Loading conversation…</p>
+              <p className={portalSectionDescClass}>Loading conversation…</p>
             </div>
           ) : null}
 
           {!isLoadingMessages && messages.length === 0 ? (
             <div className="rounded-2xl border border-dashed border-primary/10 bg-white/70 px-6 py-10 text-center">
-              <p className="text-[14px] font-medium text-primary/70">Start the follow-up consultation</p>
-              <p className="mt-2 text-[13px] leading-relaxed text-primary/45">
+              <p className={portalSectionTitleClass}>Start the follow-up consultation</p>
+              <p className={cn("mt-2", portalSectionDescClass)}>
                 Ask about dosing, alternatives, side effects, labs, or mechanisms for this patient case.
               </p>
             </div>
@@ -267,7 +284,7 @@ export function AdviserChatPanel({ patient, onPatientChange, onNewCase }: Advise
             disabled={isSending}
             rows={1}
             placeholder="Message the clinical adviser…"
-            className="max-h-40 min-h-[44px] flex-1 resize-none bg-transparent px-3 py-2.5 text-[14px] leading-relaxed text-primary outline-none placeholder:text-primary/35 disabled:opacity-60"
+            className="text-brand-body max-h-40 min-h-[44px] flex-1 resize-none bg-transparent px-3 py-2.5 leading-relaxed text-primary outline-none placeholder:text-primary/35 disabled:opacity-60"
           />
           <button
             type="submit"
@@ -289,7 +306,7 @@ export function AdviserChatPanel({ patient, onPatientChange, onNewCase }: Advise
             )}
           </button>
         </form>
-        <p className="mx-auto mt-2 max-w-3xl text-center text-[11px] text-primary/35">
+        <p className={cn("mx-auto mt-2 max-w-3xl text-center", portalDisclaimerClass)}>
           Enter to send · Shift+Enter for new line · For clinical decision support only
         </p>
       </footer>
@@ -310,7 +327,7 @@ function ChatMessageRow({ message }: { message: DisplayMessage }) {
             message.pending && "opacity-90",
           )}
         >
-          <p className="whitespace-pre-wrap text-[14px] leading-relaxed">{message.content}</p>
+          <p className="text-brand-body whitespace-pre-wrap leading-relaxed">{message.content}</p>
         </div>
       </div>
     );
@@ -318,15 +335,15 @@ function ChatMessageRow({ message }: { message: DisplayMessage }) {
 
   return (
     <div className="flex items-start gap-3">
-      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#3853A4]/10 text-[11px] font-bold text-[#3853A4]">
+      <div className="text-brand-caption mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#3853A4]/10 font-bold text-[#3853A4]">
         AI
       </div>
       <div className="min-w-0 flex-1">
-        <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.08em] text-primary/40">
+        <p className={cn("mb-1.5", portalRowCategoryClass)}>
           {isRecommendation ? "Recommendation card" : "Clinical adviser"}
         </p>
         <div className="rounded-[1.25rem] rounded-tl-md border border-primary/8 bg-white px-4 py-3 shadow-sm">
-          <MarkdownContent content={message.content} className="text-[14px]" />
+          <MarkdownContent content={message.content} />
         </div>
       </div>
     </div>
@@ -336,7 +353,7 @@ function ChatMessageRow({ message }: { message: DisplayMessage }) {
 function AssistantTypingRow() {
   return (
     <div className="flex items-start gap-3">
-      <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#3853A4]/10 text-[11px] font-bold text-[#3853A4]">
+      <div className="text-brand-caption mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#3853A4]/10 font-bold text-[#3853A4]">
         AI
       </div>
       <div className="rounded-[1.25rem] rounded-tl-md border border-primary/8 bg-white px-4 py-3 shadow-sm">

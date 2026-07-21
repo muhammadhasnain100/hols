@@ -2,6 +2,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
+import {
+  portalEmptyStateClass,
+  portalPaginationClass,
+  portalRowCategoryClass,
+  portalRowValueClass,
+  portalSectionDescClass,
+  portalSectionEyebrowClass,
+  portalSectionTitleClass,
+} from "@/components/platform/provider/portal-styles";
 import { PaymentPageLayout } from "@/components/platform/provider/student/payment/PaymentPageLayout";
 import { Button } from "@/components/ui/Button";
 import { ApiRequestError } from "@/lib/integrate/client";
@@ -15,19 +24,20 @@ import {
   formatMoney,
   planLabels,
 } from "@/lib/integrate/provider/student/payment/types";
+import { cn } from "@/lib/utils";
 
 function OrderRow({ order }: { order: Order }) {
   return (
     <div className="rounded-2xl bg-white p-4 shadow-[0_1px_3px_rgba(21,39,68,0.06)] md:p-5">
-      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-primary/40">Order</p>
+      <p className={portalRowCategoryClass}>Order</p>
       <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
         <div className="min-w-0">
-          <p className="text-[15px] font-semibold text-primary">
+          <p className={portalSectionTitleClass}>
             {planLabels[order.plan_type]} · {formatMoney(order.amount, order.currency)}
           </p>
-          <p className="mt-1 text-[13px] text-primary/50">{formatDate(order.created_at)}</p>
+          <p className={portalSectionDescClass}>{formatDate(order.created_at)}</p>
         </div>
-        <span className="inline-flex w-fit shrink-0 rounded-full bg-primary/[0.06] px-2.5 py-1 text-xs font-medium capitalize text-primary/70">
+        <span className="text-brand-caption inline-flex w-fit shrink-0 rounded-full bg-primary/[0.06] px-2.5 py-1 font-medium capitalize text-primary/70">
           {order.status}
         </span>
       </div>
@@ -80,16 +90,16 @@ export function StudentOrdersPage() {
       {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
 
       <section>
-        <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary/40">History</p>
-        <h2 className="mt-1 text-[15px] font-semibold text-primary">Order history</h2>
-        <p className="mt-1 text-[13px] text-primary/45">Membership purchases on this account.</p>
+        <p className={portalSectionEyebrowClass}>History</p>
+        <h2 className={portalSectionTitleClass}>Order history</h2>
+        <p className={portalSectionDescClass}>Membership purchases on this account.</p>
 
         {loading ? (
           <div className="mt-6 flex justify-center py-8">
             <div className="h-8 w-8 animate-pulse rounded-full bg-primary/10" />
           </div>
         ) : orders.length === 0 ? (
-          <p className="mt-6 rounded-2xl bg-white px-5 py-8 text-center text-[13px] text-primary/45 shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
+          <p className={cn("mt-6 rounded-2xl bg-white px-5 py-8 shadow-[0_1px_3px_rgba(21,39,68,0.06)]", portalEmptyStateClass)}>
             No orders yet.
           </p>
         ) : (
@@ -110,7 +120,7 @@ export function StudentOrdersPage() {
           >
             Previous
           </Button>
-          <span className="text-[12px] text-primary/40">Page {page}</span>
+          <span className={portalPaginationClass}>Page {page}</span>
           <Button
             type="button"
             variant="secondary"

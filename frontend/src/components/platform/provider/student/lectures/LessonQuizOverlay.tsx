@@ -2,6 +2,16 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
+import { authFieldClass } from "@/components/platform/auth/auth-styles";
+import {
+  portalCardTitleClass,
+  portalInlineMetaClass,
+  portalRowCategoryClass,
+  portalSectionDescClass,
+  portalSectionEyebrowClass,
+  portalSectionTitleClass,
+  portalSubnavItemClass,
+} from "@/components/platform/provider/portal-styles";
 import { Button } from "@/components/ui/Button";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
@@ -61,10 +71,8 @@ function QuizQuestion({
 
   return (
     <div className="rounded-xl border border-primary/[0.06] bg-white p-4 shadow-[0_1px_3px_rgba(21,39,68,0.04)]">
-      <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary/40">
-        {variant.variant_type.replaceAll("_", " ")}
-      </p>
-      <p className="mt-2 text-[13px] font-medium text-primary">{question}</p>
+      <p className={portalRowCategoryClass}>{variant.variant_type.replaceAll("_", " ")}</p>
+      <p className={cn("mt-2 font-medium", portalSectionDescClass)}>{question}</p>
 
       {options ? (
         <div className="mt-3 space-y-2">
@@ -72,7 +80,7 @@ function QuizQuestion({
             <label
               key={option}
               className={cn(
-                "flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 text-[13px] transition",
+                "text-brand-body flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2 transition",
                 value === option
                   ? "border-primary bg-primary/[0.05] text-primary"
                   : "border-primary/[0.08] text-primary/70 hover:border-primary/20",
@@ -99,7 +107,7 @@ function QuizQuestion({
             const current = typeof value === "object" && value ? (value as Record<string, string>) : {};
             return (
               <div key={left} className="grid gap-2 sm:grid-cols-[1fr_1fr] sm:items-center">
-                <span className="text-[13px] text-primary/70">{left}</span>
+                <span className={portalSectionDescClass}>{left}</span>
                 <select
                   value={current[left] ?? ""}
                   disabled={disabled}
@@ -109,7 +117,7 @@ function QuizQuestion({
                       [left]: event.target.value,
                     })
                   }
-                  className="rounded-xl border border-primary/[0.08] bg-white px-3 py-2 text-[13px] text-primary outline-none"
+                  className={cn(authFieldClass, "rounded-xl px-4 py-2")}
                 >
                   <option value="">Select match</option>
                   {matchingOptions.map((option) => (
@@ -131,7 +139,7 @@ function QuizQuestion({
           disabled={disabled}
           onChange={(event) => onChange(event.target.value)}
           placeholder="Type your answer"
-          className="mt-3 w-full rounded-xl border border-primary/[0.08] bg-white px-3 py-2 text-[13px] text-primary outline-none"
+          className={cn(authFieldClass, "mt-3 w-full rounded-xl px-4 py-2")}
         />
       ) : null}
     </div>
@@ -259,9 +267,9 @@ export function LessonQuizOverlay({
 
       {phase === "confirm" ? (
         <div className="relative w-full max-w-md rounded-2xl bg-white p-6 shadow-[0_20px_60px_rgba(21,39,68,0.18)]">
-          <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary/40">Lesson quiz</p>
-          <h3 className="mt-2 text-lg font-semibold text-primary">Do you want to continue?</h3>
-          <p className="mt-2 text-[13px] leading-relaxed text-primary/55">
+          <p className={portalSectionEyebrowClass}>Lesson quiz</p>
+          <h3 className={cn("mt-2", portalCardTitleClass)}>Do you want to continue?</h3>
+          <p className={cn("mt-2", portalSectionDescClass)}>
             You are about to start the quiz for <span className="font-medium text-primary">{lessonTitle}</span>.
             It has {variants.length} question{variants.length === 1 ? "" : "s"}. You will have{" "}
             <span className="font-medium text-primary">5 minutes</span> to complete it after the countdown.
@@ -279,10 +287,10 @@ export function LessonQuizOverlay({
 
       {phase === "countdown" ? (
         <div className="relative w-full max-w-sm rounded-2xl bg-white p-8 text-center shadow-[0_20px_60px_rgba(21,39,68,0.18)]">
-          <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary/40">Get ready</p>
-          <p className="mt-3 text-[15px] font-medium text-primary">Quiz starts in</p>
+          <p className={portalSectionEyebrowClass}>Get ready</p>
+          <p className={cn("mt-3 font-medium", portalSectionTitleClass)}>Quiz starts in</p>
           <p className="mt-4 text-5xl font-bold tabular-nums text-primary">{secondsLeft || "Go!"}</p>
-          <p className="mt-4 text-[13px] text-primary/45">Focus up — your lesson quiz is about to begin.</p>
+          <p className={cn("mt-4", portalSectionDescClass)}>Focus up — your lesson quiz is about to begin.</p>
         </div>
       ) : null}
 
@@ -290,13 +298,13 @@ export function LessonQuizOverlay({
         <div className="relative flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-[#f7f9fc] shadow-[0_20px_60px_rgba(21,39,68,0.18)]">
           <header className="flex items-center justify-between gap-3 border-b border-primary/[0.08] bg-white px-5 py-4">
             <div>
-              <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary/40">Lesson quiz</p>
-              <h3 className="text-[15px] font-semibold text-primary">{lessonTitle}</h3>
+              <p className={portalSectionEyebrowClass}>Lesson quiz</p>
+              <h3 className={portalSectionTitleClass}>{lessonTitle}</h3>
             </div>
             <div className="flex items-center gap-2">
               <span
                 className={cn(
-                  "inline-flex rounded-full px-3 py-1 text-[12px] font-semibold tabular-nums",
+                  "text-brand-caption inline-flex rounded-full px-3 py-1 font-semibold tabular-nums",
                   timedOut
                     ? "bg-amber-100 text-amber-700"
                     : quizSecondsLeft <= 60
@@ -347,7 +355,7 @@ export function LessonQuizOverlay({
 
           <footer className="border-t border-primary/[0.08] bg-white px-5 py-4">
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-[13px] text-primary/45">
+              <p className={portalSectionDescClass}>
                 {timedOut
                   ? "Quiz time has expired."
                   : `Answer all ${variants.length} question${variants.length === 1 ? "" : "s"} to submit`}
@@ -379,17 +387,17 @@ export function LessonQuizResultCard({ result, courseId, onRetake }: LessonQuizR
     <section className="rounded-2xl border border-primary/[0.08] bg-white p-5 shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary/40">Latest quiz result</p>
-          <h3 className="mt-1 text-lg font-semibold text-primary">
+          <p className={portalSectionEyebrowClass}>Latest quiz result</p>
+          <h3 className={cn("mt-1", portalCardTitleClass)}>
             {result.score_percent}% · {result.correct_count}/{result.total_questions} correct
           </h3>
-          <p className="mt-1 text-[13px] text-primary/55">
+          <p className={cn("mt-1", portalSectionDescClass)}>
             {result.passed ? "You passed this lesson quiz." : "Review the lesson and try again when ready."}
           </p>
         </div>
         <span
           className={cn(
-            "inline-flex rounded-full px-3 py-1 text-[12px] font-semibold",
+            "text-brand-caption inline-flex rounded-full px-3 py-1 font-semibold",
             result.passed ? "bg-emerald-100 text-emerald-700" : "bg-amber-100 text-amber-700",
           )}
         >
@@ -402,7 +410,7 @@ export function LessonQuizResultCard({ result, courseId, onRetake }: LessonQuizR
           <div
             key={answer.variant_id}
             className={cn(
-              "rounded-xl border px-3 py-2 text-[12px]",
+              "text-brand-body rounded-xl border px-3 py-2",
               answer.is_correct
                 ? "border-emerald-200 bg-emerald-50/70 text-primary"
                 : "border-amber-200 bg-amber-50/70 text-primary",

@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { HeroLogo } from "@/components/hero/HeroLogo";
+import { authEyebrowClass, authSubtitleClass, authTitleClass } from "@/components/platform/auth/auth-styles";
 import { brand } from "@/config/brand";
+import { heroLayout } from "@/lib/hero-styles";
 import { cn } from "@/lib/utils";
 
 type AuthShellProps = {
@@ -79,13 +81,13 @@ export function AuthShell({
       </aside>
 
       <section className="relative flex min-h-svh flex-col overflow-hidden bg-white">
-        <header className="relative z-10 flex items-center justify-between px-5 py-5 md:px-8 lg:px-10">
+        <header className={cn("relative z-10 flex items-center justify-between py-5", heroLayout.gutterX, "lg:px-10")}>
           <Link href="/" className="inline-flex lg:hidden">
             <HeroLogo variant="dark" className="h-8" linked={false} />
           </Link>
           <Link
             href="/"
-            className="ml-auto inline-flex items-center gap-2 rounded-full border border-primary/10 bg-white px-4 py-2 text-sm font-medium text-primary transition hover:bg-primary/[0.03]"
+            className="text-brand-caption ml-auto inline-flex items-center gap-2 rounded-full border border-primary/10 bg-white px-4 py-2 font-medium text-primary/75 transition hover:bg-primary/[0.03] hover:text-primary"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
               <path d="M15 18l-6-6 6-6" />
@@ -94,7 +96,7 @@ export function AuthShell({
           </Link>
         </header>
 
-        <div className="relative z-10 flex flex-1 flex-col justify-center px-5 pb-12 pt-4 md:px-8 lg:px-10 xl:px-16">
+        <div className={cn("relative z-10 flex flex-1 flex-col justify-center pb-12 pt-4", heroLayout.gutterX, "lg:px-10 xl:px-16")}>
           <div
             className={cn(
               "mx-auto w-full",
@@ -102,15 +104,9 @@ export function AuthShell({
             )}
           >
             <div className="mb-8">
-              <p className="font-sans text-xs font-semibold uppercase tracking-[0.18em] text-primary/50">
-                {eyebrow}
-              </p>
-              <h2 className="text-brand-subheading mt-3 font-bold text-primary md:text-[2.35rem]">
-                {title}
-              </h2>
-              {subtitle ? (
-                <p className="mt-3 text-sm leading-relaxed text-muted md:text-base">{subtitle}</p>
-              ) : null}
+              <p className={authEyebrowClass}>{eyebrow}</p>
+              <h1 className={cn("mt-3", authTitleClass)}>{title}</h1>
+              {subtitle ? <p className={authSubtitleClass}>{subtitle}</p> : null}
             </div>
             {children}
           </div>

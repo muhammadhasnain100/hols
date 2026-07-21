@@ -1,5 +1,6 @@
 "use client";
 
+import { authAlertClass } from "@/components/platform/auth/auth-styles";
 import { cn } from "@/lib/utils";
 
 type AuthAlertProps = {
@@ -19,7 +20,8 @@ export function AuthAlert({ variant = "error", children, className }: AuthAlertP
     <div
       role="alert"
       className={cn(
-        "rounded-xl border px-4 py-3 text-sm leading-relaxed",
+        "rounded-xl border px-4 py-3",
+        authAlertClass,
         variants[variant],
         className,
       )}

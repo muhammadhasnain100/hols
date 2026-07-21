@@ -17,41 +17,59 @@ const MERGE_STROKE = 2.15;
 
 const HOOK_SINGLE_PATH_SYNC = "hook-single-path-sync";
 
-/**
- * Scattered lines originate from the left ball, fan out, converge at the right ball,
- * then one line exits to the CTA.
- */
-function buildConvergePaths(viewW: number, viewH: number) {
-  const count = 9;
-  const padY = 16;
-  const gap = (viewH - padY * 2) / (count - 1);
-  const originY = viewH / 2;
-  const ballRadius = viewW * 0.038;
-  const originX = ballRadius;
-  const startX = originX;
+/** Deterministic pseudo-random in [0, 1) for stable organic curves. */
+function seededUnit(seed: number) {
+  const x = Math.sin(seed * 12.9898 + 78.233) * 43758.5453;
+  return x - Math.floor(x);
+}
 
+/**
+ * Each scattered capsule sits on the left with a unique x-offset; a curved line
+ * originates from the capsule and converges on the HOLS hub, then one line exits to the CTA.
+ */
+function buildConvergePaths(viewW: number, viewH: number, count: number) {
+  const padY = 20;
+  const gap = (viewH - padY * 2) / Math.max(count - 1, 1);
   const mergeY = viewH / 2;
   const mergeX = viewW * 0.68;
-  const spreadEnd = viewW * 0.34;
-  const convergeStart = viewW * 0.5;
-  const tipX = mergeX - ballRadius;
-  const singleStartX = mergeX + ballRadius;
+  const hubHalf = viewW * 0.045;
+  const tipX = mergeX - hubHalf;
+  const singleStartX = mergeX + hubHalf;
+  const capsuleHalfW = viewW * 0.055;
 
-  const paths = Array.from({ length: count }, (_, i) => {
+  const scatterPositions = Array.from({ length: count }, (_, i) => {
     const y = padY + i * gap;
-    const fanC1x = startX + (spreadEnd - startX) * 0.32;
-    const fanC2x = startX + (spreadEnd - startX) * 0.68;
-    const fanC1y = originY + (y - originY) * 0.12;
-    const fanC2y = originY + (y - originY) * 0.88;
-    const c1x = convergeStart + (tipX - convergeStart) * 0.35;
-    const c2x = convergeStart + (tipX - convergeStart) * 0.72;
-    const c1y = y;
-    const c2y = y + (mergeY - y) * 0.72;
-
-    return `M ${startX.toFixed(2)} ${originY.toFixed(2)} C ${fanC1x.toFixed(2)} ${fanC1y.toFixed(2)}, ${fanC2x.toFixed(2)} ${fanC2y.toFixed(2)}, ${spreadEnd.toFixed(2)} ${y.toFixed(2)} L ${convergeStart.toFixed(2)} ${y.toFixed(2)} C ${c1x.toFixed(2)} ${c1y.toFixed(2)}, ${c2x.toFixed(2)} ${c2y.toFixed(2)}, ${tipX.toFixed(2)} ${mergeY.toFixed(2)}`;
+    const xJitter = (seededUnit(i * 7 + 1) - 0.5) * viewW * 0.06;
+    const capsuleCenterX = viewW * 0.14 + xJitter;
+    return {
+      leftPct: (capsuleCenterX / viewW) * 100,
+      topPct: (y / viewH) * 100,
+      lineStartX: capsuleCenterX + capsuleHalfW,
+      lineStartY: y,
+    };
   });
 
-  return { paths, originX, mergeX, mergeY, ballRadius, singleStartX };
+  const paths = scatterPositions.map((pos, i) => {
+    const { lineStartX, lineStartY } = pos;
+    const dx = tipX - lineStartX;
+    const bend = seededUnit(i * 13 + 3);
+    const sway = seededUnit(i * 19 + 5) - 0.5;
+
+    const c1x = lineStartX + dx * (0.28 + bend * 0.18);
+    const c1y = lineStartY + sway * viewH * 0.14;
+    const c2x = lineStartX + dx * (0.62 + bend * 0.12);
+    const c2y = mergeY + (lineStartY - mergeY) * (0.15 + bend * 0.35);
+
+    const endY = mergeY + (lineStartY - mergeY) * (seededUnit(i * 11 + 7) - 0.5) * 0.08;
+    const endX = tipX - seededUnit(i * 17 + 9) * hubHalf * 0.35;
+
+    return `M ${lineStartX.toFixed(2)} ${lineStartY.toFixed(2)} C ${c1x.toFixed(2)} ${c1y.toFixed(2)}, ${c2x.toFixed(2)} ${c2y.toFixed(2)}, ${endX.toFixed(2)} ${endY.toFixed(2)}`;
+  });
+
+  const scatterClusterPct =
+    scatterPositions.reduce((sum, pos) => sum + pos.leftPct, 0) / scatterPositions.length;
+
+  return { paths, mergeX, mergeY, singleStartX, scatterPositions, scatterClusterPct };
 }
 
 function buildSinglePath(endX: number, startX: number, y: number) {
@@ -59,47 +77,18 @@ function buildSinglePath(endX: number, startX: number, y: number) {
 }
 
 const VIEW_W = 1200;
-const VIEW_H = 240;
-const { paths: CONVERGE_PATHS, mergeX, singleStartX, mergeY } =
-  buildConvergePaths(VIEW_W, VIEW_H);
+const VIEW_H = 280;
+const SCATTER_COUNT = landingContent.hook.scatterCapsules.length;
+const {
+  paths: CONVERGE_PATHS,
+  mergeX,
+  singleStartX,
+  mergeY,
+  scatterPositions,
+  scatterClusterPct,
+} = buildConvergePaths(VIEW_W, VIEW_H, SCATTER_COUNT);
 const DEFAULT_SINGLE_END = VIEW_W * 0.9;
-
-const BALL_CLASS =
-  "h-14 w-14 object-contain drop-shadow-[0_8px_24px_rgba(21,39,68,0.18)] sm:h-16 sm:w-16 md:h-20 md:w-20 lg:h-24 lg:w-24";
-
-function HookBall({
-  src,
-  dataAttr,
-  leftPct,
-  align = "center",
-}: {
-  src: string;
-  dataAttr: "data-hook-ball-origin" | "data-hook-ball-merge";
-  leftPct?: number;
-  align?: "center" | "start";
-}) {
-  return (
-    <div
-      {...{ [dataAttr]: true }}
-      aria-hidden
-      className={cn(
-        "absolute top-1/2 z-10 -translate-y-1/2",
-        align === "center" ? "-translate-x-1/2" : "translate-x-0",
-      )}
-      style={{ left: align === "start" ? 0 : `${leftPct}%` }}
-    >
-      <Image
-        src={src}
-        alt=""
-        width={96}
-        height={96}
-        className={BALL_CLASS}
-        sizes="(max-width: 640px) 3.5rem, 6rem"
-        priority
-      />
-    </div>
-  );
-}
+const MERGE_PCT = (mergeX / VIEW_W) * 100;
 
 function prepareStroke(path: SVGPathElement, hidden: boolean) {
   const length = path.getTotalLength();
@@ -140,9 +129,34 @@ function HookCta({ href, label }: { href: string; label: string }) {
 const HOOK_LABEL_CAPSULE =
   "glass-capsule inline-flex items-center rounded-full px-4 py-2 font-sans text-sm font-semibold leading-none tracking-[0.005em] text-primary md:px-5 md:py-2.5 md:text-base lg:text-lg";
 
+const HOOK_SCATTER_CAPSULE =
+  "glass-capsule inline-flex max-w-[8rem] items-center justify-center rounded-full px-3.5 py-1.5 text-center font-sans text-[11px] font-medium leading-tight tracking-[0.005em] text-primary shadow-[0_2px_8px_rgba(21,39,68,0.06)] sm:max-w-none sm:px-4 sm:py-2 sm:text-xs md:text-sm";
+
+function HookMergeHub() {
+  return (
+    <div
+      data-hook-merge-hub
+      aria-hidden
+      className="absolute top-1/2 z-10 -translate-x-1/2 -translate-y-1/2"
+      style={{ left: `${MERGE_PCT}%` }}
+    >
+      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary shadow-[0_8px_24px_rgba(21,39,68,0.18)] sm:h-16 sm:w-16 md:h-20 md:w-20">
+        <Image
+          src="/assets/logo/hols-logo-mark-light.png"
+          alt=""
+          width={56}
+          height={56}
+          className="h-8 w-8 object-contain sm:h-9 sm:w-9 md:h-10 md:w-10"
+          sizes="(max-width: 640px) 2rem, 2.5rem"
+        />
+      </div>
+    </div>
+  );
+}
+
 function FlowDiagram() {
   const { hook } = landingContent;
-  const mergePct = (mergeX / VIEW_W) * 100;
+  const scatterLabels = hook.scatterCapsules;
   const rowRef = useRef<HTMLDivElement>(null);
   const svgRef = useRef<SVGSVGElement>(null);
   const ctaRef = useRef<HTMLDivElement>(null);
@@ -160,8 +174,7 @@ function FlowDiagram() {
     const ctaRect = cta.getBoundingClientRect();
     if (svgRect.width <= 0) return;
 
-    const endX =
-      ((ctaRect.left - svgRect.left) / svgRect.width) * VIEW_W;
+    const endX = ((ctaRect.left - svgRect.left) / svgRect.width) * VIEW_W;
     const clamped = Math.max(singleStartX + 24, Math.min(endX, VIEW_W - 2));
     const nextPath = buildSinglePath(clamped, singleStartX, mergeY);
 
@@ -194,22 +207,21 @@ function FlowDiagram() {
       <div className="pointer-events-none relative mb-2 h-10 w-full md:mb-3 md:h-11">
         <div
           data-hook-before-label
-          className="absolute top-0 left-[1.75rem] z-20 -translate-x-1/2 will-change-transform sm:left-8 md:left-10"
+          className="absolute top-0 z-20 -translate-x-1/2 will-change-transform"
+          style={{ left: `${scatterClusterPct}%` }}
         >
           <span className={HOOK_LABEL_CAPSULE}>{hook.beforeLabel}</span>
         </div>
         <div
           data-hook-after-label
           className="absolute top-0 z-20 -translate-x-1/2 will-change-transform"
-          style={{ left: `${mergePct}%` }}
+          style={{ left: `${MERGE_PCT}%` }}
         >
-          <span className={cn(HOOK_LABEL_CAPSULE, "font-medium italic")}>
-            {hook.afterLabel}
-          </span>
+          <span className={cn(HOOK_LABEL_CAPSULE, "font-medium italic")}>{hook.afterLabel}</span>
         </div>
       </div>
 
-      <div ref={rowRef} className="relative w-full">
+      <div ref={rowRef} className="relative w-full py-1 md:py-2">
         <svg
           ref={svgRef}
           aria-hidden
@@ -238,21 +250,25 @@ function FlowDiagram() {
           />
         </svg>
 
-        <HookBall
-          src={hook.ballImage}
-          dataAttr="data-hook-ball-origin"
-          align="start"
-        />
-        <HookBall
-          src={hook.ballImage}
-          dataAttr="data-hook-ball-merge"
-          leftPct={mergePct}
-        />
+        {scatterLabels.map((label, index) => {
+          const position = scatterPositions[index];
+          if (!position) return null;
 
-        <div
-          ref={ctaRef}
-          className="absolute top-1/2 right-0 z-20 -translate-y-1/2"
-        >
+          return (
+            <div
+              key={label}
+              data-hook-scatter-capsule
+              className="pointer-events-none absolute z-20 -translate-x-1/2 -translate-y-1/2 will-change-transform"
+              style={{ left: `${position.leftPct}%`, top: `${position.topPct}%` }}
+            >
+              <span className={HOOK_SCATTER_CAPSULE}>{label}</span>
+            </div>
+          );
+        })}
+
+        <HookMergeHub />
+
+        <div ref={ctaRef} className="absolute top-1/2 right-0 z-20 -translate-y-1/2">
           <HookCta href={hook.cta.href} label={hook.cta.label} />
         </div>
       </div>
@@ -383,15 +399,13 @@ export function HookSection() {
       const singlePaths = gsap.utils.toArray<SVGPathElement>(
         pinWrap.querySelectorAll("[data-hook-single]"),
       );
-      const originBalls = gsap.utils.toArray<HTMLElement>(
-        pinWrap.querySelectorAll("[data-hook-ball-origin]"),
+      const scatterCapsules = gsap.utils.toArray<HTMLElement>(
+        pinWrap.querySelectorAll("[data-hook-scatter-capsule]"),
       );
-      const mergeBalls = gsap.utils.toArray<HTMLElement>(
-        pinWrap.querySelectorAll("[data-hook-ball-merge]"),
+      const mergeHub = gsap.utils.toArray<HTMLElement>(
+        pinWrap.querySelectorAll("[data-hook-merge-hub]"),
       );
-      const ctas = gsap.utils.toArray<HTMLElement>(
-        pinWrap.querySelectorAll("[data-hook-cta]"),
-      );
+      const ctas = gsap.utils.toArray<HTMLElement>(pinWrap.querySelectorAll("[data-hook-cta]"));
       const beforeLabels = gsap.utils.toArray<HTMLElement>(
         pinWrap.querySelectorAll("[data-hook-before-label]"),
       );
@@ -405,8 +419,8 @@ export function HookSection() {
       scatterPaths.forEach((p) => prepareStroke(p, true));
       singlePaths.forEach((p) => prepareStroke(p, true));
 
-      gsap.set(originBalls, { scale: 0.85, autoAlpha: 0 });
-      gsap.set(mergeBalls, { scale: 0.85, autoAlpha: 0 });
+      gsap.set(scatterCapsules, { autoAlpha: 0, scale: 0.92 });
+      gsap.set(mergeHub, { scale: 0.85, autoAlpha: 0 });
       gsap.set(ctas, { autoAlpha: 0, x: 16 });
       gsap.set(beforeLabels, { autoAlpha: 0, x: -12 });
       gsap.set(afterLabels, { autoAlpha: 0, y: 8 });
@@ -428,52 +442,45 @@ export function HookSection() {
         },
       });
 
-      // 1 — Before-label + origin ball enter
-      tl.to(
-          beforeLabels,
-          { autoAlpha: 1, x: 0, duration: 0.45, ease: "none" },
-          0.4,
-        )
-        .fromTo(
-          originBalls,
-          { scale: 0.85, autoAlpha: 0 },
-          { scale: 1, autoAlpha: 1, duration: 0.45, ease: "none" },
-          0.4,
-        );
+      // 1 — Before-label enters
+      tl.to(beforeLabels, { autoAlpha: 1, x: 0, duration: 0.45, ease: "none" }, 0.4);
 
-      // 2 — Scattered lines draw outward from the origin ball, then converge
-      scatterPaths.forEach((path, i) => {
+      // 2 — Scattered capsules appear, then lines draw from each capsule to the hub
+      scatterCapsules.forEach((capsule, i) => {
         tl.to(
-          path,
-          { strokeDashoffset: 0, duration: 1.55, ease: "none" },
-          0.55 + i * 0.045,
+          capsule,
+          { autoAlpha: 1, scale: 1, duration: 0.35, ease: "none" },
+          0.55 + i * 0.035,
         );
       });
 
-      // 3 — Merge ball + label, then single line exits right
+      scatterPaths.forEach((path, i) => {
+        tl.to(
+          path,
+          { strokeDashoffset: 0, duration: 1.2, ease: "none" },
+          0.85 + i * 0.045,
+        );
+      });
+
+      // 3 — HOLS hub + after label, then single line exits right
       tl.fromTo(
-        mergeBalls,
+        mergeHub,
         { scale: 0.85, autoAlpha: 0 },
         { scale: 1, autoAlpha: 1, duration: 0.45, ease: "none" },
-        2.0,
+        2.15,
       )
-        .to(
-          afterLabels,
-          { autoAlpha: 1, y: 0, duration: 0.4, ease: "none" },
-          2.05,
-        )
-        .to(
-          singlePaths,
-          { strokeDashoffset: 0, duration: 0.85, ease: "none" },
-          2.1,
-        );
+        .to(afterLabels, { autoAlpha: 1, y: 0, duration: 0.4, ease: "none" }, 2.2)
+        .to(singlePaths, { strokeDashoffset: 0, duration: 0.85, ease: "none" }, 2.25);
 
       // 4 — Explore courses on the right
-      tl.to(ctas, { autoAlpha: 1, x: 0, duration: 0.5, ease: "none" }, 2.65);
+      tl.to(ctas, { autoAlpha: 1, x: 0, duration: 0.5, ease: "none" }, 2.8);
 
       // 5 — Problem → solution
-      tl.to(problem, { autoAlpha: 0, y: -14, duration: 0.5, ease: "none" }, 3.1)
-        .to(solution, { autoAlpha: 1, y: 0, duration: 0.55, ease: "none" }, 3.25);
+      tl.to(problem, { autoAlpha: 0, y: -14, duration: 0.5, ease: "none" }, 3.25).to(
+        solution,
+        { autoAlpha: 1, y: 0, duration: 0.55, ease: "none" },
+        3.4,
+      );
 
       tl.to({}, { duration: 0.6 });
 

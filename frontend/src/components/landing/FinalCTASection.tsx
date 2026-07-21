@@ -145,11 +145,11 @@ export function FinalCTASection() {
         },
       });
 
-      // Hold, then a longer in-place spin — more scroll distance = more time to enjoy it
+      // Hold, then one full in-place spin
       tl.to({}, { duration: 0.14 }, 0).to(
         ballSpin,
         {
-          rotation: 1080,
+          rotation: 360,
           duration: 0.42,
           ease: "none",
         },

@@ -5,14 +5,24 @@ import {
   LessonQuizOverlay,
   LessonQuizResultCard,
 } from "@/components/platform/provider/student/lectures/LessonQuizOverlay";
+import {
+  portalCardTitleClass,
+  portalEmptyStateClass,
+  portalInlineMetaClass,
+  portalRowCategoryClass,
+  portalSectionDescClass,
+  portalSectionEyebrowClass,
+  portalSectionTitleClass,
+} from "@/components/platform/provider/portal-styles";
 import { Button } from "@/components/ui/Button";
 import type { LessonDetail, LessonQuizResult } from "@/lib/integrate/provider/student/lectures";
+import { cn } from "@/lib/utils";
 
 function ContentBlock({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="rounded-xl border border-primary/[0.06] bg-primary/[0.03] p-4 md:p-5">
-      <h3 className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary/40">{title}</h3>
-      <div className="mt-2 whitespace-pre-wrap text-[13px] leading-relaxed text-primary">{children}</div>
+      <h3 className={portalRowCategoryClass}>{title}</h3>
+      <div className="text-brand-body mt-2 whitespace-pre-wrap leading-relaxed text-primary">{children}</div>
     </div>
   );
 }
@@ -69,32 +79,32 @@ export function LessonContentPanel({
     <div className="grid gap-4">
       <section className="rounded-2xl border border-[#8DC3E1]/35 bg-[#eef6fb] p-5 md:p-6">
         <div className="flex flex-wrap items-start gap-2">
-          <span className="inline-flex h-8 items-center rounded-full bg-primary px-3 text-[12px] font-semibold text-white">
+          <span className={cn("inline-flex h-8 items-center rounded-full bg-primary px-3 font-semibold text-white", portalInlineMetaClass)}>
             Lesson {lesson.order}
           </span>
           {currentIndex && total ? (
-            <span className="inline-flex h-8 items-center rounded-full bg-white/80 px-3 text-[12px] font-medium text-primary/70">
+            <span className={cn("inline-flex h-8 items-center rounded-full bg-white/80 px-3", portalInlineMetaClass)}>
               {currentIndex} of {total}
             </span>
           ) : null}
           {lesson.l1_name ? (
-            <span className="inline-flex h-8 items-center rounded-full bg-white/80 px-3 text-[12px] font-medium text-primary/70">
+            <span className={cn("inline-flex h-8 items-center rounded-full bg-white/80 px-3", portalInlineMetaClass)}>
               {lesson.l1_name}
             </span>
           ) : null}
           {lesson.l2_name ? (
-            <span className="inline-flex h-8 items-center rounded-full bg-white/80 px-3 text-[12px] font-medium text-primary/70">
+            <span className={cn("inline-flex h-8 items-center rounded-full bg-white/80 px-3", portalInlineMetaClass)}>
               {lesson.l2_name}
             </span>
           ) : null}
         </div>
-        <h2 className="mt-4 text-lg font-semibold tracking-tight text-primary md:text-xl">{lesson.title}</h2>
+        <h2 className={cn("mt-4", portalCardTitleClass)}>{lesson.title}</h2>
       </section>
 
       {detailLoading ? (
         <div className="rounded-2xl bg-white p-8 text-center shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
           <div className="mx-auto h-7 w-7 animate-pulse rounded-full bg-primary/10" />
-          <p className="mt-3 text-[13px] text-primary/45">Loading lesson content…</p>
+          <p className={cn("mt-3", portalEmptyStateClass)}>Loading lesson content…</p>
         </div>
       ) : (
         <>
@@ -110,7 +120,7 @@ export function LessonContentPanel({
 
             {!hasContent ? (
               <div className="rounded-2xl bg-white p-8 text-center shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
-                <p className="text-[13px] text-primary/45">No lesson content available yet.</p>
+                <p className={portalEmptyStateClass}>No lesson content available yet.</p>
               </div>
             ) : null}
           </section>
@@ -123,11 +133,11 @@ export function LessonContentPanel({
             />
           ) : hasQuiz ? (
             <section className="rounded-2xl bg-white p-5 shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
-              <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary/40">Practice quiz</p>
-              <h3 className="mt-1 text-[15px] font-semibold text-primary">
+              <p className={portalSectionEyebrowClass}>Practice quiz</p>
+              <h3 className={portalSectionTitleClass}>
                 {lesson.variants.length} question{lesson.variants.length === 1 ? "" : "s"} · 5 minute limit
               </h3>
-              <p className="mt-2 max-w-2xl text-[13px] leading-relaxed text-primary/55">
+              <p className={cn("mt-2 max-w-2xl", portalSectionDescClass)}>
                 Read the lesson first, then take the quiz when you are ready. You will confirm before the countdown
                 starts and have 5 minutes to finish.
               </p>
@@ -143,7 +153,7 @@ export function LessonContentPanel({
 
       {(prevLessonId || nextLessonId) && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white p-4 shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
-          <p className="text-[13px] text-primary/45">
+          <p className={portalInlineMetaClass}>
             {currentIndex && total ? `Lesson ${currentIndex} of ${total}` : "Lesson navigation"}
           </p>
           <div className="flex gap-2">

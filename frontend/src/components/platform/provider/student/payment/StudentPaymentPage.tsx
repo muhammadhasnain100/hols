@@ -3,6 +3,14 @@
 import { useCallback, useEffect, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { PortalStatCard } from "@/components/platform/provider/PortalStatCard";
+import {
+  portalPlanMetaClass,
+  portalPlanPriceClass,
+  portalRowCategoryClass,
+  portalSectionDescClass,
+  portalSectionEyebrowClass,
+  portalSectionTitleClass,
+} from "@/components/platform/provider/portal-styles";
 import { PaymentPageLayout } from "@/components/platform/provider/student/payment/PaymentPageLayout";
 import { Button } from "@/components/ui/Button";
 import { ApiRequestError } from "@/lib/integrate/client";
@@ -141,13 +149,9 @@ export function StudentPaymentPage() {
           </div>
 
           <section>
-            <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary/40">
-              Plans
-            </p>
-            <h2 className="mt-1 text-[15px] font-semibold text-primary">Available membership</h2>
-            <p className="mt-1 text-[13px] text-primary/45">
-              Your saved card will be charged on purchase.
-            </p>
+            <p className={portalSectionEyebrowClass}>Plans</p>
+            <h2 className={portalSectionTitleClass}>Available membership</h2>
+            <p className={portalSectionDescClass}>Your saved card will be charged on purchase.</p>
 
             <div className="mt-5 grid gap-3 lg:grid-cols-3">
               {plans.map((plan) => {
@@ -162,13 +166,9 @@ export function StudentPaymentPage() {
                         : "border-primary/[0.08] bg-white",
                     )}
                   >
-                    <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-primary/40">
-                      {planLabels[plan.plan_type]}
-                    </p>
-                    <p className="mt-2 text-2xl font-semibold tracking-tight text-primary">
-                      {formatMoney(plan.price, plan.currency)}
-                    </p>
-                    <p className="mt-1 text-[13px] text-primary/45">{plan.duration_days} days access</p>
+                    <p className={portalRowCategoryClass}>{planLabels[plan.plan_type]}</p>
+                    <p className={portalPlanPriceClass}>{formatMoney(plan.price, plan.currency)}</p>
+                    <p className={portalPlanMetaClass}>{plan.duration_days} days access</p>
                     <Button
                       type="button"
                       variant={current ? "secondary" : "primary"}

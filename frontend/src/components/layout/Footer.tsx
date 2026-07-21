@@ -41,8 +41,11 @@ export function Footer() {
   const year = new Date().getFullYear();
 
   return (
-    <footer className="border-t border-primary/8 bg-[#F4F5F7] text-primary">
-      <div className={cn("w-full py-12 md:py-14 lg:py-16", heroLayout.gutterX)}>
+    <footer
+      data-nav-surface="light"
+      className="relative w-full overflow-hidden bg-[#F4F5F7] text-primary"
+    >
+      <div className={cn("relative w-full py-12 md:py-14 lg:py-16", heroLayout.gutterX)}>
         <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-3 lg:grid-cols-6 lg:gap-x-10">
           <div className="col-span-2 sm:col-span-3 lg:col-span-2">
             <Logo variant="dark" className="h-9 md:h-10" />
@@ -129,16 +132,6 @@ export function Footer() {
           </p>
         </div>
       </div>
-
-      <div
-        className="h-3 w-full opacity-35"
-        style={{
-          backgroundImage:
-            "repeating-linear-gradient(90deg, transparent, transparent 10px, rgba(21,39,68,0.08) 10px, rgba(21,39,68,0.08) 11px), repeating-linear-gradient(0deg, transparent, transparent 10px, rgba(21,39,68,0.08) 10px, rgba(21,39,68,0.08) 11px)",
-          backgroundSize: "12px 12px",
-        }}
-        aria-hidden
-      />
     </footer>
   );
 }

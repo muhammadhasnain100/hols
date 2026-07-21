@@ -401,8 +401,10 @@ body {
   border-radius: 0.875rem;
   border: 1px solid transparent;
   padding: 0.625rem 0.75rem;
-  font-size: 0.8125rem;
+  font-family: var(--font-primary-stack);
+  font-size: var(--brand-text-caption);
   font-weight: 600;
+  letter-spacing: var(--brand-tracking-caption);
   color: var(--sidebar-muted);
   transition:
     background 0.2s ease,
@@ -724,9 +726,10 @@ body {
 }
 
 .portal-page-eyebrow {
-  font-size: 0.6875rem;
+  font-family: var(--font-primary-stack);
+  font-size: var(--brand-text-caption);
   font-weight: 600;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--portal-muted);
 }

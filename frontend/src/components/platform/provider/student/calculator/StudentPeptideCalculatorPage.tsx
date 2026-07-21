@@ -5,6 +5,15 @@ import { useGSAP } from "@gsap/react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { authFieldClass } from "@/components/platform/auth/auth-styles";
 import { CalculatorPageLayout } from "@/components/platform/provider/student/calculator/CalculatorPageLayout";
+import {
+  portalDisclaimerClass,
+  portalResultLabelClass,
+  portalResultValueClass,
+  portalSectionDescClass,
+  portalStepHeadingClass,
+  portalStepPillClass,
+  portalUnitLabelClass,
+} from "@/components/platform/provider/portal-styles";
 import { CalculatorVisual } from "@/components/platform/provider/student/calculator/CalculatorVisual";
 import { SyringeSizeOption } from "@/components/platform/provider/student/calculator/CalculatorAssetIllustrations";
 import { InjectionAnimation } from "@/components/platform/provider/student/calculator/InjectionAnimation";
@@ -33,7 +42,7 @@ const fieldClass = cn(authFieldClass, "max-w-[9.5rem] px-3 text-center text-lg f
 
 const selectClass = cn(
   fieldClass,
-  "max-w-[6rem] appearance-none bg-[length:0.9rem] bg-[right_0.7rem_center] bg-no-repeat pr-8 text-sm font-medium",
+  "max-w-[6rem] appearance-none bg-[length:0.9rem] bg-[right_0.7rem_center] bg-no-repeat pr-8 font-sans text-sm font-medium md:text-base",
 );
 
 export function StudentPeptideCalculatorPage() {
@@ -192,7 +201,8 @@ export function StudentPeptideCalculatorPage() {
             <span
               key={item.id}
               className={cn(
-                "inline-flex items-center gap-2 rounded-xl px-4 py-2 text-[13px] font-medium transition",
+                portalStepPillClass,
+                "transition",
                 done
                   ? "bg-primary text-white shadow-[0_1px_3px_rgba(21,39,68,0.12)]"
                   : active
@@ -202,7 +212,7 @@ export function StudentPeptideCalculatorPage() {
             >
               <span
                 className={cn(
-                  "flex h-4 w-4 items-center justify-center rounded-full text-[10px] font-semibold",
+                  "text-brand-caption flex h-4 w-4 items-center justify-center rounded-full font-semibold",
                   done ? "bg-white/20" : active ? "bg-primary/10 text-primary" : "bg-primary/[0.06]",
                 )}
               >
@@ -266,8 +276,8 @@ export function StudentPeptideCalculatorPage() {
 
         {step === "animating" ? (
           <div className="text-center">
-            <h2 className="text-xl font-semibold text-primary md:text-2xl">Preparing your dose</h2>
-            <p className="mt-1.5 text-[13px] text-primary/45">
+            <h2 className={portalStepHeadingClass}>Preparing your dose</h2>
+            <p className={cn("mt-2", portalSectionDescClass)}>
               Watch the reconstitution sequence
             </p>
             <div className="mt-5">
@@ -282,26 +292,22 @@ export function StudentPeptideCalculatorPage() {
 
         {step === "result" && result ? (
           <div className="text-center">
-            <h2 className="text-xl font-semibold text-primary md:text-2xl">Results</h2>
+            <h2 className={portalStepHeadingClass}>Results</h2>
             <div className="mt-7 grid gap-3 sm:grid-cols-2">
               <div className="rounded-2xl bg-primary/[0.04] px-5 py-6">
-                <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-primary/40">
-                  Units per dose
-                </p>
-                <p className="mt-2 font-sans text-4xl font-semibold text-primary">
+                <p className={portalResultLabelClass}>Units per dose</p>
+                <p className={portalResultValueClass}>
                   <span ref={unitsRef}>{result.unitsPerDose.toFixed(2)}</span>
                 </p>
               </div>
               <div className="rounded-2xl bg-primary/[0.04] px-5 py-6">
-                <p className="text-[12px] font-medium uppercase tracking-[0.12em] text-primary/40">
-                  Total doses in vial
-                </p>
-                <p className="mt-2 font-sans text-4xl font-semibold text-primary">
+                <p className={portalResultLabelClass}>Total doses in vial</p>
+                <p className={portalResultValueClass}>
                   <span ref={dosesRef}>{result.totalDoses.toFixed(2)}</span>
                 </p>
               </div>
             </div>
-            <p className="mx-auto mt-4 max-w-md text-[13px] text-primary/50">
+            <p className={cn("mx-auto mt-4 max-w-md", portalSectionDescClass)}>
               Draw to {result.unitsPerDose.toFixed(2)} units ({result.doseVolumeMl} ml) on your{" "}
               {syringeMl} ml syringe.
             </p>
@@ -341,7 +347,7 @@ export function StudentPeptideCalculatorPage() {
         ) : null}
       </div>
 
-      <p className="text-center text-[11px] leading-relaxed text-primary/35">
+      <p className={portalDisclaimerClass}>
         Research-use education tool only. Follow peptide documentation and institutional protocols.
       </p>
     </CalculatorPageLayout>
@@ -351,9 +357,7 @@ export function StudentPeptideCalculatorPage() {
 function StepHeader({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div>
-      <h2 className="text-center text-xl font-semibold tracking-tight text-primary md:text-2xl">
-        {title}
-      </h2>
+      <h2 className={portalStepHeadingClass}>{title}</h2>
       {children}
     </div>
   );
@@ -386,7 +390,7 @@ function AmountRow({
         aria-label="Amount"
       />
       {unitLabel ? (
-        <span className="text-sm font-medium text-primary/60">{unitLabel}</span>
+        <span className={portalUnitLabelClass}>{unitLabel}</span>
       ) : (
         <select
           value={unit}

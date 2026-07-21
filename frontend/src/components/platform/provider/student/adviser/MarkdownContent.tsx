@@ -1,5 +1,9 @@
 "use client";
 
+import {
+  portalCardTitleClass,
+  portalSectionTitleClass,
+} from "@/components/platform/provider/portal-styles";
 import { cn } from "@/lib/utils";
 
 type MarkdownContentProps = {
@@ -36,7 +40,7 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
   const flushList = () => {
     if (listItems.length === 0) return;
     blocks.push(
-      <ul key={`list-${blocks.length}`} className="my-2 list-disc space-y-1 pl-5 text-[13px] leading-relaxed text-primary/80">
+      <ul key={`list-${blocks.length}`} className="text-brand-body my-2 list-disc space-y-1 pl-5 leading-relaxed text-primary/80">
         {listItems.map((item, index) => (
           <li key={index}>{renderInline(item)}</li>
         ))}
@@ -56,7 +60,7 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
     if (trimmed.startsWith("### ")) {
       flushList();
       blocks.push(
-        <h3 key={`h3-${index}`} className="mt-4 text-[14px] font-semibold text-primary first:mt-0">
+        <h3 key={`h3-${index}`} className={cn("mt-4 first:mt-0", portalCardTitleClass)}>
           {trimmed.slice(4)}
         </h3>,
       );
@@ -66,7 +70,7 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
     if (trimmed.startsWith("## ")) {
       flushList();
       blocks.push(
-        <h2 key={`h2-${index}`} className="mt-4 text-[15px] font-semibold text-primary first:mt-0">
+        <h2 key={`h2-${index}`} className={cn("mt-4 first:mt-0", portalSectionTitleClass)}>
           {trimmed.slice(3)}
         </h2>,
       );
@@ -80,7 +84,7 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
 
     flushList();
     blocks.push(
-      <p key={`p-${index}`} className="text-[13px] leading-relaxed text-primary/80">
+      <p key={`p-${index}`} className="text-brand-body leading-relaxed text-primary/80">
         {renderInline(trimmed)}
       </p>,
     );

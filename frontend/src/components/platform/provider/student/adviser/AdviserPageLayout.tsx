@@ -1,7 +1,12 @@
 "use client";
 
 import { PortalShell } from "@/components/platform/provider/PortalShell";
+import {
+  portalPageDescClass,
+  portalPageTitleClass,
+} from "@/components/platform/provider/portal-styles";
 import { studentNav } from "@/components/platform/provider/student/studentNav";
+import { cn } from "@/lib/utils";
 
 type AdviserPageLayoutProps = {
   children: React.ReactNode;

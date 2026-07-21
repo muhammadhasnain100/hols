@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { AuthField } from "@/components/platform/auth/AuthField";
-import { authFieldClass, authIconButtonClass } from "@/components/platform/auth/auth-styles";
+import { authFieldClass, authFooterTextClass, authHelperTextClass, authIconButtonClass, authLabelClass, authLinkClass, authRoleButtonClass } from "@/components/platform/auth/auth-styles";
 import { Button } from "@/components/ui/Button";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
@@ -140,7 +140,7 @@ export function LoginForm({ className, initialMessage }: LoginFormProps) {
   if (otpStep) {
     return (
       <form className={cn("w-full", className)} onSubmit={handleOtpSubmit}>
-        <p className="text-sm leading-relaxed text-muted">
+        <p className={authHelperTextClass}>
           {otpMessage || "Check your email for a 6-digit code."}
         </p>
 
@@ -149,7 +149,7 @@ export function LoginForm({ className, initialMessage }: LoginFormProps) {
           {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
 
           <div className="grid gap-2">
-            <label htmlFor="otp" className="font-sans text-sm font-medium text-primary">
+            <label htmlFor="otp" className={authLabelClass}>
               Verification code
             </label>
             <input
@@ -182,7 +182,7 @@ export function LoginForm({ className, initialMessage }: LoginFormProps) {
           >
             {loading ? "Verifying…" : "Verify"}
           </Button>
-          <div className="flex items-center justify-between text-sm">
+          <div className={cn("flex items-center justify-between", authHelperTextClass)}>
             <button
               type="button"
               onClick={() => {
@@ -191,7 +191,7 @@ export function LoginForm({ className, initialMessage }: LoginFormProps) {
                 setError(null);
                 setInfo(null);
               }}
-              className="font-medium text-primary/60 transition hover:text-primary"
+              className="font-sans font-medium text-primary/70 transition hover:text-primary"
             >
               Back
             </button>
@@ -199,7 +199,7 @@ export function LoginForm({ className, initialMessage }: LoginFormProps) {
               type="button"
               disabled={resendLoading}
               onClick={handleResendOtp}
-              className="font-semibold text-primary underline-offset-4 transition hover:underline disabled:opacity-60"
+              className={cn(authLinkClass, "disabled:opacity-60")}
             >
               {resendLoading ? "Sending…" : "Resend code"}
             </button>
@@ -216,7 +216,7 @@ export function LoginForm({ className, initialMessage }: LoginFormProps) {
         {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
 
         <div className="grid gap-2">
-          <span className="font-sans text-sm font-medium text-primary">Account type</span>
+          <span className={authLabelClass}>Account type</span>
           <div
             className="grid grid-cols-3 gap-1 rounded-2xl border border-primary/10 bg-white p-1"
             role="radiogroup"
@@ -232,7 +232,7 @@ export function LoginForm({ className, initialMessage }: LoginFormProps) {
                   aria-checked={selected}
                   onClick={() => setRole(option.value)}
                   className={cn(
-                    "rounded-xl py-2.5 text-sm font-medium transition",
+                    authRoleButtonClass,
                     selected
                       ? "bg-primary text-white shadow-sm"
                       : "text-primary/55 hover:text-primary",
@@ -281,9 +281,9 @@ export function LoginForm({ className, initialMessage }: LoginFormProps) {
         {loading ? "Signing in…" : "Log in"}
       </Button>
 
-      <p className="mt-6 text-center text-sm text-muted">
+      <p className={cn("mt-6", authFooterTextClass)}>
         No account?{" "}
-        <Link href="/register" className="font-semibold text-primary underline-offset-4 hover:underline">
+        <Link href="/register" className={authLinkClass}>
           Sign up
         </Link>
       </p>

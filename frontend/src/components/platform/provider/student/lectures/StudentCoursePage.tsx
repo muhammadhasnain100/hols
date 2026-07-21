@@ -4,6 +4,16 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { PortalStatCard } from "@/components/platform/provider/PortalStatCard";
+import {
+  portalEmptyStateClass,
+  portalInlineMetaClass,
+  portalNavItemClass,
+  portalRowValueClass,
+  portalSectionDescClass,
+  portalSectionEyebrowClass,
+  portalSectionTitleClass,
+  portalSubnavItemClass,
+} from "@/components/platform/provider/portal-styles";
 import { CoursePageLayout } from "@/components/platform/provider/student/lectures/CoursePageLayout";
 import { Button } from "@/components/ui/Button";
 import { ApiRequestError } from "@/lib/integrate/client";
@@ -85,7 +95,7 @@ export function StudentCoursePage({ courseId }: StudentCoursePageProps) {
       {loading && !course ? (
         <div className="rounded-2xl bg-white p-10 text-center shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
           <div className="mx-auto h-8 w-8 animate-pulse rounded-full bg-primary/10" />
-          <p className="mt-3 text-[13px] text-primary/45">Loading course…</p>
+          <p className={cn("mt-3", portalEmptyStateClass)}>Loading course…</p>
         </div>
       ) : null}
 
@@ -94,13 +104,9 @@ export function StudentCoursePage({ courseId }: StudentCoursePageProps) {
           <section className="rounded-2xl bg-white p-5 shadow-[0_1px_3px_rgba(21,39,68,0.06)] md:p-6">
             <div className="flex flex-col gap-5 lg:flex-row lg:items-start lg:justify-between">
               <div className="min-w-0 flex-1">
-                <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary/40">
-                  About this course
-                </p>
-                <h2 className="mt-1 text-lg font-semibold tracking-tight text-primary md:text-xl">
-                  {course.title}
-                </h2>
-                <p className="mt-3 max-w-3xl text-[13px] leading-relaxed text-primary/45">{fullDescription}</p>
+                <p className={portalSectionEyebrowClass}>About this course</p>
+                <h2 className={portalSectionTitleClass}>{course.title}</h2>
+                <p className={cn("mt-3 max-w-3xl", portalSectionDescClass)}>{fullDescription}</p>
               </div>
 
               <Button
@@ -136,18 +142,16 @@ export function StudentCoursePage({ courseId }: StudentCoursePageProps) {
           </section>
 
           <section>
-            <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary/40">
-              Course structure
-            </p>
-            <h2 className="mt-1 text-[15px] font-semibold text-primary">Topics and sections</h2>
-            <p className="mt-1 max-w-2xl text-[13px] text-primary/45">
+            <p className={portalSectionEyebrowClass}>Course structure</p>
+            <h2 className={portalSectionTitleClass}>Topics and sections</h2>
+            <p className={cn("max-w-2xl", portalSectionDescClass)}>
               Each topic contains sections. Open a topic to see its sections, then jump straight into
               the lessons you need.
             </p>
 
             {topicGroups.length === 0 ? (
               <div className="mt-5 rounded-2xl bg-white p-8 text-center shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
-                <p className="text-[13px] text-primary/45">No topics available for this course yet.</p>
+                <p className={portalEmptyStateClass}>No topics available for this course yet.</p>
               </div>
             ) : (
               <div className="mt-5 grid gap-3">
@@ -209,7 +213,7 @@ function TopicCard({
       >
         <span
           className={cn(
-            "flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-semibold transition-colors",
+            "font-sans flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-sm font-semibold tracking-[0.005em] transition-colors",
             expanded ? "bg-primary text-white shadow-[0_2px_8px_rgba(21,39,68,0.15)]" : "bg-primary/[0.06] text-primary",
           )}
         >
@@ -217,7 +221,7 @@ function TopicCard({
         </span>
 
         <span className="min-w-0 flex-1">
-          <span className={cn("block text-[15px] font-semibold", expanded ? "text-primary" : "text-primary")}>
+          <span className={cn("block", portalSectionTitleClass)}>
             {topic.l1_name}
           </span>
           <span className="mt-2 flex flex-wrap gap-2">
@@ -228,7 +232,8 @@ function TopicCard({
 
         <span
           className={cn(
-            "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium transition",
+            portalSubnavItemClass,
+            "inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1.5 transition",
             expanded
               ? "bg-primary text-white"
               : "bg-primary/[0.06] text-primary/70 hover:bg-primary/[0.1] hover:text-primary",
@@ -253,7 +258,7 @@ function TopicCard({
       {expanded ? (
         <div className="bg-white/45 px-5 pb-5 pt-4 md:px-6 md:pb-6">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-[13px] font-medium text-primary/55">
+            <p className={portalRowValueClass}>
               {topic.sections.length} section{topic.sections.length === 1 ? "" : "s"} in this topic
             </p>
             <Button href={topicLessonsHref} variant="secondary" size="sm">
@@ -262,7 +267,7 @@ function TopicCard({
           </div>
 
           {topic.sections.length === 0 ? (
-            <p className="rounded-xl border border-[#8DC3E1]/25 bg-white/70 px-4 py-3 text-[13px] text-primary/45">
+            <p className={cn("rounded-xl border border-[#8DC3E1]/25 bg-white/70 px-4 py-3", portalSectionDescClass)}>
               No sections listed for this topic yet.
             </p>
           ) : (
@@ -287,15 +292,15 @@ function SectionRow({ courseId, section }: { courseId: string; section: SectionS
       className="group flex items-center justify-between gap-4 rounded-xl border border-white/80 bg-white px-4 py-3.5 shadow-[0_1px_3px_rgba(21,39,68,0.04)] transition hover:border-[#8DC3E1]/40 hover:bg-[#f8fcfe] hover:shadow-[0_3px_12px_rgba(21,39,68,0.06)]"
     >
       <span className="min-w-0 flex-1">
-        <span className="line-clamp-2 text-[13px] font-semibold text-primary" title={section.l2_name}>
+        <span className={cn("line-clamp-2 font-semibold", portalNavItemClass)} title={section.l2_name}>
           {section.l2_name}
         </span>
-        <span className="mt-0.5 block text-[12px] text-primary/45">
+        <span className={cn("mt-0.5 block", portalInlineMetaClass)}>
           Section {section.order} · {section.item_count} lesson{section.item_count === 1 ? "" : "s"}
         </span>
       </span>
 
-      <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/[0.06] px-2.5 py-1 text-[12px] font-medium text-primary/60 transition group-hover:bg-accent group-hover:text-primary">
+      <span className={cn("inline-flex shrink-0 items-center gap-1 rounded-full bg-primary/[0.06] px-2.5 py-1 transition group-hover:bg-accent group-hover:text-primary", portalSubnavItemClass, "text-primary/60")}>
         Open
         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
           <path d="m9 18 6-6-6-6" />
@@ -309,7 +314,7 @@ function TopicBadge({ children, active = false }: { children: React.ReactNode; a
   return (
     <span
       className={cn(
-        "inline-flex rounded-full px-2.5 py-1 text-[11px] font-medium",
+        "text-brand-caption inline-flex rounded-full px-2.5 py-1 font-medium",
         active ? "bg-[#8DC3E1]/25 text-primary" : "bg-primary/[0.06] text-primary/65",
       )}
     >

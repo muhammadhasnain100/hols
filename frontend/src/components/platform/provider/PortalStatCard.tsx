@@ -1,3 +1,8 @@
+import {
+  portalStatHintClass,
+  portalStatLabelClass,
+  portalStatValueClass,
+} from "@/components/platform/provider/portal-styles";
 import { cn } from "@/lib/utils";
 
 type PortalStatCardProps = {
@@ -16,11 +21,11 @@ export function PortalStatCard({ label, value, hint, trend, className }: PortalS
         className,
       )}
     >
-      <p className="text-[12px] font-medium uppercase tracking-[0.1em] text-primary/40">{label}</p>
-      <p className="mt-2.5 text-2xl font-semibold tracking-tight text-primary md:text-[1.75rem]">{value}</p>
-      {hint ? <p className="mt-1.5 text-[13px] text-primary/45">{hint}</p> : null}
+      <p className={portalStatLabelClass}>{label}</p>
+      <p className={portalStatValueClass}>{value}</p>
+      {hint ? <p className={portalStatHintClass}>{hint}</p> : null}
       {trend ? (
-        <p className="mt-3 inline-flex rounded-full bg-primary/[0.06] px-2.5 py-1 text-[11px] font-medium text-primary/70">
+        <p className="text-brand-caption mt-3 inline-flex rounded-full bg-primary/[0.06] px-2.5 py-1 font-medium text-primary/70">
           {trend}
         </p>
       ) : null}

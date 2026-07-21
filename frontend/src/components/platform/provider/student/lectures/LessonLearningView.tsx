@@ -1,6 +1,12 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import {
+  portalInlineMetaClass,
+  portalRowCategoryClass,
+  portalSectionDescClass,
+  portalSubnavItemClass,
+} from "@/components/platform/provider/portal-styles";
 import type { LessonDetail } from "@/lib/integrate/provider/student/lectures";
 import { cn } from "@/lib/utils";
 import {
@@ -104,7 +110,7 @@ function ToolButton({
       aria-label={label}
       title={label}
       className={cn(
-        "inline-flex h-8 min-w-8 items-center justify-center rounded-full border px-2 text-[11px] font-medium transition",
+        "text-brand-caption inline-flex h-8 min-w-8 items-center justify-center rounded-full border px-2 font-medium transition",
         active
           ? "border-primary bg-primary text-white"
           : "border-primary/10 bg-white text-primary hover:bg-primary/[0.04]",
@@ -140,7 +146,8 @@ function SegmentedControl<T extends string>({
           type="button"
           onClick={() => onChange(option.id)}
           className={cn(
-            "rounded-full px-2.5 py-1 text-[11px] font-medium transition",
+            portalSubnavItemClass,
+            "rounded-full px-2.5 py-1 transition",
             value === option.id ? "bg-primary text-white" : "text-primary/65 hover:text-primary",
           )}
         >
@@ -307,7 +314,7 @@ export function LessonLearningView({
           <button
             type="button"
             onClick={onExit}
-            className="lesson-learning-exit inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-[12px] font-medium transition"
+            className={cn("lesson-learning-exit inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 transition", portalSubnavItemClass)}
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
               <path d="M18 6 6 18M6 6l12 12" />
@@ -315,7 +322,7 @@ export function LessonLearningView({
             Exit
           </button>
 
-          <p className="lesson-learning-meta text-[12px] font-medium">
+          <p className={cn("lesson-learning-meta font-medium", portalInlineMetaClass)}>
             {currentIndex && total ? `Lesson ${currentIndex} of ${total}` : `Lesson ${lesson.order}`}
             {scrollProgress > 0 ? ` · ${Math.round(scrollProgress)}%` : ""}
           </p>
@@ -372,7 +379,7 @@ export function LessonLearningView({
             >
               A−
             </ToolButton>
-            <span className="lesson-learning-meta min-w-[3rem] text-center text-[12px] font-medium">
+            <span className={cn("lesson-learning-meta min-w-[3rem] text-center font-medium", portalInlineMetaClass)}>
               {zoomLabel}
             </span>
             <ToolButton
@@ -473,11 +480,11 @@ export function LessonLearningView({
         >
           {!focusMode ? (
             <div className="mb-3 flex flex-wrap gap-1.5">
-              <span className="lesson-learning-badge inline-flex rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.08em]">
+              <span className={cn("lesson-learning-badge inline-flex rounded-full px-3 py-1", portalRowCategoryClass)}>
                 Lesson {lesson.order}
               </span>
               {lesson.l2_name ? (
-                <span className="lesson-learning-tag inline-flex rounded-full px-3 py-1 text-[11px] font-medium">
+                <span className={cn("lesson-learning-tag inline-flex rounded-full px-3 py-1", portalInlineMetaClass)}>
                   {lesson.l2_name}
                 </span>
               ) : null}
@@ -494,7 +501,7 @@ export function LessonLearningView({
           {detailLoading ? (
             <div className="mt-6 text-center">
               <div className="mx-auto h-8 w-8 animate-pulse rounded-full bg-primary/10" />
-              <p className="lesson-learning-meta mt-4 text-[15px]">Loading lesson…</p>
+              <p className={cn("lesson-learning-meta mt-4", portalSectionDescClass)}>Loading lesson…</p>
             </div>
           ) : sections.length === 0 ? (
             <p
@@ -562,7 +569,8 @@ export function LearningModeToggle({
       disabled={disabled}
       aria-pressed={active}
       className={cn(
-        "inline-flex items-center gap-2 rounded-full px-4 py-2 text-[13px] font-medium transition",
+        portalSubnavItemClass,
+        "inline-flex items-center gap-2 rounded-full px-4 py-2 transition",
         active
           ? "bg-primary text-white shadow-[0_2px_10px_rgba(21,39,68,0.15)]"
           : "border border-primary/15 bg-white text-primary shadow-[0_1px_3px_rgba(21,39,68,0.06)] hover:border-primary/25 hover:bg-primary/[0.03]",

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { portalSubnavItemClass } from "@/components/platform/provider/portal-styles";
 import { cn } from "@/lib/utils";
 
 type PaymentSubnavLink = {
@@ -33,7 +34,8 @@ export function PaymentSubnav() {
             key={link.href}
             href={link.href}
             className={cn(
-              "rounded-xl px-4 py-2 text-[13px] font-medium transition",
+              portalSubnavItemClass,
+              "transition",
               active
                 ? "bg-white text-primary shadow-[0_1px_3px_rgba(21,39,68,0.08)]"
                 : "text-primary/50 hover:bg-white/70 hover:text-primary",

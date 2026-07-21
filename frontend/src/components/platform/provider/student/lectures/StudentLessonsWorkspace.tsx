@@ -4,6 +4,16 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
+import {
+  portalEmptyStateClass,
+  portalInlineMetaClass,
+  portalNavItemClass,
+  portalRowValueClass,
+  portalSectionDescClass,
+  portalSectionEyebrowClass,
+  portalSectionTitleClass,
+  portalSubnavItemClass,
+} from "@/components/platform/provider/portal-styles";
 import { CoursePageLayout } from "@/components/platform/provider/student/lectures/CoursePageLayout";
 import { LessonContentPanel } from "@/components/platform/provider/student/lectures/LessonContentPanel";
 import {
@@ -222,12 +232,16 @@ export function StudentLessonsWorkspace({
     >
       {(topicId || l1Name) && (
         <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#8DC3E1]/35 bg-[#eef6fb] px-4 py-3">
-          <p className="text-[13px] text-primary/60">
+          <p className={portalSectionDescClass}>
             Showing lessons for <span className="font-medium text-primary">{filterLabel}</span>
           </p>
           <Link
             href={`/student/lectures/${courseId}/lessons`}
-            className="inline-flex items-center gap-1 rounded-full bg-white px-3 py-1.5 text-[12px] font-medium text-primary/70 shadow-[0_1px_3px_rgba(21,39,68,0.06)] transition hover:text-primary"
+            className={cn(
+              "inline-flex items-center gap-1 rounded-full bg-white px-3 py-1.5 shadow-[0_1px_3px_rgba(21,39,68,0.06)] transition hover:text-primary",
+              portalSubnavItemClass,
+              "text-primary/70",
+            )}
           >
             Clear filter
           </Link>
@@ -239,11 +253,11 @@ export function StudentLessonsWorkspace({
       {loading ? (
         <div className="rounded-2xl bg-white p-10 text-center shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
           <div className="mx-auto h-8 w-8 animate-pulse rounded-full bg-primary/10" />
-          <p className="mt-3 text-[13px] text-primary/45">Loading lessons…</p>
+          <p className={cn("mt-3", portalEmptyStateClass)}>Loading lessons…</p>
         </div>
       ) : filteredLessons.length === 0 ? (
         <div className="rounded-2xl bg-white p-10 text-center shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
-          <p className="text-[13px] text-primary/45">No lessons found.</p>
+          <p className={portalEmptyStateClass}>No lessons found.</p>
           {(topicId || l1Name) && (
             <Button href={`/student/lectures/${courseId}/lessons`} variant="secondary" size="md" className="mt-4">
               View all lessons
@@ -253,11 +267,9 @@ export function StudentLessonsWorkspace({
       ) : (
         <div className="grid gap-5 xl:grid-cols-[minmax(280px,340px)_minmax(0,1fr)] xl:items-start">
           <aside className="rounded-2xl bg-white p-4 shadow-[0_1px_3px_rgba(21,39,68,0.06)] xl:sticky xl:top-24">
-            <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary/40">Lesson list</p>
-            <h2 className="mt-1 text-[15px] font-semibold text-primary">
-              {filterLabel ? filterLabel : "All lessons"}
-            </h2>
-            <p className="mt-1 text-[12px] text-primary/45">
+            <p className={portalSectionEyebrowClass}>Lesson list</p>
+            <h2 className={portalSectionTitleClass}>{filterLabel ? filterLabel : "All lessons"}</h2>
+            <p className={portalInlineMetaClass}>
               {filteredLessons.length} lesson{filteredLessons.length === 1 ? "" : "s"}
             </p>
 
@@ -279,15 +291,15 @@ export function StudentLessonsWorkspace({
                   >
                     <span
                       className={cn(
-                        "flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[12px] font-semibold",
+                        "font-sans flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-semibold tracking-[0.005em]",
                         selected ? "bg-primary text-white" : "bg-white text-primary",
                       )}
                     >
                       {index + 1}
                     </span>
                     <span className="min-w-0 flex-1">
-                      <span className="line-clamp-2 text-[13px] font-semibold text-primary">{lesson.title}</span>
-                      <span className="mt-1 block text-[11px] text-primary/45">
+                      <span className={cn("line-clamp-2 font-semibold", portalNavItemClass)}>{lesson.title}</span>
+                      <span className={cn("mt-1 block", portalInlineMetaClass)}>
                         {lesson.variant_count} quiz items
                       </span>
                     </span>
@@ -299,7 +311,7 @@ export function StudentLessonsWorkspace({
 
           <main className="min-w-0">
             <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <p className="text-[12px] text-primary/45">
+              <p className={portalInlineMetaClass}>
                 Turn on learning mode for a focused, larger reading view.
               </p>
               <LearningModeToggle
@@ -323,7 +335,7 @@ export function StudentLessonsWorkspace({
               />
             ) : (
               <div className="rounded-2xl bg-white p-10 text-center shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
-                <p className="text-[13px] text-primary/45">Select a lesson from the list to view content.</p>
+                <p className={portalEmptyStateClass}>Select a lesson from the list to view content.</p>
               </div>
             )}
           </main>

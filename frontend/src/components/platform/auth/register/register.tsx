@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { AuthField } from "@/components/platform/auth/AuthField";
-import { authIconButtonClass } from "@/components/platform/auth/auth-styles";
+import { authFooterTextClass, authHelperTextClass, authIconButtonClass, authLinkClass } from "@/components/platform/auth/auth-styles";
 import { Button } from "@/components/ui/Button";
 import { ApiRequestError } from "@/lib/integrate/client";
 import { signup } from "@/lib/integrate/auth";
@@ -199,7 +199,7 @@ export function RegisterForm({ className }: RegisterFormProps) {
           trailing={passwordToggle}
         />
 
-        <label className="flex cursor-pointer items-center gap-3 text-sm text-muted">
+        <label className={cn("flex cursor-pointer items-center gap-3", authHelperTextClass)}>
           <input
             type="checkbox"
             name="marketingPref"
@@ -221,9 +221,9 @@ export function RegisterForm({ className }: RegisterFormProps) {
         {loading ? "Creating…" : "Create account"}
       </Button>
 
-      <p className="mt-6 text-center text-sm text-muted">
+      <p className={cn("mt-6", authFooterTextClass)}>
         Already have an account?{" "}
-        <Link href="/login" className="font-semibold text-primary underline-offset-4 hover:underline">
+        <Link href="/login" className={authLinkClass}>
           Log in
         </Link>
       </p>

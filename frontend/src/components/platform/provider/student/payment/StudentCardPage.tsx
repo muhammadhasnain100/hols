@@ -3,7 +3,16 @@
 import { useCallback, useEffect, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { AuthField } from "@/components/platform/auth/AuthField";
-import { authFieldClass } from "@/components/platform/auth/auth-styles";
+import { authFieldClass, authLabelClass } from "@/components/platform/auth/auth-styles";
+import {
+  portalCardTitleClass,
+  portalInlineMetaClass,
+  portalRowCategoryClass,
+  portalRowValueClass,
+  portalSectionDescClass,
+  portalSectionEyebrowClass,
+  portalSectionTitleClass,
+} from "@/components/platform/provider/portal-styles";
 import { PaymentPageLayout } from "@/components/platform/provider/student/payment/PaymentPageLayout";
 import { Button } from "@/components/ui/Button";
 import { ApiRequestError } from "@/lib/integrate/client";
@@ -15,8 +24,6 @@ import {
   type PaymentCard,
 } from "@/lib/integrate/provider/student/payment/api";
 import { cn } from "@/lib/utils";
-
-const labelClass = "font-sans text-sm font-medium text-primary";
 
 type CardFormState = {
   card_number: string;
@@ -117,24 +124,22 @@ export function StudentCardPage() {
         </div>
       ) : (
         <section className="mx-auto w-full max-w-lg">
-          <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary/40">Billing</p>
-          <h2 className="mt-1 text-[15px] font-semibold text-primary">
+          <p className={portalSectionEyebrowClass}>Billing</p>
+          <h2 className={portalSectionTitleClass}>
             {card ? "Update payment card" : "Add payment card"}
           </h2>
-          <p className="mt-1 text-[13px] text-primary/45">
+          <p className={portalSectionDescClass}>
             One card per account. Required to purchase membership.
           </p>
 
           {card ? (
             <div className="mt-4 rounded-2xl bg-white p-4 shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
-              <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-primary/40">
-                Saved card
-              </p>
-              <p className="mt-2 text-[15px] font-semibold text-primary">{card.card_number_masked}</p>
+              <p className={portalRowCategoryClass}>Saved card</p>
+              <p className={cn("mt-2", portalCardTitleClass)}>{card.card_number_masked}</p>
               {card.card_holder_name ? (
-                <p className="mt-1 text-sm text-primary/55">{card.card_holder_name}</p>
+                <p className={cn("mt-1", portalRowValueClass)}>{card.card_holder_name}</p>
               ) : null}
-              <p className="mt-1 text-xs text-primary/40">
+              <p className={cn("mt-1", portalInlineMetaClass)}>
                 Expires {card.exp_month}/{card.exp_year}
               </p>
             </div>
@@ -160,7 +165,7 @@ export function StudentCardPage() {
             />
             <div className="grid gap-4 sm:grid-cols-2">
               <div className="grid gap-2">
-                <label htmlFor="exp_month" className={labelClass}>
+                <label htmlFor="exp_month" className={authLabelClass}>
                   Expiry month
                 </label>
                 <input
@@ -176,7 +181,7 @@ export function StudentCardPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <label htmlFor="exp_year" className={labelClass}>
+                <label htmlFor="exp_year" className={authLabelClass}>
                   Expiry year
                 </label>
                 <input

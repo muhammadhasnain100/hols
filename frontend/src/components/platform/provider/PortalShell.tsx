@@ -16,6 +16,16 @@ import {
   getCachedStudentProfile,
   getStudentProfile,
 } from "@/lib/integrate/provider/student/profile/api";
+import {
+  portalHeaderNameClass,
+  portalNavFlyoutLabelClass,
+  portalNavItemClass,
+  portalPageDescClass,
+  portalPageTitleClass,
+  portalSidebarNameClass,
+  portalSidebarRoleClass,
+  portalThemeToggleClass,
+} from "@/components/platform/provider/portal-styles";
 import { cn } from "@/lib/utils";
 
 const MOBILE_OPEN_KEY = "hols-portal-sidebar-open";
@@ -104,7 +114,7 @@ function SidebarAvatar({
   size?: "md" | "sm";
 }) {
   const dimension = size === "sm" ? "h-8 w-8" : "h-10 w-10";
-  const textSize = size === "sm" ? "text-[10px]" : "text-[11px]";
+  const textSize = "text-brand-caption font-semibold";
 
   return (
     <span
@@ -292,7 +302,8 @@ export function PortalShell({
         href={href}
         onClick={closeMobile}
         className={cn(
-          "portal-nav-item group relative flex items-center text-[13px] font-medium transition-colors duration-200",
+          "portal-nav-item group relative flex items-center transition-colors duration-200",
+          portalNavItemClass,
           opts?.inFlyout ? "h-9 gap-2.5 rounded-xl px-3" : collapsed ? "h-11 justify-center rounded-xl px-0" : "h-11 gap-3 rounded-xl px-3.5",
           active && "is-active",
         )}
@@ -398,7 +409,8 @@ export function PortalShell({
                       type="button"
                       onClick={() => toggleGroup(item.href)}
                       className={cn(
-                        "portal-nav-item group relative flex w-full items-center rounded-xl text-[13px] font-medium transition-colors duration-200",
+                        "portal-nav-item group relative flex w-full items-center rounded-xl transition-colors duration-200",
+                        portalNavItemClass,
                         "h-11 gap-3 px-3.5",
                         active && "is-active",
                       )}
@@ -436,7 +448,7 @@ export function PortalShell({
                     >
                       {hasChildren ? (
                         <>
-                          <p className="mb-1.5 px-3 pt-1 text-[11px] font-medium uppercase tracking-wider text-[color:var(--sidebar-muted)]">
+                          <p className={portalNavFlyoutLabelClass}>
                             {item.label}
                           </p>
                           <div className="space-y-0.5">
@@ -468,8 +480,8 @@ export function PortalShell({
               <SidebarAvatar avatarSrc={avatarSrc} initials={initials} size="sm" />
               {!collapsed ? (
                 <span className="min-w-0 flex-1">
-                  <span className="block truncate text-[13px] font-semibold">{displayName}</span>
-                  <span className="block truncate text-[11px] capitalize text-[color:var(--sidebar-muted)]">
+                  <span className={portalSidebarNameClass}>{displayName}</span>
+                  <span className={portalSidebarRoleClass}>
                     {role}
                   </span>
                 </span>
@@ -542,7 +554,7 @@ export function PortalShell({
                   aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
                   title={theme === "dark" ? "Light mode" : "Dark mode"}
                   onClick={toggleTheme}
-                  className="portal-theme-capsule inline-flex h-9 shrink-0 items-center gap-2 rounded-full px-3.5 text-[12px] font-medium text-primary/75 transition hover:text-primary"
+                  className={portalThemeToggleClass}
                 >
                   {theme === "dark" ? (
                     <>
@@ -586,12 +598,12 @@ export function PortalShell({
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
                     ) : (
-                      <span className="flex h-full w-full items-center justify-center text-[10px] font-semibold text-primary/70">
+                      <span className="flex h-full w-full items-center justify-center text-brand-caption font-semibold text-primary/70">
                         {initials}
                       </span>
                     )}
                   </span>
-                  <span className="hidden truncate text-[13px] font-medium text-primary sm:block">
+                  <span className={portalHeaderNameClass}>
                     {displayName}
                   </span>
                 </Link>
@@ -603,11 +615,9 @@ export function PortalShell({
             {showPageHeader ? (
               <header className="mb-6 md:mb-8">
                 <p className="portal-page-eyebrow">{pageEyebrow}</p>
-                <h1 className="text-brand-subheading mt-2 text-[1.85rem] font-bold leading-tight text-primary md:text-[2.5rem]">
-                  {title}
-                </h1>
+                <h1 className={cn("mt-2", portalPageTitleClass)}>{title}</h1>
                 {subtitle ? (
-                  <p className="mt-2 max-w-2xl text-sm leading-relaxed text-muted md:text-base">{subtitle}</p>
+                  <p className={cn("mt-2 max-w-2xl", portalPageDescClass)}>{subtitle}</p>
                 ) : null}
               </header>
             ) : (

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
+import { portalEmptyStateClass } from "@/components/platform/provider/portal-styles";
 import { AdviserChatPageLayout } from "@/components/platform/provider/student/adviser/AdviserChatPageLayout";
 import { AdviserChatPanel } from "@/components/platform/provider/student/adviser/AdviserChatPanel";
 import { ApiRequestError } from "@/lib/integrate/client";
@@ -12,6 +13,7 @@ import {
   getPatient,
   type PatientDetail,
 } from "@/lib/integrate/provider/student/chat";
+import { cn } from "@/lib/utils";
 
 type StudentPeptideAdviserChatPageProps = {
   patientId: string;
@@ -90,7 +92,7 @@ export function StudentPeptideAdviserChatPage({ patientId }: StudentPeptideAdvis
   if (!patient) {
     return (
       <AdviserChatPageLayout patientName="Consultation chat">
-        <div className="rounded-2xl border border-primary/10 bg-white p-8 text-center text-[13px] text-primary/50">
+        <div className={cn("rounded-2xl border border-primary/10 bg-white p-8 text-center", portalEmptyStateClass)}>
           Loading chat…
         </div>
       </AdviserChatPageLayout>

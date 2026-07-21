@@ -2,6 +2,17 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
+import {
+  portalEmptyStateClass,
+  portalInlineMetaClass,
+  portalNavItemClass,
+  portalPaginationClass,
+  portalSectionDescClass,
+  portalSectionEyebrowClass,
+  portalSectionTitleClass,
+  portalStatLabelClass,
+  portalStatValueClass,
+} from "@/components/platform/provider/portal-styles";
 import { CoursePageLayout } from "@/components/platform/provider/student/lectures/CoursePageLayout";
 import { Button } from "@/components/ui/Button";
 import { ApiRequestError } from "@/lib/integrate/client";
@@ -91,42 +102,38 @@ export function StudentTestResultPage({ courseId }: StudentTestResultPageProps) 
       {loading ? (
         <div className="rounded-2xl bg-white p-10 text-center shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
           <div className="mx-auto h-8 w-8 animate-pulse rounded-full bg-primary/10" />
-          <p className="mt-3 text-[13px] text-primary/45">Loading results…</p>
+          <p className={cn("mt-3", portalEmptyStateClass)}>Loading results…</p>
         </div>
       ) : (
         <>
           <section className="rounded-2xl bg-white p-5 shadow-[0_1px_3px_rgba(21,39,68,0.06)] md:p-6">
-            <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary/40">
-              Result summary
-            </p>
-            <h2 className="mt-1 text-[15px] font-semibold text-primary">
+            <p className={portalSectionEyebrowClass}>Result summary</p>
+            <h2 className={portalSectionTitleClass}>
               {course?.title ?? "Course"} quiz progress
             </h2>
 
             <dl className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
               <div className="rounded-2xl bg-primary/[0.04] p-4">
-                <dt className="text-[13px] text-primary/45">Lessons quizzed</dt>
-                <dd className="mt-1 text-2xl font-semibold text-primary">
+                <dt className={portalStatLabelClass}>Lessons quizzed</dt>
+                <dd className={portalStatValueClass}>
                   {summary?.lessons_quizzed ?? 0}
-                  <span className="text-base font-medium text-primary/45">
+                  <span className={cn("font-medium", portalSectionDescClass)}>
                     {" "}
                     / {summary?.total_lessons ?? course?.lesson_count ?? 0}
                   </span>
                 </dd>
               </div>
               <div className="rounded-2xl bg-primary/[0.04] p-4">
-                <dt className="text-[13px] text-primary/45">Average score</dt>
-                <dd className="mt-1 text-2xl font-semibold text-primary">
-                  {summary?.average_score ?? 0}%
-                </dd>
+                <dt className={portalStatLabelClass}>Average score</dt>
+                <dd className={portalStatValueClass}>{summary?.average_score ?? 0}%</dd>
               </div>
               <div className="rounded-2xl bg-primary/[0.04] p-4">
-                <dt className="text-[13px] text-primary/45">Passed quizzes</dt>
-                <dd className="mt-1 text-2xl font-semibold text-primary">{summary?.passed_count ?? 0}</dd>
+                <dt className={portalStatLabelClass}>Passed quizzes</dt>
+                <dd className={portalStatValueClass}>{summary?.passed_count ?? 0}</dd>
               </div>
               <div className="rounded-2xl bg-primary/[0.04] p-4">
-                <dt className="text-[13px] text-primary/45">Course lessons</dt>
-                <dd className="mt-1 text-2xl font-semibold text-primary">{course?.lesson_count ?? 0}</dd>
+                <dt className={portalStatLabelClass}>Course lessons</dt>
+                <dd className={portalStatValueClass}>{course?.lesson_count ?? 0}</dd>
               </div>
             </dl>
 
@@ -141,21 +148,19 @@ export function StudentTestResultPage({ courseId }: StudentTestResultPageProps) 
           </section>
 
           <section className="mt-4 rounded-2xl bg-white p-5 shadow-[0_1px_3px_rgba(21,39,68,0.06)] md:p-6">
-            <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary/40">
-              Lesson results
-            </p>
-            <h3 className="mt-1 text-[15px] font-semibold text-primary">Saved quiz attempts</h3>
+            <p className={portalSectionEyebrowClass}>Lesson results</p>
+            <h3 className={portalSectionTitleClass}>Saved quiz attempts</h3>
 
             {loadingResults ? (
               <div className="mt-4 rounded-2xl bg-primary/[0.03] p-6 text-center">
                 <div className="mx-auto h-6 w-6 animate-pulse rounded-full bg-primary/10" />
-                <p className="mt-3 text-[13px] text-primary/45">Loading lesson results…</p>
+                <p className={cn("mt-3", portalEmptyStateClass)}>Loading lesson results…</p>
               </div>
             ) : results?.items.length ? (
               <>
                 <div className="mt-4 overflow-x-auto">
-                  <table className="min-w-full text-left text-[13px]">
-                    <thead className="text-primary/45">
+                  <table className="text-brand-body min-w-full text-left">
+                    <thead className={portalInlineMetaClass}>
                       <tr>
                         <th className="pb-3 pr-4 font-medium">Lesson</th>
                         <th className="pb-3 pr-4 font-medium">Score</th>
@@ -168,8 +173,8 @@ export function StudentTestResultPage({ courseId }: StudentTestResultPageProps) 
                       {results.items.map((item) => (
                         <tr key={item.lesson_id} className="border-t border-primary/[0.06]">
                           <td className="py-3 pr-4">
-                            <p className="font-medium text-primary">{item.lesson_title}</p>
-                            <p className="text-[12px] text-primary/45">Lesson {item.lesson_order}</p>
+                            <p className={cn("font-medium", portalNavItemClass)}>{item.lesson_title}</p>
+                            <p className={portalInlineMetaClass}>Lesson {item.lesson_order}</p>
                           </td>
                           <td className="py-3 pr-4 font-medium text-primary">{item.score_percent}%</td>
                           <td className="py-3 pr-4 text-primary/70">
@@ -178,7 +183,7 @@ export function StudentTestResultPage({ courseId }: StudentTestResultPageProps) 
                           <td className="py-3 pr-4">
                             <span
                               className={cn(
-                                "inline-flex rounded-full px-2.5 py-1 text-[11px] font-semibold",
+                                "text-brand-caption inline-flex rounded-full px-2.5 py-1 font-semibold",
                                 item.passed
                                   ? "bg-emerald-100 text-emerald-700"
                                   : "bg-amber-100 text-amber-700",
@@ -200,7 +205,7 @@ export function StudentTestResultPage({ courseId }: StudentTestResultPageProps) 
 
                 {pagination && pagination.total_pages > 1 ? (
                   <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-primary/[0.06] pt-4">
-                    <p className="text-[13px] text-primary/45">
+                    <p className={portalPaginationClass}>
                       Page {pagination.page} of {pagination.total_pages} · {pagination.total} results
                     </p>
                     <div className="flex gap-2">
@@ -225,14 +230,14 @@ export function StudentTestResultPage({ courseId }: StudentTestResultPageProps) 
                     </div>
                   </div>
                 ) : pagination ? (
-                  <p className="mt-4 text-[13px] text-primary/45">
+                  <p className={cn("mt-4", portalPaginationClass)}>
                     Showing {results.items.length} of {pagination.total} result
                     {pagination.total === 1 ? "" : "s"}
                   </p>
                 ) : null}
               </>
             ) : (
-              <div className="mt-4 rounded-2xl bg-primary/[0.03] p-6 text-[13px] text-primary/55">
+              <div className={cn("mt-4 rounded-2xl bg-primary/[0.03] p-6", portalSectionDescClass)}>
                 No quiz results yet. Open a lesson, complete the quiz at the bottom, and your score
                 will appear here.
               </div>

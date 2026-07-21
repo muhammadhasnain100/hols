@@ -4,7 +4,18 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { AuthField } from "@/components/platform/auth/AuthField";
-import { authFieldClass } from "@/components/platform/auth/auth-styles";
+import { authFieldClass, authLabelClass } from "@/components/platform/auth/auth-styles";
+import {
+  portalCardTitleClass,
+  portalInlineMetaClass,
+  portalPageDescClass,
+  portalPageTitleClass,
+  portalRowCategoryClass,
+  portalRowValueClass,
+  portalSectionDescClass,
+  portalSectionEyebrowClass,
+  portalSectionTitleClass,
+} from "@/components/platform/provider/portal-styles";
 import { ProfileLearningVisual } from "@/components/platform/provider/student/profile/ProfileLearningVisual";
 import { PortalShell } from "@/components/platform/provider/PortalShell";
 import { studentNav } from "@/components/platform/provider/student/studentNav";
@@ -38,8 +49,6 @@ const selectClass = cn(
   authFieldClass,
   "appearance-none bg-[length:1rem] bg-[right_1rem_center] bg-no-repeat px-4 pr-10",
 );
-
-const labelClass = "font-sans text-sm font-medium text-primary";
 
 type ProfileFormState = {
   first_name: string;
@@ -223,10 +232,10 @@ function ProfileInfoRow({
         className,
       )}
     >
-      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-primary/40">{category}</p>
+      <p className={portalRowCategoryClass}>{category}</p>
       <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-        <p className="text-[15px] font-semibold text-primary">{label}</p>
-        <div className="text-sm font-medium leading-relaxed text-primary/65 sm:max-w-[55%] sm:text-right">
+        <p className={portalSectionTitleClass}>{label}</p>
+        <div className={cn("sm:max-w-[55%] sm:text-right", portalRowValueClass)}>
           {value || "—"}
         </div>
       </div>
@@ -240,9 +249,9 @@ function AccountLinkRow({ label, href, category }: { label: string; href: string
       href={href}
       className="group block rounded-2xl bg-white p-4 shadow-[0_1px_3px_rgba(21,39,68,0.06)] transition hover:shadow-[0_4px_14px_rgba(21,39,68,0.08)] md:p-5"
     >
-      <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-primary/40">{category}</p>
+      <p className={portalRowCategoryClass}>{category}</p>
       <div className="mt-2 flex items-center justify-between gap-4">
-        <p className="text-[15px] font-semibold text-primary">{label}</p>
+        <p className={portalSectionTitleClass}>{label}</p>
         <svg
           width="14"
           height="14"
@@ -297,7 +306,7 @@ function FieldSelect({
 }) {
   return (
     <div className="grid gap-2">
-      <label htmlFor={id} className={labelClass}>
+      <label htmlFor={id} className={authLabelClass}>
         {label}
       </label>
       <select
@@ -471,10 +480,10 @@ export function StudentProfilePage() {
         >
           <header className="min-w-0 flex-1">
             <p className="portal-page-eyebrow">HOLS · Student portal</p>
-            <h1 className="mt-1 text-xl font-bold leading-tight tracking-tight text-primary md:text-[1.65rem]">
+            <h1 className={cn("mt-2", portalPageTitleClass)}>
               {mode === "edit" ? "Edit your profile" : "Your learning profile"}
             </h1>
-            <p className="mt-1 max-w-lg text-[13px] leading-snug text-muted md:text-sm">
+            <p className={cn("mt-2 max-w-lg", portalPageDescClass)}>
               {mode === "edit"
                 ? "Update your name, address, and profile photo."
                 : "Manage your personal details, account photo, and learning preferences."}
@@ -500,7 +509,7 @@ export function StudentProfilePage() {
             <div className="grid w-full items-start gap-5 lg:grid-cols-[minmax(16rem,18rem)_1fr] lg:gap-6">
               <div className="rounded-2xl bg-white p-6 shadow-[0_1px_3px_rgba(21,39,68,0.06)] md:p-7">
                 <div className="flex flex-col items-center text-center">
-                  <span className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-primary/10 bg-primary/[0.04] text-base font-semibold text-primary shadow-[0_4px_14px_rgba(21,39,68,0.06)]">
+                  <span className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-primary/10 bg-primary/[0.04] font-sans text-base font-semibold tracking-[0.005em] text-primary shadow-[0_4px_14px_rgba(21,39,68,0.06)]">
                     {avatarSrc ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
@@ -509,15 +518,15 @@ export function StudentProfilePage() {
                     )}
                   </span>
                   <div className="mt-4 min-w-0 w-full">
-                    <p className="truncate font-sans text-lg font-semibold tracking-tight text-primary">
+                    <p className={cn("truncate", portalCardTitleClass)}>
                       {[profile?.first_name, profile?.last_name].filter(Boolean).join(" ") || "Your profile"}
                     </p>
-                    <p className="mt-1 truncate text-sm text-primary/50">{profile?.email}</p>
+                    <p className={cn("mt-1 truncate", portalSectionDescClass)}>{profile?.email}</p>
                     <div className="mt-3 flex justify-center">
                       <VerifiedBadge verified={profile?.email_verified} />
                     </div>
                     {profile?.created_at ? (
-                      <p className="mt-3 text-xs text-primary/40">
+                      <p className={cn("mt-3", portalInlineMetaClass)}>
                         Member since {formatDate(profile.created_at)}
                       </p>
                     ) : null}
@@ -561,9 +570,7 @@ export function StudentProfilePage() {
                 />
 
                 <div className="mt-2 grid gap-3">
-                  <p className="px-1 text-[10px] font-semibold uppercase tracking-[0.14em] text-primary/40">
-                    Account shortcuts
-                  </p>
+                  <p className={portalSectionEyebrowClass}>Account shortcuts</p>
                   {accountLinks.map((link) => (
                     <AccountLinkRow
                       key={link.href}
@@ -587,8 +594,8 @@ export function StudentProfilePage() {
                   )}
                 </span>
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-primary">Profile photo</p>
-                  <p className="mt-0.5 truncate text-xs text-primary/50">{profile?.email}</p>
+                  <p className={portalSectionTitleClass}>Profile photo</p>
+                  <p className={cn("mt-0.5 truncate", portalInlineMetaClass)}>{profile?.email}</p>
                   <div className="mt-2 flex flex-wrap items-center gap-2">
                     <input
                       ref={fileInputRef}
@@ -612,7 +619,7 @@ export function StudentProfilePage() {
                           onPickPhoto(null);
                           if (fileInputRef.current) fileInputRef.current.value = "";
                         }}
-                        className="text-xs font-medium text-primary/60 transition hover:text-primary"
+                        className="text-brand-body font-medium text-primary/60 transition hover:text-primary"
                       >
                         Remove
                       </button>
@@ -749,7 +756,7 @@ export function StudentProfilePage() {
                 />
 
                 <div className="grid gap-2">
-                  <label htmlFor="country" className={labelClass}>
+                  <label htmlFor="country" className={authLabelClass}>
                     Country
                   </label>
                   <input
@@ -761,7 +768,7 @@ export function StudentProfilePage() {
                 </div>
               </div>
 
-              <label className="flex cursor-pointer items-center gap-3 text-sm text-muted">
+              <label className={cn("flex cursor-pointer items-center gap-3", portalSectionDescClass)}>
                 <input
                   type="checkbox"
                   checked={form.marketing_pref}
@@ -778,7 +785,7 @@ export function StudentProfilePage() {
               <button
                 type="button"
                 onClick={cancelEdit}
-                className="text-sm font-medium text-primary/60 transition hover:text-primary"
+                className="text-brand-body font-medium text-primary/60 transition hover:text-primary"
               >
                 Cancel
               </button>

@@ -1,7 +1,6 @@
 export const mainNav = [
   { label: "Features", href: "/#everything-inside" },
   { label: "FAQs", href: "/#faqs" },
-  { label: "Pricing", href: "/#pricing" },
   { label: "Who it's for", href: "/#who-its-for" },
 ] as const;
 
@@ -10,7 +9,6 @@ export const footerNav = {
   community: [
     { label: "Features", href: "/#everything-inside" },
     { label: "FAQs", href: "/#faqs" },
-    { label: "Pricing", href: "/#pricing" },
     { label: "Who it's for", href: "/#who-its-for" },
     { label: "Get Started", href: "/register" },
     { label: "Log in", href: "/login" },

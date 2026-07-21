@@ -2,7 +2,13 @@
 
 import Link from "next/link";
 import { PortalShell } from "@/components/platform/provider/PortalShell";
+import {
+  portalPageDescClass,
+  portalPageTitleClass,
+  portalUnitLabelClass,
+} from "@/components/platform/provider/portal-styles";
 import { studentNav } from "@/components/platform/provider/student/studentNav";
+import { cn } from "@/lib/utils";
 
 type AdviserChatPageLayoutProps = {
   patientName: string;
@@ -17,17 +23,18 @@ export function AdviserChatPageLayout({ patientName, children }: AdviserChatPage
           <header className="min-w-0 flex-1">
             <Link
               href="/student/adviser"
-              className="inline-flex items-center gap-1.5 text-[12px] font-medium text-primary/50 transition hover:text-primary"
+              className={cn(
+                "inline-flex items-center gap-1.5 transition hover:text-primary",
+                portalUnitLabelClass,
+              )}
             >
               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
                 <path d="M15 18l-6-6 6-6" />
               </svg>
               Back to patients
             </Link>
-            <h1 className="mt-2 text-xl font-bold leading-tight tracking-tight text-primary md:text-[1.65rem]">
-              {patientName}
-            </h1>
-            <p className="mt-1 max-w-2xl text-[13px] leading-snug text-muted md:text-sm">
+            <h1 className={cn("mt-2", portalPageTitleClass)}>{patientName}</h1>
+            <p className={cn("mt-2 max-w-2xl", portalPageDescClass)}>
               Follow-up consultation chat for this patient case.
             </p>
           </header>

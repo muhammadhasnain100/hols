@@ -3,6 +3,16 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
+import {
+  portalCardBodyClass,
+  portalEmptyStateClass,
+  portalInlineMetaClass,
+  portalPaginationClass,
+  portalSectionEyebrowClass,
+  portalSectionTitleClass,
+  portalStatLabelClass,
+  portalStatValueClass,
+} from "@/components/platform/provider/portal-styles";
 import { PortalCardButtonDisplay, usePortalCardButtonHover } from "@/components/platform/provider/PortalCardButton";
 import { LecturesPageLayout } from "@/components/platform/provider/student/lectures/LecturesPageLayout";
 import { ApiRequestError } from "@/lib/integrate/client";
@@ -53,11 +63,11 @@ export function StudentLecturesPage() {
       {loading ? (
         <div className="rounded-2xl bg-white p-10 text-center shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
           <div className="mx-auto h-8 w-8 animate-pulse rounded-full bg-primary/10" />
-          <p className="mt-3 text-[13px] text-primary/45">Loading courses…</p>
+          <p className={cn("mt-3", portalEmptyStateClass)}>Loading courses…</p>
         </div>
       ) : courses.length === 0 ? (
         <div className="rounded-2xl bg-white p-10 text-center shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
-          <p className="text-[13px] text-primary/45">No courses available yet.</p>
+          <p className={portalEmptyStateClass}>No courses available yet.</p>
         </div>
       ) : (
         <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
@@ -69,7 +79,7 @@ export function StudentLecturesPage() {
 
       {pagination && pagination.total_pages > 1 ? (
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className="text-[13px] text-primary/45">
+          <p className={portalPaginationClass}>
             Page {pagination.page} of {pagination.total_pages} · {pagination.total} courses
           </p>
           <div className="flex gap-2">
@@ -113,25 +123,23 @@ function CourseCard({ course }: { course: CourseSummary }) {
       )}
     >
       <div className="flex-1">
-        <p className="text-[11px] font-medium uppercase tracking-[0.12em] text-primary/40">Course</p>
-        <h2 className="mt-2 text-[15px] font-semibold tracking-tight text-primary">{course.title}</h2>
-        <p className="mt-2 text-[13px] leading-relaxed text-primary/45">
-          {shortDescription(course.description)}
-        </p>
+        <p className={portalSectionEyebrowClass}>Course</p>
+        <h2 className={cn("mt-2", portalSectionTitleClass)}>{course.title}</h2>
+        <p className={portalCardBodyClass}>{shortDescription(course.description)}</p>
       </div>
 
-      <dl className="mt-5 grid grid-cols-3 gap-2 rounded-xl bg-primary/[0.04] p-3 text-center text-[11px] text-primary/45">
+      <dl className={cn("mt-5 grid grid-cols-3 gap-2 rounded-xl bg-primary/[0.04] p-3 text-center", portalInlineMetaClass)}>
         <div className="rounded-xl bg-white/70 px-2 py-2">
-          <dt>Topics</dt>
-          <dd className="mt-1 text-base font-semibold text-primary">{course.topic_count}</dd>
+          <dt className={portalStatLabelClass}>Topics</dt>
+          <dd className={cn("mt-1", portalStatValueClass)}>{course.topic_count}</dd>
         </div>
         <div className="rounded-xl bg-white/70 px-2 py-2">
-          <dt>Sections</dt>
-          <dd className="mt-1 text-base font-semibold text-primary">{course.section_count}</dd>
+          <dt className={portalStatLabelClass}>Sections</dt>
+          <dd className={cn("mt-1", portalStatValueClass)}>{course.section_count}</dd>
         </div>
         <div className="rounded-xl bg-white/70 px-2 py-2">
-          <dt>Lessons</dt>
-          <dd className="mt-1 text-base font-semibold text-primary">{course.lesson_count}</dd>
+          <dt className={portalStatLabelClass}>Lessons</dt>
+          <dd className={cn("mt-1", portalStatValueClass)}>{course.lesson_count}</dd>
         </div>
       </dl>
 
