@@ -56,14 +56,36 @@ export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
 
     instance.on("scroll", ScrollTrigger.update);
 
+    ScrollTrigger.scrollerProxy(document.documentElement, {
+      scrollTop(value) {
+        if (arguments.length && typeof value === "number") {
+          instance.scrollTo(value, { immediate: true });
+        }
+        return instance.scroll;
+      },
+      getBoundingClientRect() {
+        return {
+          top: 0,
+          left: 0,
+          width: window.innerWidth,
+          height: window.innerHeight,
+        };
+      },
+    });
+
+    const onRefresh = () => instance.resize();
+    ScrollTrigger.addEventListener("refresh", onRefresh);
+
     const tickerCallback = (time: number) => {
       instance.raf(time * 1000);
     };
 
-    gsap.ticker.add(tickerCallback);
+    gsap.ticker.add(tickerCallback, false, true);
     gsap.ticker.lagSmoothing(0);
+    requestAnimationFrame(() => ScrollTrigger.refresh());
 
     return () => {
+      ScrollTrigger.removeEventListener("refresh", onRefresh);
       gsap.ticker.remove(tickerCallback);
       instance.destroy();
       lenisRef.current = null;

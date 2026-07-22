@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap, registerGsap, ScrollTrigger } from "@/lib/gsap";
 import { landingContent } from "@/content/landing";
+import { brand } from "@/config/brand";
 import { heroGlassPanel } from "@/lib/hero-styles";
 import { prefersReducedMotion } from "@/lib/motion";
 import { cn } from "@/lib/utils";
@@ -12,190 +13,121 @@ import { cn } from "@/lib/utils";
 type Card = (typeof landingContent.whatYouGet.cards)[number];
 
 const STEP_SIDES: Array<"left" | "right"> = ["right", "left", "right"];
+const CYAN = brand.colors.accent.babyBlue;
 
-/** Reliable horizontal dashes — avoids clipped border-dashed on 1px boxes. */
-function DashedConnector({ className }: { className?: string }) {
-  return (
-    <div
-      aria-hidden
-      className={cn("h-px min-h-px min-w-[1.25rem] flex-1 self-center", className)}
-      style={{
-        backgroundImage:
-          "repeating-linear-gradient(90deg, rgba(255,255,255,0.58) 0 5px, transparent 5px 10px)",
-      }}
-    />
-  );
-}
-
-const IMAGE_FRAME =
-  "relative aspect-[16/10] w-full max-w-[14rem] shrink-0 overflow-hidden border border-white/20";
-
-function StepImage({ card }: { card: Card }) {
-  return (
-    <div className={IMAGE_FRAME}>
-      <Image
-        src={card.image}
-        alt={card.title}
-        fill
-        className="object-cover"
-        sizes="224px"
-      />
-    </div>
-  );
-}
-
-function StepDescription({
-  card,
-  align,
+/** Straight horizontal connector from center spine to card */
+function StraightConnector({
+  side,
+  onPathRef,
   className,
 }: {
-  card: Card;
-  align: "left" | "right" | "center";
+  side: "left" | "right";
+  onPathRef: (el: SVGPathElement | null) => void;
   className?: string;
 }) {
+  const path = side === "left" ? "M 200 28 H 0" : "M 0 28 H 200";
+
   return (
-    <p
+    <svg
+      aria-hidden
+      viewBox="0 0 200 56"
+      fill="none"
+      preserveAspectRatio="none"
+      className={cn("h-14 w-full max-w-[11rem] shrink-0 xl:max-w-[13rem]", className)}
+    >
+      <path
+        ref={onPathRef}
+        d={path}
+        stroke={CYAN}
+        strokeWidth="1.75"
+        strokeLinecap="round"
+        strokeDasharray="5 7"
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
+  );
+}
+
+function StepCard({ card, className }: { card: Card; className?: string }) {
+  return (
+    <article
       className={cn(
-        "text-brand-body text-white/90",
-        "glass-capsule-overlay rounded-full px-5 py-3 md:px-6 md:py-4",
-        align === "left" && "text-left",
-        align === "right" && "text-right",
-        align === "center" && "mx-auto max-w-sm text-center",
+        "w-full max-w-[15rem] rounded-2xl p-4 text-left sm:max-w-[17rem] lg:max-w-xs",
+        heroGlassPanel,
         className,
       )}
     >
-      {card.description}
-    </p>
-  );
-}
-
-function StepMedia({
-  card,
-  showImage,
-  align,
-}: {
-  card: Card;
-  showImage: boolean;
-  align: "left" | "right" | "center";
-}) {
-  return (
-    <div
-      className={cn(
-        "max-w-[17rem] shrink-0 space-y-4 sm:max-w-xs md:max-w-sm",
-        align === "left" && "mr-auto text-left",
-        align === "right" && "ml-auto text-right",
-        align === "center" && "mx-auto max-w-sm text-center",
-      )}
-    >
-      {showImage ? <StepImage card={card} /> : null}
-      <StepDescription card={card} align={align} />
-    </div>
+      <div className="relative aspect-[16/10] w-full overflow-hidden rounded-xl border border-white/15">
+        <Image
+          src={card.image}
+          alt={card.title}
+          fill
+          className="object-cover"
+          sizes="(max-width: 768px) 85vw, 17rem"
+        />
+      </div>
+      <div className="mt-3 space-y-2">
+        <h3 className="font-sans text-base font-bold leading-[1.15] tracking-[0.005em] text-white md:text-lg">
+          {card.title}
+        </h3>
+        <p className="font-sans text-sm leading-relaxed text-white/80">{card.description}</p>
+      </div>
+    </article>
   );
 }
 
 function StepBadge({ label }: { label: string }) {
   return (
-    <span className="relative inline-flex min-w-[7.5rem] items-center justify-center rounded-full bg-accent px-5 py-2.5 text-brand-caption font-semibold uppercase tracking-[0.12em] text-primary md:min-w-[8.5rem] md:px-6">
+    <span className="relative z-20 inline-flex min-w-[7.5rem] shrink-0 items-center justify-center rounded-full bg-accent px-5 py-2.5 text-brand-caption font-semibold uppercase tracking-[0.12em] text-primary md:min-w-[8.5rem] md:px-6">
       {label}
     </span>
   );
 }
 
-/** Image-row height matches StepImage aspect box so the badge sits on the same axis. */
-const IMAGE_ROW_HEIGHT = "h-[8.75rem]";
-
 function TimelineStep({
   card,
   side,
-  showImage = false,
+  onConnectorPathRef,
 }: {
   card: Card;
   side: "left" | "right";
-  showImage?: boolean;
+  onConnectorPathRef: (el: SVGPathElement | null) => void;
 }) {
   const isLeft = side === "left";
-  const rowHeight = showImage ? IMAGE_ROW_HEIGHT : "min-h-[3rem]";
 
   return (
     <>
-      <div className="hidden w-full lg:flex lg:items-stretch">
-        {/* Left zone */}
-        <div className="flex min-w-0 flex-1 flex-col">
+      <div className="hidden w-full items-center lg:flex">
+        <div className="flex min-w-0 flex-1 justify-end pr-1">
           {isLeft ? (
-            <>
-              <div className={cn("flex items-center justify-end", rowHeight)}>
-                {showImage ? (
-                  <>
-                    <StepImage card={card} />
-                    <DashedConnector />
-                  </>
-                ) : (
-                  <>
-                    <StepMedia card={card} showImage={false} align="left" />
-                    <DashedConnector />
-                  </>
-                )}
-              </div>
-              {showImage ? (
-                <StepDescription
-                  card={card}
-                  align="left"
-                  className="mt-4 max-w-sm self-end"
-                />
-              ) : null}
-            </>
+            <div className="flex items-center gap-0">
+              <StepCard card={card} />
+              <StraightConnector side="left" onPathRef={onConnectorPathRef} className="mx-1" />
+            </div>
           ) : null}
         </div>
 
-        {/* Center badge — on the vertical spine */}
-        <div className={cn("relative z-20 flex shrink-0 items-center px-1", rowHeight)}>
-          <StepBadge label={card.step} />
-        </div>
+        <StepBadge label={card.step} />
 
-        {/* Right zone */}
-        <div className="flex min-w-0 flex-1 flex-col">
+        <div className="flex min-w-0 flex-1 justify-start pl-1">
           {!isLeft ? (
-            <>
-              <div className={cn("flex items-center justify-start", rowHeight)}>
-                {showImage ? (
-                  <>
-                    <DashedConnector />
-                    <StepImage card={card} />
-                  </>
-                ) : (
-                  <>
-                    <DashedConnector />
-                    <StepMedia card={card} showImage={false} align="right" />
-                  </>
-                )}
-              </div>
-              {showImage ? (
-                <StepDescription
-                  card={card}
-                  align="right"
-                  className="mt-4 max-w-sm self-start"
-                />
-              ) : null}
-            </>
+            <div className="flex items-center gap-0">
+              <StraightConnector side="right" onPathRef={onConnectorPathRef} className="mx-1" />
+              <StepCard card={card} />
+            </div>
           ) : null}
         </div>
       </div>
 
-      <div className="lg:hidden">
-        <StepMedia card={card} showImage={showImage} align="center" />
+      <div className="flex flex-col items-center gap-5 lg:hidden">
+        <StepBadge label={card.step} />
+        <div
+          aria-hidden
+          className="h-10 w-[2px] bg-[repeating-linear-gradient(to_bottom,var(--brand-baby-blue)_0_4px,transparent_4px_11px)]"
+        />
+        <StepCard card={card} className="max-w-sm" />
       </div>
     </>
-  );
-}
-
-function SectionBackground() {
-  return (
-    <div
-      className="pointer-events-none absolute inset-0 -z-10 bg-primary"
-      aria-hidden
-    >
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_18%_12%,rgba(141,195,225,0.14),transparent_52%),radial-gradient(ellipse_at_82%_88%,rgba(221,228,102,0.08),transparent_48%)]" />
-    </div>
   );
 }
 
@@ -231,6 +163,7 @@ export function WhatYouGetSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const timelineRef = useRef<HTMLDivElement>(null);
   const lineFillRef = useRef<HTMLDivElement>(null);
+  const connectorRefs = useRef<(SVGPathElement | null)[]>([]);
 
   useEffect(() => {
     setReduceMotion(prefersReducedMotion());
@@ -242,11 +175,10 @@ export function WhatYouGetSection() {
 
       registerGsap();
 
-      const section = sectionRef.current;
       const timeline = timelineRef.current;
       const lineFill = lineFillRef.current;
 
-      if (!section || !timeline || !lineFill) return;
+      if (!timeline || !lineFill) return;
 
       const steps = gsap.utils.toArray<HTMLElement>(
         timeline.querySelectorAll("[data-wyg-step]"),
@@ -255,11 +187,20 @@ export function WhatYouGetSection() {
       if (steps.length === 0) return;
 
       gsap.set(lineFill, { scaleY: 0, transformOrigin: "top center" });
-      gsap.set(steps, { autoAlpha: 0, y: 48 });
+      gsap.set(steps, { autoAlpha: 0, y: 40 });
+
+      connectorRefs.current.forEach((path) => {
+        if (!path) return;
+        const len = path.getTotalLength();
+        gsap.set(path, {
+          strokeDasharray: "5 7",
+          strokeDashoffset: len,
+          opacity: 0.95,
+        });
+      });
 
       const scrollTimeline = gsap.timeline({
         scrollTrigger: {
-          id: "what-you-get-timeline",
           trigger: timeline,
           start: "top 72%",
           end: "bottom 28%",
@@ -268,30 +209,29 @@ export function WhatYouGetSection() {
         },
       });
 
-      // Line draws downward through the full timeline height
       scrollTimeline.to(
         lineFill,
-        {
-          scaleY: 1,
-          ease: "none",
-          duration: steps.length,
-        },
+        { scaleY: 1, ease: "none", duration: steps.length },
         0,
       );
 
-      // Each step reveals as the line reaches it — stays visible (no fade-out)
       steps.forEach((step, index) => {
+        const path = connectorRefs.current[index];
+
         scrollTimeline.fromTo(
           step,
-          { autoAlpha: 0, y: 48 },
-          {
-            autoAlpha: 1,
-            y: 0,
-            duration: 0.65,
-            ease: "power2.out",
-          },
+          { autoAlpha: 0, y: 40 },
+          { autoAlpha: 1, y: 0, duration: 0.65, ease: "power2.out" },
           index * 0.85 + 0.15,
         );
+
+        if (path) {
+          scrollTimeline.to(
+            path,
+            { strokeDashoffset: 0, duration: 0.55, ease: "power2.out" },
+            index * 0.85 + 0.2,
+          );
+        }
       });
 
       requestAnimationFrame(() => ScrollTrigger.refresh());
@@ -300,25 +240,18 @@ export function WhatYouGetSection() {
   );
 
   return (
-    <section
-      ref={sectionRef}
-      id="what-you-get"
-      className="relative isolate overflow-hidden"
-    >
-      <SectionBackground />
-
+    <section ref={sectionRef} id="what-you-get" className="relative isolate overflow-hidden bg-primary">
       <div className="relative mx-auto flex w-full max-w-6xl flex-col px-5 py-16 md:px-8 md:py-20 lg:max-w-7xl lg:py-24">
         <SectionHeader headlineLines={whatYouGet.headlineLines} label={whatYouGet.label} />
 
         <div ref={timelineRef} className="relative mx-auto mt-8 w-full overflow-visible md:mt-10">
-          {/* Vertical spine — sits behind step badges */}
           <div
-            className="pointer-events-none absolute left-1/2 top-0 z-0 h-full w-px -translate-x-1/2 bg-white/20"
+            className="pointer-events-none absolute left-1/2 top-0 z-0 h-full w-px -translate-x-1/2 bg-white/15"
             aria-hidden
           >
             <div
               ref={lineFillRef}
-              className="h-full w-full origin-top bg-accent/85"
+              className="h-full w-full origin-top bg-accent"
               style={reduceMotion ? { transform: "scaleY(1)" } : undefined}
             />
           </div>
@@ -333,7 +266,9 @@ export function WhatYouGetSection() {
               <TimelineStep
                 card={card}
                 side={STEP_SIDES[index] ?? "right"}
-                showImage={index > 0}
+                onConnectorPathRef={(el) => {
+                  connectorRefs.current[index] = el;
+                }}
               />
             </div>
           ))}

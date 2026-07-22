@@ -25,16 +25,37 @@ export const landingContent = {
       "Instead of bouncing between chats, PDFs, and guesswork, HOLS brings training, dosing, and patient paperwork into one trusted system.",
     beforeLabel: "Scattered info",
     afterLabel: "one trusted system",
-    scatterCapsules: [
-      "Forums",
-      "Group chats",
-      "PDFs",
-      "Generate AI",
-      "Notes",
-      "Books",
-      "Peptides",
-      "Protocols",
-      "Blogs",
+    hubLabel: "HOLS",
+    sourceCards: [
+      {
+        id: "forums",
+        title: "Forums",
+        description: "Scattered threads and group answers.",
+      },
+      {
+        id: "pdfs",
+        title: "PDFs",
+        description: "Unverified docs passed around.",
+      },
+      {
+        id: "notes",
+        title: "Notes",
+        description: "Team notes in different places.",
+      },
+      {
+        id: "books",
+        title: "Books",
+        description: "Reference texts and protocols.",
+      },
+      {
+        id: "blogs",
+        title: "Blogs",
+        description: "Articles pulled from the web.",
+      },
+    ],
+    checkpoints: [
+      { id: "curated", label: "Curated content" },
+      { id: "verified", label: "Verified resources" },
     ],
     cta: {
       label: "Explore courses",
