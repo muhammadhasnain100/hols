@@ -1,28 +1,22 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import {
   LessonQuizOverlay,
   LessonQuizResultCard,
 } from "@/components/platform/provider/student/lectures/LessonQuizOverlay";
-import {
-  portalCardTitleClass,
-  portalEmptyStateClass,
-  portalInlineMetaClass,
-  portalRowCategoryClass,
-  portalSectionDescClass,
-  portalSectionEyebrowClass,
-  portalSectionTitleClass,
-} from "@/components/platform/provider/portal-styles";
-import { Button } from "@/components/ui/Button";
 import type { LessonDetail, LessonQuizResult } from "@/lib/integrate/provider/student/lectures";
-import { cn } from "@/lib/utils";
 
 function ContentBlock({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <div className="rounded-xl border border-primary/[0.06] bg-primary/[0.03] p-4 md:p-5">
-      <h3 className={portalRowCategoryClass}>{title}</h3>
-      <div className="text-brand-body mt-2 whitespace-pre-wrap leading-relaxed text-primary">{children}</div>
+    <div className="dashboard-surface rounded-2xl p-4 md:p-5">
+      <h3 className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+        {title}
+      </h3>
+      <div className="text-brand-body mt-2 whitespace-pre-wrap leading-relaxed text-[color:var(--dash-text)]">
+        {children}
+      </div>
     </div>
   );
 }
@@ -77,34 +71,25 @@ export function LessonContentPanel({
 
   return (
     <div className="grid gap-4">
-      <section className="rounded-2xl border border-[#8DC3E1]/35 bg-[#eef6fb] p-5 md:p-6">
-        <div className="flex flex-wrap items-start gap-2">
-          <span className={cn("inline-flex h-8 items-center rounded-full bg-primary px-3 font-semibold text-white", portalInlineMetaClass)}>
-            Lesson {lesson.order}
-          </span>
-          {currentIndex && total ? (
-            <span className={cn("inline-flex h-8 items-center rounded-full bg-white/80 px-3", portalInlineMetaClass)}>
-              {currentIndex} of {total}
-            </span>
-          ) : null}
-          {lesson.l1_name ? (
-            <span className={cn("inline-flex h-8 items-center rounded-full bg-white/80 px-3", portalInlineMetaClass)}>
-              {lesson.l1_name}
-            </span>
-          ) : null}
-          {lesson.l2_name ? (
-            <span className={cn("inline-flex h-8 items-center rounded-full bg-white/80 px-3", portalInlineMetaClass)}>
-              {lesson.l2_name}
-            </span>
-          ) : null}
-        </div>
-        <h2 className={cn("mt-4", portalCardTitleClass)}>{lesson.title}</h2>
+      <section className="dashboard-hero relative overflow-hidden rounded-2xl p-5 md:p-6">
+        <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
+          Lesson {lesson.order}
+          {currentIndex && total ? ` · ${currentIndex} of ${total}` : ""}
+        </p>
+        <h2 className="font-sans mt-2 text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] md:text-2xl md:leading-none">
+          {lesson.title}
+        </h2>
+        {(lesson.l1_name || lesson.l2_name) ? (
+          <p className="text-brand-body mt-2 text-[color:var(--dash-muted)]">
+            {[lesson.l1_name, lesson.l2_name].filter(Boolean).join(" · ")}
+          </p>
+        ) : null}
       </section>
 
       {detailLoading ? (
-        <div className="rounded-2xl bg-white p-8 text-center shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
-          <div className="mx-auto h-7 w-7 animate-pulse rounded-full bg-primary/10" />
-          <p className={cn("mt-3", portalEmptyStateClass)}>Loading lesson content…</p>
+        <div className="dashboard-surface rounded-2xl p-8 text-center">
+          <div className="mx-auto h-7 w-7 animate-pulse rounded-full bg-[color:var(--dash-soft)]" />
+          <p className="text-brand-body mt-3 text-[color:var(--dash-faint)]">Loading lesson content…</p>
         </div>
       ) : (
         <>
@@ -119,8 +104,8 @@ export function LessonContentPanel({
             ) : null}
 
             {!hasContent ? (
-              <div className="rounded-2xl bg-white p-8 text-center shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
-                <p className={portalEmptyStateClass}>No lesson content available yet.</p>
+              <div className="dashboard-surface rounded-2xl p-8 text-center">
+                <p className="text-brand-body text-[color:var(--dash-faint)]">No lesson content available yet.</p>
               </div>
             ) : null}
           </section>
@@ -132,48 +117,50 @@ export function LessonContentPanel({
               onRetake={() => setQuizOpen(true)}
             />
           ) : hasQuiz ? (
-            <section className="rounded-2xl bg-white p-5 shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
-              <p className={portalSectionEyebrowClass}>Practice quiz</p>
-              <h3 className={portalSectionTitleClass}>
+            <section className="dashboard-surface rounded-2xl p-5 md:p-6">
+              <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+                Practice quiz
+              </p>
+              <h3 className="font-sans mt-1 text-lg font-semibold tracking-[0.005em] text-[color:var(--dash-text)]">
                 {lesson.variants.length} question{lesson.variants.length === 1 ? "" : "s"} · 5 minute limit
               </h3>
-              <p className={cn("mt-2 max-w-2xl", portalSectionDescClass)}>
-                Read the lesson first, then take the quiz when you are ready. You will confirm before the countdown
-                starts and have 5 minutes to finish.
+              <p className="text-brand-body mt-2 max-w-2xl text-[color:var(--dash-muted)]">
+                Read the lesson first, then take the quiz when you are ready. You will confirm before the
+                countdown starts and have 5 minutes to finish.
               </p>
-              <div className="mt-4">
-                <Button onClick={() => setQuizOpen(true)} variant="primary" size="md">
-                  Take quiz
-                </Button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setQuizOpen(true)}
+                className="font-sans mt-4 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full bg-[#DDE466] px-5 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105"
+              >
+                Take quiz
+              </button>
             </section>
           ) : null}
         </>
       )}
 
       {(prevLessonId || nextLessonId) && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl bg-white p-4 shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
-          <p className={portalInlineMetaClass}>
+        <div className="dashboard-surface flex flex-wrap items-center justify-between gap-3 rounded-2xl p-4">
+          <p className="text-brand-caption text-[color:var(--dash-faint)]">
             {currentIndex && total ? `Lesson ${currentIndex} of ${total}` : "Lesson navigation"}
           </p>
           <div className="flex gap-2">
             {prevLessonId ? (
-              <Button
+              <Link
                 href={lessonHref(courseId, prevLessonId, topicId, l1Name)}
-                variant="secondary"
-                size="md"
+                className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center rounded-full px-5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition"
               >
                 Previous
-              </Button>
+              </Link>
             ) : null}
             {nextLessonId ? (
-              <Button
+              <Link
                 href={lessonHref(courseId, nextLessonId, topicId, l1Name)}
-                variant="primary"
-                size="md"
+                className="font-sans inline-flex min-h-10 items-center justify-center rounded-full bg-[#DDE466] px-5 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105"
               >
                 Next lesson
-              </Button>
+              </Link>
             ) : null}
           </div>
         </div>

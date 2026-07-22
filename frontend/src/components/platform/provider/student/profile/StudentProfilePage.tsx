@@ -6,17 +6,10 @@ import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { AuthField } from "@/components/platform/auth/AuthField";
 import { authFieldClass, authLabelClass } from "@/components/platform/auth/auth-styles";
 import {
-  portalCardTitleClass,
   portalInlineMetaClass,
-  portalPageDescClass,
-  portalPageTitleClass,
-  portalRowCategoryClass,
-  portalRowValueClass,
   portalSectionDescClass,
-  portalSectionEyebrowClass,
   portalSectionTitleClass,
 } from "@/components/platform/provider/portal-styles";
-import { ProfileLearningVisual } from "@/components/platform/provider/student/profile/ProfileLearningVisual";
 import { PortalShell } from "@/components/platform/provider/PortalShell";
 import { studentNav } from "@/components/platform/provider/student/studentNav";
 import { Button } from "@/components/ui/Button";
@@ -208,34 +201,87 @@ function formatAddress(address?: StudentAddress) {
     .join("\n");
 }
 
+const mailIcon = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+    <rect x="2" y="4" width="20" height="16" rx="2" />
+    <path d="m22 7-10 6L2 7" />
+  </svg>
+);
+
+const shieldIcon = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
+    <path d="m9 12 2 2 4-4" />
+  </svg>
+);
+
+const pinIcon = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+    <path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0z" />
+    <circle cx="12" cy="10" r="3" />
+  </svg>
+);
+
+const bellIcon = (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
+    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
+  </svg>
+);
+
 const accountLinks = [
-  { label: "Membership", href: "/student/payment", category: "Billing" },
-  { label: "Orders", href: "/student/payment/orders", category: "Billing" },
-  { label: "Payment card", href: "/student/payment/card", category: "Billing" },
+  {
+    label: "Membership",
+    href: "/student/payment",
+    category: "Billing",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.77 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" />
+      </svg>
+    ),
+  },
+  {
+    label: "Orders",
+    href: "/student/payment/orders",
+    category: "Billing",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+        <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
+        <rect x="9" y="3" width="6" height="4" rx="1" />
+        <path d="M9 12h6M9 16h4" />
+      </svg>
+    ),
+  },
+  {
+    label: "Payment card",
+    href: "/student/payment/card",
+    category: "Billing",
+    icon: (
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+        <rect x="2" y="5" width="20" height="14" rx="2" />
+        <path d="M2 10h20" />
+      </svg>
+    ),
+  },
 ] as const;
 
-function ProfileInfoRow({
-  category,
+function ProfileDetailRow({
+  icon,
   label,
   value,
-  className,
 }: {
-  category: string;
+  icon: React.ReactNode;
   label: string;
   value: React.ReactNode;
-  className?: string;
 }) {
   return (
-    <div
-      className={cn(
-        "rounded-2xl bg-white p-4 shadow-[0_1px_3px_rgba(21,39,68,0.06)] md:p-5",
-        className,
-      )}
-    >
-      <p className={portalRowCategoryClass}>{category}</p>
-      <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
-        <p className={portalSectionTitleClass}>{label}</p>
-        <div className={cn("sm:max-w-[55%] sm:text-right", portalRowValueClass)}>
+    <div className="dashboard-row flex items-start gap-3 rounded-xl px-3.5 py-3">
+      <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[color:var(--dash-soft)] text-[color:var(--dash-muted)]">
+        {icon}
+      </span>
+      <div className="min-w-0 flex-1">
+        <p className="text-brand-caption font-medium text-[color:var(--dash-faint)]">{label}</p>
+        <div className="font-sans mt-0.5 text-sm font-medium text-[color:var(--dash-text)]">
           {value || "—"}
         </div>
       </div>
@@ -243,28 +289,41 @@ function ProfileInfoRow({
   );
 }
 
-function AccountLinkRow({ label, href, category }: { label: string; href: string; category: string }) {
+function AccountLinkRow({
+  label,
+  href,
+  category,
+  icon,
+}: {
+  label: string;
+  href: string;
+  category: string;
+  icon: React.ReactNode;
+}) {
   return (
     <Link
       href={href}
-      className="group block rounded-2xl bg-white p-4 shadow-[0_1px_3px_rgba(21,39,68,0.06)] transition hover:shadow-[0_4px_14px_rgba(21,39,68,0.08)] md:p-5"
+      className="dashboard-row group flex items-center gap-3 rounded-xl px-3 py-3 transition"
     >
-      <p className={portalRowCategoryClass}>{category}</p>
-      <div className="mt-2 flex items-center justify-between gap-4">
-        <p className={portalSectionTitleClass}>{label}</p>
-        <svg
-          width="14"
-          height="14"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          className="shrink-0 opacity-30 transition group-hover:translate-x-0.5 group-hover:opacity-60"
-          aria-hidden
-        >
-          <path d="M9 18l6-6-6-6" />
-        </svg>
-      </div>
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[color:var(--dash-soft)] text-[color:var(--dash-muted)] transition group-hover:bg-[#DDE466]/15 group-hover:text-[color:var(--dash-accent)]">
+        {icon}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="text-brand-caption block text-[color:var(--dash-faint)]">{category}</span>
+        <span className="font-sans block truncate text-sm font-medium text-[color:var(--dash-text)]">{label}</span>
+      </span>
+      <svg
+        width="16"
+        height="16"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.8"
+        className="shrink-0 text-[color:var(--dash-dim)] transition group-hover:translate-x-0.5 group-hover:text-[color:var(--dash-muted)]"
+        aria-hidden
+      >
+        <path d="M9 18l6-6-6-6" />
+      </svg>
     </Link>
   );
 }
@@ -272,7 +331,7 @@ function AccountLinkRow({ label, href, category }: { label: string; href: string
 function VerifiedBadge({ verified }: { verified?: boolean }) {
   if (verified) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-700">
+      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-emerald-600">
         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
           <path d="M20 6 9 17l-5-5" />
         </svg>
@@ -282,12 +341,15 @@ function VerifiedBadge({ verified }: { verified?: boolean }) {
   }
 
   return (
-    <span className="inline-flex items-center rounded-full bg-primary/[0.06] px-2.5 py-1 text-xs font-medium text-primary/55">
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-medium text-amber-600">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 8v4M12 16h.01" />
+      </svg>
       Not verified
     </span>
   );
 }
-
 
 function FieldSelect({
   id,
@@ -468,48 +530,141 @@ export function StudentProfilePage() {
   }
 
   const avatarSrc = profilePicPreview ?? profile?.profile_pic;
+  const fullName = [profile?.first_name, profile?.last_name].filter(Boolean).join(" ") || "Your profile";
 
   return (
     <PortalShell role="student" title="Profile" showPageHeader={false} nav={studentNav}>
-      <div className="portal-guide-card mb-2 rounded-[1.75rem]">
-        <div
-          className={cn(
-            "flex flex-col gap-4 px-6 sm:flex-row sm:items-center sm:justify-between sm:gap-6 md:px-9 lg:px-10",
-            mode === "edit" ? "py-3 md:py-4" : "py-4 md:py-5",
-          )}
-        >
-          <header className="min-w-0 flex-1">
-            <p className="portal-page-eyebrow">HOLS · Student portal</p>
-            <h1 className={cn("mt-2", portalPageTitleClass)}>
-              {mode === "edit" ? "Edit your profile" : "Your learning profile"}
-            </h1>
-            <p className={cn("mt-2 max-w-lg", portalPageDescClass)}>
-              {mode === "edit"
-                ? "Update your name, address, and profile photo."
-                : "Manage your personal details, account photo, and learning preferences."}
-            </p>
-          </header>
+      <div className="dashboard-screen">
+        <header className="mb-5 flex flex-wrap items-center justify-between gap-4">
+          <h1 className="font-sans text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl">
+            {mode === "edit" ? "Edit profile" : "Profile"}
+          </h1>
 
-          {mode !== "edit" ? (
-            <ProfileLearningVisual className="mx-auto sm:mx-0 sm:justify-self-end" />
-          ) : null}
-        </div>
+          <span className="dashboard-welcome-chip flex items-center gap-2.5 rounded-full py-1 pl-1 pr-3.5">
+            <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-[#DDE466] text-brand-caption font-semibold text-[#152744]">
+              {avatarSrc ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
+              ) : (
+                initials(profile)
+              )}
+            </span>
+            <span className="hidden flex-col leading-tight sm:flex">
+              <span className="text-[11px] text-[color:var(--dash-faint)]">Welcome back,</span>
+              <span className="font-sans text-sm font-semibold text-[color:var(--dash-text)]">
+                {fullName}
+              </span>
+            </span>
+          </span>
+        </header>
 
-        <div className="px-4 pb-4 md:px-5 md:pb-5 lg:px-6 lg:pb-6">
-          <div className="profile-guide-body rounded-2xl px-6 pb-8 pt-5 md:px-8 md:pb-10 md:pt-6 lg:px-10 lg:pb-10">
-            <div className="grid w-full gap-5 md:gap-6">
+        <div className="grid w-full gap-4">
           {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
           {success ? <AuthAlert variant="success">{success}</AuthAlert> : null}
 
           {!profile && refreshing ? (
-            <div className="rounded-2xl bg-white p-10 text-center shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
-              <div className="mx-auto h-8 w-8 animate-pulse rounded-full bg-primary/10" />
-            </div>
+            <section className="dashboard-surface rounded-2xl p-10 text-center">
+              <div className="mx-auto h-8 w-8 animate-pulse rounded-full bg-[color:var(--dash-soft)]" />
+            </section>
           ) : mode === "read" ? (
-            <div className="grid w-full items-start gap-5 lg:grid-cols-[minmax(16rem,18rem)_1fr] lg:gap-6">
-              <div className="rounded-2xl bg-white p-6 shadow-[0_1px_3px_rgba(21,39,68,0.06)] md:p-7">
-                <div className="flex flex-col items-center text-center">
-                  <span className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-primary/10 bg-primary/[0.04] font-sans text-base font-semibold tracking-[0.005em] text-primary shadow-[0_4px_14px_rgba(21,39,68,0.06)]">
+            <div className="grid w-full items-start gap-4 lg:grid-cols-[1.9fr_1fr]">
+              <div className="flex flex-col gap-4">
+                <section className="dashboard-hero relative overflow-hidden rounded-2xl p-5 md:p-6">
+                  <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-5">
+                    <span className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-4 border-white/70 bg-white/40 font-sans text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] shadow-[0_8px_20px_rgba(21,39,68,0.12)]">
+                      {avatarSrc ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        initials(profile)
+                      )}
+                    </span>
+                    <div className="min-w-0 flex-1 text-center sm:text-left">
+                      <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
+                        Your profile
+                      </p>
+                      <p className="font-sans mt-1 truncate text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] md:text-2xl">
+                        {fullName}
+                      </p>
+                      <p className="text-brand-body mt-0.5 truncate text-[color:var(--dash-muted)]">
+                        {profile?.email}
+                      </p>
+                      <div className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
+                        <VerifiedBadge verified={profile?.email_verified} />
+                        {profile?.created_at ? (
+                          <span className="text-brand-caption rounded-full bg-white/40 px-2.5 py-1 font-medium text-[color:var(--dash-muted)]">
+                            Member since {formatDate(profile.created_at)}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={startEdit}
+                      className="font-sans inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-full bg-[#DDE466] px-5 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105"
+                    >
+                      Edit profile
+                    </button>
+                  </div>
+                </section>
+
+                <section className="dashboard-surface rounded-2xl p-5">
+                  <h2 className="font-sans text-lg font-semibold tracking-[0.005em] text-[color:var(--dash-text)]">
+                    Account details
+                  </h2>
+                  <div className="mt-4 space-y-2.5">
+                    <ProfileDetailRow icon={mailIcon} label="Email address" value={profile?.email} />
+                    <ProfileDetailRow
+                      icon={shieldIcon}
+                      label="Email verification"
+                      value={<VerifiedBadge verified={profile?.email_verified} />}
+                    />
+                    <ProfileDetailRow
+                      icon={pinIcon}
+                      label="Mailing address"
+                      value={<span className="whitespace-pre-line">{formatAddress(profile?.address)}</span>}
+                    />
+                    <ProfileDetailRow
+                      icon={bellIcon}
+                      label="Product updates"
+                      value={
+                        profile?.marketing_pref ? (
+                          <span className="inline-flex rounded-full bg-[#DDE466]/20 px-2.5 py-1 text-xs font-medium text-[color:var(--dash-accent)]">
+                            Subscribed
+                          </span>
+                        ) : (
+                          "Off"
+                        )
+                      }
+                    />
+                  </div>
+                </section>
+              </div>
+
+              <div className="flex flex-col gap-4">
+                <section className="dashboard-surface rounded-2xl p-5">
+                  <h2 className="font-sans text-lg font-semibold tracking-[0.005em] text-[color:var(--dash-text)]">
+                    Account shortcuts
+                  </h2>
+                  <div className="mt-3 space-y-1">
+                    {accountLinks.map((link) => (
+                      <AccountLinkRow
+                        key={link.href}
+                        category={link.category}
+                        label={link.label}
+                        href={link.href}
+                        icon={link.icon}
+                      />
+                    ))}
+                  </div>
+                </section>
+              </div>
+            </div>
+          ) : (
+            <section className="dashboard-surface rounded-2xl p-5 md:p-6">
+              <form className="mx-auto w-full max-w-3xl" onSubmit={handleSubmit}>
+                <div className="dashboard-row mb-5 flex flex-col gap-3 rounded-xl border border-[color:var(--dash-surface-border)] p-4 sm:flex-row sm:items-center sm:gap-4">
+                  <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] text-xs font-semibold text-[color:var(--dash-text)]">
                     {avatarSrc ? (
                       // eslint-disable-next-line @next/next/no-img-element
                       <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
@@ -517,292 +672,215 @@ export function StudentProfilePage() {
                       initials(profile)
                     )}
                   </span>
-                  <div className="mt-4 min-w-0 w-full">
-                    <p className={cn("truncate", portalCardTitleClass)}>
-                      {[profile?.first_name, profile?.last_name].filter(Boolean).join(" ") || "Your profile"}
-                    </p>
-                    <p className={cn("mt-1 truncate", portalSectionDescClass)}>{profile?.email}</p>
-                    <div className="mt-3 flex justify-center">
-                      <VerifiedBadge verified={profile?.email_verified} />
+                  <div className="min-w-0 flex-1">
+                    <p className={portalSectionTitleClass}>Profile photo</p>
+                    <p className={cn("mt-0.5 truncate", portalInlineMetaClass)}>{profile?.email}</p>
+                    <div className="mt-2 flex flex-wrap items-center gap-2">
+                      <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/jpeg,image/png,image/webp,image/gif"
+                        className="sr-only"
+                        onChange={(event) => onPickPhoto(event.target.files?.[0] ?? null)}
+                      />
+                      <Button
+                        type="button"
+                        variant="secondary"
+                        size="md"
+                        onClick={() => fileInputRef.current?.click()}
+                      >
+                        Change photo
+                      </Button>
+                      {profilePicFile ? (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            onPickPhoto(null);
+                            if (fileInputRef.current) fileInputRef.current.value = "";
+                          }}
+                          className="text-brand-body font-medium text-[color:var(--dash-faint)] transition hover:text-[color:var(--dash-text)]"
+                        >
+                          Remove
+                        </button>
+                      ) : null}
                     </div>
-                    {profile?.created_at ? (
-                      <p className={cn("mt-3", portalInlineMetaClass)}>
-                        Member since {formatDate(profile.created_at)}
-                      </p>
-                    ) : null}
                   </div>
-                  <Button
+                </div>
+
+                <div className="grid gap-4">
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <AuthField
+                      id="first_name"
+                      label="First name"
+                      value={form.first_name}
+                      onChange={(value) => setForm((prev) => ({ ...prev, first_name: value }))}
+                      placeholder="First name"
+                      autoComplete="given-name"
+                      icon="user"
+                      required
+                    />
+                    <AuthField
+                      id="last_name"
+                      label="Last name"
+                      value={form.last_name}
+                      onChange={(value) => setForm((prev) => ({ ...prev, last_name: value }))}
+                      placeholder="Last name"
+                      autoComplete="family-name"
+                      icon="user"
+                      required
+                    />
+                  </div>
+
+                  <AuthField
+                    id="line1"
+                    label="Address line 1"
+                    value={form.line1}
+                    onChange={(value) => setForm((prev) => ({ ...prev, line1: value }))}
+                    placeholder="Street address"
+                    autoComplete="address-line1"
+                  />
+                  <AuthField
+                    id="line2"
+                    label="Address line 2"
+                    value={form.line2}
+                    onChange={(value) => setForm((prev) => ({ ...prev, line2: value }))}
+                    placeholder="Apt, suite, etc. (optional)"
+                    autoComplete="address-line2"
+                  />
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <FieldSelect
+                      id="state"
+                      label="State"
+                      value={location.stateSelect}
+                      onChange={(value) => {
+                        setLocation({
+                          stateSelect: value,
+                          stateManual: value === MANUAL_VALUE ? location.stateManual : "",
+                          citySelect: "",
+                          cityManual: "",
+                        });
+                      }}
+                    >
+                      <option value="">Select state</option>
+                      {US_STATES.map((state) => (
+                        <option key={state.code} value={state.code}>
+                          {state.name}
+                        </option>
+                      ))}
+                      <option value={MANUAL_VALUE}>Other (manual)</option>
+                    </FieldSelect>
+
+                    {location.stateSelect === MANUAL_VALUE ? (
+                      <AuthField
+                        id="state_manual"
+                        label="State"
+                        value={location.stateManual}
+                        onChange={(value) => setLocation((prev) => ({ ...prev, stateManual: value }))}
+                        placeholder="Enter state"
+                      />
+                    ) : (
+                      <FieldSelect
+                        id="city"
+                        label="City"
+                        value={location.citySelect}
+                        disabled={!location.stateSelect}
+                        onChange={(value) => {
+                          setLocation((prev) => ({
+                            ...prev,
+                            citySelect: value,
+                            cityManual: value === MANUAL_VALUE ? prev.cityManual : "",
+                          }));
+                        }}
+                      >
+                        <option value="">
+                          {location.stateSelect ? "Select city" : "Select state first"}
+                        </option>
+                        {usCities.map((city) => (
+                          <option key={city} value={city}>
+                            {city}
+                          </option>
+                        ))}
+                        <option value={MANUAL_VALUE}>Other (manual)</option>
+                      </FieldSelect>
+                    )}
+                  </div>
+
+                  {location.stateSelect === MANUAL_VALUE ? (
+                    <AuthField
+                      id="city_manual"
+                      label="City"
+                      value={location.cityManual}
+                      onChange={(value) => setLocation((prev) => ({ ...prev, cityManual: value }))}
+                      placeholder="Enter city"
+                    />
+                  ) : location.citySelect === MANUAL_VALUE ? (
+                    <AuthField
+                      id="city_manual_other"
+                      label="City"
+                      value={location.cityManual}
+                      onChange={(value) => setLocation((prev) => ({ ...prev, cityManual: value }))}
+                      placeholder="Enter city"
+                    />
+                  ) : null}
+
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <AuthField
+                      id="postal_code"
+                      label="ZIP / Postal code"
+                      value={form.postal_code}
+                      onChange={(value) => setForm((prev) => ({ ...prev, postal_code: value }))}
+                      placeholder="ZIP code"
+                      autoComplete="postal-code"
+                    />
+
+                    <div className="grid gap-2">
+                      <label htmlFor="country" className={authLabelClass}>
+                        Country
+                      </label>
+                      <input
+                        id="country"
+                        value="United States"
+                        disabled
+                        className={cn(authFieldClass, "px-4 opacity-70")}
+                      />
+                    </div>
+                  </div>
+
+                  <label className={cn("flex cursor-pointer items-center gap-3", portalSectionDescClass)}>
+                    <input
+                      type="checkbox"
+                      checked={form.marketing_pref}
+                      onChange={(e) =>
+                        setForm((prev) => ({ ...prev, marketing_pref: e.target.checked }))
+                      }
+                      className="h-4 w-4 rounded border-border text-primary focus:ring-primary-light/20"
+                    />
+                    Email me product updates
+                  </label>
+                </div>
+
+                <div className="mt-6 flex flex-col-reverse gap-3 border-t border-[color:var(--dash-surface-border)] pt-5 sm:flex-row sm:items-center sm:justify-between">
+                  <button
                     type="button"
+                    onClick={cancelEdit}
+                    className="text-brand-body font-medium text-[color:var(--dash-faint)] transition hover:text-[color:var(--dash-text)]"
+                  >
+                    Cancel
+                  </button>
+                  <Button
+                    type="submit"
                     variant="primary"
                     size="md"
-                    className="mt-5 w-full justify-center"
-                    onClick={startEdit}
+                    disabled={saving || !hasChanges}
+                    className="w-full justify-center sm:w-auto sm:min-w-[8.5rem]"
                   >
-                    Edit profile
+                    {saving ? "Saving…" : "Save changes"}
                   </Button>
                 </div>
-              </div>
-
-              <div className="grid gap-3">
-                <ProfileInfoRow category="Contact" label="Email address" value={profile?.email} />
-                <ProfileInfoRow
-                  category="Security"
-                  label="Email verification"
-                  value={<VerifiedBadge verified={profile?.email_verified} />}
-                />
-                <ProfileInfoRow
-                  category="Location"
-                  label="Mailing address"
-                  value={<span className="whitespace-pre-line">{formatAddress(profile?.address)}</span>}
-                />
-                <ProfileInfoRow
-                  category="Preferences"
-                  label="Product updates"
-                  value={
-                    profile?.marketing_pref ? (
-                      <span className="inline-flex rounded-full bg-primary/[0.06] px-2.5 py-1 text-xs font-medium text-primary/70">
-                        Subscribed
-                      </span>
-                    ) : (
-                      "Off"
-                    )
-                  }
-                />
-
-                <div className="mt-2 grid gap-3">
-                  <p className={portalSectionEyebrowClass}>Account shortcuts</p>
-                  {accountLinks.map((link) => (
-                    <AccountLinkRow
-                      key={link.href}
-                      category={link.category}
-                      label={link.label}
-                      href={link.href}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <form className="mx-auto w-full max-w-3xl" onSubmit={handleSubmit}>
-              <div className="mb-5 flex flex-col gap-3 rounded-xl bg-white/80 p-4 shadow-[0_1px_3px_rgba(21,39,68,0.05)] sm:flex-row sm:items-center sm:gap-4">
-                <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-primary/10 bg-primary/[0.04] text-xs font-semibold text-primary">
-                  {avatarSrc ? (
-                    // eslint-disable-next-line @next/next/no-img-element
-                    <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
-                  ) : (
-                    initials(profile)
-                  )}
-                </span>
-                <div className="min-w-0 flex-1">
-                  <p className={portalSectionTitleClass}>Profile photo</p>
-                  <p className={cn("mt-0.5 truncate", portalInlineMetaClass)}>{profile?.email}</p>
-                  <div className="mt-2 flex flex-wrap items-center gap-2">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp,image/gif"
-                      className="sr-only"
-                      onChange={(event) => onPickPhoto(event.target.files?.[0] ?? null)}
-                    />
-                    <Button
-                      type="button"
-                      variant="secondary"
-                      size="md"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      Change photo
-                    </Button>
-                    {profilePicFile ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          onPickPhoto(null);
-                          if (fileInputRef.current) fileInputRef.current.value = "";
-                        }}
-                        className="text-brand-body font-medium text-primary/60 transition hover:text-primary"
-                      >
-                        Remove
-                      </button>
-                    ) : null}
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid gap-4">
-                <div className="grid gap-4 sm:grid-cols-2">
-                <AuthField
-                  id="first_name"
-                  label="First name"
-                  value={form.first_name}
-                  onChange={(value) => setForm((prev) => ({ ...prev, first_name: value }))}
-                  placeholder="First name"
-                  autoComplete="given-name"
-                  icon="user"
-                  required
-                />
-                <AuthField
-                  id="last_name"
-                  label="Last name"
-                  value={form.last_name}
-                  onChange={(value) => setForm((prev) => ({ ...prev, last_name: value }))}
-                  placeholder="Last name"
-                  autoComplete="family-name"
-                  icon="user"
-                  required
-                />
-              </div>
-
-              <AuthField
-                id="line1"
-                label="Address line 1"
-                value={form.line1}
-                onChange={(value) => setForm((prev) => ({ ...prev, line1: value }))}
-                placeholder="Street address"
-                autoComplete="address-line1"
-              />
-              <AuthField
-                id="line2"
-                label="Address line 2"
-                value={form.line2}
-                onChange={(value) => setForm((prev) => ({ ...prev, line2: value }))}
-                placeholder="Apt, suite, etc. (optional)"
-                autoComplete="address-line2"
-              />
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FieldSelect
-                  id="state"
-                  label="State"
-                  value={location.stateSelect}
-                  onChange={(value) => {
-                    setLocation({
-                      stateSelect: value,
-                      stateManual: value === MANUAL_VALUE ? location.stateManual : "",
-                      citySelect: "",
-                      cityManual: "",
-                    });
-                  }}
-                >
-                  <option value="">Select state</option>
-                  {US_STATES.map((state) => (
-                    <option key={state.code} value={state.code}>
-                      {state.name}
-                    </option>
-                  ))}
-                  <option value={MANUAL_VALUE}>Other (manual)</option>
-                </FieldSelect>
-
-                {location.stateSelect === MANUAL_VALUE ? (
-                  <AuthField
-                    id="state_manual"
-                    label="State"
-                    value={location.stateManual}
-                    onChange={(value) => setLocation((prev) => ({ ...prev, stateManual: value }))}
-                    placeholder="Enter state"
-                  />
-                ) : (
-                  <FieldSelect
-                    id="city"
-                    label="City"
-                    value={location.citySelect}
-                    disabled={!location.stateSelect}
-                    onChange={(value) => {
-                      setLocation((prev) => ({
-                        ...prev,
-                        citySelect: value,
-                        cityManual: value === MANUAL_VALUE ? prev.cityManual : "",
-                      }));
-                    }}
-                  >
-                    <option value="">
-                      {location.stateSelect ? "Select city" : "Select state first"}
-                    </option>
-                    {usCities.map((city) => (
-                      <option key={city} value={city}>
-                        {city}
-                      </option>
-                    ))}
-                    <option value={MANUAL_VALUE}>Other (manual)</option>
-                  </FieldSelect>
-                )}
-              </div>
-
-              {location.stateSelect === MANUAL_VALUE ? (
-                <AuthField
-                  id="city_manual"
-                  label="City"
-                  value={location.cityManual}
-                  onChange={(value) => setLocation((prev) => ({ ...prev, cityManual: value }))}
-                  placeholder="Enter city"
-                />
-              ) : location.citySelect === MANUAL_VALUE ? (
-                <AuthField
-                  id="city_manual_other"
-                  label="City"
-                  value={location.cityManual}
-                  onChange={(value) => setLocation((prev) => ({ ...prev, cityManual: value }))}
-                  placeholder="Enter city"
-                />
-              ) : null}
-
-              <div className="grid gap-4 sm:grid-cols-2">
-                <AuthField
-                  id="postal_code"
-                  label="ZIP / Postal code"
-                  value={form.postal_code}
-                  onChange={(value) => setForm((prev) => ({ ...prev, postal_code: value }))}
-                  placeholder="ZIP code"
-                  autoComplete="postal-code"
-                />
-
-                <div className="grid gap-2">
-                  <label htmlFor="country" className={authLabelClass}>
-                    Country
-                  </label>
-                  <input
-                    id="country"
-                    value="United States"
-                    disabled
-                    className={cn(authFieldClass, "px-4 opacity-70")}
-                  />
-                </div>
-              </div>
-
-              <label className={cn("flex cursor-pointer items-center gap-3", portalSectionDescClass)}>
-                <input
-                  type="checkbox"
-                  checked={form.marketing_pref}
-                  onChange={(e) =>
-                    setForm((prev) => ({ ...prev, marketing_pref: e.target.checked }))
-                  }
-                  className="h-4 w-4 rounded border-border text-primary focus:ring-primary-light/20"
-                />
-                Email me product updates
-              </label>
-            </div>
-
-            <div className="mt-6 flex flex-col-reverse gap-3 border-t border-primary/[0.06] pt-5 sm:flex-row sm:items-center sm:justify-between">
-              <button
-                type="button"
-                onClick={cancelEdit}
-                className="text-brand-body font-medium text-primary/60 transition hover:text-primary"
-              >
-                Cancel
-              </button>
-              <Button
-                type="submit"
-                variant="primary"
-                size="md"
-                disabled={saving || !hasChanges}
-                className="w-full justify-center sm:w-auto sm:min-w-[8.5rem]"
-              >
-                {saving ? "Saving…" : "Save changes"}
-              </Button>
-            </div>
-          </form>
-        )}
-            </div>
-          </div>
+              </form>
+            </section>
+          )}
         </div>
       </div>
     </PortalShell>

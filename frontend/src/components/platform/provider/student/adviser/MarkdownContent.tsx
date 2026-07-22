@@ -1,9 +1,5 @@
 "use client";
 
-import {
-  portalCardTitleClass,
-  portalSectionTitleClass,
-} from "@/components/platform/provider/portal-styles";
 import { cn } from "@/lib/utils";
 
 type MarkdownContentProps = {
@@ -11,86 +7,249 @@ type MarkdownContentProps = {
   className?: string;
 };
 
-function renderInline(text: string) {
-  const parts = text.split(/(\*\*[^*]+\*\*|\*[^*]+\*)/g);
-  return parts.map((part, index) => {
-    if (part.startsWith("**") && part.endsWith("**")) {
-      return (
-        <strong key={index} className="font-semibold text-primary">
-          {part.slice(2, -2)}
-        </strong>
-      );
+type Block =
+  | { type: "heading"; level: 1 | 2 | 3 | 4; text: string }
+  | { type: "paragraph"; text: string }
+  | { type: "ul"; items: string[] }
+  | { type: "ol"; items: string[] }
+  | { type: "quote"; text: string }
+  | { type: "hr" }
+  | { type: "code"; text: string };
+
+function renderInline(text: string): React.ReactNode[] {
+  const pattern = /(\*\*[^*\n]+?\*\*|__[^_\n]+?__|`[^`\n]+?`|\[[^\]]+?\]\([^)]+?\)|\*[^*\n]+?\*|_[^_\n]+?_)/g;
+  const nodes: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let key = 0;
+
+  while ((match = pattern.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      nodes.push(text.slice(lastIndex, match.index));
     }
-    if (part.startsWith("*") && part.endsWith("*")) {
-      return (
-        <em key={index} className="italic text-primary/80">
-          {part.slice(1, -1)}
-        </em>
+
+    const token = match[0];
+
+    if ((token.startsWith("**") && token.endsWith("**")) || (token.startsWith("__") && token.endsWith("__"))) {
+      nodes.push(
+        <strong key={key++} className="font-semibold text-[color:var(--dash-text)]">
+          {token.slice(2, -2)}
+        </strong>,
       );
+    } else if (token.startsWith("`") && token.endsWith("`")) {
+      nodes.push(
+        <code
+          key={key++}
+          className="rounded-md bg-[color:var(--dash-soft)] px-1.5 py-0.5 font-mono text-[0.9em] text-[color:var(--dash-text)]"
+        >
+          {token.slice(1, -1)}
+        </code>,
+      );
+    } else if (token.startsWith("[") && token.includes("](")) {
+      const labelEnd = token.indexOf("]");
+      const href = token.slice(labelEnd + 2, -1);
+      const label = token.slice(1, labelEnd);
+      nodes.push(
+        <a
+          key={key++}
+          href={href}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="font-medium text-[color:var(--dash-accent)] underline underline-offset-2 hover:brightness-110"
+        >
+          {label}
+        </a>,
+      );
+    } else if ((token.startsWith("*") && token.endsWith("*")) || (token.startsWith("_") && token.endsWith("_"))) {
+      nodes.push(
+        <em key={key++} className="italic text-[color:var(--dash-muted)]">
+          {token.slice(1, -1)}
+        </em>,
+      );
+    } else {
+      nodes.push(token);
     }
-    return part;
-  });
+
+    lastIndex = match.index + token.length;
+  }
+
+  if (lastIndex < text.length) {
+    nodes.push(text.slice(lastIndex));
+  }
+
+  return nodes.length > 0 ? nodes : [text];
 }
 
-export function MarkdownContent({ content, className }: MarkdownContentProps) {
-  const lines = content.split("\n");
-  const blocks: React.ReactNode[] = [];
-  let listItems: string[] = [];
+function parseBlocks(content: string): Block[] {
+  const lines = content.replace(/\r\n/g, "\n").split("\n");
+  const blocks: Block[] = [];
+  let i = 0;
 
-  const flushList = () => {
-    if (listItems.length === 0) return;
-    blocks.push(
-      <ul key={`list-${blocks.length}`} className="text-brand-body my-2 list-disc space-y-1 pl-5 leading-relaxed text-primary/80">
-        {listItems.map((item, index) => (
-          <li key={index}>{renderInline(item)}</li>
-        ))}
-      </ul>,
-    );
-    listItems = [];
-  };
-
-  lines.forEach((line, index) => {
-    const trimmed = line.trim();
+  while (i < lines.length) {
+    const raw = lines[i];
+    const trimmed = raw.trim();
 
     if (!trimmed) {
-      flushList();
-      return;
+      i += 1;
+      continue;
     }
 
-    if (trimmed.startsWith("### ")) {
-      flushList();
-      blocks.push(
-        <h3 key={`h3-${index}`} className={cn("mt-4 first:mt-0", portalCardTitleClass)}>
-          {trimmed.slice(4)}
-        </h3>,
-      );
-      return;
+    if (/^---+$/.test(trimmed) || /^\*\*\*+$/.test(trimmed)) {
+      blocks.push({ type: "hr" });
+      i += 1;
+      continue;
     }
 
-    if (trimmed.startsWith("## ")) {
-      flushList();
-      blocks.push(
-        <h2 key={`h2-${index}`} className={cn("mt-4 first:mt-0", portalSectionTitleClass)}>
-          {trimmed.slice(3)}
-        </h2>,
-      );
-      return;
+    if (trimmed.startsWith("```")) {
+      const codeLines: string[] = [];
+      i += 1;
+      while (i < lines.length && !lines[i].trim().startsWith("```")) {
+        codeLines.push(lines[i]);
+        i += 1;
+      }
+      if (i < lines.length) i += 1;
+      blocks.push({ type: "code", text: codeLines.join("\n") });
+      continue;
     }
 
-    if (trimmed.startsWith("- ")) {
-      listItems.push(trimmed.slice(2));
-      return;
+    const headingMatch = trimmed.match(/^(#{1,4})\s+(.+)$/);
+    if (headingMatch) {
+      blocks.push({
+        type: "heading",
+        level: headingMatch[1].length as 1 | 2 | 3 | 4,
+        text: headingMatch[2].trim(),
+      });
+      i += 1;
+      continue;
     }
 
-    flushList();
-    blocks.push(
-      <p key={`p-${index}`} className="text-brand-body leading-relaxed text-primary/80">
-        {renderInline(trimmed)}
-      </p>,
-    );
-  });
+    if (trimmed.startsWith("> ")) {
+      const quoteLines: string[] = [];
+      while (i < lines.length && lines[i].trim().startsWith("> ")) {
+        quoteLines.push(lines[i].trim().slice(2));
+        i += 1;
+      }
+      blocks.push({ type: "quote", text: quoteLines.join(" ") });
+      continue;
+    }
 
-  flushList();
+    if (/^[-*+]\s+/.test(trimmed)) {
+      const items: string[] = [];
+      while (i < lines.length && /^[-*+]\s+/.test(lines[i].trim())) {
+        items.push(lines[i].trim().replace(/^[-*+]\s+/, ""));
+        i += 1;
+      }
+      blocks.push({ type: "ul", items });
+      continue;
+    }
 
-  return <div className={cn("space-y-1", className)}>{blocks}</div>;
+    if (/^\d+[.)]\s+/.test(trimmed)) {
+      const items: string[] = [];
+      while (i < lines.length && /^\d+[.)]\s+/.test(lines[i].trim())) {
+        items.push(lines[i].trim().replace(/^\d+[.)]\s+/, ""));
+        i += 1;
+      }
+      blocks.push({ type: "ol", items });
+      continue;
+    }
+
+    const paragraphLines: string[] = [trimmed];
+    i += 1;
+    while (i < lines.length) {
+      const next = lines[i].trim();
+      if (
+        !next ||
+        next.startsWith("#") ||
+        next.startsWith("> ") ||
+        next.startsWith("```") ||
+        /^[-*+]\s+/.test(next) ||
+        /^\d+[.)]\s+/.test(next) ||
+        /^---+$/.test(next) ||
+        /^\*\*\*+$/.test(next)
+      ) {
+        break;
+      }
+      paragraphLines.push(next);
+      i += 1;
+    }
+    blocks.push({ type: "paragraph", text: paragraphLines.join(" ") });
+  }
+
+  return blocks;
+}
+
+const headingClass: Record<1 | 2 | 3 | 4, string> = {
+  1: "font-sans text-2xl font-bold tracking-[0.01em] text-[color:var(--dash-text)]",
+  2: "font-sans text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)]",
+  3: "font-sans text-lg font-semibold tracking-[0.005em] text-[color:var(--dash-text)]",
+  4: "font-sans text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)]",
 };
+
+export function MarkdownContent({ content, className }: MarkdownContentProps) {
+  const blocks = parseBlocks(content);
+
+  return (
+    <div className={cn("space-y-3", className)}>
+      {blocks.map((block, index) => {
+        switch (block.type) {
+          case "heading": {
+            const Tag = `h${block.level}` as "h1" | "h2" | "h3" | "h4";
+            return (
+              <Tag key={index} className={cn("mt-5 first:mt-0", headingClass[block.level])}>
+                {renderInline(block.text)}
+              </Tag>
+            );
+          }
+          case "paragraph":
+            return (
+              <p key={index} className="text-brand-body leading-relaxed text-[color:var(--dash-muted)]">
+                {renderInline(block.text)}
+              </p>
+            );
+          case "ul":
+            return (
+              <ul key={index} className="text-brand-body my-1 list-disc space-y-1.5 pl-5 leading-relaxed text-[color:var(--dash-muted)] marker:text-[color:var(--dash-dim)]">
+                {block.items.map((item, itemIndex) => (
+                  <li key={itemIndex} className="pl-0.5">
+                    {renderInline(item)}
+                  </li>
+                ))}
+              </ul>
+            );
+          case "ol":
+            return (
+              <ol key={index} className="text-brand-body my-1 list-decimal space-y-1.5 pl-5 leading-relaxed text-[color:var(--dash-muted)] marker:font-medium marker:text-[color:var(--dash-faint)]">
+                {block.items.map((item, itemIndex) => (
+                  <li key={itemIndex} className="pl-0.5">
+                    {renderInline(item)}
+                  </li>
+                ))}
+              </ol>
+            );
+          case "quote":
+            return (
+              <blockquote
+                key={index}
+                className="border-l-2 border-[color:var(--dash-surface-border)] pl-3 text-brand-body italic leading-relaxed text-[color:var(--dash-faint)]"
+              >
+                {renderInline(block.text)}
+              </blockquote>
+            );
+          case "hr":
+            return <hr key={index} className="my-4 border-0 border-t border-[color:var(--dash-surface-border)]" />;
+          case "code":
+            return (
+              <pre
+                key={index}
+                className="overflow-x-auto rounded-xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] p-3 text-sm leading-relaxed text-[color:var(--dash-text)]"
+              >
+                <code className="font-mono whitespace-pre">{block.text}</code>
+              </pre>
+            );
+          default:
+            return null;
+        }
+      })}
+    </div>
+  );
+}

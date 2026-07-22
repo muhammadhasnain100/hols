@@ -1,13 +1,8 @@
 "use client";
 
 import { PortalShell } from "@/components/platform/provider/PortalShell";
-import {
-  portalPageDescClass,
-  portalPageTitleClass,
-} from "@/components/platform/provider/portal-styles";
-import { ProfileLearningVisual } from "@/components/platform/provider/student/profile/ProfileLearningVisual";
+import { StudentPageHeader } from "@/components/platform/provider/student/StudentPageHeader";
 import { studentNav } from "@/components/platform/provider/student/studentNav";
-import { cn } from "@/lib/utils";
 
 type LecturesPageLayoutProps = {
   children: React.ReactNode;
@@ -16,24 +11,22 @@ type LecturesPageLayoutProps = {
 export function LecturesPageLayout({ children }: LecturesPageLayoutProps) {
   return (
     <PortalShell role="student" title="Lectures" showPageHeader={false} nav={studentNav}>
-      <div className="portal-guide-card mb-2 rounded-[1.75rem]">
-        <div className="flex flex-col gap-4 px-6 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6 md:px-9 md:py-5 lg:px-10">
-          <header className="min-w-0 flex-1">
-            <p className="portal-page-eyebrow">HOLS · Learning</p>
-            <h1 className={cn("mt-2", portalPageTitleClass)}>Lectures</h1>
-            <p className={cn("mt-2 max-w-lg", portalPageDescClass)}>
-              Choose a course and continue learning.
-            </p>
-          </header>
+      <div className="dashboard-screen">
+        <StudentPageHeader title="Lectures" />
 
-          <ProfileLearningVisual className="mx-auto sm:mx-0 sm:justify-self-end" />
-        </div>
+        <section className="dashboard-hero relative overflow-hidden rounded-2xl p-5 md:p-6">
+          <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
+            HOLS · Learning
+          </p>
+          <h2 className="font-sans mt-2 text-2xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] md:text-[2rem] md:leading-none">
+            Lectures
+          </h2>
+          <p className="text-brand-body mt-2 max-w-lg text-[color:var(--dash-muted)]">
+            Choose a course and continue learning.
+          </p>
+        </section>
 
-        <div className="px-4 pb-4 md:px-5 md:pb-5 lg:px-6 lg:pb-6">
-          <div className="profile-guide-body rounded-2xl px-5 pb-6 pt-5 md:px-7 md:pb-8 md:pt-6 lg:px-8 lg:pb-9">
-            <div className="grid w-full gap-5 md:gap-6">{children}</div>
-          </div>
-        </div>
+        <div className="mt-4 grid w-full gap-3">{children}</div>
       </div>
     </PortalShell>
   );

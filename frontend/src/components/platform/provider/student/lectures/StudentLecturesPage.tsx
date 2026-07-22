@@ -3,17 +3,6 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
-import {
-  portalCardBodyClass,
-  portalEmptyStateClass,
-  portalInlineMetaClass,
-  portalPaginationClass,
-  portalSectionEyebrowClass,
-  portalSectionTitleClass,
-  portalStatLabelClass,
-  portalStatValueClass,
-} from "@/components/platform/provider/portal-styles";
-import { PortalCardButtonDisplay, usePortalCardButtonHover } from "@/components/platform/provider/PortalCardButton";
 import { LecturesPageLayout } from "@/components/platform/provider/student/lectures/LecturesPageLayout";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
@@ -21,14 +10,6 @@ import {
   type CourseSummary,
   type PaginationMeta,
 } from "@/lib/integrate/provider/student/lectures";
-import { Button } from "@/components/ui/Button";
-import { cn } from "@/lib/utils";
-
-function shortDescription(description?: string) {
-  if (!description?.trim()) return "Course details and lessons...";
-  const words = description.trim().split(/\s+/).slice(0, 5);
-  return `${words.join(" ")}...`;
-}
 
 export function StudentLecturesPage() {
   const [loading, setLoading] = useState(true);
@@ -61,16 +42,16 @@ export function StudentLecturesPage() {
       {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
 
       {loading ? (
-        <div className="rounded-2xl bg-white p-10 text-center shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
-          <div className="mx-auto h-8 w-8 animate-pulse rounded-full bg-primary/10" />
-          <p className={cn("mt-3", portalEmptyStateClass)}>Loading courses…</p>
+        <div className="dashboard-surface rounded-2xl p-10 text-center">
+          <div className="mx-auto h-8 w-8 animate-pulse rounded-full bg-[color:var(--dash-soft)]" />
+          <p className="text-brand-body mt-3 text-[color:var(--dash-faint)]">Loading courses…</p>
         </div>
       ) : courses.length === 0 ? (
-        <div className="rounded-2xl bg-white p-10 text-center shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
-          <p className={portalEmptyStateClass}>No courses available yet.</p>
+        <div className="dashboard-surface rounded-2xl p-10 text-center">
+          <p className="text-brand-body text-[color:var(--dash-faint)]">No courses available yet.</p>
         </div>
       ) : (
-        <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+        <div className="grid w-full grid-cols-2 gap-3 md:grid-cols-3 xl:grid-cols-4">
           {courses.map((course) => (
             <CourseCard key={course.course_id} course={course} />
           ))}
@@ -79,28 +60,22 @@ export function StudentLecturesPage() {
 
       {pagination && pagination.total_pages > 1 ? (
         <div className="flex flex-wrap items-center justify-between gap-3">
-          <p className={portalPaginationClass}>
+          <p className="text-brand-caption text-[color:var(--dash-faint)]">
             Page {pagination.page} of {pagination.total_pages} · {pagination.total} courses
           </p>
           <div className="flex gap-2">
-            <Button
-              type="button"
-              variant="secondary"
-              size="md"
+            <PagerButton
               disabled={!pagination.has_previous || loading}
               onClick={() => setPage((prev) => Math.max(1, prev - 1))}
             >
               Previous
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              size="md"
+            </PagerButton>
+            <PagerButton
               disabled={!pagination.has_next || loading}
               onClick={() => setPage((prev) => prev + 1)}
             >
               Next
-            </Button>
+            </PagerButton>
           </div>
         </div>
       ) : null}
@@ -108,50 +83,69 @@ export function StudentLecturesPage() {
   );
 }
 
-function CourseCard({ course }: { course: CourseSummary }) {
-  const { onMouseEnter, onMouseLeave, containerRef, fillRef, labelRef } =
-    usePortalCardButtonHover("primary");
+function PagerButton({
+  children,
+  disabled,
+  onClick,
+}: {
+  children: React.ReactNode;
+  disabled?: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      disabled={disabled}
+      onClick={onClick}
+      className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center rounded-full px-5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50"
+    >
+      {children}
+    </button>
+  );
+}
 
+function StatCapsule({ label, value }: { label: string; value: number }) {
+  return (
+    <span className="dashboard-pill-soft inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium text-[color:var(--dash-muted)]">
+      <span className="font-sans font-semibold text-[color:var(--dash-text)]">{value}</span>
+      {label}
+    </span>
+  );
+}
+
+function CourseCard({ course }: { course: CourseSummary }) {
   return (
     <Link
       href={`/student/lectures/${course.course_id}`}
-      onMouseEnter={onMouseEnter}
-      onMouseLeave={onMouseLeave}
-      className={cn(
-        "group flex min-h-[16rem] flex-col rounded-2xl bg-white p-5 shadow-[0_1px_3px_rgba(21,39,68,0.06)] transition",
-        "hover:shadow-[0_4px_14px_rgba(21,39,68,0.08)]",
-      )}
+      className="dashboard-surface group flex aspect-square w-full flex-col overflow-hidden rounded-2xl transition hover:border-[#DDE466]/60"
     >
-      <div className="flex-1">
-        <p className={portalSectionEyebrowClass}>Course</p>
-        <h2 className={cn("mt-2", portalSectionTitleClass)}>{course.title}</h2>
-        <p className={portalCardBodyClass}>{shortDescription(course.description)}</p>
+      <div className="flex flex-1 flex-col items-center justify-center gap-3 px-3 pt-4 text-center">
+        <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-[#DDE466]/20 text-[color:var(--dash-accent)]">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
+            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
+          </svg>
+        </span>
+
+        <h2 className="font-sans line-clamp-2 px-1 text-sm font-semibold leading-snug tracking-[0.005em] text-[color:var(--dash-text)]">
+          {course.title}
+        </h2>
+
+        <div className="flex flex-wrap items-center justify-center gap-1.5">
+          <StatCapsule label="topics" value={course.topic_count} />
+          <StatCapsule label="sections" value={course.section_count} />
+          <StatCapsule label="lessons" value={course.lesson_count} />
+        </div>
       </div>
 
-      <dl className={cn("mt-5 grid grid-cols-3 gap-2 rounded-xl bg-primary/[0.04] p-3 text-center", portalInlineMetaClass)}>
-        <div className="rounded-xl bg-white/70 px-2 py-2">
-          <dt className={portalStatLabelClass}>Topics</dt>
-          <dd className={cn("mt-1", portalStatValueClass)}>{course.topic_count}</dd>
-        </div>
-        <div className="rounded-xl bg-white/70 px-2 py-2">
-          <dt className={portalStatLabelClass}>Sections</dt>
-          <dd className={cn("mt-1", portalStatValueClass)}>{course.section_count}</dd>
-        </div>
-        <div className="rounded-xl bg-white/70 px-2 py-2">
-          <dt className={portalStatLabelClass}>Lessons</dt>
-          <dd className={cn("mt-1", portalStatValueClass)}>{course.lesson_count}</dd>
-        </div>
-      </dl>
-
-      <PortalCardButtonDisplay
-        variant="primary"
-        className="mt-5"
-        containerRef={containerRef}
-        fillRef={fillRef}
-        labelRef={labelRef}
-      >
-        Learn more
-      </PortalCardButtonDisplay>
+      <div className="px-3 pb-3">
+        <span className="font-sans inline-flex min-h-9 w-full items-center justify-center gap-1.5 rounded-full bg-[#DDE466] px-3 text-[13px] font-semibold tracking-[0.01em] text-[#152744] transition group-hover:brightness-105">
+          Learn more
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
+            <path d="M9 18l6-6-6-6" />
+          </svg>
+        </span>
+      </div>
     </Link>
   );
 }

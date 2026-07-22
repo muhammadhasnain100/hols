@@ -314,8 +314,8 @@ export function SyringeSizeOption({
       className={cn(
         "relative z-10 min-w-[4.75rem] rounded-2xl border-2 px-5 py-3.5 text-lg font-semibold transition duration-200",
         selected
-          ? "border-accent bg-accent/10 text-primary shadow-[0_0_0_6px_rgba(221,228,102,0.25)]"
-          : "border-primary/15 bg-white/80 text-primary/45 hover:border-primary/30 hover:text-primary/70",
+          ? "border-[#DDE466] bg-[#DDE466]/20 text-[color:var(--dash-text)] shadow-[0_0_0_6px_rgba(221,228,102,0.25)]"
+          : "border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] text-[color:var(--dash-faint)] hover:border-[color:var(--dash-dim)] hover:text-[color:var(--dash-muted)]",
       )}
       aria-pressed={selected}
     >

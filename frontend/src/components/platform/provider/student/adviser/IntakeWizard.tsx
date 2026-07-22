@@ -2,14 +2,6 @@
 
 import { useMemo } from "react";
 import { authFieldClass, authLabelClass } from "@/components/platform/auth/auth-styles";
-import {
-  portalRowValueClass,
-  portalSectionDescClass,
-  portalSectionEyebrowClass,
-  portalSectionTitleClass,
-  portalSubnavItemClass,
-} from "@/components/platform/provider/portal-styles";
-import { Button } from "@/components/ui/Button";
 import type {
   FlowQuestion,
   IntakeAnswers,
@@ -35,6 +27,7 @@ type IntakeWizardProps = {
   onStepChange: (step: number) => void;
   onAnswersChange: (answers: IntakeAnswers) => void;
   onComplete: () => void;
+  bare?: boolean;
 };
 
 export function IntakeWizard({
@@ -44,6 +37,7 @@ export function IntakeWizard({
   onStepChange,
   onAnswersChange,
   onComplete,
+  bare = false,
 }: IntakeWizardProps) {
   const branchQuestions = useMemo(() => {
     const goal = String(answers.primary_goal ?? "");
@@ -149,8 +143,8 @@ export function IntakeWizard({
                   className={cn(
                     "text-brand-body flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2",
                     checked
-                      ? "border-[#3853A4]/30 bg-[#3853A4]/[0.06] text-primary"
-                      : "border-primary/10 text-primary/70",
+                      ? "border-[#DDE466] bg-[#DDE466]/15 text-[color:var(--dash-text)]"
+                      : "border-[color:var(--dash-surface-border)] text-[color:var(--dash-muted)]",
                   )}
                 >
                   <input
@@ -233,27 +227,33 @@ export function IntakeWizard({
   const branchLabel = flow.goal_branches[String(answers.primary_goal ?? "")]?.label;
 
   return (
-    <div className="rounded-2xl border border-primary/10 bg-white p-5 shadow-[0_1px_3px_rgba(21,39,68,0.06)] md:p-6">
+    <div className={bare ? "space-y-0" : "dashboard-surface rounded-2xl p-5 md:p-6"}>
       {step === 0 ? (
         <div className="space-y-4">
           <div>
-            <p className={portalSectionEyebrowClass}>Stage 0 · Provider verification</p>
-            <h2 className={portalSectionTitleClass}>Consent & framing</h2>
-            <p className={portalSectionDescClass}>
+            <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+              Stage 0 · Provider verification
+            </p>
+            <h2 className="font-sans mt-1 text-lg font-semibold tracking-[0.005em] text-[color:var(--dash-text)] md:text-xl">
+              Consent & framing
+            </h2>
+            <p className="text-brand-body mt-1 text-[color:var(--dash-muted)]">
               This session is conducted under registered practitioner Dr. Sarah Mitchell. Confirm before entering patient information.
             </p>
           </div>
-          <div className={cn("rounded-xl border border-primary/10 bg-primary/[0.02] p-4 leading-relaxed", portalRowValueClass)}>
+          <div className="text-brand-body rounded-xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] p-4 leading-relaxed text-[color:var(--dash-muted)]">
             {flow.consent.text}
           </div>
-          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-primary/10 px-3 py-3">
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[color:var(--dash-surface-border)] px-3 py-3">
             <input
               type="checkbox"
               checked={answers.consent === true}
               onChange={(event) => updateAnswer("consent", event.target.checked)}
               className="mt-1"
             />
-            <span className={portalRowValueClass}>{flow.consent.confirm_label}</span>
+            <span className="text-brand-body font-medium text-[color:var(--dash-text)]">
+              {flow.consent.confirm_label}
+            </span>
           </label>
         </div>
       ) : null}
@@ -317,12 +317,21 @@ export function IntakeWizard({
       ) : null}
 
       <div className="mt-6 flex flex-wrap justify-between gap-3">
-        <Button type="button" variant="secondary" onClick={handleBack} disabled={step === 0}>
+        <button
+          type="button"
+          onClick={handleBack}
+          disabled={step === 0}
+          className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50"
+        >
           Back
-        </Button>
-        <Button type="button" onClick={handleNext}>
+        </button>
+        <button
+          type="button"
+          onClick={handleNext}
+          className="font-sans inline-flex min-h-10 items-center justify-center rounded-full bg-[#DDE466] px-5 text-sm font-medium text-[#152744] transition hover:brightness-105"
+        >
           {step === 6 ? "Generate recommendation" : "Continue"}
-        </Button>
+        </button>
       </div>
     </div>
   );
@@ -342,9 +351,15 @@ function StageBlock({
   return (
     <div className="space-y-4">
       <div>
-        <p className={portalSectionEyebrowClass}>{badge}</p>
-        <h2 className={portalSectionTitleClass}>{title}</h2>
-        {description ? <p className={portalSectionDescClass}>{description}</p> : null}
+        <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+          {badge}
+        </p>
+        <h2 className="font-sans mt-1 text-lg font-semibold tracking-[0.005em] text-[color:var(--dash-text)] md:text-xl">
+          {title}
+        </h2>
+        {description ? (
+          <p className="text-brand-body mt-1 text-[color:var(--dash-muted)]">{description}</p>
+        ) : null}
       </div>
       {children}
     </div>
@@ -367,19 +382,18 @@ export function IntakeStageList({
           <li
             key={label}
             className={cn(
-              "flex items-center gap-2 rounded-lg px-2 py-1.5",
-              portalSubnavItemClass,
-              active && "bg-[#3853A4]/[0.08] font-semibold text-primary",
-              !active && done && "text-primary/55",
-              !active && !done && "text-primary/35",
+              "font-sans flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm",
+              active && "bg-[#DDE466]/20 font-semibold text-[color:var(--dash-text)]",
+              !active && done && "text-[color:var(--dash-muted)]",
+              !active && !done && "text-[color:var(--dash-faint)]",
             )}
           >
             <span
               className={cn(
                 "text-brand-caption flex h-5 w-5 shrink-0 items-center justify-center rounded-md font-semibold",
-                active && "bg-[#3853A4] text-white",
-                !active && done && "border border-[#3853A4]/30 text-[#3853A4]",
-                !active && !done && "bg-primary/[0.06] text-primary/45",
+                active && "bg-[#DDE466] text-[#152744]",
+                !active && done && "border border-[#DDE466]/50 text-[color:var(--dash-accent)]",
+                !active && !done && "bg-[color:var(--dash-soft)] text-[color:var(--dash-faint)]",
               )}
             >
               {index + 1}

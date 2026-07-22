@@ -2,17 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
-import { PortalStatCard } from "@/components/platform/provider/PortalStatCard";
-import {
-  portalPlanMetaClass,
-  portalPlanPriceClass,
-  portalRowCategoryClass,
-  portalSectionDescClass,
-  portalSectionEyebrowClass,
-  portalSectionTitleClass,
-} from "@/components/platform/provider/portal-styles";
 import { PaymentPageLayout } from "@/components/platform/provider/student/payment/PaymentPageLayout";
-import { Button } from "@/components/ui/Button";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
   getCard,
@@ -33,6 +23,20 @@ import {
   planLabels,
 } from "@/lib/integrate/provider/student/payment/types";
 import { cn } from "@/lib/utils";
+
+function StatTile({ label, value, hint }: { label: string; value: string; hint: string }) {
+  return (
+    <div className="dashboard-surface rounded-2xl p-5">
+      <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+        {label}
+      </p>
+      <p className="font-sans mt-2 text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] md:text-2xl">
+        {value}
+      </p>
+      <p className="text-brand-body mt-1 text-[color:var(--dash-muted)]">{hint}</p>
+    </div>
+  );
+}
 
 export function StudentPaymentPage() {
   const cachedMembership = getCachedCurrentMembership();
@@ -113,45 +117,64 @@ export function StudentPaymentPage() {
   }
 
   return (
-    <PaymentPageLayout
-      title="Membership"
-      description="View plans, manage your subscription, and purchase access."
-      visual="membership"
-    >
+    <PaymentPageLayout title="Membership">
       {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
       {success ? <AuthAlert variant="success">{success}</AuthAlert> : null}
 
       {loading ? (
-        <div className="rounded-2xl bg-white p-10 text-center shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
-          <div className="mx-auto h-8 w-8 animate-pulse rounded-full bg-primary/10" />
+        <div className="dashboard-surface rounded-2xl p-10 text-center">
+          <div className="mx-auto h-8 w-8 animate-pulse rounded-full bg-[color:var(--dash-soft)]" />
         </div>
       ) : (
         <>
+          <section className="dashboard-hero relative overflow-hidden rounded-2xl p-5 md:p-6">
+            <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
+              Current membership
+            </p>
+            <div className="mt-2 flex flex-wrap items-end gap-2">
+              <span className="font-sans text-2xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] md:text-[2.25rem] md:leading-none">
+                {membership ? planLabels[membership.plan_type] : "No plan"}
+              </span>
+              {membership ? (
+                <span className="mb-1 text-brand-caption font-medium capitalize text-[color:var(--dash-faint)]">
+                  {membership.status}
+                </span>
+              ) : null}
+            </div>
+            <p className="text-brand-body mt-2 text-[color:var(--dash-muted)]">
+              {membership
+                ? `Active until ${formatDate(membership.end_date)}`
+                : "You have no active membership yet."}
+            </p>
+          </section>
+
           <div className="grid gap-4 sm:grid-cols-2">
-            <PortalStatCard
-              label="Current plan"
-              value={membership ? planLabels[membership.plan_type] : "None"}
-              hint={
-                membership
-                  ? `${membership.status} · until ${formatDate(membership.end_date)}`
-                  : "No active membership"
-              }
-            />
-            <PortalStatCard
+            <StatTile
               label="Payment card"
               value={card ? card.card_number_masked : "Not added"}
+              hint={card ? `Expires ${card.exp_month}/${card.exp_year}` : "Add a card before purchasing"}
+            />
+            <StatTile
+              label="Plan status"
+              value={membership ? membership.status : "Inactive"}
               hint={
-                card
-                  ? `Expires ${card.exp_month}/${card.exp_year}`
-                  : "Add a card before purchasing"
+                membership
+                  ? `Renews / ends ${formatDate(membership.end_date)}`
+                  : "Choose a plan below to activate"
               }
             />
           </div>
 
-          <section>
-            <p className={portalSectionEyebrowClass}>Plans</p>
-            <h2 className={portalSectionTitleClass}>Available membership</h2>
-            <p className={portalSectionDescClass}>Your saved card will be charged on purchase.</p>
+          <section className="dashboard-surface rounded-2xl p-5 md:p-6">
+            <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+              Plans
+            </p>
+            <h2 className="font-sans mt-1 text-lg font-semibold tracking-[0.005em] text-[color:var(--dash-text)] md:text-xl">
+              Available membership
+            </h2>
+            <p className="text-brand-body mt-1 text-[color:var(--dash-muted)]">
+              Your saved card will be charged on purchase.
+            </p>
 
             <div className="mt-5 grid gap-3 lg:grid-cols-3">
               {plans.map((plan) => {
@@ -160,29 +183,38 @@ export function StudentPaymentPage() {
                   <div
                     key={plan.plan_type}
                     className={cn(
-                      "rounded-2xl border p-5 shadow-[0_1px_3px_rgba(21,39,68,0.05)]",
+                      "flex flex-col rounded-2xl border p-5 transition",
                       current
-                        ? "border-primary/25 bg-primary/[0.04]"
-                        : "border-primary/[0.08] bg-white",
+                        ? "border-[#DDE466] bg-[#DDE466]/10"
+                        : "border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)]",
                     )}
                   >
-                    <p className={portalRowCategoryClass}>{planLabels[plan.plan_type]}</p>
-                    <p className={portalPlanPriceClass}>{formatMoney(plan.price, plan.currency)}</p>
-                    <p className={portalPlanMetaClass}>{plan.duration_days} days access</p>
-                    <Button
+                    <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+                      {planLabels[plan.plan_type]}
+                    </p>
+                    <p className="font-sans mt-1 text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] md:text-2xl">
+                      {formatMoney(plan.price, plan.currency)}
+                    </p>
+                    <p className="text-brand-body mt-1 text-[color:var(--dash-muted)]">
+                      {plan.duration_days} days access
+                    </p>
+                    <button
                       type="button"
-                      variant={current ? "secondary" : "primary"}
-                      size="md"
-                      className="mt-4 w-full justify-center"
                       disabled={purchasingPlan !== null || current}
                       onClick={() => handlePurchase(plan.plan_type)}
+                      className={cn(
+                        "font-sans mt-4 inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] transition disabled:pointer-events-none disabled:opacity-60",
+                        current
+                          ? "dashboard-pill-soft text-[color:var(--dash-text)]"
+                          : "bg-[#DDE466] text-[#152744] hover:brightness-105",
+                      )}
                     >
                       {current
                         ? "Current plan"
                         : purchasingPlan === plan.plan_type
                           ? "Processing…"
                           : "Purchase"}
-                    </Button>
+                    </button>
                   </div>
                 );
               })}

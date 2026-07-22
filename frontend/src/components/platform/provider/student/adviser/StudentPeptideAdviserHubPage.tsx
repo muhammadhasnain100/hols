@@ -3,17 +3,11 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
-import {
-  portalEmptyStateClass,
-  portalInlineMetaClass,
-  portalSectionDescClass,
-  portalSectionEyebrowClass,
-} from "@/components/platform/provider/portal-styles";
 import { AdviserPageLayout } from "@/components/platform/provider/student/adviser/AdviserPageLayout";
 import { CreatePatientDialog } from "@/components/platform/provider/student/adviser/CreatePatientDialog";
-import { IntakeStageList, IntakeWizard } from "@/components/platform/provider/student/adviser/IntakeWizard";
+import { IntakeOnboardingDialog } from "@/components/platform/provider/student/adviser/IntakeOnboardingDialog";
+import { INTAKE_STAGES } from "@/components/platform/provider/student/adviser/IntakeWizard";
 import { PatientListPanel } from "@/components/platform/provider/student/adviser/PatientListPanel";
-import { Button } from "@/components/ui/Button";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
   ACTIVE_PATIENT_STORAGE_KEY,
@@ -26,16 +20,66 @@ import {
   recommendPatient,
   savePatientIntake,
   type ChatInfo,
+  type IntakeAnswers,
   type PatientDetail,
   type PatientSummary,
   type QuestionnaireFlow,
 } from "@/lib/integrate/provider/student/chat";
-import { cn } from "@/lib/utils";
 
-function resolveStep(patient: PatientDetail): number {
-  if (patient.recommendation) return 7;
-  if (Object.keys(patient.intake_answers || {}).length > 0) return 7;
-  return 0;
+function hasValue(value: unknown) {
+  if (Array.isArray(value)) return value.length > 0;
+  return value !== "" && value != null;
+}
+
+/** Infer the current intake stage from saved answers. */
+export function resolveStep(patient: PatientDetail): number {
+  if (patient.recommendation || patient.evaluation) return 7;
+
+  const answers = patient.intake_answers || {};
+  if (!answers.consent) return 0;
+  if (
+    !["age", "sex", "pregnancy", "height_cm", "weight_kg", "activity"].every((key) =>
+      hasValue(answers[key]),
+    )
+  ) {
+    return 1;
+  }
+  if (
+    !["cancer", "mtc_men2", "peptide_allergy", "medications"].every((key) => hasValue(answers[key])) ||
+    !hasValue(answers.conditions)
+  ) {
+    return 2;
+  }
+  if (!hasValue(answers.primary_goal)) return 3;
+  // Branch step is complete once any branch-related progress or history fields exist,
+  // or if preferences already started — otherwise stay on deep dive.
+  if (
+    !["injection_tolerance", "complexity", "timeline"].some((key) => hasValue(answers[key])) &&
+    !hasValue(answers.prior_peptides) &&
+    !hasValue(answers.labs)
+  ) {
+    return 4;
+  }
+  if (!["injection_tolerance", "complexity", "timeline"].every((key) => hasValue(answers[key]))) {
+    // If preferences incomplete, they may still be on history (5) or preferences (6)
+    if (!hasValue(answers.prior_peptides) && !hasValue(answers.labs) && !hasValue(answers.injection_tolerance)) {
+      return 5;
+    }
+    return 6;
+  }
+  return 7;
+}
+
+function progressLabel(patient: PatientSummary, answersStep?: number) {
+  if (patient.has_recommendation) {
+    return `${patient.message_count} messages · Open chat`;
+  }
+  if (patient.status === "draft") {
+    const step = answersStep ?? 0;
+    const stage = INTAKE_STAGES[Math.min(step, INTAKE_STAGES.length - 1)];
+    return `Onboarding · ${stage}`;
+  }
+  return patient.primary_goal || "Draft intake";
 }
 
 function chatRouteForPatient(patientId: string) {
@@ -57,6 +101,7 @@ export function StudentPeptideAdviserHubPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createDialogError, setCreateDialogError] = useState<string | null>(null);
+  const [onboardingOpen, setOnboardingOpen] = useState(false);
 
   const refreshPatients = useCallback(async () => {
     const result = await listPatients();
@@ -72,6 +117,12 @@ export function StudentPeptideAdviserHubPage() {
     [router],
   );
 
+  const openOnboarding = useCallback((patient: PatientDetail) => {
+    setActivePatient(patient);
+    setStep(resolveStep(patient));
+    setOnboardingOpen(true);
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
 
@@ -84,8 +135,7 @@ export function StudentPeptideAdviserHubPage() {
           setFlow(cached.flow);
           setPatients(cached.patients);
           if (cached.active_patient && !cached.active_patient.recommendation) {
-            setActivePatient(cached.active_patient);
-            setStep(resolveStep(cached.active_patient));
+            openOnboarding(cached.active_patient);
           }
         }
 
@@ -97,11 +147,10 @@ export function StudentPeptideAdviserHubPage() {
         setPatients(payload.patients);
 
         if (payload.active_patient && !payload.active_patient.recommendation) {
-          setActivePatient(payload.active_patient);
-          setStep(resolveStep(payload.active_patient));
           if (payload.active_patient_id) {
             window.sessionStorage.setItem(ACTIVE_PATIENT_STORAGE_KEY, payload.active_patient_id);
           }
+          openOnboarding(payload.active_patient);
         }
       } catch (err) {
         if (cancelled) return;
@@ -124,7 +173,7 @@ export function StudentPeptideAdviserHubPage() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [openOnboarding]);
 
   const selectPatient = useCallback(
     async (patientId: string) => {
@@ -138,13 +187,12 @@ export function StudentPeptideAdviserHubPage() {
       window.sessionStorage.setItem(ACTIVE_PATIENT_STORAGE_KEY, patientId);
       try {
         const patient = await getPatient(patientId);
-        setActivePatient(patient);
-        setStep(resolveStep(patient));
+        openOnboarding(patient);
       } catch (err) {
         setActionError(err instanceof ApiRequestError ? err.message : "Could not load patient.");
       }
     },
-    [patients, routeToChat],
+    [openOnboarding, patients, routeToChat],
   );
 
   const handleCreatePatient = useCallback(
@@ -156,9 +204,8 @@ export function StudentPeptideAdviserHubPage() {
         const patient = await createPatient(displayName);
         window.sessionStorage.setItem(ACTIVE_PATIENT_STORAGE_KEY, patient.patient_id);
         await refreshPatients();
-        setActivePatient(patient);
-        setStep(0);
         setCreateDialogOpen(false);
+        openOnboarding(patient);
       } catch (err) {
         const message =
           err instanceof ApiRequestError ? err.message : "Could not create patient.";
@@ -168,11 +215,12 @@ export function StudentPeptideAdviserHubPage() {
         setIsCreating(false);
       }
     },
-    [refreshPatients],
+    [openOnboarding, refreshPatients],
   );
 
   const openCreateDialog = useCallback(() => {
     setCreateDialogError(null);
+    setOnboardingOpen(false);
     setCreateDialogOpen(true);
   }, []);
 
@@ -204,6 +252,7 @@ export function StudentPeptideAdviserHubPage() {
     try {
       await recommendPatient(activePatient.patient_id);
       await refreshPatients();
+      setOnboardingOpen(false);
       routeToChat(activePatient.patient_id);
     } catch (err) {
       setActionError(
@@ -214,14 +263,17 @@ export function StudentPeptideAdviserHubPage() {
     }
   }, [activePatient, refreshPatients, routeToChat]);
 
-  const showIntake =
-    activePatient && !activePatient.recommendation && step < 7 && !isSavingIntake;
   const showRecommendPrompt =
-    activePatient &&
-    !activePatient.recommendation &&
+    Boolean(activePatient) &&
+    !activePatient?.recommendation &&
     step >= 7 &&
     !isSavingIntake &&
     !isGenerating;
+
+  const closeOnboarding = useCallback(() => {
+    if (isSavingIntake || isGenerating) return;
+    setOnboardingOpen(false);
+  }, [isGenerating, isSavingIntake]);
 
   return (
     <AdviserPageLayout>
@@ -236,99 +288,121 @@ export function StudentPeptideAdviserHubPage() {
         onSubmit={(displayName) => void handleCreatePatient(displayName)}
       />
 
+      {flow && activePatient && onboardingOpen ? (
+        <IntakeOnboardingDialog
+          open={onboardingOpen}
+          patientName={activePatient.display_name}
+          flow={flow}
+          step={step}
+          answers={activePatient.intake_answers}
+          isSaving={isSavingIntake}
+          isGenerating={isGenerating}
+          error={actionError}
+          showRecommendPrompt={showRecommendPrompt}
+          onClose={closeOnboarding}
+          onStepChange={setStep}
+          onAnswersChange={(answers: IntakeAnswers) =>
+            setActivePatient((current) =>
+              current ? { ...current, intake_answers: answers } : current,
+            )
+          }
+          onComplete={() => void handleIntakeComplete()}
+          onGenerate={() => void handleGenerateRecommendation()}
+        />
+      ) : null}
+
       {loadError ? (
         <AuthAlert variant="error">{loadError}</AuthAlert>
       ) : (
-        <div className="grid gap-5 xl:grid-cols-[15rem_minmax(0,1fr)_15rem]">
-          <PatientListPanel
-            patients={patients}
-            activePatientId={activePatient?.patient_id ?? null}
-            onSelect={(patientId) => void selectPatient(patientId)}
-            onCreate={openCreateDialog}
-            isCreating={isCreating}
-          />
-
-          <div className="space-y-4">
-            {actionError ? <AuthAlert variant="error">{actionError}</AuthAlert> : null}
-
-            {!activePatient ? (
-              <div className={cn("rounded-2xl border border-primary/10 bg-white p-8 text-center", portalEmptyStateClass)}>
-                Select a patient or create a new one to begin intake.
-              </div>
-            ) : null}
-
-            {showIntake && flow ? (
-              <IntakeWizard
-                flow={flow}
-                step={step}
-                answers={activePatient.intake_answers}
-                onStepChange={setStep}
-                onAnswersChange={(answers) =>
-                  setActivePatient((current) =>
-                    current ? { ...current, intake_answers: answers } : current,
-                  )
-                }
-                onComplete={() => void handleIntakeComplete()}
-              />
-            ) : null}
-
-            {isSavingIntake ? (
-              <div className={cn("rounded-2xl border border-primary/10 bg-white p-8 text-center", portalEmptyStateClass)}>
-                Saving intake…
-              </div>
-            ) : null}
-
-            {showRecommendPrompt ? (
-              <div className="rounded-2xl border border-primary/10 bg-white p-8 text-center">
-                <p className={portalSectionDescClass}>
-                  Intake saved for <span className="font-semibold">{activePatient.display_name}</span>.
-                  Generate the recommendation card to open the consultation chat.
-                </p>
-                <Button
-                  type="button"
-                  className="mt-4"
-                  onClick={() => void handleGenerateRecommendation()}
-                  disabled={isGenerating}
-                >
-                  {isGenerating ? "Generating…" : "Generate recommendation & open chat"}
-                </Button>
-              </div>
-            ) : null}
-
-            {isGenerating ? (
-              <div className={cn("rounded-2xl border border-primary/10 bg-white p-8 text-center", portalEmptyStateClass)}>
-                Generating recommendation…
-              </div>
-            ) : null}
-          </div>
-
-          <aside className="rounded-2xl border border-primary/10 bg-white p-4 shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
-            <p className={portalSectionEyebrowClass}>Intake progress</p>
-            <div className="mt-3">
-              <IntakeStageList
-                step={step}
-                inChat={Boolean(activePatient?.recommendation)}
-              />
+        <>
+          <section className="dashboard-hero relative overflow-hidden rounded-2xl p-5 md:p-6">
+            <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
+              Clinical adviser
+            </p>
+            <div className="mt-2 flex flex-wrap items-end gap-2">
+              <span className="font-sans text-2xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] md:text-[2.25rem] md:leading-none">
+                Peptide adviser
+              </span>
+              <span className="mb-1 text-brand-caption font-medium text-[color:var(--dash-faint)]">
+                {info ? "System online" : "Connecting…"}
+              </span>
             </div>
-
-            <div className={cn("mt-5 space-y-2 border-t border-primary/8 pt-4", portalInlineMetaClass)}>
-              <div className="flex items-center justify-between gap-2">
-                <span>System</span>
-                <span className="font-semibold text-emerald-600">{info ? "online" : "connecting…"}</span>
-              </div>
-              <div className="flex items-center justify-between gap-2">
-                <span>Knowledge base</span>
-                <span>{vectors != null ? `${vectors.toLocaleString()} vectors` : "—"}</span>
-              </div>
-              {info ? (
-                <div className="flex items-center justify-between gap-2">
-                  <span>Model</span>
-                  <span className="truncate text-right">{info.chat_model}</span>
-                </div>
+            <p className="text-brand-body mt-2 max-w-2xl text-[color:var(--dash-muted)]">
+              Create a patient to start structured intake. Onboarding progress opens in a popup —
+              patients with a recommendation open directly in chat.
+            </p>
+            <div className="mt-5 flex flex-wrap gap-2.5">
+              <button
+                type="button"
+                onClick={openCreateDialog}
+                disabled={isCreating}
+                className="font-sans inline-flex min-h-10 items-center gap-1.5 rounded-full bg-[#DDE466] px-5 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60"
+              >
+                {isCreating ? "Creating…" : "New patient"}
+              </button>
+              {activePatient && !activePatient.recommendation ? (
+                <button
+                  type="button"
+                  onClick={() => setOnboardingOpen(true)}
+                  className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center gap-1.5 rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] transition"
+                >
+                  Continue onboarding · {activePatient.display_name}
+                </button>
               ) : null}
             </div>
-          </aside>
-        </div>
+          </section>
+
+          {actionError && !onboardingOpen ? <AuthAlert variant="error">{actionError}</AuthAlert> : null}
+
+          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(16rem,0.8fr)]">
+            <PatientListPanel
+              patients={patients}
+              activePatientId={activePatient?.patient_id ?? null}
+              onSelect={(patientId) => void selectPatient(patientId)}
+              onCreate={openCreateDialog}
+              isCreating={isCreating}
+              progressLabelFor={(patient) =>
+                progressLabel(
+                  patient,
+                  activePatient?.patient_id === patient.patient_id ? step : undefined,
+                )
+              }
+            />
+
+            <aside className="dashboard-surface rounded-2xl p-5">
+              <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+                System status
+              </p>
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center justify-between gap-2 text-brand-caption text-[color:var(--dash-muted)]">
+                  <span>Service</span>
+                  <span className="font-semibold text-emerald-600">
+                    {info ? "Online" : "Connecting…"}
+                  </span>
+                </div>
+                <div className="flex items-center justify-between gap-2 text-brand-caption text-[color:var(--dash-muted)]">
+                  <span>Knowledge base</span>
+                  <span>{vectors != null ? `${vectors.toLocaleString()} vectors` : "—"}</span>
+                </div>
+                {info ? (
+                  <div className="flex items-center justify-between gap-2 text-brand-caption text-[color:var(--dash-muted)]">
+                    <span>Model</span>
+                    <span className="truncate text-right text-[color:var(--dash-text)]">
+                      {info.chat_model}
+                    </span>
+                  </div>
+                ) : null}
+              </div>
+
+              <div className="mt-5 rounded-xl bg-[color:var(--dash-soft)] px-3.5 py-3">
+                <p className="text-brand-caption text-[color:var(--dash-muted)]">
+                  Select a draft patient to resume onboarding in the popup, or open a completed
+                  case to continue in chat.
+                </p>
+              </div>
+            </aside>
+          </div>
+        </>
       )}
     </AdviserPageLayout>
   );

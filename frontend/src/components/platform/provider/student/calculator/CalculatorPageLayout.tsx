@@ -1,39 +1,60 @@
 "use client";
 
 import { PortalShell } from "@/components/platform/provider/PortalShell";
-import {
-  portalPageDescClass,
-  portalPageTitleClass,
-} from "@/components/platform/provider/portal-styles";
-import { cn } from "@/lib/utils";
-import { CalculatorHeroVisual } from "@/components/platform/provider/student/calculator/CalculatorHeroVisual";
 import { studentNav } from "@/components/platform/provider/student/studentNav";
+import { getStoredUser } from "@/lib/integrate/auth/storage";
 
 type CalculatorPageLayoutProps = {
   children: React.ReactNode;
 };
 
+function initialsFor(name: string) {
+  return (
+    name
+      .split(" ")
+      .map((part) => part[0])
+      .filter(Boolean)
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "S"
+  );
+}
+
 export function CalculatorPageLayout({ children }: CalculatorPageLayoutProps) {
+  const user = getStoredUser();
+  const firstName = typeof user?.profile?.first_name === "string" ? user.profile.first_name : "";
+  const lastName = typeof user?.profile?.last_name === "string" ? user.profile.last_name : "";
+  const displayName = firstName && lastName ? `${firstName} ${lastName}` : firstName || "Student";
+  const avatarSrc =
+    typeof user?.profile?.profile_pic === "string" ? user.profile.profile_pic : undefined;
+
   return (
     <PortalShell role="student" title="Peptide Calculator" showPageHeader={false} nav={studentNav}>
-      <div className="portal-guide-card mb-2 rounded-[1.75rem]">
-        <div className="flex flex-col gap-4 px-6 py-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6 md:px-9 md:py-5 lg:px-10">
-          <header className="min-w-0 flex-1">
-            <p className="portal-page-eyebrow">HOLS · Learning tools</p>
-            <h1 className={cn("mt-2", portalPageTitleClass)}>Peptide calculator</h1>
-            <p className={cn("mt-2 max-w-lg", portalPageDescClass)}>
-              Step-by-step reconstitution and dosing helper for peptide preparations.
-            </p>
-          </header>
+      <div className="dashboard-screen">
+        <header className="mb-5 flex flex-wrap items-center justify-between gap-4">
+          <h1 className="font-sans text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl">
+            Peptide calculator
+          </h1>
 
-          <CalculatorHeroVisual className="mx-auto shrink-0 sm:mx-0 sm:justify-self-end" />
-        </div>
+          <span className="dashboard-welcome-chip flex items-center gap-2.5 rounded-full py-1 pl-1 pr-3.5">
+            <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-[#DDE466] text-brand-caption font-semibold text-[#152744]">
+              {avatarSrc ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
+              ) : (
+                initialsFor(displayName)
+              )}
+            </span>
+            <span className="hidden flex-col leading-tight sm:flex">
+              <span className="text-[11px] text-[color:var(--dash-faint)]">Welcome back,</span>
+              <span className="font-sans text-sm font-semibold text-[color:var(--dash-text)]">
+                {displayName}
+              </span>
+            </span>
+          </span>
+        </header>
 
-        <div className="px-4 pb-4 md:px-5 md:pb-5 lg:px-6 lg:pb-6">
-          <div className="profile-guide-body rounded-2xl px-5 pb-6 pt-5 md:px-7 md:pb-8 md:pt-6 lg:px-8 lg:pb-9">
-            <div className="grid w-full gap-5 md:gap-6">{children}</div>
-          </div>
-        </div>
+        <div className="grid w-full gap-4">{children}</div>
       </div>
     </PortalShell>
   );

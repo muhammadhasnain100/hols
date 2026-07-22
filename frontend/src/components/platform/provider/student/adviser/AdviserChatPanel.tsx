@@ -3,15 +3,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { MarkdownContent } from "@/components/platform/provider/student/adviser/MarkdownContent";
-import {
-  portalDisclaimerClass,
-  portalInlineMetaClass,
-  portalNavItemClass,
-  portalRowCategoryClass,
-  portalSectionDescClass,
-  portalSectionTitleClass,
-  portalSubnavItemClass,
-} from "@/components/platform/provider/portal-styles";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
   getPatientMessages,
@@ -25,7 +16,6 @@ import { cn } from "@/lib/utils";
 type AdviserChatPanelProps = {
   patient: PatientDetail;
   onPatientChange?: (patient: PatientDetail) => void;
-  onNewCase: () => void;
 };
 
 type DisplayMessage = StoredChatMessage & {
@@ -45,7 +35,7 @@ function createTempUserMessage(content: string): DisplayMessage {
   };
 }
 
-export function AdviserChatPanel({ patient, onPatientChange, onNewCase }: AdviserChatPanelProps) {
+export function AdviserChatPanel({ patient, onPatientChange }: AdviserChatPanelProps) {
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
@@ -53,7 +43,7 @@ export function AdviserChatPanel({ patient, onPatientChange, onNewCase }: Advise
   const [pagination, setPagination] = useState<ChatMessagesPagination | null>(null);
   const [isLoadingMessages, setIsLoadingMessages] = useState(false);
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
-  const threadRef = useRef<HTMLDivElement>(null);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
   const shouldStickToBottomRef = useRef(true);
   const initializedPatientRef = useRef<string | null>(null);
@@ -98,8 +88,8 @@ export function AdviserChatPanel({ patient, onPatientChange, onNewCase }: Advise
   }, [patient.patient_id]);
 
   useEffect(() => {
-    if (!shouldStickToBottomRef.current || !threadRef.current) return;
-    threadRef.current.scrollTop = threadRef.current.scrollHeight;
+    if (!shouldStickToBottomRef.current) return;
+    window.scrollTo({ top: document.documentElement.scrollHeight });
   }, [messages, isSending]);
 
   const loadOlderMessages = useCallback(async () => {
@@ -107,7 +97,7 @@ export function AdviserChatPanel({ patient, onPatientChange, onNewCase }: Advise
 
     setIsLoadingOlder(true);
     shouldStickToBottomRef.current = false;
-    const previousHeight = threadRef.current?.scrollHeight ?? 0;
+    const previousHeight = document.documentElement.scrollHeight;
 
     try {
       const page = await getPatientMessages(patient.patient_id, {
@@ -121,8 +111,7 @@ export function AdviserChatPanel({ patient, onPatientChange, onNewCase }: Advise
       );
 
       requestAnimationFrame(() => {
-        if (!threadRef.current) return;
-        threadRef.current.scrollTop = threadRef.current.scrollHeight - previousHeight;
+        window.scrollTo({ top: document.documentElement.scrollHeight - previousHeight });
       });
     } catch (err) {
       setError(
@@ -133,16 +122,19 @@ export function AdviserChatPanel({ patient, onPatientChange, onNewCase }: Advise
     }
   }, [isLoadingOlder, pagination, patient.patient_id]);
 
-  const handleThreadScroll = useCallback(() => {
-    const node = threadRef.current;
-    if (!node) return;
+  useEffect(() => {
+    function handleWindowScroll() {
+      const doc = document.documentElement;
+      const distanceFromBottom = doc.scrollHeight - window.scrollY - window.innerHeight;
+      shouldStickToBottomRef.current = distanceFromBottom < 96;
 
-    const distanceFromBottom = node.scrollHeight - node.scrollTop - node.clientHeight;
-    shouldStickToBottomRef.current = distanceFromBottom < 96;
-
-    if (node.scrollTop <= 48) {
-      void loadOlderMessages();
+      if (window.scrollY <= 48) {
+        void loadOlderMessages();
+      }
     }
+
+    window.addEventListener("scroll", handleWindowScroll, { passive: true });
+    return () => window.removeEventListener("scroll", handleWindowScroll);
   }, [loadOlderMessages]);
 
   const sendMessage = useCallback(async () => {
@@ -191,47 +183,27 @@ export function AdviserChatPanel({ patient, onPatientChange, onNewCase }: Advise
     }
   };
 
-  const messageCount = patient.message_count ?? messages.length;
+  const copyMessage = useCallback(async (messageId: string, content: string) => {
+    try {
+      await navigator.clipboard.writeText(content);
+      setCopiedId(messageId);
+      window.setTimeout(() => setCopiedId((current) => (current === messageId ? null : current)), 1600);
+    } catch {
+      setError("Could not copy message.");
+    }
+  }, []);
 
   return (
-    <div className="flex h-[min(78vh,52rem)] flex-col overflow-hidden rounded-2xl border border-primary/10 bg-[#f7f8fb] shadow-[0_8px_30px_rgba(21,39,68,0.06)]">
-      <header className="flex shrink-0 items-center justify-between gap-3 border-b border-primary/8 bg-white px-4 py-3 md:px-6">
-        <div className="min-w-0">
-          <p className={cn("truncate font-semibold", portalNavItemClass)}>{patient.display_name}</p>
-          <p className={portalInlineMetaClass}>
-            Clinical consultation · {messageCount} message{messageCount === 1 ? "" : "s"}
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={onNewCase}
-          className={cn(
-            "shrink-0 rounded-full border border-primary/10 bg-white px-3 py-1.5 transition hover:border-primary/20 hover:text-primary",
-            portalSubnavItemClass,
-            "text-primary/70",
-          )}
-        >
-          New patient
-        </button>
-      </header>
-
-      <div
-        ref={threadRef}
-        className="flex-1 overflow-y-auto px-3 py-5 md:px-6"
-        onScroll={handleThreadScroll}
-      >
-        <div className="mx-auto flex w-full max-w-3xl flex-col gap-5">
+    <div className="flex min-h-[calc(100svh-8rem)] flex-col">
+      <div className="flex-1 pb-24">
+        <div className="mx-auto flex w-full max-w-4xl flex-col gap-7 px-1">
           {pagination?.has_older ? (
             <div className="flex justify-center">
               <button
                 type="button"
                 onClick={() => void loadOlderMessages()}
                 disabled={isLoadingOlder}
-                className={cn(
-                  "rounded-full bg-white px-4 py-1.5 shadow-sm transition hover:text-primary disabled:opacity-60",
-                  portalSubnavItemClass,
-                  "text-primary/55",
-                )}
+                className="text-brand-caption font-medium text-[color:var(--dash-faint)] transition hover:text-[color:var(--dash-text)] disabled:opacity-60"
               >
                 {isLoadingOlder ? "Loading earlier messages…" : "Load earlier messages"}
               </button>
@@ -239,38 +211,40 @@ export function AdviserChatPanel({ patient, onPatientChange, onNewCase }: Advise
           ) : null}
 
           {isLoadingMessages ? (
-            <div className="flex flex-col items-center justify-center gap-3 py-16 text-primary/45">
-              <span className="h-8 w-8 animate-spin rounded-full border-2 border-primary/15 border-t-[#3853A4]" />
-              <p className={portalSectionDescClass}>Loading conversation…</p>
+            <div className="flex flex-col items-center justify-center gap-3 py-16 text-[color:var(--dash-faint)]">
+              <ChatSpinner className="h-7 w-7 text-[#DDE466]" />
+              <p className="text-brand-body">Loading conversation…</p>
             </div>
           ) : null}
 
           {!isLoadingMessages && messages.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-primary/10 bg-white/70 px-6 py-10 text-center">
-              <p className={portalSectionTitleClass}>Start the follow-up consultation</p>
-              <p className={cn("mt-2", portalSectionDescClass)}>
-                Ask about dosing, alternatives, side effects, labs, or mechanisms for this patient case.
-              </p>
-            </div>
+            <p className="text-brand-body py-16 text-center text-[color:var(--dash-faint)]">
+              Ask anything about this patient case.
+            </p>
           ) : null}
 
           {messages.map((message) => (
-            <ChatMessageRow key={message.message_id} message={message} />
+            <ChatMessageRow
+              key={message.message_id}
+              message={message}
+              copied={copiedId === message.message_id}
+              onCopy={() => void copyMessage(message.message_id, message.content)}
+            />
           ))}
 
           {isSending ? <AssistantTypingRow /> : null}
+
+          {error ? (
+            <div className="py-2">
+              <AuthAlert variant="error">{error}</AuthAlert>
+            </div>
+          ) : null}
         </div>
       </div>
 
-      {error ? (
-        <div className="shrink-0 border-t border-primary/8 bg-white px-4 py-2 md:px-6">
-          <AuthAlert variant="error">{error}</AuthAlert>
-        </div>
-      ) : null}
-
-      <footer className="shrink-0 border-t border-primary/8 bg-white px-3 py-3 md:px-6 md:py-4">
+      <footer className="fixed inset-x-0 bottom-0 z-30 bg-transparent px-4 pb-4 pt-2 md:px-6 lg:left-[var(--portal-sidebar-offset)] lg:px-8">
         <form
-          className="mx-auto flex w-full max-w-3xl items-end gap-2 rounded-2xl border border-primary/10 bg-[#f7f8fb] p-2 shadow-inner"
+          className="mx-auto flex w-full max-w-4xl items-end gap-2 rounded-full border border-[color:var(--portal-border)] bg-[color:var(--portal-soft)] px-3 py-2 shadow-none backdrop-blur-none"
           onSubmit={(event) => {
             event.preventDefault();
             void sendMessage();
@@ -283,48 +257,52 @@ export function AdviserChatPanel({ patient, onPatientChange, onNewCase }: Advise
             onKeyDown={handleComposerKeyDown}
             disabled={isSending}
             rows={1}
-            placeholder="Message the clinical adviser…"
-            className="text-brand-body max-h-40 min-h-[44px] flex-1 resize-none bg-transparent px-3 py-2.5 leading-relaxed text-primary outline-none placeholder:text-primary/35 disabled:opacity-60"
+            placeholder="Ask anything"
+            className="text-brand-body max-h-40 min-h-[40px] flex-1 resize-none bg-transparent px-2 py-2 leading-relaxed text-[color:var(--dash-text)] outline-none placeholder:text-[color:var(--dash-faint)] disabled:opacity-60"
           />
           <button
             type="submit"
             disabled={isSending || !input.trim()}
             aria-label="Send message"
             className={cn(
-              "mb-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition",
+              "mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition",
               input.trim() && !isSending
-                ? "bg-[#3853A4] text-white hover:bg-[#2f4690]"
-                : "bg-primary/8 text-primary/30",
+                ? "bg-[#DDE466] text-[#152744] hover:brightness-105"
+                : "bg-[color:var(--portal-border)] text-[color:var(--dash-dim)]",
             )}
           >
             {isSending ? (
-              <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white" />
+              <ChatSpinner className="h-4 w-4 text-[#152744]" />
             ) : (
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                 <path d="M12 19V5M5 12l7-7 7 7" />
               </svg>
             )}
           </button>
         </form>
-        <p className={cn("mx-auto mt-2 max-w-3xl text-center", portalDisclaimerClass)}>
-          Enter to send · Shift+Enter for new line · For clinical decision support only
-        </p>
       </footer>
     </div>
   );
 }
 
-function ChatMessageRow({ message }: { message: DisplayMessage }) {
+function ChatMessageRow({
+  message,
+  copied,
+  onCopy,
+}: {
+  message: DisplayMessage;
+  copied: boolean;
+  onCopy: () => void;
+}) {
   const isUser = message.role === "user";
-  const isRecommendation = message.kind === "recommendation";
 
   if (isUser) {
     return (
-      <div className="flex justify-end">
+      <div className="flex justify-end pl-10 sm:pl-16">
         <div
           className={cn(
-            "max-w-[85%] rounded-[1.25rem] rounded-br-md bg-[#3853A4] px-4 py-3 text-white shadow-sm md:max-w-[75%]",
-            message.pending && "opacity-90",
+            "max-w-full rounded-[1.5rem] bg-[color:var(--dash-soft)] px-4 py-2.5 text-[color:var(--dash-text)]",
+            message.pending && "opacity-80",
           )}
         >
           <p className="text-brand-body whitespace-pre-wrap leading-relaxed">{message.content}</p>
@@ -334,35 +312,148 @@ function ChatMessageRow({ message }: { message: DisplayMessage }) {
   }
 
   return (
-    <div className="flex items-start gap-3">
-      <div className="text-brand-caption mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#3853A4]/10 font-bold text-[#3853A4]">
-        AI
+    <div className="w-full pr-6 sm:pr-10">
+      <div className="text-brand-body leading-relaxed text-[color:var(--dash-text)]">
+        <MarkdownContent content={message.content} />
       </div>
-      <div className="min-w-0 flex-1">
-        <p className={cn("mb-1.5", portalRowCategoryClass)}>
-          {isRecommendation ? "Recommendation card" : "Clinical adviser"}
-        </p>
-        <div className="rounded-[1.25rem] rounded-tl-md border border-primary/8 bg-white px-4 py-3 shadow-sm">
-          <MarkdownContent content={message.content} />
-        </div>
+      <div className="mt-3 flex items-center gap-0.5">
+        <MessageActionButton
+          label={copied ? "Copied" : "Copy"}
+          onClick={onCopy}
+        >
+          {copied ? (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path
+                d="M5 12.5 9.5 17 19 7"
+                stroke="currentColor"
+                strokeWidth="1.8"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          ) : (
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+              <path
+                d="M8.5 8.5V6.8c0-1 .8-1.8 1.8-1.8h7.9c1 0 1.8.8 1.8 1.8v7.9c0 1-.8 1.8-1.8 1.8h-1.7"
+                stroke="currentColor"
+                strokeWidth="1.6"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <rect
+                x="4"
+                y="8.5"
+                width="11.5"
+                height="11.5"
+                rx="2"
+                stroke="currentColor"
+                strokeWidth="1.6"
+              />
+            </svg>
+          )}
+        </MessageActionButton>
+        <MessageActionButton label="Good response">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path
+              d="M7 10v10"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+            />
+            <path
+              d="M7 20H5.5A1.5 1.5 0 0 1 4 18.5v-6A1.5 1.5 0 0 1 5.5 11H7"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M7 11l.8-3.2A2.8 2.8 0 0 1 10.5 5.5H12a1.2 1.2 0 0 1 1.2 1.2V10h5.1a1.8 1.8 0 0 1 1.78 2.1l-1.05 6A1.8 1.8 0 0 1 17.05 20H7"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </MessageActionButton>
+        <MessageActionButton label="Bad response">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
+            <path
+              d="M17 14V4"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinecap="round"
+            />
+            <path
+              d="M17 4h1.5A1.5 1.5 0 0 1 20 5.5v6A1.5 1.5 0 0 1 18.5 13H17"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinejoin="round"
+            />
+            <path
+              d="M17 13l-.8 3.2a2.8 2.8 0 0 1-2.7 2.3H12a1.2 1.2 0 0 1-1.2-1.2V14H5.7a1.8 1.8 0 0 1-1.78-2.1l1.05-6A1.8 1.8 0 0 1 6.95 4H17"
+              stroke="currentColor"
+              strokeWidth="1.6"
+              strokeLinejoin="round"
+            />
+          </svg>
+        </MessageActionButton>
       </div>
     </div>
   );
 }
 
+function MessageActionButton({
+  label,
+  onClick,
+  children,
+}: {
+  label: string;
+  onClick?: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      title={label}
+      onClick={onClick}
+      className="flex h-8 w-8 items-center justify-center rounded-lg text-[color:var(--dash-faint)] transition-colors hover:bg-[color:var(--dash-soft)] hover:text-[color:var(--dash-text)] active:scale-[0.96]"
+    >
+      {children}
+    </button>
+  );
+}
+
+function ChatSpinner({ className }: { className?: string }) {
+  return (
+    <svg
+      className={cn("animate-spin", className)}
+      viewBox="0 0 24 24"
+      fill="none"
+      aria-hidden
+    >
+      <circle
+        cx="12"
+        cy="12"
+        r="9"
+        stroke="currentColor"
+        strokeOpacity="0.2"
+        strokeWidth="2.5"
+      />
+      <path
+        d="M21 12a9 9 0 0 0-9-9"
+        stroke="currentColor"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      />
+    </svg>
+  );
+}
+
 function AssistantTypingRow() {
   return (
-    <div className="flex items-start gap-3">
-      <div className="text-brand-caption mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#3853A4]/10 font-bold text-[#3853A4]">
-        AI
-      </div>
-      <div className="rounded-[1.25rem] rounded-tl-md border border-primary/8 bg-white px-4 py-3 shadow-sm">
-        <div className="flex items-center gap-1.5 py-1">
-          <span className="h-2 w-2 animate-bounce rounded-full bg-primary/30 [animation-delay:0ms]" />
-          <span className="h-2 w-2 animate-bounce rounded-full bg-primary/30 [animation-delay:150ms]" />
-          <span className="h-2 w-2 animate-bounce rounded-full bg-primary/30 [animation-delay:300ms]" />
-        </div>
-      </div>
+    <div className="flex items-center gap-2 py-1" aria-label="Assistant is typing">
+      <ChatSpinner className="h-4 w-4 text-[color:var(--dash-accent)]" />
+      <span className="text-brand-caption text-[color:var(--dash-faint)]">Thinking…</span>
     </div>
   );
 }

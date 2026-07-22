@@ -1,13 +1,8 @@
 "use client";
 
-import { useEffect, useId, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { authFieldClass, authLabelClass } from "@/components/platform/auth/auth-styles";
-import {
-  portalSectionDescClass,
-  portalSectionTitleClass,
-} from "@/components/platform/provider/portal-styles";
-import { Button } from "@/components/ui/Button";
 import { cn } from "@/lib/utils";
 
 type CreatePatientDialogProps = {
@@ -28,18 +23,27 @@ export function CreatePatientDialog({
   onSubmit,
 }: CreatePatientDialogProps) {
   const titleId = useId();
+  const inputRef = useRef<HTMLInputElement>(null);
   const [name, setName] = useState(defaultName);
 
   useEffect(() => {
-    if (open) {
-      setName(defaultName);
-    }
+    if (!open) return;
+    setName(defaultName);
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    const timer = window.setTimeout(() => inputRef.current?.focus(), 30);
+    return () => {
+      document.body.style.overflow = previousOverflow;
+      window.clearTimeout(timer);
+    };
   }, [defaultName, open]);
 
   if (!open) return null;
 
+  const canSubmit = Boolean(name.trim()) && !isSubmitting;
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/45 px-4 py-6">
       <button
         type="button"
         aria-label="Close create patient dialog"
@@ -48,11 +52,12 @@ export function CreatePatientDialog({
           if (!isSubmitting) onClose();
         }}
       />
+
       <form
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="relative z-10 w-full max-w-md rounded-2xl border border-black/[0.06] bg-white p-6 shadow-2xl"
+        className="relative z-10 w-full max-w-md overflow-hidden rounded-2xl border border-[color:var(--dash-surface-border)] bg-[color:var(--portal-surface)] shadow-[0_24px_64px_rgba(21,39,68,0.22)]"
         onSubmit={(event) => {
           event.preventDefault();
           const trimmed = name.trim();
@@ -60,20 +65,26 @@ export function CreatePatientDialog({
           onSubmit(trimmed);
         }}
       >
-        <div className="mb-5 flex items-start justify-between gap-4">
-          <div>
-            <h2 id={titleId} className={portalSectionTitleClass}>
+        <div className="flex items-start justify-between gap-4 border-b border-[color:var(--dash-surface-border)] px-5 py-4 md:px-6">
+          <div className="min-w-0">
+            <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+              Peptide adviser
+            </p>
+            <h2
+              id={titleId}
+              className="font-sans mt-1 text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)]"
+            >
               New patient
             </h2>
-            <p className={portalSectionDescClass}>
-              Enter a name for this case. You can run intake and chat separately for each patient.
+            <p className="text-brand-body mt-1 text-[color:var(--dash-muted)]">
+              Enter a case name to start structured intake.
             </p>
           </div>
           <button
             type="button"
             disabled={isSubmitting}
             onClick={onClose}
-            className="rounded-md p-1.5 text-primary/40 transition hover:bg-black/[0.04] hover:text-primary disabled:opacity-50"
+            className="dashboard-icon-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full disabled:opacity-50"
             aria-label="Close dialog"
           >
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
@@ -82,34 +93,51 @@ export function CreatePatientDialog({
           </button>
         </div>
 
-        <label className="block space-y-2">
-          <span className={authLabelClass}>Patient name</span>
-          <input
-            type="text"
-            required
-            autoFocus
-            maxLength={120}
-            value={name}
+        <div className="space-y-4 px-5 py-5 md:px-6">
+          <label className="block space-y-2">
+            <span className={authLabelClass}>Patient name</span>
+            <input
+              ref={inputRef}
+              type="text"
+              required
+              maxLength={120}
+              value={name}
+              disabled={isSubmitting}
+              placeholder="e.g. Patient A"
+              onChange={(event) => setName(event.target.value)}
+              className={cn(authFieldClass, "w-full px-4")}
+            />
+          </label>
+
+          {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
+        </div>
+
+        <div className="flex justify-end gap-2.5 border-t border-[color:var(--dash-surface-border)] px-5 py-4 md:px-6">
+          <button
+            type="button"
             disabled={isSubmitting}
-            placeholder="e.g. Patient A"
-            onChange={(event) => setName(event.target.value)}
-            className={cn(authFieldClass, "w-full px-4")}
-          />
-        </label>
-
-        {error ? (
-          <div className="mt-4">
-            <AuthAlert variant="error">{error}</AuthAlert>
-          </div>
-        ) : null}
-
-        <div className="mt-6 flex justify-end gap-2">
-          <Button type="button" variant="secondary" disabled={isSubmitting} onClick={onClose}>
+            onClick={onClose}
+            className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50"
+          >
             Cancel
-          </Button>
-          <Button type="submit" disabled={isSubmitting || !name.trim()}>
-            {isSubmitting ? "Creating…" : "Create patient"}
-          </Button>
+          </button>
+          <button
+            type="submit"
+            disabled={!canSubmit}
+            className="font-sans inline-flex min-h-10 items-center justify-center rounded-full bg-[#DDE466] px-5 text-sm font-medium text-[#152744] transition hover:brightness-105 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
+          >
+            {isSubmitting ? (
+              <span className="inline-flex items-center gap-2">
+                <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden>
+                  <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.25" strokeWidth="2.5" />
+                  <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                </svg>
+                Creating…
+              </span>
+            ) : (
+              "Create patient"
+            )}
+          </button>
         </div>
       </form>
     </div>

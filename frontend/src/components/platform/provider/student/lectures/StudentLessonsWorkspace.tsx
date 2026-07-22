@@ -4,23 +4,12 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
-import {
-  portalEmptyStateClass,
-  portalInlineMetaClass,
-  portalNavItemClass,
-  portalRowValueClass,
-  portalSectionDescClass,
-  portalSectionEyebrowClass,
-  portalSectionTitleClass,
-  portalSubnavItemClass,
-} from "@/components/platform/provider/portal-styles";
 import { CoursePageLayout } from "@/components/platform/provider/student/lectures/CoursePageLayout";
 import { LessonContentPanel } from "@/components/platform/provider/student/lectures/LessonContentPanel";
 import {
   LearningModeToggle,
   LessonLearningView,
 } from "@/components/platform/provider/student/lectures/LessonLearningView";
-import { Button } from "@/components/ui/Button";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
   getCachedLesson,
@@ -229,19 +218,38 @@ export function StudentLessonsWorkspace({
       courseNavActive="lessons"
       backHref={`/student/lectures/${courseId}`}
       backLabel="Course overview"
+      heroActions={
+        <>
+          <Link
+            href={`/student/lectures/${courseId}`}
+            className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition"
+          >
+            Overview
+          </Link>
+          <Link
+            href={`/student/lectures/${courseId}/test-result`}
+            className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition"
+          >
+            Test results
+          </Link>
+          <Link
+            href="/student/calculator"
+            className="font-sans inline-flex min-h-10 items-center gap-1.5 rounded-full bg-[#DDE466] px-5 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105"
+          >
+            Calculator
+          </Link>
+        </>
+      }
     >
       {(topicId || l1Name) && (
-        <div className="flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-[#8DC3E1]/35 bg-[#eef6fb] px-4 py-3">
-          <p className={portalSectionDescClass}>
-            Showing lessons for <span className="font-medium text-primary">{filterLabel}</span>
+        <div className="dashboard-surface flex flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-3">
+          <p className="text-brand-body text-[color:var(--dash-muted)]">
+            Showing lessons for{" "}
+            <span className="font-medium text-[color:var(--dash-text)]">{filterLabel}</span>
           </p>
           <Link
             href={`/student/lectures/${courseId}/lessons`}
-            className={cn(
-              "inline-flex items-center gap-1 rounded-full bg-white px-3 py-1.5 shadow-[0_1px_3px_rgba(21,39,68,0.06)] transition hover:text-primary",
-              portalSubnavItemClass,
-              "text-primary/70",
-            )}
+            className="dashboard-pill-soft font-sans inline-flex min-h-9 items-center gap-1 rounded-full px-4 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-muted)] transition hover:text-[color:var(--dash-text)]"
           >
             Clear filter
           </Link>
@@ -251,29 +259,46 @@ export function StudentLessonsWorkspace({
       {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
 
       {loading ? (
-        <div className="rounded-2xl bg-white p-10 text-center shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
-          <div className="mx-auto h-8 w-8 animate-pulse rounded-full bg-primary/10" />
-          <p className={cn("mt-3", portalEmptyStateClass)}>Loading lessons…</p>
+        <div className="dashboard-surface rounded-2xl p-10 text-center">
+          <div className="mx-auto h-8 w-8 animate-pulse rounded-full bg-[color:var(--dash-soft)]" />
+          <p className="text-brand-body mt-3 text-[color:var(--dash-faint)]">Loading lessons…</p>
         </div>
       ) : filteredLessons.length === 0 ? (
-        <div className="rounded-2xl bg-white p-10 text-center shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
-          <p className={portalEmptyStateClass}>No lessons found.</p>
+        <div className="dashboard-surface rounded-2xl p-10 text-center">
+          <p className="text-brand-body text-[color:var(--dash-faint)]">No lessons found.</p>
           {(topicId || l1Name) && (
-            <Button href={`/student/lectures/${courseId}/lessons`} variant="secondary" size="md" className="mt-4">
+            <Link
+              href={`/student/lectures/${courseId}/lessons`}
+              className="dashboard-pill-soft font-sans mt-4 inline-flex min-h-10 items-center justify-center rounded-full px-5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition"
+            >
               View all lessons
-            </Button>
+            </Link>
           )}
         </div>
       ) : (
-        <div className="grid gap-5 xl:grid-cols-[minmax(280px,340px)_minmax(0,1fr)] xl:items-start">
-          <aside className="rounded-2xl bg-white p-4 shadow-[0_1px_3px_rgba(21,39,68,0.06)] xl:sticky xl:top-24">
-            <p className={portalSectionEyebrowClass}>Lesson list</p>
-            <h2 className={portalSectionTitleClass}>{filterLabel ? filterLabel : "All lessons"}</h2>
-            <p className={portalInlineMetaClass}>
-              {filteredLessons.length} lesson{filteredLessons.length === 1 ? "" : "s"}
+        <div className="grid gap-4 lg:grid-cols-[minmax(240px,300px)_minmax(0,1fr)] lg:items-start">
+          <aside className="dashboard-surface flex flex-col rounded-2xl p-5 lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)]">
+            <div className="flex shrink-0 items-center justify-between gap-2">
+              <h2 className="font-sans text-lg font-semibold tracking-[0.005em] text-[color:var(--dash-text)]">
+                Lesson list
+              </h2>
+              <span className="text-brand-caption font-medium text-[color:var(--dash-accent)]">
+                {filteredLessons.length}
+              </span>
+            </div>
+            <p className="text-brand-caption mt-0.5 text-[color:var(--dash-faint)]">
+              {filterLabel ? filterLabel : "All lessons"}
             </p>
 
-            <div className="mt-4 max-h-[min(70vh,720px)] space-y-2 overflow-y-auto pr-1">
+            <div className="mt-4 shrink-0">
+              <LearningModeToggle
+                active={learningMode}
+                onToggle={() => setLearningMode((value) => !value)}
+                disabled={!displayLesson || detailLoading}
+              />
+            </div>
+
+            <div className="mt-4 min-h-0 space-y-2.5 overflow-y-auto overscroll-contain [scrollbar-width:thin] lg:max-h-[calc(100dvh-14rem)]">
               {filteredLessons.map((lesson, index) => {
                 const selected = lesson.lesson_id === activeLessonId;
                 return (
@@ -282,27 +307,26 @@ export function StudentLessonsWorkspace({
                     type="button"
                     onClick={() => selectLesson(lesson.lesson_id)}
                     className={cn(
-                      "flex w-full items-start gap-3 rounded-xl border px-3 py-3 text-left transition",
-                      selected
-                        ? "border-[#8DC3E1]/55 bg-[#eef6fb] shadow-[0_2px_10px_rgba(21,39,68,0.06)]"
-                        : "border-transparent bg-primary/[0.03] hover:border-[#8DC3E1]/30 hover:bg-[#f8fcfe]",
+                      "dashboard-row flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-3 text-left transition",
+                      selected && "bg-[color:var(--dash-soft)]",
                     )}
                     aria-current={selected ? "true" : undefined}
                   >
-                    <span
-                      className={cn(
-                        "font-sans flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-sm font-semibold tracking-[0.005em]",
-                        selected ? "bg-primary text-white" : "bg-white text-primary",
-                      )}
-                    >
-                      {index + 1}
-                    </span>
-                    <span className="min-w-0 flex-1">
-                      <span className={cn("line-clamp-2 font-semibold", portalNavItemClass)}>{lesson.title}</span>
-                      <span className={cn("mt-1 block", portalInlineMetaClass)}>
-                        {lesson.variant_count} quiz items
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span
+                        className={cn(
+                          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold",
+                          selected
+                            ? "bg-[#DDE466] text-[#152744]"
+                            : "bg-[#DDE466]/15 text-[color:var(--dash-accent)]",
+                        )}
+                      >
+                        {index + 1}
                       </span>
-                    </span>
+                      <p className="font-sans line-clamp-2 text-sm font-medium text-[color:var(--dash-text)]">
+                        {lesson.title}
+                      </p>
+                    </div>
                   </button>
                 );
               })}
@@ -310,17 +334,6 @@ export function StudentLessonsWorkspace({
           </aside>
 
           <main className="min-w-0">
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-              <p className={portalInlineMetaClass}>
-                Turn on learning mode for a focused, larger reading view.
-              </p>
-              <LearningModeToggle
-                active={learningMode}
-                onToggle={() => setLearningMode((value) => !value)}
-                disabled={!displayLesson || detailLoading}
-              />
-            </div>
-
             {displayLesson ? (
               <LessonContentPanel
                 lesson={displayLesson}
@@ -334,8 +347,10 @@ export function StudentLessonsWorkspace({
                 l1Name={l1Name}
               />
             ) : (
-              <div className="rounded-2xl bg-white p-10 text-center shadow-[0_1px_3px_rgba(21,39,68,0.06)]">
-                <p className={portalEmptyStateClass}>Select a lesson from the list to view content.</p>
+              <div className="dashboard-surface rounded-2xl p-10 text-center">
+                <p className="text-brand-body text-[color:var(--dash-faint)]">
+                  Select a lesson from the list to view content.
+                </p>
               </div>
             )}
           </main>

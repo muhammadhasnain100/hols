@@ -2,17 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
-import {
-  portalEmptyStateClass,
-  portalPaginationClass,
-  portalRowCategoryClass,
-  portalRowValueClass,
-  portalSectionDescClass,
-  portalSectionEyebrowClass,
-  portalSectionTitleClass,
-} from "@/components/platform/provider/portal-styles";
 import { PaymentPageLayout } from "@/components/platform/provider/student/payment/PaymentPageLayout";
-import { Button } from "@/components/ui/Button";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
   getCachedOrders,
@@ -24,26 +14,6 @@ import {
   formatMoney,
   planLabels,
 } from "@/lib/integrate/provider/student/payment/types";
-import { cn } from "@/lib/utils";
-
-function OrderRow({ order }: { order: Order }) {
-  return (
-    <div className="rounded-2xl bg-white p-4 shadow-[0_1px_3px_rgba(21,39,68,0.06)] md:p-5">
-      <p className={portalRowCategoryClass}>Order</p>
-      <div className="mt-2 flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-        <div className="min-w-0">
-          <p className={portalSectionTitleClass}>
-            {planLabels[order.plan_type]} · {formatMoney(order.amount, order.currency)}
-          </p>
-          <p className={portalSectionDescClass}>{formatDate(order.created_at)}</p>
-        </div>
-        <span className="text-brand-caption inline-flex w-fit shrink-0 rounded-full bg-primary/[0.06] px-2.5 py-1 font-medium capitalize text-primary/70">
-          {order.status}
-        </span>
-      </div>
-    </div>
-  );
-}
 
 export function StudentOrdersPage() {
   const cachedFirstPage = getCachedOrders({ page: 1, limit: 10 });
@@ -51,6 +21,7 @@ export function StudentOrdersPage() {
   const [error, setError] = useState<string | null>(null);
   const [orders, setOrders] = useState<Order[]>(cachedFirstPage?.items ?? []);
   const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(cachedFirstPage?.pagination.total ?? 0);
   const [hasNext, setHasNext] = useState(cachedFirstPage?.pagination.has_next ?? false);
 
   const loadOrders = useCallback(async (pageNum: number, signal?: AbortSignal) => {
@@ -61,6 +32,7 @@ export function StudentOrdersPage() {
       const res = await listOrders({ page: pageNum, limit: 10 }, signal);
       if (signal?.aborted) return;
       setOrders(res.items);
+      setTotal(res.pagination.total);
       setHasNext(res.pagination.has_next);
     } catch (err) {
       if (signal?.aborted) return;
@@ -81,57 +53,125 @@ export function StudentOrdersPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
+  const latest = orders[0];
+
   return (
-    <PaymentPageLayout
-      title="Orders"
-      description="Review your purchase history and membership receipts."
-      visual="orders"
-    >
+    <PaymentPageLayout title="Orders">
       {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
 
-      <section>
-        <p className={portalSectionEyebrowClass}>History</p>
-        <h2 className={portalSectionTitleClass}>Order history</h2>
-        <p className={portalSectionDescClass}>Membership purchases on this account.</p>
+      <div className="grid w-full items-start gap-4 lg:grid-cols-[1.9fr_1fr]">
+        <div className="flex flex-col gap-4">
+          <section className="dashboard-hero relative overflow-hidden rounded-2xl p-5 md:p-6">
+            <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
+              Order history
+            </p>
+            <div className="mt-2 flex items-end gap-2">
+              <span className="font-sans text-2xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] md:text-[2.5rem] md:leading-none">
+                {loading && !cachedFirstPage ? "—" : total}
+              </span>
+              <span className="mb-1 text-brand-caption font-medium text-[color:var(--dash-faint)]">
+                {total === 1 ? "order" : "orders"}
+              </span>
+            </div>
+            <p className="text-brand-body mt-2 text-[color:var(--dash-muted)]">
+              {latest
+                ? `Latest · ${planLabels[latest.plan_type]} · ${formatMoney(latest.amount, latest.currency)}`
+                : "No purchases on this account yet."}
+            </p>
+          </section>
 
-        {loading ? (
-          <div className="mt-6 flex justify-center py-8">
-            <div className="h-8 w-8 animate-pulse rounded-full bg-primary/10" />
-          </div>
-        ) : orders.length === 0 ? (
-          <p className={cn("mt-6 rounded-2xl bg-white px-5 py-8 shadow-[0_1px_3px_rgba(21,39,68,0.06)]", portalEmptyStateClass)}>
-            No orders yet.
-          </p>
-        ) : (
-          <div className="mt-5 grid gap-3">
-            {orders.map((order) => (
-              <OrderRow key={order.order_id} order={order} />
-            ))}
-          </div>
-        )}
+          <section className="dashboard-surface rounded-2xl p-5">
+            <div className="flex items-center justify-between">
+              <h2 className="font-sans text-lg font-semibold tracking-[0.005em] text-[color:var(--dash-text)]">
+                Recent orders
+              </h2>
+              <span className="text-brand-caption font-medium text-[color:var(--dash-accent)]">
+                Page {page}
+              </span>
+            </div>
 
-        <div className="mt-5 flex items-center justify-between gap-3 border-t border-primary/[0.06] pt-5">
-          <Button
-            type="button"
-            variant="secondary"
-            size="md"
-            disabled={page <= 1 || loading}
-            onClick={() => setPage((p) => Math.max(1, p - 1))}
-          >
-            Previous
-          </Button>
-          <span className={portalPaginationClass}>Page {page}</span>
-          <Button
-            type="button"
-            variant="secondary"
-            size="md"
-            disabled={!hasNext || loading}
-            onClick={() => setPage((p) => p + 1)}
-          >
-            Next
-          </Button>
+            <div className="mt-4 space-y-2.5">
+              {loading ? (
+                <div className="flex justify-center py-8">
+                  <div className="h-8 w-8 animate-pulse rounded-full bg-[color:var(--dash-soft)]" />
+                </div>
+              ) : orders.length === 0 ? (
+                <p className="text-brand-body py-6 text-center text-[color:var(--dash-faint)]">
+                  No orders yet.
+                </p>
+              ) : (
+                orders.map((order) => (
+                  <div
+                    key={order.order_id}
+                    className="dashboard-row flex items-center justify-between gap-3 rounded-xl px-3.5 py-3"
+                  >
+                    <div className="flex min-w-0 items-center gap-3">
+                      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#DDE466]/15 text-[color:var(--dash-accent)]">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden>
+                          <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.77 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" />
+                        </svg>
+                      </span>
+                      <div className="min-w-0">
+                        <p className="font-sans truncate text-sm font-medium text-[color:var(--dash-text)]">
+                          {planLabels[order.plan_type]} plan
+                        </p>
+                        <p className="text-brand-caption truncate text-[color:var(--dash-faint)]">
+                          {formatDate(order.created_at)}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="font-sans shrink-0 text-sm font-semibold text-[color:var(--dash-accent)]">
+                      {formatMoney(order.amount, order.currency)}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="mt-4 flex items-center justify-between gap-2">
+              <button
+                type="button"
+                disabled={page <= 1 || loading}
+                onClick={() => setPage((p) => Math.max(1, p - 1))}
+                className="dashboard-pill-soft font-sans inline-flex min-h-9 items-center justify-center rounded-full px-4 text-sm font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50"
+              >
+                Previous
+              </button>
+              <button
+                type="button"
+                disabled={!hasNext || loading}
+                onClick={() => setPage((p) => p + 1)}
+                className="dashboard-pill-soft font-sans inline-flex min-h-9 items-center justify-center rounded-full px-4 text-sm font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50"
+              >
+                Next
+              </button>
+            </div>
+          </section>
         </div>
-      </section>
+
+        <section className="dashboard-surface rounded-2xl p-5">
+          <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+            Summary
+          </p>
+          <p className="font-sans mt-2 text-2xl font-bold tracking-[0.01em] text-[color:var(--dash-text)]">
+            {loading && !cachedFirstPage ? "—" : total}
+          </p>
+          <p className="text-brand-body mt-1 text-[color:var(--dash-muted)]">
+            Total membership purchases
+          </p>
+          {latest ? (
+            <div className="mt-4 border-t border-[color:var(--dash-surface-border)] pt-4">
+              <p className="text-brand-caption text-[color:var(--dash-faint)]">Latest order</p>
+              <p className="font-sans mt-1 text-sm font-medium text-[color:var(--dash-text)]">
+                {planLabels[latest.plan_type]} · {formatMoney(latest.amount, latest.currency)}
+              </p>
+              <p className="text-brand-caption mt-0.5 text-[color:var(--dash-faint)]">
+                {formatDate(latest.created_at)}
+              </p>
+            </div>
+          ) : null}
+        </section>
+      </div>
     </PaymentPageLayout>
   );
 }

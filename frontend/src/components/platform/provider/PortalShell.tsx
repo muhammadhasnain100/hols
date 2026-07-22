@@ -2,29 +2,16 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useState, type CSSProperties } from "react";
 import { HeroLogo } from "@/components/hero/HeroLogo";
 import { stopPortalAuthRuntime } from "@/lib/integrate/auth/runtime";
-import { clearAuthSession, getStoredUser } from "@/lib/integrate/auth/storage";
-import type { StoredUser, UserRole } from "@/lib/integrate/auth/types";
-import { getAdminProfile, getCachedAdminProfile } from "@/lib/integrate/provider/admin/profile/api";
+import { clearAuthSession } from "@/lib/integrate/auth/storage";
+import type { UserRole } from "@/lib/integrate/auth/types";
 import {
-  getAffiliateProfile,
-  getCachedAffiliateProfile,
-} from "@/lib/integrate/provider/affiliate/profile/api";
-import {
-  getCachedStudentProfile,
-  getStudentProfile,
-} from "@/lib/integrate/provider/student/profile/api";
-import {
-  portalHeaderNameClass,
   portalNavFlyoutLabelClass,
   portalNavItemClass,
   portalPageDescClass,
   portalPageTitleClass,
-  portalSidebarNameClass,
-  portalSidebarRoleClass,
-  portalThemeToggleClass,
 } from "@/components/platform/provider/portal-styles";
 import { cn } from "@/lib/utils";
 
@@ -37,6 +24,7 @@ type PortalTheme = "light" | "dark";
 export type PortalNavChild = {
   label: string;
   href: string;
+  exact?: boolean;
 };
 
 export type PortalNavItem = {
@@ -54,6 +42,8 @@ type PortalShellProps = {
   eyebrow?: string;
   /** When false, skip in-page title (use for pages with their own hero heading). */
   showPageHeader?: boolean;
+  /** When true, skip the sticky top chrome so the page can own a fixed header. */
+  contentFlush?: boolean;
   nav: PortalNavItem[];
   children: React.ReactNode;
 };
@@ -65,7 +55,11 @@ function roleEyebrow(role: UserRole): string {
 }
 
 function NavIcon({ children }: { children: React.ReactNode }) {
-  return <span className="flex h-5 w-5 shrink-0 items-center justify-center text-current">{children}</span>;
+  return (
+    <span className="portal-nav-icon flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-current transition-colors duration-200">
+      {children}
+    </span>
+  );
 }
 
 function isItemActive(pathname: string, href: string, exact?: boolean): boolean {
@@ -78,74 +72,13 @@ function isNavItemActive(pathname: string, item: PortalNavItem): boolean {
   return item.children?.some((child) => isItemActive(pathname, child.href)) ?? false;
 }
 
-function profileHrefForRole(role: UserRole): string {
-  if (role === "admin") return "/admin/profile";
-  if (role === "affiliate") return "/affiliate/profile";
-  return "/student/profile";
-}
-
-function resolveProfilePic(role: UserRole, user: StoredUser | null): string | undefined {
-  const fromUser = user?.profile?.profile_pic;
-  if (typeof fromUser === "string" && fromUser) return fromUser;
-
-  const cached =
-    role === "admin"
-      ? getCachedAdminProfile()?.profile?.profile_pic
-      : role === "affiliate"
-        ? getCachedAffiliateProfile()?.profile?.profile_pic
-        : getCachedStudentProfile()?.profile?.profile_pic;
-
-  return typeof cached === "string" && cached ? cached : undefined;
-}
-
-async function refreshProfileForRole(role: UserRole) {
-  if (role === "admin") return getAdminProfile();
-  if (role === "affiliate") return getAffiliateProfile();
-  return getStudentProfile();
-}
-
-function SidebarAvatar({
-  avatarSrc,
-  initials,
-  size = "md",
-}: {
-  avatarSrc?: string;
-  initials: string;
-  size?: "md" | "sm";
-}) {
-  const dimension = size === "sm" ? "h-8 w-8" : "h-10 w-10";
-  const textSize = "text-brand-caption font-semibold";
-
-  return (
-    <span
-      className={cn(
-        "relative shrink-0 overflow-hidden rounded-full bg-[color:var(--sidebar-hover)]",
-        dimension,
-      )}
-    >
-      {avatarSrc ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
-      ) : (
-        <span
-          className={cn(
-            "flex h-full w-full items-center justify-center font-semibold text-[color:var(--sidebar-muted)]",
-            textSize,
-          )}
-        >
-          {initials}
-        </span>
-      )}
-    </span>
-  );
-}
-
 export function PortalShell({
   role,
   title,
   subtitle,
   eyebrow,
   showPageHeader = true,
+  contentFlush = false,
   nav,
   children,
 }: PortalShellProps) {
@@ -156,29 +89,10 @@ export function PortalShell({
   const [theme, setTheme] = useState<PortalTheme>("light");
   const [flyoutHref, setFlyoutHref] = useState<string | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => new Set());
-  const [user, setUser] = useState<StoredUser | null>(null);
-
-  const profileHref = profileHrefForRole(role);
-
-  const displayName = useMemo(() => {
-    const first = typeof user?.profile?.first_name === "string" ? user.profile.first_name : "";
-    const last = typeof user?.profile?.last_name === "string" ? user.profile.last_name : "";
-    const full = `${first} ${last}`.trim();
-    return full || "Account";
-  }, [user]);
-
-  const avatarSrc = useMemo(() => resolveProfilePic(role, user), [role, user]);
-
-  const initials = displayName
-    .split(" ")
-    .map((part) => part[0])
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
 
   const sidebarOffset = collapsed
-    ? "lg:ml-[calc(4.75rem+1.5rem)]"
-    : "lg:ml-[calc(16rem+1.5rem)]";
+    ? "lg:ml-[4.75rem]"
+    : "lg:ml-[16rem]";
   const pageEyebrow = eyebrow ?? roleEyebrow(role);
 
   useEffect(() => {
@@ -189,7 +103,6 @@ export function PortalShell({
       if (storedMobile !== null) setMobileOpen(storedMobile === "true");
       if (storedCollapsed !== null) setCollapsed(storedCollapsed === "true");
       if (storedTheme === "dark" || storedTheme === "light") setTheme(storedTheme);
-      setUser(getStoredUser());
     }, 0);
     return () => window.clearTimeout(timer);
   }, []);
@@ -201,39 +114,6 @@ export function PortalShell({
   const toggleTheme = useCallback(() => {
     setTheme((current) => (current === "light" ? "dark" : "light"));
   }, []);
-
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      setUser(getStoredUser());
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [pathname]);
-
-  useEffect(() => {
-    const refreshUser = () => setUser(getStoredUser());
-    window.addEventListener("focus", refreshUser);
-    window.addEventListener("storage", refreshUser);
-    return () => {
-      window.removeEventListener("focus", refreshUser);
-      window.removeEventListener("storage", refreshUser);
-    };
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    void refreshProfileForRole(role)
-      .then(() => {
-        if (!cancelled) setUser(getStoredUser());
-      })
-      .catch(() => {
-        if (!cancelled) setUser(getStoredUser());
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [role]);
 
   useEffect(() => {
     localStorage.setItem(MOBILE_OPEN_KEY, String(mobileOpen));
@@ -266,6 +146,14 @@ export function PortalShell({
     return () => window.clearTimeout(timer);
   }, [pathname, nav]);
 
+  useEffect(() => {
+    function handleOpenSidebar() {
+      setMobileOpen(true);
+    }
+    window.addEventListener("hols-portal-open-sidebar", handleOpenSidebar);
+    return () => window.removeEventListener("hols-portal-open-sidebar", handleOpenSidebar);
+  }, []);
+
   const handleLogout = useCallback(() => {
     stopPortalAuthRuntime();
     clearAuthSession();
@@ -292,7 +180,7 @@ export function PortalShell({
     const href = opts?.child?.href ?? item.href;
     const label = opts?.child?.label ?? item.label;
     const active = opts?.child
-      ? isItemActive(pathname, opts.child.href)
+      ? isItemActive(pathname, opts.child.href, opts.child.exact)
       : isNavItemActive(pathname, item);
     const showIcon = !opts?.inFlyout && !opts?.child;
 
@@ -319,7 +207,7 @@ export function PortalShell({
             stroke="currentColor"
             strokeWidth="2"
             className={cn(
-              "ml-auto shrink-0 opacity-40 transition-transform",
+              "ml-auto shrink-0 text-[color:var(--sidebar-text)] opacity-60 transition-transform",
               expandedGroups.has(item.href) && "rotate-90",
             )}
             aria-hidden
@@ -332,7 +220,7 @@ export function PortalShell({
   }
 
   return (
-    <div className="portal-shell min-h-svh text-primary" data-theme={theme} style={{ background: "var(--portal-page-bg)" }}>
+    <div className="portal-shell min-h-svh text-primary" data-theme={theme} data-role={role} style={{ background: "var(--portal-page-bg)" }}>
       <div className="flex min-h-svh">
         {mobileOpen ? (
           <button
@@ -346,9 +234,7 @@ export function PortalShell({
         <aside
           aria-hidden={!mobileOpen}
           className={cn(
-            "portal-sidebar-glass portal-sidebar-capsule fixed z-40 flex shrink-0 flex-col overflow-visible transition-all duration-300 ease-out",
-            "max-lg:inset-y-0 max-lg:left-0 max-lg:rounded-none",
-            "lg:left-3 lg:top-3 lg:bottom-3",
+            "portal-sidebar-glass portal-sidebar-flush fixed inset-y-0 left-0 z-40 flex shrink-0 flex-col overflow-visible transition-all duration-300 ease-out",
             collapsed ? "w-[4.75rem]" : "w-[16rem]",
             mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
           )}
@@ -424,7 +310,7 @@ export function PortalShell({
                         fill="none"
                         stroke="currentColor"
                         strokeWidth="2"
-                        className={cn("ml-auto shrink-0 opacity-40 transition-transform", groupOpen && "rotate-90")}
+                        className={cn("ml-auto shrink-0 text-[color:var(--sidebar-text)] opacity-60 transition-transform", groupOpen && "rotate-90")}
                         aria-hidden
                       >
                         <path d="M9 18l6-6-6-6" />
@@ -466,33 +352,52 @@ export function PortalShell({
           </nav>
 
           <div className="portal-sidebar-footer mx-3 mb-3 mt-auto shrink-0 space-y-2 rounded-2xl p-2 pt-2">
-            <Link
-              href={profileHref}
-              onClick={closeMobile}
-              aria-label="Open profile"
-              title={displayName}
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
+              title={theme === "dark" ? "Light mode" : "Dark mode"}
               className={cn(
-                "portal-sidebar-profile flex w-full items-center rounded-xl transition",
+                "portal-sidebar-theme flex w-full items-center rounded-xl transition",
                 collapsed ? "justify-center p-2" : "gap-3 px-2.5 py-2",
-                (pathname === profileHref || pathname.startsWith(`${profileHref}/`)) && "is-active",
               )}
             >
-              <SidebarAvatar avatarSrc={avatarSrc} initials={initials} size="sm" />
+              <span className="portal-sidebar-theme-icon flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
+                {theme === "dark" ? (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                    <path d="M21 14.5A8.5 8.5 0 0 1 9.5 3 7 7 0 1 0 21 14.5z" />
+                  </svg>
+                ) : (
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                    <circle cx="12" cy="12" r="4" />
+                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+                  </svg>
+                )}
+              </span>
               {!collapsed ? (
-                <span className="min-w-0 flex-1">
-                  <span className={portalSidebarNameClass}>{displayName}</span>
-                  <span className={portalSidebarRoleClass}>
-                    {role}
+                <>
+                  <span className="min-w-0 flex-1 text-left font-sans text-sm font-medium">
+                    {theme === "dark" ? "Dark mode" : "Light mode"}
                   </span>
-                </span>
+                  <span
+                    className="portal-theme-switch"
+                    data-on={theme === "dark" ? "true" : "false"}
+                    aria-hidden
+                  >
+                    <span className="portal-theme-switch-knob" />
+                  </span>
+                </>
               ) : null}
-            </Link>
+            </button>
 
             <button
               type="button"
               onClick={handleLogout}
               aria-label="Log out"
-              className={cn("portal-sidebar-logout", collapsed && "px-2")}
+              className={cn(
+                "portal-sidebar-logout",
+                collapsed ? "justify-center px-2" : "justify-start",
+              )}
             >
               <span className="portal-sidebar-logout-icon">
                 <svg
@@ -529,89 +434,42 @@ export function PortalShell({
 
         <div
           className={cn(
-            "portal-content-area flex min-w-0 flex-1 flex-col transition-[margin] duration-300 ease-out lg:mr-3",
+            "portal-content-area flex min-w-0 flex-1 flex-col transition-[margin] duration-300 ease-out",
             sidebarOffset,
           )}
-          style={{ background: "var(--portal-page-bg)" }}
+          style={
+            {
+              background: "var(--portal-page-bg)",
+              "--portal-sidebar-offset": collapsed ? "4.75rem" : "16rem",
+            } as CSSProperties
+          }
         >
-          <div className="pointer-events-none sticky top-0 z-20 px-4 pt-4 pb-2 md:px-6 lg:px-8">
-            <header className="flex items-center justify-end gap-3">
-              <button
-                type="button"
-                aria-label="Open sidebar"
-                aria-expanded={mobileOpen}
-                onClick={() => setMobileOpen(true)}
-                className="portal-header-icon pointer-events-auto mr-auto rounded-full p-2 lg:hidden"
-              >
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-                  <path d="M4 7h16M4 12h10M4 17h16" />
-                </svg>
-              </button>
-
-              <div className="portal-header-actions pointer-events-auto inline-flex items-center gap-2 sm:gap-3">
+          {!contentFlush ? (
+            <div className="pointer-events-none sticky top-0 z-20 px-4 pt-4 pb-2 md:px-6 lg:px-8">
+              <header className="flex items-center justify-end gap-3">
                 <button
                   type="button"
-                  aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-                  title={theme === "dark" ? "Light mode" : "Dark mode"}
-                  onClick={toggleTheme}
-                  className={portalThemeToggleClass}
+                  aria-label="Open sidebar"
+                  aria-expanded={mobileOpen}
+                  onClick={() => setMobileOpen(true)}
+                  className="portal-header-icon pointer-events-auto mr-auto rounded-full p-2 lg:hidden"
                 >
-                  {theme === "dark" ? (
-                    <>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-                        <circle cx="12" cy="12" r="4" />
-                        <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
-                      </svg>
-                      <span className="hidden sm:inline">Light</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-                        <path d="M21 14.5A8.5 8.5 0 0 1 9.5 3 7 7 0 1 0 21 14.5z" />
-                      </svg>
-                      <span className="hidden sm:inline">Dark</span>
-                    </>
-                  )}
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                    <path d="M4 7h16M4 12h10M4 17h16" />
+                  </svg>
                 </button>
+              </header>
+            </div>
+          ) : null}
 
-                <Link
-                  href={profileHref}
-                  onClick={closeMobile}
-                  aria-label="Open profile"
-                  title={displayName}
-                  className={cn(
-                    "inline-flex max-w-[14rem] items-center gap-2.5 rounded-full py-1 pl-1 pr-3 transition hover:bg-primary/[0.05]",
-                    pathname === profileHref || pathname.startsWith(`${profileHref}/`)
-                      ? "bg-primary/[0.04]"
-                      : null,
-                  )}
-                >
-                  <span
-                    className={cn(
-                      "portal-header-avatar inline-flex h-8 w-8 shrink-0 overflow-hidden rounded-full bg-primary/[0.06]",
-                      pathname === profileHref || pathname.startsWith(`${profileHref}/`)
-                        ? "ring-2 ring-[#3853A4]/30"
-                        : null,
-                    )}
-                  >
-                    {avatarSrc ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                      <span className="flex h-full w-full items-center justify-center text-brand-caption font-semibold text-primary/70">
-                        {initials}
-                      </span>
-                    )}
-                  </span>
-                  <span className={portalHeaderNameClass}>
-                    {displayName}
-                  </span>
-                </Link>
-              </div>
-            </header>
-          </div>
-
-          <main className="flex-1 px-4 pb-6 pt-2 md:px-6 md:pb-8 lg:px-8 lg:pb-10">
+          <main
+            className={cn(
+              "flex-1",
+              contentFlush
+                ? "px-4 md:px-6 lg:px-8"
+                : "px-4 pb-6 pt-2 md:px-6 md:pb-8 lg:px-8 lg:pb-10",
+            )}
+          >
             {showPageHeader ? (
               <header className="mb-6 md:mb-8">
                 <p className="portal-page-eyebrow">{pageEyebrow}</p>
