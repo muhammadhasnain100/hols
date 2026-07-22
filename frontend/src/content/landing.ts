@@ -26,16 +26,19 @@ export const landingContent = {
     beforeLabel: "Scattered info",
     afterLabel: "one trusted system",
     hubLabel: "HOLS",
+    scatteredLabel: "Scattered Information",
+    structuredLabel: "Structured Learning",
+    systemLabel: "One trusted system",
     sourceCards: [
-      {
-        id: "forums",
-        title: "Forums",
-        description: "Scattered threads and group answers.",
-      },
       {
         id: "pdfs",
         title: "PDFs",
         description: "Unverified docs passed around.",
+      },
+      {
+        id: "youtube",
+        title: "YouTube",
+        description: "Random clips and webinars.",
       },
       {
         id: "notes",
@@ -43,22 +46,65 @@ export const landingContent = {
         description: "Team notes in different places.",
       },
       {
+        id: "articles",
+        title: "Articles",
+        description: "Articles pulled from the web.",
+      },
+      {
+        id: "aichats",
+        title: "AI Chats",
+        description: "Advice buried in chat threads.",
+      },
+      {
         id: "books",
         title: "Books",
         description: "Reference texts and protocols.",
       },
       {
+        id: "podcasts",
+        title: "Podcasts",
+        description: "Insights lost in long audio.",
+      },
+      {
         id: "blogs",
         title: "Blogs",
-        description: "Articles pulled from the web.",
+        description: "Opinions scattered on the web.",
       },
     ],
     checkpoints: [
       { id: "curated", label: "Curated content" },
       { id: "verified", label: "Verified resources" },
     ],
+    dashboard: {
+      brand: "HOLS",
+      nav: [
+        { id: "dashboard", label: "Dashboard" },
+        { id: "lectures", label: "Lectures" },
+        { id: "calculator", label: "Calculator" },
+        { id: "adviser", label: "Peptide Adviser" },
+        { id: "payment", label: "Payment" },
+        { id: "profile", label: "Profile" },
+      ],
+      membership: {
+        label: "Membership status",
+        plan: "No plan",
+        status: "Inactive",
+      },
+      tools: [
+        { id: "lectures", label: "Lectures" },
+        { id: "calculator", label: "Calculator" },
+        { id: "adviser", label: "Adviser" },
+        { id: "profile", label: "Profile" },
+      ],
+      actions: [
+        { id: "plans", label: "Membership plans" },
+        { id: "orders", label: "Order history", badge: "0" },
+        { id: "card", label: "Payment card" },
+        { id: "account", label: "Account profile" },
+      ],
+    },
     cta: {
-      label: "Explore courses",
+      label: "Explore Courses",
       href: "#everything-inside",
     },
   },

@@ -36,6 +36,7 @@ export function AdviserChatPageLayout({ patientName, children }: AdviserChatPage
       title={patientName}
       showPageHeader={false}
       contentFlush
+      brandBackdrop
       nav={studentNav}
     >
       <div className="dashboard-screen">

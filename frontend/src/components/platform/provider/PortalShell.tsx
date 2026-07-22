@@ -44,6 +44,8 @@ type PortalShellProps = {
   showPageHeader?: boolean;
   /** When true, skip the sticky top chrome so the page can own a fixed header. */
   contentFlush?: boolean;
+  /** Full-bleed brand gradient on the content screen (no inset “cart” panel). */
+  brandBackdrop?: boolean;
   nav: PortalNavItem[];
   children: React.ReactNode;
 };
@@ -79,6 +81,7 @@ export function PortalShell({
   eyebrow,
   showPageHeader = true,
   contentFlush = false,
+  brandBackdrop = false,
   nav,
   children,
 }: PortalShellProps) {
@@ -86,7 +89,12 @@ export function PortalShell({
   const router = useRouter();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const [theme, setTheme] = useState<PortalTheme>("light");
+  const [theme, setTheme] = useState<PortalTheme>(() => {
+    if (typeof window === "undefined") return "dark";
+    const stored = localStorage.getItem(THEME_KEY);
+    if (stored === "dark" || stored === "light") return stored;
+    return "dark";
+  });
   const [flyoutHref, setFlyoutHref] = useState<string | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => new Set());
 
@@ -102,17 +110,21 @@ export function PortalShell({
       const storedTheme = localStorage.getItem(THEME_KEY);
       if (storedMobile !== null) setMobileOpen(storedMobile === "true");
       if (storedCollapsed !== null) setCollapsed(storedCollapsed === "true");
-      if (storedTheme === "dark" || storedTheme === "light") setTheme(storedTheme);
+      if (storedTheme === "dark" || storedTheme === "light") {
+        setTheme(storedTheme);
+      } else {
+        localStorage.setItem(THEME_KEY, "dark");
+      }
     }, 0);
     return () => window.clearTimeout(timer);
   }, []);
 
-  useEffect(() => {
-    localStorage.setItem(THEME_KEY, theme);
-  }, [theme]);
-
   const toggleTheme = useCallback(() => {
-    setTheme((current) => (current === "light" ? "dark" : "light"));
+    setTheme((current) => {
+      const next: PortalTheme = current === "light" ? "dark" : "light";
+      localStorage.setItem(THEME_KEY, next);
+      return next;
+    });
   }, []);
 
   useEffect(() => {
@@ -220,7 +232,13 @@ export function PortalShell({
   }
 
   return (
-    <div className="portal-shell min-h-svh text-primary" data-theme={theme} data-role={role} style={{ background: "var(--portal-page-bg)" }}>
+    <div
+      className="portal-shell min-h-svh text-primary"
+      data-theme={theme}
+      data-role={role}
+      data-backdrop={brandBackdrop ? "brand" : undefined}
+      style={brandBackdrop ? undefined : { background: "var(--portal-page-bg)" }}
+    >
       <div className="flex min-h-svh">
         {mobileOpen ? (
           <button
@@ -355,8 +373,8 @@ export function PortalShell({
             <button
               type="button"
               onClick={toggleTheme}
-              aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-              title={theme === "dark" ? "Light mode" : "Dark mode"}
+              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
               className={cn(
                 "portal-sidebar-theme flex w-full items-center rounded-xl transition",
                 collapsed ? "justify-center p-2" : "gap-3 px-2.5 py-2",
@@ -377,7 +395,7 @@ export function PortalShell({
               {!collapsed ? (
                 <>
                   <span className="min-w-0 flex-1 text-left font-sans text-sm font-medium">
-                    {theme === "dark" ? "Dark mode" : "Light mode"}
+                    Dark mode
                   </span>
                   <span
                     className="portal-theme-switch"
@@ -437,15 +455,21 @@ export function PortalShell({
             "portal-content-area flex min-w-0 flex-1 flex-col transition-[margin] duration-300 ease-out",
             sidebarOffset,
           )}
+          data-backdrop={brandBackdrop ? "brand" : undefined}
           style={
             {
-              background: "var(--portal-page-bg)",
+              ...(brandBackdrop ? {} : { background: "var(--portal-page-bg)" }),
               "--portal-sidebar-offset": collapsed ? "4.75rem" : "16rem",
             } as CSSProperties
           }
         >
           {!contentFlush ? (
-            <div className="pointer-events-none sticky top-0 z-20 px-4 pt-4 pb-2 md:px-6 lg:px-8">
+            <div
+              className={cn(
+                "pointer-events-none sticky top-0 z-20 px-4 pb-2 md:px-6 lg:px-8",
+                brandBackdrop ? "pt-3" : "pt-4",
+              )}
+            >
               <header className="flex items-center justify-end gap-3">
                 <button
                   type="button"
@@ -467,7 +491,9 @@ export function PortalShell({
               "flex-1",
               contentFlush
                 ? "px-4 md:px-6 lg:px-8"
-                : "px-4 pb-6 pt-2 md:px-6 md:pb-8 lg:px-8 lg:pb-10",
+                : brandBackdrop
+                  ? "px-4 pb-8 pt-1 md:px-6 lg:px-8"
+                  : "px-4 pb-6 pt-2 md:px-6 md:pb-8 lg:px-8 lg:pb-10",
             )}
           >
             {showPageHeader ? (

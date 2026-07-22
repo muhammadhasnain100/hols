@@ -83,18 +83,9 @@ function BulletSlide({ items }: { items: readonly string[] }) {
   );
 }
 
-function WhoItsForSlideContent({
-  slide,
-  dataAttr = false,
-}: {
-  slide: WhoItsForSlide;
-  dataAttr?: boolean;
-}) {
+function WhoItsForSlideContent({ slide }: { slide: WhoItsForSlide }) {
   return (
-    <div
-      {...(dataAttr ? { "data-wif-text": true } : {})}
-      className="w-full will-change-transform"
-    >
+    <div className="w-full">
       {slide.type === "text" ? (
         <RawTextSlide lines={slide.lines} />
       ) : (
@@ -255,23 +246,29 @@ export function WhoItsForSection() {
       const pinWrap = pinWrapRef.current;
       if (!pinWrap) return;
 
-      const texts = gsap.utils.toArray<HTMLElement>(
-        pinWrap.querySelectorAll("[data-wif-text]"),
+      const slides = gsap.utils.toArray<HTMLElement>(
+        pinWrap.querySelectorAll("[data-wif-slide]"),
       );
 
-      if (texts.length === 0) return;
+      if (slides.length === 0) return;
 
       const scrollDistance = () =>
-        window.innerHeight * Math.max(texts.length, 1) * 0.9;
+        window.innerHeight * Math.max(slides.length, 1) * 0.9;
 
-      gsap.set(texts, { autoAlpha: 0, y: 28 });
-      gsap.set(texts[0], { autoAlpha: 1, y: 0 });
+      // Own the visibility on the slide wrappers so React re-renders
+      // (step capsule / progress) cannot fight the timeline.
+      gsap.set(slides, { autoAlpha: 0, y: 28 });
+      gsap.set(slides[0], { autoAlpha: 1, y: 0 });
 
-      texts.forEach((text) => {
-        const bullets = text.querySelectorAll("[data-wif-bullet]");
-        const dots = text.querySelectorAll("[data-wif-dot]");
-        gsap.set(bullets, { autoAlpha: 0, y: 16 });
-        gsap.set(dots, { autoAlpha: 0, scale: 0.4 });
+      slides.forEach((slide) => {
+        const bullets = gsap.utils.toArray<HTMLElement>(
+          slide.querySelectorAll("[data-wif-bullet]"),
+        );
+        const dots = gsap.utils.toArray<HTMLElement>(
+          slide.querySelectorAll("[data-wif-dot]"),
+        );
+        if (bullets.length > 0) gsap.set(bullets, { autoAlpha: 0, y: 16 });
+        if (dots.length > 0) gsap.set(dots, { autoAlpha: 0, scale: 0.4 });
       });
 
       const timeline = gsap.timeline({
@@ -287,24 +284,28 @@ export function WhoItsForSection() {
           invalidateOnRefresh: true,
           onUpdate: (self) => {
             const index = Math.min(
-              texts.length - 1,
-              Math.round(self.progress * (texts.length - 1)),
+              slides.length - 1,
+              Math.round(self.progress * (slides.length - 1)),
             );
             setActiveIndex(index);
           },
         },
       });
 
-      texts.forEach((text, index) => {
+      slides.forEach((slide, index) => {
         const start = index;
-        const bullets = text.querySelectorAll("[data-wif-bullet]");
-        const dots = text.querySelectorAll("[data-wif-dot]");
+        const bullets = gsap.utils.toArray<HTMLElement>(
+          slide.querySelectorAll("[data-wif-bullet]"),
+        );
+        const dots = gsap.utils.toArray<HTMLElement>(
+          slide.querySelectorAll("[data-wif-dot]"),
+        );
 
         if (index === 0) {
-          timeline.to(text, { autoAlpha: 1, y: 0, duration: 0.35 }, 0);
+          timeline.to(slide, { autoAlpha: 1, y: 0, duration: 0.35 }, 0);
         } else {
           timeline.fromTo(
-            text,
+            slide,
             { autoAlpha: 0, y: 28 },
             { autoAlpha: 1, y: 0, duration: 0.5, ease: "power2.out" },
             start,
@@ -338,9 +339,9 @@ export function WhoItsForSection() {
           );
         }
 
-        if (index < texts.length - 1) {
+        if (index < slides.length - 1) {
           timeline.to(
-            text,
+            slide,
             { autoAlpha: 0, y: -20, duration: 0.4, ease: "power2.in" },
             start + 0.65,
           );
@@ -381,14 +382,16 @@ export function WhoItsForSection() {
               {whoItsFor.slides.map((slide) => (
                 <div
                   key={slide.id}
-                  className="absolute inset-0 flex items-center justify-center"
+                  data-wif-slide
+                  className="absolute inset-0 flex items-center justify-center will-change-transform"
                 >
-                  <WhoItsForSlideContent slide={slide} dataAttr />
+                  <WhoItsForSlideContent slide={slide} />
                 </div>
               ))}
 
+              {/* Height sizer so the absolute stack has layout space */}
               <div className="pointer-events-none invisible" aria-hidden>
-                <WhoItsForSlideContent slide={whoItsFor.slides[1]} />
+                <WhoItsForSlideContent slide={whoItsFor.slides[1] ?? whoItsFor.slides[0]} />
               </div>
             </div>
           </div>

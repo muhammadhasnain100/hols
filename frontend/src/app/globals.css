@@ -154,14 +154,18 @@ body {
 .portal-sidebar-glass {
   background: var(--sidebar-bg);
   border: 1px solid var(--sidebar-border);
+  backdrop-filter: blur(28px) saturate(170%);
+  -webkit-backdrop-filter: blur(28px) saturate(170%);
   box-shadow:
-    0 28px 70px rgba(21, 39, 68, 0.14),
-    0 10px 24px rgba(21, 39, 68, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+    0 28px 70px rgba(21, 39, 68, 0.1),
+    0 10px 24px rgba(21, 39, 68, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.7);
   color: var(--sidebar-text);
 }
 
 .portal-shell[data-theme="dark"] .portal-sidebar-glass {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
   box-shadow:
     0 28px 70px rgba(0, 0, 0, 0.55),
     0 10px 24px rgba(0, 0, 0, 0.35),
@@ -176,18 +180,31 @@ body {
 .portal-sidebar-flush {
   border-radius: 0;
   border-width: 0 1px 0 0;
-  box-shadow: 1px 0 0 rgba(21, 39, 68, 0.04);
+  box-shadow: 1px 0 0 rgba(21, 39, 68, 0.06);
+  background: var(--sidebar-bg);
+  backdrop-filter: blur(28px) saturate(170%);
+  -webkit-backdrop-filter: blur(28px) saturate(170%);
 }
 
 .portal-shell[data-theme="dark"] .portal-sidebar-flush {
-  box-shadow: 1px 0 0 rgba(255, 255, 255, 0.04);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: 1px 0 0 rgba(255, 255, 255, 0.08);
 }
 
 .portal-sidebar-flyout {
   background: var(--sidebar-bg);
   border: 1px solid var(--sidebar-border);
+  backdrop-filter: blur(20px) saturate(160%);
+  -webkit-backdrop-filter: blur(20px) saturate(160%);
   box-shadow: 0 12px 32px rgba(21, 39, 68, 0.1);
   color: var(--sidebar-text);
+}
+
+.portal-shell[data-theme="dark"] .portal-sidebar-flyout {
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.45);
 }
 
 /* Portal content theme (light / dark) */
@@ -199,15 +216,16 @@ body {
   --portal-text: #152744;
   --portal-muted: rgba(21, 39, 68, 0.45);
   --portal-soft: #eef1f5;
-  --sidebar-bg: #ffffff;
-  --sidebar-border: rgba(21, 39, 68, 0.08);
-  --sidebar-text: #152744;
-  --sidebar-muted: rgba(21, 39, 68, 0.72);
-  --sidebar-hover: rgba(21, 39, 68, 0.05);
-  --sidebar-active: rgba(56, 83, 164, 0.1);
-  --sidebar-accent: #3853A4;
-  --sidebar-divider: rgba(21, 39, 68, 0.08);
-  --sidebar-footer-bg: rgba(21, 39, 68, 0.04);
+  /* Soft brand glass — not solid white */
+  --sidebar-bg: rgba(236, 244, 250, 0.55);
+  --sidebar-border: rgba(56, 83, 164, 0.12);
+  --sidebar-text: #142644;
+  --sidebar-muted: rgba(20, 38, 68, 0.62);
+  --sidebar-hover: rgba(56, 83, 164, 0.08);
+  --sidebar-active: rgba(221, 228, 102, 0.28);
+  --sidebar-accent: #3853a4;
+  --sidebar-divider: rgba(20, 38, 68, 0.08);
+  --sidebar-footer-bg: rgba(255, 255, 255, 0.28);
   --portal-guide-bg: #eef6fb;
 }
 
@@ -222,15 +240,15 @@ body {
   --brand-prussian-blue: #e8eef6;
   --color-primary: #e8eef6;
   --brand-muted: rgba(232, 238, 246, 0.55);
-  --sidebar-bg: #0a0c10;
-  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-bg: #142644;
+  --sidebar-border: rgba(141, 195, 225, 0.14);
   --sidebar-text: #f4f7fb;
-  --sidebar-muted: rgba(244, 247, 251, 0.72);
-  --sidebar-hover: rgba(255, 255, 255, 0.06);
-  --sidebar-active: rgba(255, 255, 255, 0.1);
-  --sidebar-accent: #8DC3E1;
-  --sidebar-divider: rgba(255, 255, 255, 0.08);
-  --sidebar-footer-bg: rgba(255, 255, 255, 0.05);
+  --sidebar-muted: rgba(244, 247, 251, 0.68);
+  --sidebar-hover: rgba(255, 255, 255, 0.08);
+  --sidebar-active: rgba(221, 228, 102, 0.16);
+  --sidebar-accent: #dde466;
+  --sidebar-divider: rgba(255, 255, 255, 0.1);
+  --sidebar-footer-bg: rgba(0, 0, 0, 0.22);
   --portal-guide-bg: #121820;
   color: var(--portal-text);
 }
@@ -380,9 +398,15 @@ body {
   box-shadow: inset 0 0 0 1px rgba(56, 83, 164, 0.12);
 }
 
+.portal-shell[data-theme="dark"] .portal-nav-item.is-active {
+  box-shadow: inset 0 0 0 1px rgba(221, 228, 102, 0.28);
+}
+
 /* Sidebar icon badge */
 .portal-nav-icon {
-  color: var(--sidebar-text);
+  color: var(--sidebar-muted);
+  background: transparent;
+  transition: background 0.2s ease, color 0.2s ease, box-shadow 0.2s ease;
 }
 
 .portal-nav-item:hover .portal-nav-icon {
@@ -390,16 +414,25 @@ body {
   color: var(--sidebar-text);
 }
 
+.portal-nav-item.is-active .portal-nav-icon {
+  color: var(--sidebar-text);
+}
+
 /* Student portal: active nav item gets a lime icon badge */
 .portal-shell[data-role="student"] .portal-nav-item.is-active {
-  background: rgba(221, 228, 102, 0.14);
+  background: rgba(221, 228, 102, 0.18);
   color: var(--sidebar-text);
-  box-shadow: inset 0 0 0 1px rgba(221, 228, 102, 0.32);
+  box-shadow: inset 0 0 0 1px rgba(221, 228, 102, 0.36);
+}
+
+.portal-shell[data-theme="dark"][data-role="student"] .portal-nav-item.is-active {
+  background: rgba(221, 228, 102, 0.2);
+  box-shadow: inset 0 0 0 1px rgba(221, 228, 102, 0.4);
 }
 
 .portal-shell[data-role="student"] .portal-nav-item.is-active .portal-nav-icon {
   background: #dde466;
-  color: #152744;
+  color: #142644;
   box-shadow: 0 3px 10px rgba(221, 228, 102, 0.38);
 }
 
@@ -410,7 +443,7 @@ body {
 }
 
 .portal-shell[data-theme="dark"] .portal-sidebar-footer {
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .portal-sidebar-theme {
@@ -425,7 +458,7 @@ body {
 .portal-sidebar-theme-icon {
   background: var(--sidebar-hover);
   color: var(--sidebar-text);
-  transition: color 0.2s ease;
+  transition: color 0.2s ease, background 0.2s ease;
 }
 
 .portal-sidebar-theme:hover .portal-sidebar-theme-icon {
@@ -440,9 +473,14 @@ body {
   flex-shrink: 0;
   align-items: center;
   border-radius: 999px;
-  background: var(--sidebar-hover);
-  border: 1px solid var(--sidebar-border);
+  background: rgba(20, 38, 68, 0.12);
+  border: 1px solid rgba(20, 38, 68, 0.12);
   transition: background 0.25s ease, border-color 0.25s ease;
+}
+
+.portal-shell[data-theme="dark"] .portal-theme-switch {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.14);
 }
 
 .portal-theme-switch[data-on="true"] {
@@ -463,7 +501,7 @@ body {
 
 .portal-theme-switch[data-on="true"] .portal-theme-switch-knob {
   transform: translateX(1.15rem);
-  background: #152744;
+  background: #142644;
 }
 
 .portal-sidebar-profile {
@@ -505,6 +543,12 @@ body {
   color: #dc2626;
 }
 
+.portal-shell[data-theme="dark"] .portal-sidebar-logout:hover {
+  background: rgba(248, 113, 113, 0.12);
+  border-color: rgba(248, 113, 113, 0.22);
+  color: #fca5a5;
+}
+
 .portal-sidebar-logout-icon {
   display: flex;
   height: 2rem;
@@ -521,6 +565,11 @@ body {
 .portal-sidebar-logout:hover .portal-sidebar-logout-icon {
   background: rgba(220, 38, 38, 0.14);
   color: #dc2626;
+}
+
+.portal-shell[data-theme="dark"] .portal-sidebar-logout:hover .portal-sidebar-logout-icon {
+  background: rgba(248, 113, 113, 0.18);
+  color: #fca5a5;
 }
 
 .portal-guide-card {
@@ -568,6 +617,108 @@ body {
   --dash-surface: rgba(255, 255, 255, 0.05);
   --dash-surface-border: rgba(255, 255, 255, 0.09);
   --dash-soft: rgba(255, 255, 255, 0.06);
+}
+
+/* Student brand screen — full-bleed gradient BACKGROUND (no inset “cart”)
+   Prussian #142644 · Dusk #3853A4 · Lemon Lime #DDE466 · Baby Blue #8DC3E1 */
+.portal-shell[data-backdrop="brand"],
+.portal-content-area[data-backdrop="brand"] {
+  background:
+    radial-gradient(100% 90% at 100% 0%, rgba(221, 228, 102, 0.75) 0%, transparent 55%),
+    radial-gradient(90% 85% at 0% 100%, rgba(141, 195, 225, 0.7) 0%, transparent 58%),
+    radial-gradient(70% 70% at 70% 80%, rgba(56, 83, 164, 0.28) 0%, transparent 60%),
+    linear-gradient(150deg, #dceaf5 0%, #e8eef8 35%, #eef3d8 70%, #dfe9f4 100%) !important;
+}
+
+.portal-shell[data-theme="dark"][data-backdrop="brand"],
+.portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] {
+  background:
+    radial-gradient(100% 90% at 100% 0%, rgba(221, 228, 102, 0.35) 0%, transparent 55%),
+    radial-gradient(90% 85% at 0% 100%, rgba(141, 195, 225, 0.28) 0%, transparent 58%),
+    radial-gradient(70% 70% at 70% 80%, rgba(56, 83, 164, 0.45) 0%, transparent 60%),
+    linear-gradient(150deg, #142644 0%, #1a2f55 40%, #162848 100%) !important;
+}
+
+.portal-content-area[data-backdrop="brand"] > main {
+  background: transparent !important;
+}
+
+/* Never paint an outer rounded “cart” behind page content */
+.portal-content-area[data-backdrop="brand"] .dashboard-screen {
+  position: relative;
+  isolation: isolate;
+  margin: 0 !important;
+  padding: 0 0 1.5rem !important;
+  min-height: calc(100svh - 4.5rem);
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+/* Glass cards / surfaces on brand screens */
+.portal-content-area[data-backdrop="brand"] .dashboard-glass-card,
+.portal-content-area[data-backdrop="brand"] .dashboard-surface,
+.portal-content-area[data-backdrop="brand"] .dashboard-hero {
+  background: rgba(255, 255, 255, 0.28) !important;
+  backdrop-filter: blur(22px) saturate(180%);
+  -webkit-backdrop-filter: blur(22px) saturate(180%);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+  box-shadow:
+    0 12px 40px rgba(20, 38, 68, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .dashboard-glass-card,
+.portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .dashboard-surface,
+.portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .dashboard-hero {
+  background: rgba(20, 38, 68, 0.35) !important;
+  border-color: rgba(141, 195, 225, 0.2);
+  box-shadow:
+    0 12px 40px rgba(0, 0, 0, 0.35),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.portal-content-area[data-backdrop="brand"] .dashboard-pill-soft {
+  background: rgba(255, 255, 255, 0.4);
+  border-color: rgba(255, 255, 255, 0.65);
+}
+
+.portal-content-area[data-backdrop="brand"] .dashboard-pill-soft:hover {
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .dashboard-pill-soft {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .dashboard-pill-soft:hover {
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.portal-content-area[data-backdrop="brand"] .dashboard-icon-btn,
+.portal-content-area[data-backdrop="brand"] .dashboard-welcome-chip,
+.portal-content-area[data-backdrop="brand"] .dashboard-tool-icon {
+  background: rgba(255, 255, 255, 0.38);
+  border-color: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .dashboard-icon-btn,
+.portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .dashboard-welcome-chip,
+.portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .dashboard-tool-icon {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.14);
+}
+
+.portal-content-area[data-backdrop="brand"] .dashboard-row:hover {
+  background: rgba(255, 255, 255, 0.28);
+}
+
+.portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .dashboard-row:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .dashboard-icon-btn {
@@ -836,27 +987,27 @@ body {
 }
 
 .portal-sidebar-toggle {
-  border: 1px solid var(--portal-border);
-  background: var(--portal-surface);
-  color: var(--portal-text);
+  border: 1px solid var(--sidebar-border);
+  background: var(--sidebar-bg);
+  color: var(--sidebar-text);
   box-shadow: 0 4px 14px rgba(21, 39, 68, 0.1);
   transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
 }
 
 .portal-sidebar-toggle:hover {
-  background: var(--portal-soft);
+  background: var(--sidebar-hover);
   box-shadow: 0 6px 18px rgba(21, 39, 68, 0.12);
 }
 
 .portal-shell[data-theme="dark"] .portal-sidebar-toggle {
-  background: #171b24;
-  border-color: rgba(255, 255, 255, 0.1);
-  color: #e8eef6;
+  background: #1c3358;
+  border-color: rgba(141, 195, 225, 0.2);
+  color: #f4f7fb;
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.35);
 }
 
 .portal-shell[data-theme="dark"] .portal-sidebar-toggle:hover {
-  background: #1e2430;
+  background: #243e68;
 }
 
 @keyframes profile-learning-float {

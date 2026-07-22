@@ -10,7 +10,7 @@ type LecturesPageLayoutProps = {
 
 export function LecturesPageLayout({ children }: LecturesPageLayoutProps) {
   return (
-    <PortalShell role="student" title="Lectures" showPageHeader={false} nav={studentNav}>
+    <PortalShell role="student" title="Lectures" showPageHeader={false} brandBackdrop nav={studentNav}>
       <div className="dashboard-screen">
         <StudentPageHeader title="Lectures" />
 

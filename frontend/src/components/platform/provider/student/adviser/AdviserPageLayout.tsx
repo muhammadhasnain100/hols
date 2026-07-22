@@ -29,7 +29,7 @@ export function AdviserPageLayout({ children }: AdviserPageLayoutProps) {
     typeof user?.profile?.profile_pic === "string" ? user.profile.profile_pic : undefined;
 
   return (
-    <PortalShell role="student" title="Peptide Adviser" showPageHeader={false} nav={studentNav}>
+    <PortalShell role="student" title="Peptide Adviser" showPageHeader={false} brandBackdrop nav={studentNav}>
       <div className="dashboard-screen">
         <header className="mb-5 flex flex-wrap items-center justify-between gap-4">
           <h1 className="font-sans text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl">

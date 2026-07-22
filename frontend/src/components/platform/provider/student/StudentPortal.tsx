@@ -181,7 +181,7 @@ function MembershipHeroCard({
   expiry: string;
 }) {
   return (
-    <section className="dashboard-hero relative overflow-hidden rounded-2xl p-5 md:p-6">
+    <section className="dashboard-glass-card relative overflow-hidden rounded-2xl p-5 md:p-6">
       <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
         Membership status
       </p>
@@ -234,7 +234,7 @@ function HeroPill({
 
 function QuickToolsCard() {
   return (
-    <section className="dashboard-surface rounded-2xl p-5">
+    <section className="dashboard-glass-card rounded-2xl p-5">
       <div className="flex items-center justify-between">
         <h2 className="font-sans text-lg font-semibold tracking-[0.005em] text-[color:var(--dash-text)]">Quick tools</h2>
         <Link href="/student/lectures" className="text-brand-caption font-medium text-[color:var(--dash-accent)] hover:brightness-110">
@@ -258,7 +258,7 @@ function QuickToolsCard() {
 
 function ActivityCard({ orders }: { orders: Order[] }) {
   return (
-    <section className="dashboard-surface rounded-2xl p-5">
+    <section className="dashboard-glass-card rounded-2xl p-5">
       <div className="flex items-center justify-between">
         <h2 className="font-sans text-lg font-semibold tracking-[0.005em] text-[color:var(--dash-text)]">Recent activity</h2>
         <Link
@@ -304,7 +304,7 @@ function ActivityCard({ orders }: { orders: Order[] }) {
 
 function QuickLinksCard({ orderCount }: { orderCount: string }) {
   return (
-    <section className="dashboard-surface rounded-2xl p-5">
+    <section className="dashboard-glass-card rounded-2xl p-5">
       <div className="space-y-1">
         {QUICK_LINKS.map((link) => (
           <Link

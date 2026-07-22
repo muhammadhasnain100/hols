@@ -32,7 +32,7 @@ export function CoursePageLayout({
   children,
 }: CoursePageLayoutProps) {
   return (
-    <PortalShell role="student" title={title} showPageHeader={false} nav={studentNav}>
+    <PortalShell role="student" title={title} showPageHeader={false} brandBackdrop nav={studentNav}>
       <div className="dashboard-screen">
         <StudentPageHeader title="Lectures" />
 

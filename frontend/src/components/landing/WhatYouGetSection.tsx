@@ -186,8 +186,9 @@ export function WhatYouGetSection() {
 
       if (steps.length === 0) return;
 
+      // Use fromTo in the timeline only — do not pre-hide with autoAlpha:0
+      // outside the ScrollTrigger, or a broken/delayed ST leaves the section blank.
       gsap.set(lineFill, { scaleY: 0, transformOrigin: "top center" });
-      gsap.set(steps, { autoAlpha: 0, y: 40 });
 
       connectorRefs.current.forEach((path) => {
         if (!path) return;
