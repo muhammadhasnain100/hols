@@ -77,7 +77,7 @@ export function CalculatorVisual({
   return (
     <div
       ref={rootRef}
-      className="relative mx-auto mt-8 w-full max-w-md overflow-hidden rounded-2xl border border-primary/[0.06] bg-[#EEF2F4]/60 px-3 py-6 sm:max-w-lg sm:bg-[#EEF2F4]/70 sm:px-6 sm:py-8"
+      className="dashboard-glass-card relative mx-auto w-full max-w-sm overflow-visible rounded-2xl px-2 py-3 sm:max-w-md sm:px-6 sm:py-5 md:px-8 md:py-6 lg:mt-0 lg:max-w-none"
     >
       <div ref={sceneRef}>
         <CalculatorReconScene

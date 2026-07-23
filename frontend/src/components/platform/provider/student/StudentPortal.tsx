@@ -3,7 +3,6 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { DashboardPageLayout } from "@/components/platform/provider/student/dashboard/DashboardPageLayout";
-import { getStoredUser } from "@/lib/integrate/auth/storage";
 import {
   getCurrentMembership,
   listOrders,
@@ -115,7 +114,7 @@ const QUICK_LINKS: readonly QuickLink[] = [
 ];
 
 export function StudentPortal() {
-  const user = getStoredUser();
+  const [loading, setLoading] = useState(true);
   const [membershipLabel, setMembershipLabel] = useState("—");
   const [membershipStatus, setMembershipStatus] = useState("Loading…");
   const [membershipExpiry, setMembershipExpiry] = useState("—");
@@ -124,6 +123,7 @@ export function StudentPortal() {
 
   useEffect(() => {
     async function loadSummary() {
+      setLoading(true);
       try {
         const [membershipRes, ordersRes] = await Promise.all([
           getCurrentMembership(),
@@ -144,30 +144,119 @@ export function StudentPortal() {
         setRecentOrders(ordersRes.items);
       } catch {
         setMembershipStatus("Could not load");
+      } finally {
+        setLoading(false);
       }
     }
 
     void loadSummary();
   }, []);
 
-  const firstName =
-    typeof user?.profile?.first_name === "string" ? user.profile.first_name : "";
-  const lastName = typeof user?.profile?.last_name === "string" ? user.profile.last_name : "";
-  const displayName =
-    firstName && lastName ? `${firstName} ${lastName}` : firstName || "Student";
-
   return (
-    <DashboardPageLayout displayName={displayName}>
-      <div className="flex flex-col gap-4">
-        <MembershipHeroCard planLabel={membershipLabel} status={membershipStatus} expiry={membershipExpiry} />
-        <QuickToolsCard />
-        <ActivityCard orders={recentOrders} />
+    <DashboardPageLayout>
+      {loading ? (
+        <DashboardSkeleton />
+      ) : (
+        <>
+          <div className="flex min-w-0 flex-col gap-3 sm:gap-4">
+            <MembershipHeroCard
+              planLabel={membershipLabel}
+              status={membershipStatus}
+              expiry={membershipExpiry}
+            />
+            <QuickToolsCard />
+            <ActivityCard orders={recentOrders} />
+          </div>
+
+          <div className="flex min-w-0 flex-col gap-3 sm:gap-4">
+            <QuickLinksCard orderCount={orderCount} />
+          </div>
+        </>
+      )}
+    </DashboardPageLayout>
+  );
+}
+
+function SkeletonBlock({ className }: { className?: string }) {
+  return <span className={cn("dashboard-skeleton-block", className)} aria-hidden />;
+}
+
+function DashboardSkeleton() {
+  return (
+    <>
+      <div className="flex min-w-0 flex-col gap-3 sm:gap-4" aria-busy="true" aria-label="Loading dashboard">
+        <section className="dashboard-glass-card relative overflow-hidden rounded-2xl p-4 sm:p-5 md:p-6">
+          <SkeletonBlock className="h-3 w-28 rounded-full" />
+          <SkeletonBlock className="mt-3 h-8 w-40 rounded-full sm:h-10 sm:w-52" />
+          <SkeletonBlock className="mt-3 h-4 w-36 rounded-full" />
+          <div className="mt-5 flex flex-wrap gap-2">
+            <SkeletonBlock className="h-10 w-24 rounded-full" />
+            <SkeletonBlock className="h-10 w-20 rounded-full" />
+            <SkeletonBlock className="h-10 w-16 rounded-full" />
+          </div>
+        </section>
+
+        <section className="dashboard-glass-card rounded-2xl p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-2">
+            <SkeletonBlock className="h-5 w-28 rounded-full" />
+            <SkeletonBlock className="h-4 w-16 rounded-full" />
+          </div>
+          <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4">
+            {Array.from({ length: 4 }, (_, index) => (
+              <div key={index} className="flex flex-col items-center gap-2">
+                <SkeletonBlock className="h-11 w-11 rounded-full sm:h-12 sm:w-12" />
+                <SkeletonBlock className="h-3 w-14 rounded-full" />
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="dashboard-glass-card rounded-2xl p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-2">
+            <SkeletonBlock className="h-5 w-32 rounded-full" />
+            <SkeletonBlock className="h-4 w-16 rounded-full" />
+          </div>
+          <div className="mt-4 space-y-2.5">
+            {Array.from({ length: 3 }, (_, index) => (
+              <div
+                key={index}
+                className="flex items-center justify-between gap-3 rounded-xl px-2.5 py-2.5 sm:px-3.5 sm:py-3"
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <SkeletonBlock className="h-9 w-9 shrink-0 rounded-full" />
+                  <div className="min-w-0 space-y-2">
+                    <SkeletonBlock className="h-3.5 w-28 rounded-full" />
+                    <SkeletonBlock className="h-3 w-20 rounded-full" />
+                  </div>
+                </div>
+                <SkeletonBlock className="h-4 w-14 rounded-full" />
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
 
-      <div className="flex flex-col gap-4">
-        <QuickLinksCard orderCount={orderCount} />
+      <div className="flex min-w-0 flex-col gap-3 sm:gap-4">
+        <section className="dashboard-glass-card rounded-2xl p-4 sm:p-5">
+          <div className="space-y-1">
+            {Array.from({ length: 4 }, (_, index) => (
+              <div
+                key={index}
+                className="flex items-center gap-3 rounded-xl px-2.5 py-2.5 sm:px-3 sm:py-3"
+              >
+                <SkeletonBlock className="h-9 w-9 shrink-0 rounded-full" />
+                <SkeletonBlock className="h-3.5 flex-1 rounded-full" />
+                <SkeletonBlock className="h-4 w-4 shrink-0 rounded-full" />
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 grid grid-cols-1 gap-2.5 min-[380px]:grid-cols-2">
+            <SkeletonBlock className="h-10 w-full rounded-full" />
+            <SkeletonBlock className="h-10 w-full rounded-full" />
+          </div>
+        </section>
       </div>
-    </DashboardPageLayout>
+    </>
   );
 }
 
@@ -181,19 +270,19 @@ function MembershipHeroCard({
   expiry: string;
 }) {
   return (
-    <section className="dashboard-glass-card relative overflow-hidden rounded-2xl p-5 md:p-6">
+    <section className="dashboard-glass-card relative overflow-hidden rounded-2xl p-4 sm:p-5 md:p-6">
       <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
         Membership status
       </p>
-      <div className="mt-2 flex items-end gap-2">
-        <span className="font-sans text-2xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] md:text-[2.5rem] md:leading-none">
+      <div className="mt-2 flex flex-wrap items-end gap-x-2 gap-y-1">
+        <span className="font-sans text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl md:text-[2.5rem] md:leading-none">
           {planLabel}
         </span>
-        <span className="mb-1 text-brand-caption font-medium text-[color:var(--dash-faint)]">{status}</span>
+        <span className="mb-0.5 text-brand-caption font-medium text-[color:var(--dash-faint)] sm:mb-1">{status}</span>
       </div>
       <p className="text-brand-body mt-2 text-[color:var(--dash-muted)]">Active until {expiry}</p>
 
-      <div className="mt-5 flex flex-wrap gap-2.5">
+      <div className="mt-4 flex flex-wrap gap-2 sm:mt-5 sm:gap-2.5">
         <HeroPill href="/student/payment" variant="solid">
           Upgrade
         </HeroPill>
@@ -221,7 +310,7 @@ function HeroPill({
     <Link
       href={href}
       className={cn(
-        "font-sans inline-flex min-h-10 items-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] transition",
+        "font-sans inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-full px-4 text-sm font-medium tracking-[0.01em] transition sm:flex-none sm:px-5",
         variant === "solid"
           ? "bg-[#DDE466] text-[#152744] hover:brightness-105"
           : "dashboard-pill-soft text-[color:var(--dash-text)]",
@@ -234,21 +323,25 @@ function HeroPill({
 
 function QuickToolsCard() {
   return (
-    <section className="dashboard-glass-card rounded-2xl p-5">
-      <div className="flex items-center justify-between">
-        <h2 className="font-sans text-lg font-semibold tracking-[0.005em] text-[color:var(--dash-text)]">Quick tools</h2>
-        <Link href="/student/lectures" className="text-brand-caption font-medium text-[color:var(--dash-accent)] hover:brightness-110">
+    <section className="dashboard-glass-card rounded-2xl p-4 sm:p-5">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="font-sans text-base font-semibold tracking-[0.005em] text-[color:var(--dash-accent)] sm:text-lg">
+          Quick tools
+        </h2>
+        <Link href="/student/lectures" className="text-brand-caption shrink-0 font-medium text-[color:var(--dash-accent)] hover:brightness-110">
           View all
         </Link>
       </div>
 
-      <div className="mt-4 grid grid-cols-4 gap-2 sm:gap-3">
+      <div className="mt-4 grid grid-cols-2 gap-3 sm:grid-cols-4 sm:gap-3">
         {QUICK_TOOLS.map((tool) => (
           <Link key={tool.href} href={tool.href} className="group flex flex-col items-center gap-2">
-            <span className="dashboard-tool-icon flex h-12 w-12 items-center justify-center rounded-full text-[color:var(--dash-text)] transition group-hover:text-[#152744]">
+            <span className="dashboard-tool-icon flex h-11 w-11 items-center justify-center rounded-full text-[color:var(--dash-text)] transition sm:h-12 sm:w-12 group-hover:text-[#152744]">
               {tool.icon}
             </span>
-            <span className="text-brand-caption text-center text-[color:var(--dash-muted)]">{tool.label}</span>
+            <span className="text-brand-caption text-center text-[color:var(--dash-muted)] group-hover:text-[color:var(--dash-text)]">
+              {tool.label}
+            </span>
           </Link>
         ))}
       </div>
@@ -258,12 +351,14 @@ function QuickToolsCard() {
 
 function ActivityCard({ orders }: { orders: Order[] }) {
   return (
-    <section className="dashboard-glass-card rounded-2xl p-5">
-      <div className="flex items-center justify-between">
-        <h2 className="font-sans text-lg font-semibold tracking-[0.005em] text-[color:var(--dash-text)]">Recent activity</h2>
+    <section className="dashboard-glass-card rounded-2xl p-4 sm:p-5">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="font-sans text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg">
+          Recent activity
+        </h2>
         <Link
           href="/student/payment/orders"
-          className="text-brand-caption font-medium text-[color:var(--dash-accent)] hover:brightness-110"
+          className="text-brand-caption shrink-0 font-medium text-[color:var(--dash-accent)] hover:brightness-110"
         >
           View all
         </Link>
@@ -276,9 +371,9 @@ function ActivityCard({ orders }: { orders: Order[] }) {
           orders.map((order) => (
             <div
               key={order.order_id}
-              className="dashboard-row flex items-center justify-between gap-3 rounded-xl px-3.5 py-3"
+              className="dashboard-row flex items-center justify-between gap-2 rounded-xl px-2.5 py-2.5 sm:gap-3 sm:px-3.5 sm:py-3"
             >
-              <div className="flex min-w-0 items-center gap-3">
+              <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#DDE466]/15 text-[color:var(--dash-accent)]">
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden>
                     <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.77 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" />
@@ -304,18 +399,20 @@ function ActivityCard({ orders }: { orders: Order[] }) {
 
 function QuickLinksCard({ orderCount }: { orderCount: string }) {
   return (
-    <section className="dashboard-glass-card rounded-2xl p-5">
+    <section className="dashboard-glass-card rounded-2xl p-4 sm:p-5">
       <div className="space-y-1">
         {QUICK_LINKS.map((link) => (
           <Link
             key={link.href}
             href={link.href}
-            className="dashboard-row group flex items-center gap-3 rounded-xl px-3 py-3 transition"
+            className="dashboard-row group flex items-center gap-2.5 rounded-xl px-2.5 py-2.5 transition sm:gap-3 sm:px-3 sm:py-3"
           >
             <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[color:var(--dash-soft)] text-[color:var(--dash-muted)] transition group-hover:bg-[#DDE466]/15 group-hover:text-[color:var(--dash-accent)]">
               {link.icon}
             </span>
-            <span className="font-sans flex-1 text-sm font-medium text-[color:var(--dash-muted)]">{link.label}</span>
+            <span className="font-sans min-w-0 flex-1 truncate text-sm font-medium text-[color:var(--dash-muted)]">
+              {link.label}
+            </span>
             {link.label === "Order history" && orderCount !== "—" ? (
               <span className="text-brand-caption rounded-full bg-[color:var(--dash-soft)] px-2 py-0.5 font-medium text-[color:var(--dash-faint)]">
                 {orderCount}
@@ -337,7 +434,7 @@ function QuickLinksCard({ orderCount }: { orderCount: string }) {
         ))}
       </div>
 
-      <div className="mt-4 grid grid-cols-2 gap-2.5">
+      <div className="mt-4 grid grid-cols-1 gap-2.5 min-[380px]:grid-cols-2">
         <Link
           href="/student/payment"
           className="font-sans inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full bg-[#DDE466] px-4 text-sm font-medium text-[#152744] transition hover:brightness-105"

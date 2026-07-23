@@ -1,9 +1,12 @@
-import Link from "next/link";
-import { HeroLogo } from "@/components/hero/HeroLogo";
+import { AuthCreativeAside } from "@/components/platform/auth/AuthCreativeAside";
 import { authEyebrowClass, authSubtitleClass, authTitleClass } from "@/components/platform/auth/auth-styles";
-import { brand } from "@/config/brand";
+import { HeroLogo } from "@/components/hero/HeroLogo";
 import { heroLayout } from "@/lib/hero-styles";
 import { cn } from "@/lib/utils";
+
+/** Same light portal brand gradient as student dashboard (`data-backdrop="brand"`). */
+const AUTH_BRAND_BACKDROP =
+  "radial-gradient(100% 90% at 100% 0%, rgba(221, 228, 102, 0.75) 0%, transparent 55%), radial-gradient(90% 85% at 0% 100%, rgba(141, 195, 225, 0.7) 0%, transparent 58%), radial-gradient(70% 70% at 70% 80%, rgba(56, 83, 164, 0.28) 0%, transparent 60%), linear-gradient(150deg, #dceaf5 0%, #e8eef8 35%, #eef3d8 70%, #dfe9f4 100%)";
 
 type AuthShellProps = {
   children: React.ReactNode;
@@ -23,89 +26,41 @@ export function AuthShell({
   className,
 }: AuthShellProps) {
   return (
-    <div className={cn("relative min-h-svh bg-white lg:grid lg:grid-cols-2", className)}>
-      <aside
-        className="relative hidden overflow-hidden lg:flex lg:flex-col lg:px-12 lg:py-12 xl:px-16 xl:py-14"
-        style={{ backgroundColor: brand.colors.primary.prussianBlue }}
-      >
+    <div className={cn("relative min-h-svh bg-transparent lg:grid lg:grid-cols-2", className)}>
+      <AuthCreativeAside />
+
+      <section className="relative flex min-h-svh flex-col overflow-hidden">
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0"
-          style={{
-            backgroundImage: `radial-gradient(circle at 14% 10%, ${brand.colors.accent.babyBlue}47, transparent 34%), radial-gradient(circle at 86% 18%, ${brand.colors.accent.lemonLime}2E, transparent 32%), radial-gradient(circle at 48% 86%, ${brand.colors.primary.duskBlue}33, transparent 42%)`,
-          }}
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 opacity-[0.05]"
-          style={{
-            backgroundImage:
-              "linear-gradient(rgba(255,255,255,0.7) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.7) 1px, transparent 1px)",
-            backgroundSize: "48px 48px",
-            maskImage: "radial-gradient(circle at 50% 36%, black, transparent 74%)",
-            WebkitMaskImage: "radial-gradient(circle at 50% 36%, black, transparent 74%)",
-          }}
+          className="auth-brand-backdrop pointer-events-none absolute inset-0"
+          style={{ background: AUTH_BRAND_BACKDROP, backgroundColor: "#e8eef8" }}
         />
 
-        <div className="relative z-10 flex h-full flex-col">
-          <Link href="/" className="inline-flex transition-opacity hover:opacity-90">
-            <HeroLogo variant="light" className="h-10" linked={false} />
-          </Link>
-
-          <div className="flex flex-1 items-center justify-center py-12 xl:py-16">
-            <div aria-hidden className="relative aspect-square w-full max-w-[500px]">
-              <div className="absolute inset-3 rounded-full border border-white/10" />
-              <div className="absolute inset-14 rounded-full border border-dashed border-accent/35" />
-              <div
-                aria-hidden
-                className="absolute -bottom-5 right-2 h-40 w-40 rounded-full blur-3xl"
-                style={{ backgroundColor: `${brand.colors.accent.lemonLime}26` }}
-              />
-              <div
-                aria-hidden
-                className="absolute -top-3 left-8 h-32 w-32 rounded-full blur-2xl"
-                style={{ backgroundColor: `${brand.colors.accent.babyBlue}1A` }}
-              />
-
-              <img
-                src="/assets/hols-auth-illustration.svg"
-                alt=""
-                aria-hidden="true"
-                className="relative z-10 h-full w-full object-contain drop-shadow-[0_34px_90px_rgba(0,0,0,0.28)]"
-              />
-            </div>
-          </div>
-
-          <div className="mt-auto h-px w-full bg-gradient-to-r from-transparent via-white/20 to-transparent" />
-        </div>
-      </aside>
-
-      <section className="relative flex min-h-svh flex-col overflow-hidden bg-white">
-        <header className={cn("relative z-10 flex items-center justify-between py-5", heroLayout.gutterX, "lg:px-10")}>
-          <Link href="/" className="inline-flex lg:hidden">
+        <header className={cn("relative z-10 flex items-center justify-between py-4 sm:py-5", heroLayout.gutterX, "lg:px-10")}>
+          <a href="/" className="inline-flex lg:hidden">
             <HeroLogo variant="dark" className="h-8" linked={false} />
-          </Link>
-          <Link
+          </a>
+          <a
             href="/"
-            className="text-brand-caption ml-auto inline-flex items-center gap-2 rounded-full border border-primary/10 bg-white px-4 py-2 font-medium text-primary/75 transition hover:bg-primary/[0.03] hover:text-primary"
+            className="text-brand-caption ml-auto inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/45 px-3.5 py-2 font-medium text-primary/80 shadow-[0_8px_24px_rgba(20,38,68,0.08)] backdrop-blur-md transition hover:bg-white/70 hover:text-primary sm:px-4"
           >
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
               <path d="M15 18l-6-6 6-6" />
             </svg>
             Back to site
-          </Link>
+          </a>
         </header>
 
-        <div className={cn("relative z-10 flex flex-1 flex-col justify-center pb-12 pt-4", heroLayout.gutterX, "lg:px-10 xl:px-16")}>
+        <div className={cn("relative z-10 flex flex-1 flex-col justify-center pb-10 pt-2 sm:pb-12 sm:pt-4", heroLayout.gutterX, "lg:px-10 xl:px-16")}>
           <div
             className={cn(
-              "mx-auto w-full",
+              "mx-auto w-full rounded-2xl border border-white/55 bg-white/55 p-4 shadow-[0_12px_40px_rgba(20,38,68,0.1),inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-[22px] [backdrop-filter:blur(22px)_saturate(180%)] [-webkit-backdrop-filter:blur(22px)_saturate(180%)] sm:p-6 md:p-8",
               contentWidth === "lg" ? "max-w-xl" : "max-w-md",
             )}
           >
-            <div className="mb-8">
+            <div className="mb-6 sm:mb-8">
               <p className={authEyebrowClass}>{eyebrow}</p>
-              <h1 className={cn("mt-3", authTitleClass)}>{title}</h1>
+              <h1 className={cn("mt-2 sm:mt-3", authTitleClass)}>{title}</h1>
               {subtitle ? <p className={authSubtitleClass}>{subtitle}</p> : null}
             </div>
             {children}

@@ -2,7 +2,14 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { useCallback, useEffect, useState, type CSSProperties } from "react";
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+  type CSSProperties,
+} from "react";
 import { HeroLogo } from "@/components/hero/HeroLogo";
 import { stopPortalAuthRuntime } from "@/lib/integrate/auth/runtime";
 import { clearAuthSession } from "@/lib/integrate/auth/storage";
@@ -13,13 +20,18 @@ import {
   portalPageDescClass,
   portalPageTitleClass,
 } from "@/components/platform/provider/portal-styles";
+import { parsePortalTheme, PORTAL_THEME_KEY } from "@/components/platform/provider/portal-theme";
+import {
+  getPortalThemeMemory,
+  getPortalThemeSnapshot,
+  setPortalThemeMemory,
+  subscribePortalTheme,
+  writePortalTheme,
+} from "@/components/platform/provider/portal-theme-store";
+import { useServerPortalTheme } from "@/components/platform/provider/PortalThemeProvider";
 import { cn } from "@/lib/utils";
 
-const MOBILE_OPEN_KEY = "hols-portal-sidebar-open";
 const COLLAPSED_KEY = "hols-portal-sidebar-collapsed";
-const THEME_KEY = "hols-portal-theme";
-
-type PortalTheme = "light" | "dark";
 
 export type PortalNavChild = {
   label: string;
@@ -87,54 +99,92 @@ export function PortalShell({
 }: PortalShellProps) {
   const pathname = usePathname();
   const router = useRouter();
+  const serverTheme = useServerPortalTheme();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [collapsed, setCollapsed] = useState(false);
-  const [theme, setTheme] = useState<PortalTheme>(() => {
-    if (typeof window === "undefined") return "dark";
-    const stored = localStorage.getItem(THEME_KEY);
-    if (stored === "dark" || stored === "light") return stored;
-    return "dark";
-  });
+  // Cookie/SSR theme for first paint; localStorage/memory for client navigations.
+  const getServerSnapshot = useCallback(() => serverTheme, [serverTheme]);
+  const theme = useSyncExternalStore(
+    subscribePortalTheme,
+    getPortalThemeSnapshot,
+    getServerSnapshot,
+  );
   const [flyoutHref, setFlyoutHref] = useState<string | null>(null);
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => new Set());
+  const [navQuery, setNavQuery] = useState("");
+  const [isDesktop, setIsDesktop] = useState(false);
+
+  // Collapsed icon-rail only applies on desktop; mobile drawer is always full.
+  const compact = collapsed && isDesktop;
 
   const sidebarOffset = collapsed
     ? "lg:ml-[4.75rem]"
     : "lg:ml-[16rem]";
   const pageEyebrow = eyebrow ?? roleEyebrow(role);
 
+  const filteredNav = useMemo(() => {
+    const q = navQuery.trim().toLowerCase();
+    if (!q) return nav;
+    return nav
+      .map((item) => {
+        const labelMatch = item.label.toLowerCase().includes(q);
+        const matchedChildren = item.children?.filter((child) =>
+          child.label.toLowerCase().includes(q),
+        );
+        if (labelMatch) return item;
+        if (matchedChildren && matchedChildren.length > 0) {
+          return { ...item, children: matchedChildren };
+        }
+        return null;
+      })
+      .filter((item): item is PortalNavItem => item !== null);
+  }, [nav, navQuery]);
+
+  useEffect(() => {
+    const mq = window.matchMedia("(min-width: 1024px)");
+    const sync = () => setIsDesktop(mq.matches);
+    sync();
+    mq.addEventListener("change", sync);
+    return () => mq.removeEventListener("change", sync);
+  }, []);
+
   useEffect(() => {
     const timer = window.setTimeout(() => {
-      const storedMobile = localStorage.getItem(MOBILE_OPEN_KEY);
       const storedCollapsed = localStorage.getItem(COLLAPSED_KEY);
-      const storedTheme = localStorage.getItem(THEME_KEY);
-      if (storedMobile !== null) setMobileOpen(storedMobile === "true");
       if (storedCollapsed !== null) setCollapsed(storedCollapsed === "true");
-      if (storedTheme === "dark" || storedTheme === "light") {
-        setTheme(storedTheme);
+
+      const storedTheme = parsePortalTheme(localStorage.getItem(PORTAL_THEME_KEY));
+      const nextTheme = storedTheme ?? serverTheme;
+      const htmlTheme = parsePortalTheme(document.documentElement.getAttribute("data-portal-theme"));
+      if (nextTheme !== serverTheme || htmlTheme !== nextTheme || getPortalThemeMemory() !== nextTheme) {
+        writePortalTheme(nextTheme);
       } else {
-        localStorage.setItem(THEME_KEY, "dark");
+        setPortalThemeMemory(nextTheme);
       }
+
+      // Never restore an open mobile drawer — start closed on small screens.
+      setMobileOpen(false);
     }, 0);
     return () => window.clearTimeout(timer);
-  }, []);
+  }, [serverTheme]);
 
   const toggleTheme = useCallback(() => {
-    setTheme((current) => {
-      const next: PortalTheme = current === "light" ? "dark" : "light";
-      localStorage.setItem(THEME_KEY, next);
-      return next;
-    });
-  }, []);
-
-  useEffect(() => {
-    localStorage.setItem(MOBILE_OPEN_KEY, String(mobileOpen));
-  }, [mobileOpen]);
+    writePortalTheme(theme === "light" ? "dark" : "light");
+  }, [theme]);
 
   useEffect(() => {
     localStorage.setItem(COLLAPSED_KEY, String(collapsed));
     if (collapsed) setExpandedGroups(new Set());
   }, [collapsed]);
+
+  useEffect(() => {
+    if (!mobileOpen || isDesktop) return;
+    const previous = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previous;
+    };
+  }, [mobileOpen, isDesktop]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -191,9 +241,8 @@ export function PortalShell({
   function renderNavLink(item: PortalNavItem, opts?: { inFlyout?: boolean; child?: PortalNavChild }) {
     const href = opts?.child?.href ?? item.href;
     const label = opts?.child?.label ?? item.label;
-    const active = opts?.child
-      ? isItemActive(pathname, opts.child.href, opts.child.exact)
-      : isNavItemActive(pathname, item);
+    // Only color top-level items (e.g. Payment). Child routes stay unstyled.
+    const active = opts?.child ? false : isNavItemActive(pathname, item);
     const showIcon = !opts?.inFlyout && !opts?.child;
 
     return (
@@ -204,13 +253,13 @@ export function PortalShell({
         className={cn(
           "portal-nav-item group relative flex items-center transition-colors duration-200",
           portalNavItemClass,
-          opts?.inFlyout ? "h-9 gap-2.5 rounded-xl px-3" : collapsed ? "h-11 justify-center rounded-xl px-0" : "h-11 gap-3 rounded-xl px-3.5",
+          opts?.inFlyout ? "h-10 gap-2.5 rounded-xl px-3" : compact ? "h-11 justify-center rounded-xl px-0" : "h-11 gap-3 rounded-xl px-3.5",
           active && "is-active",
         )}
       >
         {showIcon ? item.icon : null}
-        {(!collapsed || opts?.inFlyout) && <span className="truncate">{label}</span>}
-        {!opts?.inFlyout && !collapsed && item.children?.length ? (
+        {(!compact || opts?.inFlyout) && <span className="truncate">{label}</span>}
+        {!opts?.inFlyout && !compact && item.children?.length ? (
           <svg
             width="14"
             height="14"
@@ -233,8 +282,9 @@ export function PortalShell({
 
   return (
     <div
-      className="portal-shell min-h-svh text-primary"
+      className="portal-shell min-h-svh overflow-x-hidden text-primary"
       data-theme={theme}
+      suppressHydrationWarning
       data-role={role}
       data-backdrop={brandBackdrop ? "brand" : undefined}
       style={brandBackdrop ? undefined : { background: "var(--portal-page-bg)" }}
@@ -244,31 +294,89 @@ export function PortalShell({
           <button
             type="button"
             aria-label="Close sidebar backdrop"
-            className="fixed inset-0 z-30 bg-black/40 backdrop-blur-sm lg:hidden"
+            className="fixed inset-0 z-30 bg-black/45 backdrop-blur-sm lg:hidden"
             onClick={() => setMobileOpen(false)}
           />
         ) : null}
 
         <aside
-          aria-hidden={!mobileOpen}
+          aria-hidden={!mobileOpen && !isDesktop}
           className={cn(
-            "portal-sidebar-glass portal-sidebar-flush fixed inset-y-0 left-0 z-40 flex shrink-0 flex-col overflow-visible transition-all duration-300 ease-out",
-            collapsed ? "w-[4.75rem]" : "w-[16rem]",
-            mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+            "portal-sidebar-glass portal-sidebar-flush fixed inset-y-0 left-0 z-40 flex w-[min(17.5rem,88vw)] shrink-0 flex-col overflow-hidden pb-[env(safe-area-inset-bottom)] pt-[env(safe-area-inset-top)] transition-all duration-300 ease-out",
+            compact ? "lg:w-[4.75rem]" : "lg:w-[16rem]",
+            mobileOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full lg:translate-x-0 lg:shadow-none",
           )}
         >
           <div
             className={cn(
-              "flex shrink-0 items-center",
-              collapsed ? "h-16 justify-center px-2" : "h-16 px-5",
+              "flex shrink-0 flex-col gap-3",
+              compact ? "items-center px-2 pb-3 pt-4" : "px-3 pb-3 pt-4",
             )}
           >
-            <HeroLogo
-              variant={theme === "dark" ? "light" : "dark"}
-              compact={collapsed}
-              linked={false}
-              className={cn(collapsed ? "h-7 w-7" : "h-7 max-w-[8.5rem]")}
-            />
+            <div
+              className={cn(
+                "flex items-center",
+                compact ? "h-10 justify-center" : "h-10 px-2 pr-10 lg:pr-2",
+              )}
+            >
+              <HeroLogo
+                variant={theme === "dark" ? "light" : "dark"}
+                compact={compact}
+                linked={false}
+                className={cn(compact ? "h-7 w-7" : "h-7 max-w-[8.5rem]")}
+              />
+            </div>
+
+            {compact ? (
+              <button
+                type="button"
+                className="portal-sidebar-search-collapsed"
+                aria-label="Expand sidebar to search"
+                title="Search"
+                onClick={() => setCollapsed(false)}
+              >
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.9"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden
+                >
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="M20 20l-3.5-3.5" />
+                </svg>
+              </button>
+            ) : (
+              <label className="portal-sidebar-search">
+                <svg
+                  width="15"
+                  height="15"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="1.9"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  className="shrink-0"
+                  aria-hidden
+                >
+                  <circle cx="11" cy="11" r="7" />
+                  <path d="M20 20l-3.5-3.5" />
+                </svg>
+                <input
+                  type="search"
+                  value={navQuery}
+                  onChange={(event) => setNavQuery(event.target.value)}
+                  placeholder="Search menu…"
+                  className="portal-sidebar-search-input"
+                  aria-label="Search navigation"
+                />
+              </label>
+            )}
           </div>
 
           <button
@@ -291,10 +399,15 @@ export function PortalShell({
             </svg>
           </button>
 
-          <nav className="flex-1 space-y-1.5 overflow-y-auto overflow-x-visible px-3 pb-3" aria-label="Portal navigation">
-            {nav.map((item) => {
+          <nav className="flex-1 space-y-1.5 overflow-y-auto overflow-x-hidden overscroll-contain px-3 pb-3" aria-label="Portal navigation">
+            {filteredNav.length === 0 ? (
+              <p className="px-3 py-4 text-center text-brand-caption text-[color:var(--sidebar-muted)]">
+                No matches
+              </p>
+            ) : null}
+            {filteredNav.map((item) => {
               const hasChildren = (item.children?.length ?? 0) > 0;
-              const groupOpen = expandedGroups.has(item.href);
+              const groupOpen = Boolean(navQuery.trim()) || expandedGroups.has(item.href);
               const active = isNavItemActive(pathname, item);
 
               return (
@@ -302,13 +415,13 @@ export function PortalShell({
                   key={item.href}
                   className="relative"
                   onMouseEnter={() => {
-                    if (collapsed) setFlyoutHref(item.href);
+                    if (compact) setFlyoutHref(item.href);
                   }}
                   onMouseLeave={() => {
-                    if (collapsed) setFlyoutHref((current) => (current === item.href ? null : current));
+                    if (compact) setFlyoutHref((current) => (current === item.href ? null : current));
                   }}
                 >
-                  {hasChildren && !collapsed ? (
+                  {hasChildren && !compact ? (
                     <button
                       type="button"
                       onClick={() => toggleGroup(item.href)}
@@ -338,13 +451,13 @@ export function PortalShell({
                     renderNavLink(item)
                   )}
 
-                  {!collapsed && hasChildren && groupOpen ? (
+                  {!compact && hasChildren && groupOpen ? (
                     <div className="relative ml-5 mt-0.5 space-y-0.5 border-l border-[color:var(--sidebar-divider)] pl-3">
                       {item.children!.map((child) => renderNavLink(item, { inFlyout: true, child }))}
                     </div>
                   ) : null}
 
-                  {collapsed && flyoutHref === item.href ? (
+                  {compact && flyoutHref === item.href ? (
                     <div
                       className="portal-sidebar-flyout absolute left-[calc(100%+0.65rem)] top-0 z-50 min-w-[11rem] rounded-2xl p-2"
                       onMouseEnter={() => setFlyoutHref(item.href)}
@@ -372,49 +485,12 @@ export function PortalShell({
           <div className="portal-sidebar-footer mx-3 mb-3 mt-auto shrink-0 space-y-2 rounded-2xl p-2 pt-2">
             <button
               type="button"
-              onClick={toggleTheme}
-              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-              className={cn(
-                "portal-sidebar-theme flex w-full items-center rounded-xl transition",
-                collapsed ? "justify-center p-2" : "gap-3 px-2.5 py-2",
-              )}
-            >
-              <span className="portal-sidebar-theme-icon flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
-                {theme === "dark" ? (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-                    <path d="M21 14.5A8.5 8.5 0 0 1 9.5 3 7 7 0 1 0 21 14.5z" />
-                  </svg>
-                ) : (
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-                    <circle cx="12" cy="12" r="4" />
-                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
-                  </svg>
-                )}
-              </span>
-              {!collapsed ? (
-                <>
-                  <span className="min-w-0 flex-1 text-left font-sans text-sm font-medium">
-                    Dark mode
-                  </span>
-                  <span
-                    className="portal-theme-switch"
-                    data-on={theme === "dark" ? "true" : "false"}
-                    aria-hidden
-                  >
-                    <span className="portal-theme-switch-knob" />
-                  </span>
-                </>
-              ) : null}
-            </button>
-
-            <button
-              type="button"
               onClick={handleLogout}
               aria-label="Log out"
+              title="Log out"
               className={cn(
                 "portal-sidebar-logout",
-                collapsed ? "justify-center px-2" : "justify-start",
+                compact ? "justify-center px-2" : "justify-start",
               )}
             >
               <span className="portal-sidebar-logout-icon">
@@ -429,12 +505,70 @@ export function PortalShell({
                   strokeLinejoin="round"
                   aria-hidden
                 >
-                  <path d="M18 20V6a2 2 0 0 0-2-2H8a2 2 0 0 0-2 2v14" />
-                  <path d="M2 20h20" />
-                  <circle cx="12" cy="12" r="1" fill="currentColor" stroke="none" />
+                  <path d="M10 17H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4" />
+                  <path d="M15 16l4-4-4-4" />
+                  <path d="M19 12H10" />
                 </svg>
               </span>
-              {!collapsed ? <span>Log out</span> : null}
+              {!compact ? <span>Log out</span> : null}
+            </button>
+
+            <button
+              type="button"
+              onClick={toggleTheme}
+              aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+              className={cn(
+                "portal-sidebar-theme flex w-full items-center rounded-xl transition",
+                compact ? "justify-center p-2" : "gap-3 px-2.5 py-2",
+              )}
+            >
+              <span className="portal-sidebar-theme-icon flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
+                {theme === "dark" ? (
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <path d="M12 3a6.5 6.5 0 0 0 8.5 8.5A8 8 0 1 1 12 3z" />
+                  </svg>
+                ) : (
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <circle cx="12" cy="12" r="4" />
+                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
+                  </svg>
+                )}
+              </span>
+              {!compact ? (
+                <>
+                  <span className="min-w-0 flex-1 text-left font-sans text-sm font-medium">
+                    Dark mode
+                  </span>
+                  <span
+                    className="portal-theme-switch"
+                    data-on={theme === "dark" ? "true" : "false"}
+                    aria-hidden
+                  >
+                    <span className="portal-theme-switch-knob" />
+                  </span>
+                </>
+              ) : null}
             </button>
           </div>
 
@@ -442,9 +576,9 @@ export function PortalShell({
             type="button"
             aria-label="Close sidebar"
             onClick={() => setMobileOpen(false)}
-            className="absolute right-2 top-2 rounded-lg p-1.5 text-[color:var(--sidebar-muted)] transition hover:bg-[color:var(--sidebar-hover)] hover:text-[color:var(--sidebar-text)] lg:hidden"
+            className="absolute right-2 top-[max(0.5rem,env(safe-area-inset-top))] rounded-lg p-2 text-[color:var(--sidebar-muted)] transition hover:bg-[color:var(--sidebar-hover)] hover:text-[color:var(--sidebar-text)] lg:hidden"
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
               <path d="M18 6L6 18M6 6l12 12" />
             </svg>
           </button>
@@ -452,7 +586,7 @@ export function PortalShell({
 
         <div
           className={cn(
-            "portal-content-area flex min-w-0 flex-1 flex-col transition-[margin] duration-300 ease-out",
+            "portal-content-area flex min-w-0 flex-1 flex-col overflow-x-hidden transition-[margin] duration-300 ease-out",
             sidebarOffset,
           )}
           data-backdrop={brandBackdrop ? "brand" : undefined}
@@ -466,7 +600,7 @@ export function PortalShell({
           {!contentFlush ? (
             <div
               className={cn(
-                "pointer-events-none sticky top-0 z-20 px-4 pb-2 md:px-6 lg:px-8",
+                "pointer-events-none sticky top-0 z-20 px-3 pb-2 sm:px-4 md:px-6 lg:px-8",
                 brandBackdrop ? "pt-3" : "pt-4",
               )}
             >
@@ -476,7 +610,7 @@ export function PortalShell({
                   aria-label="Open sidebar"
                   aria-expanded={mobileOpen}
                   onClick={() => setMobileOpen(true)}
-                  className="portal-header-icon pointer-events-auto mr-auto rounded-full p-2 lg:hidden"
+                  className="portal-header-icon pointer-events-auto mr-auto min-h-10 min-w-10 rounded-full p-2 lg:hidden"
                 >
                   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
                     <path d="M4 7h16M4 12h10M4 17h16" />
@@ -488,16 +622,16 @@ export function PortalShell({
 
           <main
             className={cn(
-              "flex-1",
+              "flex-1 min-w-0",
               contentFlush
-                ? "px-4 md:px-6 lg:px-8"
+                ? "px-3 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-4 md:px-6 lg:px-8"
                 : brandBackdrop
-                  ? "px-4 pb-8 pt-1 md:px-6 lg:px-8"
-                  : "px-4 pb-6 pt-2 md:px-6 md:pb-8 lg:px-8 lg:pb-10",
+                  ? "px-3 pb-8 pt-1 sm:px-4 md:px-6 lg:px-8"
+                  : "px-3 pb-6 pt-2 sm:px-4 md:px-6 md:pb-8 lg:px-8 lg:pb-10",
             )}
           >
             {showPageHeader ? (
-              <header className="mb-6 md:mb-8">
+              <header className="mb-5 md:mb-8">
                 <p className="portal-page-eyebrow">{pageEyebrow}</p>
                 <h1 className={cn("mt-2", portalPageTitleClass)}>{title}</h1>
                 {subtitle ? (

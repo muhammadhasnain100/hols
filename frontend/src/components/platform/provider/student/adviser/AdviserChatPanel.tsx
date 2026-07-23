@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { MarkdownContent } from "@/components/platform/provider/student/adviser/MarkdownContent";
+import { ChatMessagesSkeleton } from "@/components/platform/provider/student/DashboardSkeletons";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
   getPatientMessages,
@@ -170,10 +171,12 @@ export function AdviserChatPanel({ patient, onPatientChange }: AdviserChatPanelP
     }
   }, [input, isSending, onPatientChange, patient.patient_id, patient.recommendation]);
 
+  const COMPOSER_MAX_HEIGHT = 120;
+
   const handleComposerInput = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     setInput(event.target.value);
     event.target.style.height = "auto";
-    event.target.style.height = `${Math.min(event.target.scrollHeight, 160)}px`;
+    event.target.style.height = `${Math.min(event.target.scrollHeight, COMPOSER_MAX_HEIGHT)}px`;
   };
 
   const handleComposerKeyDown = (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -194,9 +197,9 @@ export function AdviserChatPanel({ patient, onPatientChange }: AdviserChatPanelP
   }, []);
 
   return (
-    <div className="flex min-h-[calc(100svh-8rem)] flex-col">
-      <div className="flex-1 pb-24">
-        <div className="mx-auto flex w-full max-w-4xl flex-col gap-7 px-1">
+    <div className="flex min-h-[calc(100svh-7.5rem)] flex-col sm:min-h-[calc(100svh-8rem)]">
+      <div className="flex-1 pb-[calc(5.75rem+env(safe-area-inset-bottom))] sm:pb-36">
+        <div className="mx-auto flex w-full max-w-4xl flex-col gap-5 px-1 sm:gap-7 sm:px-2">
           {pagination?.has_older ? (
             <div className="flex justify-center">
               <button
@@ -210,15 +213,10 @@ export function AdviserChatPanel({ patient, onPatientChange }: AdviserChatPanelP
             </div>
           ) : null}
 
-          {isLoadingMessages ? (
-            <div className="flex flex-col items-center justify-center gap-3 py-16 text-[color:var(--dash-faint)]">
-              <ChatSpinner className="h-7 w-7 text-[#DDE466]" />
-              <p className="text-brand-body">Loading conversation…</p>
-            </div>
-          ) : null}
+          {isLoadingMessages ? <ChatMessagesSkeleton /> : null}
 
           {!isLoadingMessages && messages.length === 0 ? (
-            <p className="text-brand-body py-16 text-center text-[color:var(--dash-faint)]">
+            <p className="text-brand-body px-2 py-12 text-center text-[color:var(--dash-faint)] sm:py-16">
               Ask anything about this patient case.
             </p>
           ) : null}
@@ -242,9 +240,9 @@ export function AdviserChatPanel({ patient, onPatientChange }: AdviserChatPanelP
         </div>
       </div>
 
-      <footer className="fixed inset-x-0 bottom-0 z-30 bg-transparent px-4 pb-4 pt-2 md:px-6 lg:left-[var(--portal-sidebar-offset)] lg:px-8">
+      <footer className="adviser-chat-composer-bar fixed inset-x-0 bottom-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-5 sm:px-4 sm:pb-4 sm:pt-6 md:px-6 lg:left-[var(--portal-sidebar-offset)] lg:px-8">
         <form
-          className="mx-auto flex w-full max-w-4xl items-end gap-2 rounded-full border border-[color:var(--portal-border)] bg-[color:var(--portal-soft)] px-3 py-2 shadow-none backdrop-blur-none"
+          className="adviser-chat-composer mx-auto flex w-full max-w-3xl items-end gap-1.5 rounded-[1.5rem] px-2.5 py-1.5 sm:gap-2 sm:rounded-[1.75rem] sm:px-4 sm:py-2"
           onSubmit={(event) => {
             event.preventDefault();
             void sendMessage();
@@ -258,17 +256,18 @@ export function AdviserChatPanel({ patient, onPatientChange }: AdviserChatPanelP
             disabled={isSending}
             rows={1}
             placeholder="Ask anything"
-            className="text-brand-body max-h-40 min-h-[40px] flex-1 resize-none bg-transparent px-2 py-2 leading-relaxed text-[color:var(--dash-text)] outline-none placeholder:text-[color:var(--dash-faint)] disabled:opacity-60"
+            spellCheck={false}
+            className="text-brand-body max-h-[7.5rem] min-h-[40px] flex-1 resize-none overflow-y-auto bg-transparent px-1.5 py-2 leading-relaxed text-[color:var(--dash-text)] outline-none placeholder:text-[color:var(--dash-faint)] disabled:opacity-60 sm:min-h-[44px] sm:px-2 sm:py-2.5 [scrollbar-width:thin]"
           />
           <button
             type="submit"
             disabled={isSending || !input.trim()}
             aria-label="Send message"
             className={cn(
-              "mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition",
+              "mb-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition sm:mb-1 sm:h-10 sm:w-10",
               input.trim() && !isSending
                 ? "bg-[#DDE466] text-[#152744] hover:brightness-105"
-                : "bg-[color:var(--portal-border)] text-[color:var(--dash-dim)]",
+                : "adviser-chat-composer-send-idle",
             )}
           >
             {isSending ? (
@@ -298,25 +297,25 @@ function ChatMessageRow({
 
   if (isUser) {
     return (
-      <div className="flex justify-end pl-10 sm:pl-16">
+      <div className="flex justify-end pl-6 sm:pl-16">
         <div
           className={cn(
-            "max-w-full rounded-[1.5rem] bg-[color:var(--dash-soft)] px-4 py-2.5 text-[color:var(--dash-text)]",
+            "max-w-[min(100%,22rem)] rounded-[1.25rem] bg-[color:var(--dash-soft)] px-3.5 py-2 text-[color:var(--dash-text)] sm:max-w-full sm:rounded-[1.5rem] sm:px-4 sm:py-2.5",
             message.pending && "opacity-80",
           )}
         >
-          <p className="text-brand-body whitespace-pre-wrap leading-relaxed">{message.content}</p>
+          <p className="text-brand-body whitespace-pre-wrap break-words leading-[1.5]">{message.content}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="w-full pr-6 sm:pr-10">
-      <div className="text-brand-body leading-relaxed text-[color:var(--dash-text)]">
-        <MarkdownContent content={message.content} />
+    <div className="adviser-chat-ai w-full min-w-0">
+      <div className="text-brand-body adviser-chat-ai-body break-words text-[color:var(--dash-text)]">
+        <MarkdownContent content={message.content} className="adviser-chat-markdown" />
       </div>
-      <div className="mt-3 flex items-center gap-0.5">
+      <div className="mt-2 flex items-center gap-0.5 sm:mt-3">
         <MessageActionButton
           label={copied ? "Copied" : "Copy"}
           onClick={onCopy}

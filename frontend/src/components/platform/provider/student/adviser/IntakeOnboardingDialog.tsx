@@ -1,7 +1,10 @@
 "use client";
 
+import { useEffect } from "react";
+import { createPortal } from "react-dom";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import {
+  INTAKE_STAGES,
   IntakeStageList,
   IntakeWizard,
 } from "@/components/platform/provider/student/adviser/IntakeWizard";
@@ -43,18 +46,38 @@ export function IntakeOnboardingDialog({
   onComplete,
   onGenerate,
 }: IntakeOnboardingDialogProps) {
-  if (!open) return null;
+  useEffect(() => {
+    if (!open) return;
+    const previousOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+    return () => {
+      document.body.style.overflow = previousOverflow;
+    };
+  }, [open]);
+
+  useEffect(() => {
+    if (!open) return;
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape" && !isSaving && !isGenerating) onClose();
+    }
+    document.addEventListener("keydown", onKeyDown);
+    return () => document.removeEventListener("keydown", onKeyDown);
+  }, [isGenerating, isSaving, onClose, open]);
+
+  if (!open || typeof document === "undefined") return null;
 
   const progressPercent = Math.min(100, Math.round(((showRecommendPrompt ? 7 : step) / 7) * 100));
+  const busy = isSaving || isGenerating;
+  const stageIndex = showRecommendPrompt ? 7 : step;
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-3 py-4 sm:px-4 sm:py-6">
+  return createPortal(
+    <div className="adviser-dialog-overlay fixed inset-0 z-[80] flex items-center justify-center bg-black/45 px-3 py-4 sm:px-4 sm:py-6 max-sm:items-end max-sm:px-0 max-sm:py-0">
       <button
         type="button"
         aria-label="Close onboarding dialog"
         className="absolute inset-0 cursor-default"
         onClick={() => {
-          if (!isSaving && !isGenerating) onClose();
+          if (!busy) onClose();
         }}
       />
 
@@ -62,24 +85,28 @@ export function IntakeOnboardingDialog({
         role="dialog"
         aria-modal="true"
         aria-label={`Onboarding for ${patientName}`}
-        className="relative z-10 flex max-h-[min(92svh,56rem)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl border border-[color:var(--dash-surface-border)] bg-[color:var(--portal-page-bg)] shadow-2xl"
+        className="adviser-dialog-panel relative z-10 flex max-h-[min(92svh,56rem)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl max-sm:h-[min(96svh,56rem)] max-sm:max-h-none max-sm:rounded-b-none max-sm:rounded-t-3xl max-sm:pb-[env(safe-area-inset-bottom)]"
       >
-        <div className="flex shrink-0 items-start justify-between gap-4 border-b border-[color:var(--dash-surface-border)] px-5 py-4 md:px-6">
-          <div className="min-w-0">
+        <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-[color:var(--dash-dim)] sm:hidden" aria-hidden />
+
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[color:var(--dash-surface-border)] px-4 py-3.5 sm:gap-4 sm:px-5 sm:py-4 md:px-6">
+          <div className="min-w-0 flex-1">
             <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
               Patient onboarding
             </p>
-            <h2 className="font-sans mt-1 truncate text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)]">
+            <h2 className="font-sans mt-1 truncate text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl">
               {patientName}
             </h2>
             <div className="mt-3 max-w-sm">
               <div className="mb-1.5 flex items-center justify-between gap-3 text-brand-caption text-[color:var(--dash-muted)]">
-                <span>
+                <span className="truncate">
                   {showRecommendPrompt
                     ? "Intake complete"
                     : `Stage ${Math.min(step + 1, 7)} of 7`}
                 </span>
-                <span className="font-semibold text-[color:var(--dash-text)]">{progressPercent}%</span>
+                <span className="shrink-0 font-semibold text-[color:var(--dash-text)]">
+                  {progressPercent}%
+                </span>
               </div>
               <div className="h-1.5 overflow-hidden rounded-full bg-[color:var(--dash-soft)]">
                 <div
@@ -92,7 +119,7 @@ export function IntakeOnboardingDialog({
 
           <button
             type="button"
-            disabled={isSaving || isGenerating}
+            disabled={busy}
             onClick={onClose}
             className="dashboard-icon-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full disabled:opacity-50"
             aria-label="Close dialog"
@@ -104,69 +131,90 @@ export function IntakeOnboardingDialog({
         </div>
 
         <div className="grid min-h-0 flex-1 lg:grid-cols-[15rem_minmax(0,1fr)]">
-          <aside className="hidden overflow-y-auto border-b border-[color:var(--dash-surface-border)] p-4 lg:block lg:border-b-0 lg:border-r">
+          <aside className="hidden min-h-0 overflow-y-auto border-r border-[color:var(--dash-surface-border)] p-4 lg:block">
             <p className="text-brand-caption mb-3 font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
               Intake progress
             </p>
-            <IntakeStageList step={showRecommendPrompt ? 7 : step} inChat={false} />
+            <IntakeStageList step={stageIndex} inChat={false} />
           </aside>
 
-          <div className="min-h-0 overflow-y-auto p-4 md:p-5">
-            {error ? (
-              <div className="mb-4">
-                <AuthAlert variant="error">{error}</AuthAlert>
-              </div>
-            ) : null}
-
-            <div className="mb-4 lg:hidden">
-              <IntakeStageList step={showRecommendPrompt ? 7 : step} inChat={false} />
+          <div className="flex min-h-0 min-w-0 flex-col">
+            <div className="shrink-0 border-b border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] px-4 py-3 sm:px-5 lg:hidden">
+              <p className="text-brand-caption mb-2 font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+                Intake progress
+              </p>
+              <p className="text-brand-body mb-2.5 text-sm font-semibold text-[color:var(--dash-text)]">
+                {showRecommendPrompt
+                  ? "Recommendation"
+                  : INTAKE_STAGES[Math.min(stageIndex, INTAKE_STAGES.length - 1)]}
+                <span className="ml-2 font-medium text-[color:var(--dash-muted)]">
+                  · {Math.min(stageIndex + 1, INTAKE_STAGES.length)}/{INTAKE_STAGES.length}
+                </span>
+              </p>
+              <IntakeStageList step={stageIndex} inChat={false} orientation="wrap" />
             </div>
 
-            {isSaving ? (
-              <div className="dashboard-surface rounded-2xl p-8 text-center">
-                <p className="text-brand-body text-[color:var(--dash-faint)]">Saving intake…</p>
-              </div>
-            ) : null}
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-4 sm:p-5 md:p-6">
+              {error ? (
+                <div className="mb-4">
+                  <AuthAlert variant="error">{error}</AuthAlert>
+                </div>
+              ) : null}
 
-            {isGenerating ? (
-              <div className="dashboard-surface rounded-2xl p-8 text-center">
-                <p className="text-brand-body text-[color:var(--dash-faint)]">
-                  Generating recommendation…
-                </p>
-              </div>
-            ) : null}
+              {isSaving ? (
+                <div className="dashboard-surface rounded-2xl p-6 text-center sm:p-8">
+                  <div className="mx-auto mb-3 h-8 w-8 animate-pulse rounded-full bg-[color:var(--dash-soft)]" />
+                  <p className="text-brand-body text-[color:var(--dash-faint)]">Saving intake…</p>
+                </div>
+              ) : null}
 
-            {!isSaving && !isGenerating && showRecommendPrompt ? (
-              <div className="dashboard-surface rounded-2xl p-6 text-center md:p-8">
-                <p className="text-brand-body text-[color:var(--dash-muted)]">
-                  Intake saved for{" "}
-                  <span className="font-semibold text-[color:var(--dash-text)]">{patientName}</span>.
-                  Generate the recommendation card to open the consultation chat.
-                </p>
-                <button
-                  type="button"
-                  className="font-sans mt-4 inline-flex min-h-10 items-center justify-center rounded-full bg-[#DDE466] px-5 text-sm font-medium text-[#152744] transition hover:brightness-105"
-                  onClick={onGenerate}
-                >
-                  Generate recommendation & open chat
-                </button>
-              </div>
-            ) : null}
+              {isGenerating ? (
+                <div className="dashboard-surface rounded-2xl p-6 text-center sm:p-8">
+                  <div className="mx-auto mb-3 h-8 w-8 animate-pulse rounded-full bg-[color:var(--dash-soft)]" />
+                  <p className="text-brand-body text-[color:var(--dash-faint)]">
+                    Generating recommendation…
+                  </p>
+                </div>
+              ) : null}
 
-            {!isSaving && !isGenerating && !showRecommendPrompt ? (
-              <IntakeWizard
-                bare
-                flow={flow}
-                step={step}
-                answers={answers}
-                onStepChange={onStepChange}
-                onAnswersChange={onAnswersChange}
-                onComplete={onComplete}
-              />
-            ) : null}
+              {!busy && showRecommendPrompt ? (
+                <div className="dashboard-surface rounded-2xl p-4 text-center sm:p-6 md:p-8">
+                  <span className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#DDE466]/25 text-[color:var(--dash-accent)]">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                      <path d="M20 6 9 17l-5-5" />
+                    </svg>
+                  </span>
+                  <p className="text-brand-body mt-3 text-sm text-[color:var(--dash-muted)] sm:text-base">
+                    Intake saved for{" "}
+                    <span className="font-semibold text-[color:var(--dash-text)]">{patientName}</span>.
+                    Generate the recommendation card to open the consultation chat.
+                  </p>
+                  <button
+                    type="button"
+                    className="font-sans mt-4 inline-flex min-h-10 w-full items-center justify-center rounded-full bg-[#DDE466] px-5 text-sm font-medium text-[#152744] transition hover:brightness-105 sm:w-auto"
+                    onClick={onGenerate}
+                  >
+                    Generate recommendation & open chat
+                  </button>
+                </div>
+              ) : null}
+
+              {!busy && !showRecommendPrompt ? (
+                <IntakeWizard
+                  bare
+                  flow={flow}
+                  step={step}
+                  answers={answers}
+                  onStepChange={onStepChange}
+                  onAnswersChange={onAnswersChange}
+                  onComplete={onComplete}
+                />
+              ) : null}
+            </div>
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body,
   );
 }

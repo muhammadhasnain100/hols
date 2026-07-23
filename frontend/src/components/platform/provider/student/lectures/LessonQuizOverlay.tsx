@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
+import { createPortal } from "react-dom";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
-import { authFieldClass } from "@/components/platform/auth/auth-styles";
 import { Button } from "@/components/ui/Button";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
@@ -41,6 +41,21 @@ function formatAnswer(value: unknown) {
   return String(value);
 }
 
+function DialogCloseButton({ onClick, label }: { onClick: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className="dashboard-icon-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+      aria-label={label}
+    >
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
+        <path d="M18 6L6 18M6 6l12 12" />
+      </svg>
+    </button>
+  );
+}
+
 function QuizQuestion({
   variant,
   value,
@@ -61,7 +76,7 @@ function QuizQuestion({
     : null;
 
   return (
-    <div className="dashboard-surface rounded-2xl p-4">
+    <div className="rounded-2xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] p-3.5 sm:p-4">
       <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
         {variant.variant_type.replaceAll("_", " ")}
       </p>
@@ -73,10 +88,10 @@ function QuizQuestion({
             <label
               key={option}
               className={cn(
-                "text-brand-body flex cursor-pointer items-center gap-2 rounded-xl border px-3 py-2.5 transition",
+                "text-brand-body flex cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2.5 transition",
                 value === option
                   ? "border-[#DDE466] bg-[#DDE466]/15 text-[color:var(--dash-text)]"
-                  : "border-[color:var(--dash-surface-border)] text-[color:var(--dash-muted)] hover:bg-[color:var(--dash-soft)]",
+                  : "border-[color:var(--dash-surface-border)] bg-[color:var(--dash-surface,#fff)] text-[color:var(--dash-muted)] hover:bg-[color:var(--dash-soft)]",
                 disabled && "cursor-not-allowed opacity-70",
               )}
             >
@@ -87,20 +102,21 @@ function QuizQuestion({
                 checked={value === option}
                 disabled={disabled}
                 onChange={() => onChange(option)}
+                className="shrink-0"
               />
-              <span>{option}</span>
+              <span className="min-w-0 break-words">{option}</span>
             </label>
           ))}
         </div>
       ) : null}
 
       {matchingLeft && matchingOptions ? (
-        <div className="mt-3 space-y-2">
+        <div className="mt-3 space-y-2.5">
           {matchingLeft.map((left) => {
             const current = typeof value === "object" && value ? (value as Record<string, string>) : {};
             return (
               <div key={left} className="grid gap-2 sm:grid-cols-[1fr_1fr] sm:items-center">
-                <span className="text-brand-body text-[color:var(--dash-muted)]">{left}</span>
+                <span className="text-brand-body min-w-0 break-words text-[color:var(--dash-muted)]">{left}</span>
                 <select
                   value={current[left] ?? ""}
                   disabled={disabled}
@@ -110,7 +126,7 @@ function QuizQuestion({
                       [left]: event.target.value,
                     })
                   }
-                  className={cn(authFieldClass, "rounded-xl px-4 py-2")}
+                  className="dashboard-field dashboard-field-select h-11 w-full min-w-0"
                 >
                   <option value="">Select match</option>
                   {matchingOptions.map((option) => (
@@ -132,7 +148,7 @@ function QuizQuestion({
           disabled={disabled}
           onChange={(event) => onChange(event.target.value)}
           placeholder="Type your answer"
-          className={cn(authFieldClass, "mt-3 w-full rounded-xl px-4 py-2")}
+          className="dashboard-field mt-3 w-full"
         />
       ) : null}
     </div>
@@ -148,6 +164,9 @@ export function LessonQuizOverlay({
   onClose,
   onSubmitted,
 }: LessonQuizOverlayProps) {
+  const confirmTitleId = useId();
+  const quizTitleId = useId();
+  const leaveTitleId = useId();
   const [phase, setPhase] = useState<"confirm" | "countdown" | "quiz">("confirm");
   const [secondsLeft, setSecondsLeft] = useState(PRESTART_SECONDS);
   const [quizSecondsLeft, setQuizSecondsLeft] = useState(QUIZ_DURATION_SECONDS);
@@ -278,14 +297,20 @@ export function LessonQuizOverlay({
     }
   }
 
-  if (!open) return null;
+  if (!open || typeof document === "undefined") return null;
 
-  return (
-    <div className="fixed inset-0 z-[130] flex items-center justify-center p-4">
+  const overlayClass =
+    "adviser-dialog-overlay fixed inset-0 z-[130] flex items-center justify-center bg-black/45 px-3 py-4 sm:px-4 sm:py-6 max-sm:items-end max-sm:px-0 max-sm:py-0";
+
+  const sheetPanelClass =
+    "adviser-dialog-panel relative z-10 flex w-full flex-col overflow-hidden rounded-2xl max-sm:rounded-b-none max-sm:rounded-t-3xl max-sm:pb-[env(safe-area-inset-bottom)]";
+
+  return createPortal(
+    <div className={overlayClass}>
       <button
         type="button"
         aria-label="Close quiz"
-        className="absolute inset-0 bg-[#152744]/45 backdrop-blur-[2px]"
+        className="absolute inset-0 cursor-default"
         onClick={requestLeave}
       />
 
@@ -293,39 +318,47 @@ export function LessonQuizOverlay({
         <div
           role="dialog"
           aria-modal="true"
-          aria-labelledby="quiz-confirm-title"
-          className="relative w-full max-w-md rounded-2xl bg-[color:var(--portal-surface,#fff)] p-6 shadow-[0_20px_60px_rgba(21,39,68,0.22)]"
+          aria-labelledby={confirmTitleId}
+          className={cn(sheetPanelClass, "max-w-md")}
         >
-          <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-            Lesson quiz
-          </p>
-          <h3
-            id="quiz-confirm-title"
-            className="font-sans mt-2 text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)]"
-          >
-            Do you want to continue?
-          </h3>
-          <p className="text-brand-body mt-2 text-[color:var(--dash-muted)]">
-            You are about to start the quiz for{" "}
-            <span className="font-medium text-[color:var(--dash-text)]">{lessonTitle}</span>. It has{" "}
-            {variants.length} question{variants.length === 1 ? "" : "s"}. You will have{" "}
-            <span className="font-medium text-[color:var(--dash-text)]">5 minutes</span> to complete it
-            after the countdown.
-          </p>
-          <div className="mt-6 flex flex-wrap gap-2">
-            <button
-              type="button"
-              onClick={() => setPhase("countdown")}
-              className="font-sans inline-flex min-h-10 items-center justify-center rounded-full bg-[#DDE466] px-5 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105"
-            >
-              Continue
-            </button>
+          <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-[color:var(--dash-dim)] sm:hidden" aria-hidden />
+
+          <div className="flex items-start justify-between gap-3 border-b border-[color:var(--dash-surface-border)] px-4 py-3.5 sm:gap-4 sm:px-5 sm:py-4 md:px-6">
+            <div className="min-w-0">
+              <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+                Lesson quiz
+              </p>
+              <h2
+                id={confirmTitleId}
+                className="font-sans mt-1 text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl"
+              >
+                Do you want to continue?
+              </h2>
+              <p className="text-brand-body mt-1 text-sm text-[color:var(--dash-muted)] sm:text-base">
+                Start the quiz for{" "}
+                <span className="font-medium text-[color:var(--dash-text)]">{lessonTitle}</span>.{" "}
+                {variants.length} question{variants.length === 1 ? "" : "s"} ·{" "}
+                <span className="font-medium text-[color:var(--dash-text)]">5 minutes</span> after
+                the countdown.
+              </p>
+            </div>
+            <DialogCloseButton onClick={onClose} label="Close quiz dialog" />
+          </div>
+
+          <div className="flex flex-col-reverse gap-2 border-t border-[color:var(--dash-surface-border)] px-4 py-3.5 sm:flex-row sm:justify-end sm:gap-2.5 sm:px-5 sm:py-4 md:px-6">
             <button
               type="button"
               onClick={onClose}
-              className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center rounded-full px-5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition"
+              className="dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] transition sm:w-auto"
             >
               Cancel
+            </button>
+            <button
+              type="button"
+              onClick={() => setPhase("countdown")}
+              className="font-sans inline-flex min-h-10 w-full items-center justify-center rounded-full bg-[#DDE466] px-5 text-sm font-medium text-[#152744] transition hover:brightness-105 active:scale-[0.98] sm:w-auto"
+            >
+              Continue
             </button>
           </div>
         </div>
@@ -335,25 +368,41 @@ export function LessonQuizOverlay({
         <div
           role="dialog"
           aria-modal="true"
-          className="relative w-full max-w-sm rounded-2xl bg-[color:var(--portal-surface,#fff)] p-8 text-center shadow-[0_20px_60px_rgba(21,39,68,0.22)]"
+          aria-label="Quiz countdown"
+          className={cn(sheetPanelClass, "max-w-sm")}
         >
-          <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-            Get ready
-          </p>
-          <p className="font-sans mt-3 text-lg font-semibold text-[color:var(--dash-text)]">Quiz starts in</p>
-          <p className="mt-4 text-5xl font-bold tabular-nums text-[color:var(--dash-text)]">
-            {secondsLeft || "Go!"}
-          </p>
-          <p className="text-brand-body mt-4 text-[color:var(--dash-muted)]">
-            Focus up — your lesson quiz is about to begin.
-          </p>
-          <button
-            type="button"
-            onClick={requestLeave}
-            className="dashboard-pill-soft font-sans mt-6 inline-flex min-h-10 items-center justify-center rounded-full px-5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition"
-          >
-            Back to lesson
-          </button>
+          <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-[color:var(--dash-dim)] sm:hidden" aria-hidden />
+
+          <div className="flex items-start justify-between gap-3 border-b border-[color:var(--dash-surface-border)] px-4 py-3.5 sm:px-5 sm:py-4">
+            <div className="min-w-0">
+              <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+                Get ready
+              </p>
+              <h2 className="font-sans mt-1 text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)]">
+                Quiz starts in
+              </h2>
+            </div>
+            <DialogCloseButton onClick={requestLeave} label="Cancel quiz countdown" />
+          </div>
+
+          <div className="px-4 py-8 text-center sm:px-5 sm:py-10">
+            <p className="text-5xl font-bold tabular-nums text-[color:var(--dash-text)] sm:text-6xl">
+              {secondsLeft || "Go!"}
+            </p>
+            <p className="text-brand-body mt-4 text-[color:var(--dash-muted)]">
+              Focus up — your lesson quiz is about to begin.
+            </p>
+          </div>
+
+          <div className="border-t border-[color:var(--dash-surface-border)] px-4 py-3.5 sm:px-5 sm:py-4">
+            <button
+              type="button"
+              onClick={requestLeave}
+              className="dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] transition sm:w-auto sm:mx-auto"
+            >
+              Back to lesson
+            </button>
+          </div>
         </div>
       ) : null}
 
@@ -361,91 +410,103 @@ export function LessonQuizOverlay({
         <div
           role="dialog"
           aria-modal="true"
-          aria-labelledby="quiz-title"
-          className="relative flex max-h-[90vh] w-full max-w-3xl flex-col overflow-hidden rounded-2xl bg-[color:var(--portal-page-bg,#f7f8fa)] shadow-[0_20px_60px_rgba(21,39,68,0.22)]"
+          aria-labelledby={quizTitleId}
+          className={cn(
+            sheetPanelClass,
+            "max-h-[min(92svh,56rem)] max-w-3xl max-sm:h-[min(96svh,56rem)] max-sm:max-h-none",
+          )}
         >
-          <header className="flex items-center justify-between gap-3 border-b border-[color:var(--dash-surface-border)] bg-[color:var(--portal-surface,#fff)] px-5 py-4">
-            <div className="min-w-0">
+          <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-[color:var(--dash-dim)] sm:hidden" aria-hidden />
+
+          <header className="flex shrink-0 items-start justify-between gap-3 border-b border-[color:var(--dash-surface-border)] px-4 py-3.5 sm:gap-4 sm:px-5 sm:py-4 md:px-6">
+            <div className="min-w-0 flex-1">
               <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
                 Lesson quiz
               </p>
-              <h3
-                id="quiz-title"
-                className="font-sans mt-0.5 truncate text-base font-semibold text-[color:var(--dash-text)]"
+              <h2
+                id={quizTitleId}
+                className="font-sans mt-1 truncate text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl"
               >
                 {lessonTitle}
-              </h3>
+              </h2>
+              <div className="mt-2.5 flex flex-wrap items-center gap-2">
+                <span
+                  className={cn(
+                    "text-brand-caption inline-flex rounded-full px-3 py-1 font-semibold tabular-nums",
+                    timedOut
+                      ? "bg-amber-500/15 text-amber-600"
+                      : quizSecondsLeft <= 60
+                        ? "bg-red-500/15 text-red-600"
+                        : "bg-[color:var(--dash-soft)] text-[color:var(--dash-text)]",
+                  )}
+                >
+                  {timedOut ? "Time up" : formatQuizTime(quizSecondsLeft)}
+                </span>
+                <span className="text-brand-caption text-[color:var(--dash-muted)]">
+                  {variants.length} question{variants.length === 1 ? "" : "s"}
+                </span>
+              </div>
             </div>
-            <div className="flex shrink-0 items-center gap-2">
-              <span
-                className={cn(
-                  "text-brand-caption inline-flex rounded-full px-3 py-1 font-semibold tabular-nums",
-                  timedOut
-                    ? "bg-amber-500/15 text-amber-600"
-                    : quizSecondsLeft <= 60
-                      ? "bg-red-500/15 text-red-600"
-                      : "bg-[color:var(--dash-soft)] text-[color:var(--dash-text)]",
-                )}
-              >
-                {timedOut ? "Time up" : formatQuizTime(quizSecondsLeft)}
-              </span>
+            <DialogCloseButton onClick={requestLeave} label="Leave quiz" />
+          </header>
+
+          <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 sm:py-5 md:px-6">
+            {timedOut ? (
+              <AuthAlert variant="error">
+                Time is up. You can no longer submit this quiz attempt. Go back to the lesson and try
+                again.
+              </AuthAlert>
+            ) : null}
+
+            {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
+
+            {variants.map((variant) => (
+              <QuizQuestion
+                key={variant.id}
+                variant={variant}
+                value={answers[variant.id]}
+                disabled={submitting || timedOut}
+                onChange={(value) =>
+                  setAnswers((current) => ({
+                    ...current,
+                    [variant.id]: value,
+                  }))
+                }
+              />
+            ))}
+          </div>
+
+          <footer className="flex shrink-0 flex-col-reverse gap-2 border-t border-[color:var(--dash-surface-border)] px-4 py-3.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:px-5 sm:py-4 md:px-6">
+            <p className="text-brand-body text-center text-sm text-[color:var(--dash-muted)] sm:text-left sm:text-base">
+              {timedOut
+                ? "Quiz time has expired."
+                : `Answer all ${variants.length} question${variants.length === 1 ? "" : "s"} to submit`}
+            </p>
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end sm:gap-2.5">
               <button
                 type="button"
                 onClick={requestLeave}
-                className="dashboard-pill-soft font-sans inline-flex min-h-9 items-center justify-center rounded-full px-4 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition"
+                className="dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] transition sm:w-auto"
               >
                 Back to lesson
               </button>
-            </div>
-          </header>
-
-          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 py-4">
-            {timedOut ? (
-              <div className="mb-4">
-                <AuthAlert variant="error">
-                  Time is up. You can no longer submit this quiz attempt. Go back to the lesson and try again.
-                </AuthAlert>
-              </div>
-            ) : null}
-
-            {error ? (
-              <div className="mb-4">
-                <AuthAlert variant="error">{error}</AuthAlert>
-              </div>
-            ) : null}
-
-            <div className="grid gap-3">
-              {variants.map((variant) => (
-                <QuizQuestion
-                  key={variant.id}
-                  variant={variant}
-                  value={answers[variant.id]}
-                  disabled={submitting || timedOut}
-                  onChange={(value) =>
-                    setAnswers((current) => ({
-                      ...current,
-                      [variant.id]: value,
-                    }))
-                  }
-                />
-              ))}
-            </div>
-          </div>
-
-          <footer className="border-t border-[color:var(--dash-surface-border)] bg-[color:var(--portal-surface,#fff)] px-5 py-4">
-            <div className="flex flex-wrap items-center justify-between gap-3">
-              <p className="text-brand-body text-[color:var(--dash-muted)]">
-                {timedOut
-                  ? "Quiz time has expired."
-                  : `Answer all ${variants.length} question${variants.length === 1 ? "" : "s"} to submit`}
-              </p>
               <button
                 type="button"
                 onClick={() => void handleSubmit()}
                 disabled={timedOut || !allAnswered || submitting}
-                className="font-sans inline-flex min-h-10 items-center justify-center rounded-full bg-[#DDE466] px-5 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 disabled:pointer-events-none disabled:opacity-50"
+                className="font-sans inline-flex min-h-10 w-full items-center justify-center rounded-full bg-[#DDE466] px-5 text-sm font-medium text-[#152744] transition hover:brightness-105 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 sm:w-auto"
               >
-                {submitting ? "Submitting…" : "Submit quiz"}
+                {submitting ? (
+                  <span className="inline-flex items-center gap-2">
+                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden>
+                      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.25" strokeWidth="2.5" />
+                      <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+                    </svg>
+                    Submitting…
+                  </span>
+                ) : (
+                  "Submit quiz"
+                )}
               </button>
             </div>
           </footer>
@@ -453,51 +514,64 @@ export function LessonQuizOverlay({
       ) : null}
 
       {leaveConfirmOpen ? (
-        <div className="absolute inset-0 z-10 flex items-center justify-center p-4">
+        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/35 px-3 py-4 sm:px-4 sm:py-6 max-sm:items-end max-sm:px-0 max-sm:py-0">
           <button
             type="button"
             aria-label="Dismiss cancel dialog"
-            className="absolute inset-0 bg-[#152744]/35"
+            className="absolute inset-0 cursor-default"
             onClick={() => setLeaveConfirmOpen(false)}
           />
           <div
             role="alertdialog"
             aria-modal="true"
-            aria-labelledby="quiz-leave-title"
-            className="relative w-full max-w-sm rounded-2xl bg-[color:var(--portal-surface,#fff)] p-6 shadow-[0_20px_60px_rgba(21,39,68,0.28)]"
+            aria-labelledby={leaveTitleId}
+            className={cn(sheetPanelClass, "max-w-md")}
           >
-            <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-              Leave quiz
-            </p>
-            <h3
-              id="quiz-leave-title"
-              className="font-sans mt-2 text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)]"
-            >
-              Do you want to cancel this quiz?
-            </h3>
-            <p className="text-brand-body mt-2 text-[color:var(--dash-muted)]">
-              Your progress will not be saved. You can start the quiz again later from the lesson page.
-            </p>
-            <div className="mt-6 flex flex-wrap gap-2">
-              <button
-                type="button"
-                onClick={confirmLeave}
-                className="font-sans inline-flex min-h-10 items-center justify-center rounded-full bg-[#DDE466] px-5 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105"
-              >
-                Yes, cancel quiz
-              </button>
+            <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-[color:var(--dash-dim)] sm:hidden" aria-hidden />
+
+            <div className="flex items-start justify-between gap-3 border-b border-[color:var(--dash-surface-border)] px-4 py-3.5 sm:gap-4 sm:px-5 sm:py-4 md:px-6">
+              <div className="min-w-0">
+                <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+                  Leave quiz
+                </p>
+                <h2
+                  id={leaveTitleId}
+                  className="font-sans mt-1 text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl"
+                >
+                  Do you want to cancel this quiz?
+                </h2>
+                <p className="text-brand-body mt-1 text-sm text-[color:var(--dash-muted)] sm:text-base">
+                  Your progress will not be saved. You can start the quiz again later from the lesson
+                  page.
+                </p>
+              </div>
+              <DialogCloseButton
+                onClick={() => setLeaveConfirmOpen(false)}
+                label="Keep taking quiz"
+              />
+            </div>
+
+            <div className="flex flex-col-reverse gap-2 border-t border-[color:var(--dash-surface-border)] px-4 py-3.5 sm:flex-row sm:justify-end sm:gap-2.5 sm:px-5 sm:py-4 md:px-6">
               <button
                 type="button"
                 onClick={() => setLeaveConfirmOpen(false)}
-                className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center rounded-full px-5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition"
+                className="dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] transition sm:w-auto"
               >
                 Keep taking quiz
+              </button>
+              <button
+                type="button"
+                onClick={confirmLeave}
+                className="font-sans inline-flex min-h-10 w-full items-center justify-center rounded-full bg-[#DDE466] px-5 text-sm font-medium text-[#152744] transition hover:brightness-105 active:scale-[0.98] sm:w-auto"
+              >
+                Yes, cancel quiz
               </button>
             </div>
           </div>
         </div>
       ) : null}
-    </div>
+    </div>,
+    document.body,
   );
 }
 
@@ -509,9 +583,9 @@ type LessonQuizResultCardProps = {
 
 export function LessonQuizResultCard({ result, courseId, onRetake }: LessonQuizResultCardProps) {
   return (
-    <section className="dashboard-surface rounded-2xl p-5 md:p-6">
+    <section className="dashboard-surface rounded-2xl p-4 sm:p-5 md:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
-        <div>
+        <div className="min-w-0">
           <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
             Latest quiz result
           </p>
@@ -557,17 +631,17 @@ export function LessonQuizResultCard({ result, courseId, onRetake }: LessonQuizR
         ))}
       </div>
 
-      <div className="mt-4 flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={onRetake}
-          className="font-sans inline-flex min-h-10 items-center justify-center rounded-full bg-[#DDE466] px-5 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105"
-        >
-          Take quiz again
-        </button>
+      <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap">
         <Button href={`/student/lectures/${courseId}/test-result`} variant="secondary" size="md">
           View all test results
         </Button>
+        <button
+          type="button"
+          onClick={onRetake}
+          className="font-sans inline-flex min-h-10 w-full items-center justify-center rounded-full bg-[#DDE466] px-5 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 sm:w-auto"
+        >
+          Take quiz again
+        </button>
       </div>
     </section>
   );

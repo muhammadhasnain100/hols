@@ -122,7 +122,7 @@ export const heroTypography = {
     "font-sans text-[1.875rem] font-bold leading-[1.05] tracking-[0.01em] text-white sm:text-[2.25rem] md:text-[3.75rem]",
   subhead:
     "font-sans mt-3 text-lg font-normal leading-[1.12] tracking-[0.005em] text-white/90 sm:text-xl md:mt-5 md:max-w-xl md:text-[2.125rem] md:leading-[1.1] lg:max-w-2xl",
-  body: "text-brand-body mt-3 max-w-xl text-white/85 sm:mt-4 md:mt-5 lg:max-w-2xl",
+  body: "text-brand-body mt-4 max-w-lg text-white/85 sm:mt-5 md:mt-6 md:max-w-xl",
   trustStrip: "text-brand-caption leading-relaxed text-white/70 sm:leading-normal",
 } as const;
 

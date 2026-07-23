@@ -13,7 +13,7 @@ import { cn } from "@/lib/utils";
 const FINAL_CTA_EYEBROW =
   "text-brand-caption uppercase tracking-[0.08em] text-white/80";
 const FINAL_CTA_HEADLINE =
-  "font-sans text-[1.875rem] font-bold leading-[1.05] tracking-[0.01em] text-white sm:text-[2.25rem] md:text-[3.75rem]";
+  "font-sans text-[1.5rem] font-bold leading-[1.1] tracking-[0.01em] text-balance text-white sm:text-[2.25rem] sm:leading-[1.05] md:text-[3.75rem]";
 
 function FinalCtaCopy({
   showHeadline = true,
@@ -32,7 +32,7 @@ function FinalCtaCopy({
     <div className="relative z-10 mx-auto flex w-full max-w-6xl flex-col items-center text-center">
       <p className={FINAL_CTA_EYEBROW}>{finalCta.eyebrow}</p>
 
-      <div className="relative mt-8 md:mt-10">
+      <div className="relative mt-6 sm:mt-8 md:mt-10">
         <div
           className="pointer-events-none absolute left-1/2 top-1/2 h-[140%] w-[140%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent-light/12 blur-3xl"
           aria-hidden
@@ -42,13 +42,13 @@ function FinalCtaCopy({
           alt=""
           width={512}
           height={512}
-          className="relative h-auto w-36 object-contain drop-shadow-[0_24px_48px_rgba(0,0,0,0.45)] sm:w-44 md:w-52 lg:w-60"
-          sizes="(max-width: 640px) 9rem, 15rem"
+          className="relative h-auto w-28 object-contain drop-shadow-[0_24px_48px_rgba(0,0,0,0.45)] sm:w-44 md:w-52 lg:w-60"
+          sizes="(max-width: 640px) 7rem, 15rem"
         />
       </div>
 
       <h2
-        className={cn("mt-10 w-full", FINAL_CTA_HEADLINE)}
+        className={cn("mt-6 w-full sm:mt-8 md:mt-10", FINAL_CTA_HEADLINE)}
         style={{ opacity: showHeadline ? 1 : 0 }}
       >
         {parts.map((part, index) =>
@@ -63,7 +63,7 @@ function FinalCtaCopy({
       </h2>
 
       <div
-        className="mt-14"
+        className="mt-8 sm:mt-10 md:mt-14"
         style={{ opacity: showCta ? 1 : 0, pointerEvents: showCta ? "auto" : "none" }}
       >
         <HeroButton href={finalCta.primaryCta.href} variant="primary">
@@ -77,7 +77,7 @@ function FinalCtaCopy({
 function FinalCtaShell({ children }: { children: ReactNode }) {
   return (
     <section className="relative w-full overflow-hidden bg-black">
-      <div className="relative flex w-full min-h-[32rem] flex-col items-center justify-center overflow-hidden py-24 text-center md:min-h-[36rem] md:py-28 lg:min-h-[40rem] lg:py-32">
+      <div className="relative flex w-full min-h-[28rem] flex-col items-center justify-center overflow-hidden py-16 text-center sm:min-h-[32rem] sm:py-20 md:min-h-[36rem] md:py-28 lg:min-h-[40rem] lg:py-32">
         <div
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_28%,rgba(141,195,225,0.16),transparent_55%),radial-gradient(ellipse_at_50%_72%,rgba(221,228,102,0.06),transparent_45%)]"
           aria-hidden
@@ -186,7 +186,7 @@ export function FinalCTASection() {
     <section ref={sectionRef} className="relative w-full overflow-hidden bg-black">
       <div
         ref={pinWrapRef}
-        className="relative flex min-h-[100dvh] w-full flex-col items-center justify-center overflow-hidden py-20 text-center md:py-24"
+        className="relative flex min-h-[100dvh] w-full flex-col items-center justify-center overflow-hidden py-14 text-center sm:py-16 md:py-24"
       >
         <div
           className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_28%,rgba(141,195,225,0.16),transparent_55%),radial-gradient(ellipse_at_50%_72%,rgba(221,228,102,0.06),transparent_45%)]"
@@ -203,7 +203,7 @@ export function FinalCTASection() {
             {finalCta.eyebrow}
           </p>
 
-          <div data-final-ball className="relative mt-8 md:mt-10">
+          <div data-final-ball className="relative mt-6 sm:mt-8 md:mt-10">
             <div
               className="pointer-events-none absolute left-1/2 top-1/2 h-[140%] w-[140%] -translate-x-1/2 -translate-y-1/2 rounded-full bg-accent-light/12 blur-3xl"
               aria-hidden
@@ -217,15 +217,18 @@ export function FinalCTASection() {
                 alt=""
                 width={512}
                 height={512}
-                className="relative h-auto w-36 object-contain drop-shadow-[0_24px_48px_rgba(0,0,0,0.45)] sm:w-44 md:w-52 lg:w-60"
-                sizes="(max-width: 640px) 9rem, 15rem"
+                className="relative h-auto w-28 object-contain drop-shadow-[0_24px_48px_rgba(0,0,0,0.45)] sm:w-44 md:w-52 lg:w-60"
+                sizes="(max-width: 640px) 7rem, 15rem"
               />
             </div>
           </div>
 
           <h2
             data-final-headline
-            className={cn("invisible mt-10 w-full", FINAL_CTA_HEADLINE)}
+            className={cn(
+              "invisible mt-6 w-full sm:mt-8 md:mt-10",
+              FINAL_CTA_HEADLINE,
+            )}
           >
             {parts.map((part, index) =>
               part.toLowerCase() === accent?.toLowerCase() ? (
@@ -238,7 +241,7 @@ export function FinalCTASection() {
             )}
           </h2>
 
-          <div data-final-cta className="invisible mt-14">
+          <div data-final-cta className="invisible mt-8 sm:mt-10 md:mt-14">
             <HeroButton href={finalCta.primaryCta.href} variant="primary">
               {finalCta.primaryCta.label}
             </HeroButton>

@@ -7,17 +7,16 @@ import { heroCtaSeparator, heroTypography } from "@/lib/hero-styles";
 import { cn } from "@/lib/utils";
 
 export function HeroHeadline() {
-  const { headline, subheading, body, primaryCta, secondaryCta } = heroContent;
+  const { headlineLines, body, primaryCta, secondaryCta } = heroContent;
 
   return (
-    <div className="relative w-full">
+    <div className="relative w-full md:ml-auto md:text-left">
       <FadeIn className="relative text-left" stagger={0.14} y={40}>
         <div className="hero-reveal">
-          <h1 className={heroTypography.headline}>{headline}</h1>
-        </div>
-
-        <div className="hero-reveal">
-          <p className={heroTypography.subhead}>{subheading}</p>
+          <h1 className={heroTypography.headline}>
+            <span className="block md:whitespace-nowrap">{headlineLines[0]}</span>
+            <span className="block md:whitespace-nowrap">{headlineLines[1]}</span>
+          </h1>
         </div>
 
         <div className="hero-reveal">

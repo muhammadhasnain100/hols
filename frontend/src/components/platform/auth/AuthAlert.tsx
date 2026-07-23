@@ -12,7 +12,7 @@ type AuthAlertProps = {
 const variants = {
   error: "border-red-200 bg-red-50 text-red-800",
   success: "border-emerald-200 bg-emerald-50 text-emerald-800",
-  info: "border-primary/15 bg-white/80 text-primary",
+  info: "border-[#8DC3E1]/50 bg-[#E8F4FA] text-primary",
 };
 
 export function AuthAlert({ variant = "error", children, className }: AuthAlertProps) {

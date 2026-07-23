@@ -1,7 +1,9 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import Link from "next/link";
+import { useCallback, useEffect, useState, type ReactNode } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
+import { MembershipPageSkeleton } from "@/components/platform/provider/student/DashboardSkeletons";
 import { PaymentPageLayout } from "@/components/platform/provider/student/payment/PaymentPageLayout";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
@@ -24,32 +26,81 @@ import {
 } from "@/lib/integrate/provider/student/payment/types";
 import { cn } from "@/lib/utils";
 
-function StatTile({ label, value, hint }: { label: string; value: string; hint: string }) {
-  return (
-    <div className="dashboard-surface rounded-2xl p-5">
-      <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-        {label}
-      </p>
-      <p className="font-sans mt-2 text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] md:text-2xl">
-        {value}
-      </p>
-      <p className="text-brand-body mt-1 text-[color:var(--dash-muted)]">{hint}</p>
-    </div>
+const PLAN_ORDER: PlanType[] = ["monthly", "biannual", "annual"];
+
+const PLAN_META: Record<
+  PlanType,
+  {
+    period: string;
+    badge?: string;
+    favourite?: boolean;
+    features: string[];
+    icon: ReactNode;
+  }
+> = {
+  monthly: {
+    period: "per month",
+    features: [
+      "Lecture library access",
+      "Peptide calculator tools",
+      "AI adviser sessions",
+      "30 days membership",
+    ],
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden>
+        <rect x="3" y="4" width="18" height="18" rx="2" />
+        <path d="M16 2v4M8 2v4M3 10h18" />
+      </svg>
+    ),
+  },
+  biannual: {
+    period: "every 6 months",
+    badge: "Favourite",
+    favourite: true,
+    features: [
+      "Everything in Monthly",
+      "Priority content updates",
+      "Cross-device progress sync",
+      "182 days membership",
+    ],
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden>
+        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.77 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" />
+      </svg>
+    ),
+  },
+  annual: {
+    period: "per year",
+    badge: "Best value",
+    features: [
+      "Everything in Biannual",
+      "Full-year uninterrupted access",
+      "Certification pathway support",
+      "365 days membership",
+    ],
+    icon: (
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden>
+        <circle cx="12" cy="12" r="9" />
+        <path d="M12 7v5l3 2" />
+      </svg>
+    ),
+  },
+};
+
+function sortedPlans(plans: Plan[]) {
+  return [...plans].sort(
+    (a, b) => PLAN_ORDER.indexOf(a.plan_type) - PLAN_ORDER.indexOf(b.plan_type),
   );
 }
 
 export function StudentPaymentPage() {
-  const cachedMembership = getCachedCurrentMembership();
-  const cachedPlans = getCachedPlans();
-  const cachedCard = getCachedCard();
-  const hasCachedPageData =
-    cachedMembership !== undefined && cachedPlans !== undefined && cachedCard !== undefined;
-  const [loading, setLoading] = useState(!hasCachedPageData);
+  // Keep SSR and first client paint identical — never read session cache during render.
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [membership, setMembership] = useState<Membership | null>(cachedMembership ?? null);
-  const [plans, setPlans] = useState<Plan[]>(cachedPlans ?? []);
-  const [card, setCard] = useState<PaymentCard | null>(cachedCard ?? null);
+  const [membership, setMembership] = useState<Membership | null>(null);
+  const [plans, setPlans] = useState<Plan[]>([]);
+  const [card, setCard] = useState<PaymentCard | null>(null);
   const [purchasingPlan, setPurchasingPlan] = useState<PlanType | null>(null);
 
   const loadData = useCallback(async (signal?: AbortSignal) => {
@@ -88,6 +139,20 @@ export function StudentPaymentPage() {
 
   useEffect(() => {
     const controller = new AbortController();
+
+    const cachedMembership = getCachedCurrentMembership();
+    const cachedPlans = getCachedPlans();
+    const cachedCard = getCachedCard();
+    const hasCachedPageData =
+      cachedMembership !== undefined && cachedPlans !== undefined && cachedCard !== undefined;
+
+    if (hasCachedPageData) {
+      setMembership(cachedMembership ?? null);
+      setPlans(cachedPlans ?? []);
+      setCard(cachedCard ?? null);
+      setLoading(false);
+    }
+
     const timer = window.setTimeout(() => void loadData(controller.signal), 0);
     return () => {
       window.clearTimeout(timer);
@@ -122,100 +187,170 @@ export function StudentPaymentPage() {
       {success ? <AuthAlert variant="success">{success}</AuthAlert> : null}
 
       {loading ? (
-        <div className="dashboard-surface rounded-2xl p-10 text-center">
-          <div className="mx-auto h-8 w-8 animate-pulse rounded-full bg-[color:var(--dash-soft)]" />
-        </div>
+        <MembershipPageSkeleton />
       ) : (
         <>
-          <section className="dashboard-hero relative overflow-hidden rounded-2xl p-5 md:p-6">
-            <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
-              Current membership
-            </p>
-            <div className="mt-2 flex flex-wrap items-end gap-2">
-              <span className="font-sans text-2xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] md:text-[2.25rem] md:leading-none">
-                {membership ? planLabels[membership.plan_type] : "No plan"}
-              </span>
-              {membership ? (
-                <span className="mb-1 text-brand-caption font-medium capitalize text-[color:var(--dash-faint)]">
-                  {membership.status}
-                </span>
-              ) : null}
-            </div>
-            <p className="text-brand-body mt-2 text-[color:var(--dash-muted)]">
-              {membership
-                ? `Active until ${formatDate(membership.end_date)}`
-                : "You have no active membership yet."}
-            </p>
-          </section>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <StatTile
-              label="Payment card"
-              value={card ? card.card_number_masked : "Not added"}
-              hint={card ? `Expires ${card.exp_month}/${card.exp_year}` : "Add a card before purchasing"}
-            />
-            <StatTile
-              label="Plan status"
-              value={membership ? membership.status : "Inactive"}
-              hint={
-                membership
-                  ? `Renews / ends ${formatDate(membership.end_date)}`
-                  : "Choose a plan below to activate"
-              }
-            />
-          </div>
-
-          <section className="dashboard-surface rounded-2xl p-5 md:p-6">
-            <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-              Plans
-            </p>
-            <h2 className="font-sans mt-1 text-lg font-semibold tracking-[0.005em] text-[color:var(--dash-text)] md:text-xl">
-              Available membership
-            </h2>
-            <p className="text-brand-body mt-1 text-[color:var(--dash-muted)]">
-              Your saved card will be charged on purchase.
-            </p>
-
-            <div className="mt-5 grid gap-3 lg:grid-cols-3">
-              {plans.map((plan) => {
-                const current = membership?.plan_type === plan.plan_type;
-                return (
-                  <div
-                    key={plan.plan_type}
+          <section className="dashboard-hero relative overflow-hidden rounded-2xl p-4 sm:p-5 md:p-6">
+            <div className="flex flex-col gap-4 sm:gap-5 lg:flex-row lg:items-end lg:justify-between">
+              <div className="min-w-0">
+                <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
+                  Current membership
+                </p>
+                <div className="mt-2 flex flex-wrap items-end gap-x-2 gap-y-1">
+                  <span className="font-sans text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl md:text-[2.25rem] md:leading-none">
+                    {membership ? planLabels[membership.plan_type] : "No plan"}
+                  </span>
+                  <span
                     className={cn(
-                      "flex flex-col rounded-2xl border p-5 transition",
-                      current
-                        ? "border-[#DDE466] bg-[#DDE466]/10"
-                        : "border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)]",
+                      "mb-0.5 inline-flex rounded-full px-2.5 py-0.5 text-brand-caption font-semibold capitalize",
+                      membership
+                        ? "bg-[#DDE466]/25 text-[color:var(--dash-accent)]"
+                        : "bg-[color:var(--dash-soft)] text-[color:var(--dash-faint)]",
                     )}
                   >
-                    <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+                    {membership ? membership.status : "Inactive"}
+                  </span>
+                </div>
+                <p className="text-brand-body mt-2 text-[color:var(--dash-muted)]">
+                  {membership
+                    ? `Active until ${formatDate(membership.end_date)}`
+                    : "Choose a plan below to unlock lectures, tools, and adviser access."}
+                </p>
+              </div>
+
+              <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:gap-2.5">
+                <Link
+                  href="/student/payment/card"
+                  className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center rounded-full px-3 text-sm font-medium text-[color:var(--dash-text)] transition sm:px-5"
+                >
+                  {card ? `Card ···· ${card.card_last4}` : "Add card"}
+                </Link>
+                <Link
+                  href="/student/payment/orders"
+                  className="font-sans inline-flex min-h-10 items-center justify-center rounded-full bg-[#DDE466] px-3 text-sm font-medium text-[#152744] transition hover:brightness-105 sm:px-5"
+                >
+                  View orders
+                </Link>
+              </div>
+            </div>
+          </section>
+
+          <section className="mt-0.5 min-w-0 sm:mt-1">
+            <div className="mb-3 flex flex-col gap-1 sm:mb-4 sm:flex-row sm:items-end sm:justify-between">
+              <div className="min-w-0">
+                <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+                  Choose a plan
+                </p>
+                <h2 className="font-sans mt-1 text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg md:text-xl">
+                  Membership options
+                </h2>
+              </div>
+              <p className="text-brand-caption text-[color:var(--dash-muted)]">
+                All prices in USD · charged to your saved card
+              </p>
+            </div>
+
+            {!card ? (
+              <div className="mb-3 flex flex-col gap-3 rounded-2xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-surface)] px-4 py-3.5 sm:mb-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+                <p className="text-brand-body text-[color:var(--dash-muted)]">
+                  Add a payment card before selecting a plan.
+                </p>
+                <Link
+                  href="/student/payment/card"
+                  className="font-sans inline-flex min-h-9 w-full items-center justify-center rounded-full bg-[#DDE466] px-4 text-sm font-medium text-[#152744] transition hover:brightness-105 sm:w-auto"
+                >
+                  Add card
+                </Link>
+              </div>
+            ) : null}
+
+            <div className="grid min-w-0 items-stretch gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {sortedPlans(plans).map((plan) => {
+                const meta = PLAN_META[plan.plan_type];
+                const current = membership?.plan_type === plan.plan_type;
+                const favourite = Boolean(meta.favourite);
+                const priceUsd = formatMoney(plan.price, "USD");
+
+                return (
+                  <article
+                    key={plan.plan_type}
+                    className={cn(
+                      "membership-plan-card relative flex min-w-0 flex-col rounded-[1.25rem] p-4 sm:rounded-[1.35rem] sm:p-5 md:p-6",
+                      favourite && "membership-plan-card--favourite",
+                      current && "membership-plan-card--current",
+                    )}
+                  >
+                    {meta.badge ? (
+                      <span
+                        className={cn(
+                          "membership-plan-badge",
+                          favourite ? "membership-plan-badge--favourite" : "membership-plan-badge--value",
+                        )}
+                      >
+                        {meta.badge}
+                      </span>
+                    ) : (
+                      <span className="membership-plan-badge membership-plan-badge--spacer" aria-hidden>
+                        &nbsp;
+                      </span>
+                    )}
+
+                    <div className="mt-1 flex items-start justify-between gap-3">
+                      <div className="membership-plan-icon" aria-hidden>
+                        {meta.icon}
+                      </div>
+                    </div>
+
+                    <h3 className="font-sans mt-3 text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:mt-4 sm:text-[1.35rem]">
                       {planLabels[plan.plan_type]}
-                    </p>
-                    <p className="font-sans mt-1 text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] md:text-2xl">
-                      {formatMoney(plan.price, plan.currency)}
-                    </p>
-                    <p className="text-brand-body mt-1 text-[color:var(--dash-muted)]">
-                      {plan.duration_days} days access
-                    </p>
+                    </h3>
+
+                    <div className="mt-3 flex flex-wrap items-baseline gap-x-2 gap-y-0.5">
+                      <span className="font-sans text-[1.65rem] font-bold leading-none tracking-[0.01em] text-[color:var(--dash-text)] sm:text-[1.85rem] md:text-[2rem]">
+                        {priceUsd}
+                      </span>
+                      <span className="text-brand-caption font-medium text-[color:var(--dash-faint)]">
+                        USD · {meta.period}
+                      </span>
+                    </div>
+
+                    <div className="membership-plan-divider my-3 sm:my-4" />
+
+                    <ul className="flex flex-1 flex-col gap-2 sm:gap-2.5">
+                      {meta.features.map((feature) => (
+                        <li key={feature} className="flex items-start gap-2.5">
+                          <span className="membership-plan-check mt-0.5" aria-hidden>
+                            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6">
+                              <path d="M20 6 9 17l-5-5" />
+                            </svg>
+                          </span>
+                          <span className="text-sm leading-snug text-[color:var(--dash-muted)]">
+                            {feature}
+                          </span>
+                        </li>
+                      ))}
+                    </ul>
+
                     <button
                       type="button"
-                      disabled={purchasingPlan !== null || current}
+                      disabled={purchasingPlan !== null || current || !card}
                       onClick={() => handlePurchase(plan.plan_type)}
                       className={cn(
-                        "font-sans mt-4 inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] transition disabled:pointer-events-none disabled:opacity-60",
+                        "font-sans mt-5 inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-semibold tracking-[0.01em] transition disabled:pointer-events-none disabled:opacity-55 sm:mt-6",
                         current
                           ? "dashboard-pill-soft text-[color:var(--dash-text)]"
-                          : "bg-[#DDE466] text-[#152744] hover:brightness-105",
+                          : favourite
+                            ? "membership-plan-cta membership-plan-cta--favourite"
+                            : "membership-plan-cta",
                       )}
                     >
                       {current
                         ? "Current plan"
                         : purchasingPlan === plan.plan_type
                           ? "Processing…"
-                          : "Purchase"}
+                          : "Add plan"}
                     </button>
-                  </div>
+                  </article>
                 );
               })}
             </div>

@@ -15,17 +15,17 @@ const WHO_IT_FOR_POSTER = "/assets/whoitfor/background.png";
 type WhoItsForSlide = (typeof landingContent.whoItsFor.slides)[number];
 
 const WIF_RAW_TEXT =
-  "font-body text-[1.625rem] font-light leading-[1.5] tracking-[0.02em] text-white drop-shadow-[0_2px_14px_rgba(0,0,0,0.4)] sm:text-[1.875rem] md:text-[2.125rem] lg:text-[2.35rem] lg:leading-[1.45]";
+  "font-body text-[1.25rem] font-light leading-[1.45] tracking-[0.02em] text-balance text-white drop-shadow-[0_2px_14px_rgba(0,0,0,0.4)] sm:text-[1.625rem] sm:leading-[1.5] md:text-[2.125rem] lg:text-[2.35rem] lg:leading-[1.45]";
 const WIF_BULLET_LABEL =
-  "font-body text-[1.375rem] font-light tracking-[0.02em] text-white/95 drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)] sm:text-[1.5rem] md:text-[1.75rem] lg:text-[2rem]";
+  "font-body text-[1.125rem] font-light tracking-[0.02em] text-white/95 drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)] sm:text-[1.375rem] md:text-[1.75rem] lg:text-[2rem]";
 
 function StepCapsule({ step }: { step: number }) {
   return (
     <div
       aria-hidden
-      className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-white/75 md:h-11 md:w-11"
+      className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-white/75 sm:h-10 sm:w-10 md:h-11 md:w-11"
     >
-      <span className="font-sans text-base font-normal text-white md:text-lg">
+      <span className="font-sans text-sm font-normal text-white sm:text-base md:text-lg">
         {step}
       </span>
     </div>
@@ -41,7 +41,10 @@ function ScrollProgressLine({
 }) {
   return (
     <div
-      className={cn("h-px w-40 overflow-hidden bg-white/25 md:w-56", className)}
+      className={cn(
+        "h-px w-28 overflow-hidden bg-white/25 sm:w-40 md:w-56",
+        className,
+      )}
       aria-hidden
     >
       <div
@@ -54,7 +57,7 @@ function ScrollProgressLine({
 
 function RawTextSlide({ lines }: { lines: readonly string[] }) {
   return (
-    <div className="mx-auto max-w-4xl px-2 text-center">
+    <div className="mx-auto w-full max-w-4xl px-1 text-center sm:px-2">
       {lines.map((line) => (
         <p key={line} className={WIF_RAW_TEXT}>
           {line}
@@ -66,15 +69,18 @@ function RawTextSlide({ lines }: { lines: readonly string[] }) {
 
 function BulletSlide({ items }: { items: readonly string[] }) {
   return (
-    <ul className="mx-auto flex max-w-4xl flex-wrap items-start justify-center gap-x-10 gap-y-10 px-2 md:gap-x-14 lg:gap-x-16">
+    <ul className="mx-auto flex w-full max-w-4xl flex-col items-center gap-6 px-1 sm:flex-row sm:flex-wrap sm:items-start sm:justify-center sm:gap-x-10 sm:gap-y-10 sm:px-2 md:gap-x-14 lg:gap-x-16">
       {items.map((item) => (
-        <li key={item} className="flex flex-col items-center gap-4 md:gap-5">
+        <li
+          key={item}
+          className="flex flex-col items-center gap-3 sm:gap-4 md:gap-5"
+        >
           <span data-wif-bullet className={WIF_BULLET_LABEL}>
             {item}
           </span>
           <span
             data-wif-dot
-            className="h-2.5 w-2.5 rounded-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.45)]"
+            className="h-2 w-2 rounded-full bg-white shadow-[0_0_12px_rgba(255,255,255,0.45)] sm:h-2.5 sm:w-2.5"
             aria-hidden
           />
         </li>
@@ -206,12 +212,15 @@ function WhoItsForStatic() {
 
       <div
         className={cn(
-          "relative mx-auto flex w-full max-w-4xl flex-col items-center gap-16 py-20 md:py-28",
+          "relative mx-auto flex w-full max-w-4xl flex-col items-center gap-12 py-14 sm:gap-14 sm:py-16 md:gap-16 md:py-28",
           heroLayout.gutterX,
         )}
       >
         {whoItsFor.slides.map((slide, index) => (
-          <div key={slide.id} className="flex w-full flex-col items-center gap-10">
+          <div
+            key={slide.id}
+            className="flex w-full flex-col items-center gap-6 sm:gap-8 md:gap-10"
+          >
             <StepCapsule step={index + 1} />
             <WhoItsForSlideContent slide={slide} />
           </div>
@@ -369,16 +378,16 @@ export function WhoItsForSection() {
 
         <div
           className={cn(
-            "relative mx-auto flex h-full w-full max-w-5xl flex-col items-center",
+            "relative mx-auto flex h-full min-h-0 w-full max-w-5xl flex-col items-center",
             heroLayout.gutterX,
           )}
         >
-          <div className="flex shrink-0 justify-center pt-10 md:pt-12">
+          <div className="flex shrink-0 justify-center pt-6 sm:pt-8 md:pt-12">
             <StepCapsule step={activeIndex + 1} />
           </div>
 
-          <div className="relative flex w-full flex-1 items-center justify-center py-10 md:py-12">
-            <div className="relative w-full">
+          <div className="relative flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden py-4 sm:py-8 md:py-12">
+            <div className="relative w-full max-h-full">
               {whoItsFor.slides.map((slide) => (
                 <div
                   key={slide.id}
@@ -389,14 +398,21 @@ export function WhoItsForSection() {
                 </div>
               ))}
 
-              {/* Height sizer so the absolute stack has layout space */}
-              <div className="pointer-events-none invisible" aria-hidden>
-                <WhoItsForSlideContent slide={whoItsFor.slides[1] ?? whoItsFor.slides[0]} />
+              {/* Height sizer: grid stacks every slide so layout uses the tallest */}
+              <div
+                className="pointer-events-none invisible grid"
+                aria-hidden
+              >
+                {whoItsFor.slides.map((slide) => (
+                  <div key={slide.id} className="col-start-1 row-start-1">
+                    <WhoItsForSlideContent slide={slide} />
+                  </div>
+                ))}
               </div>
             </div>
           </div>
 
-          <div className="flex shrink-0 flex-col items-center gap-6 pb-10 md:pb-12">
+          <div className="flex shrink-0 flex-col items-center gap-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:gap-6 sm:pb-10 md:pb-12">
             <ScrollProgressLine progress={progress} />
           </div>
         </div>

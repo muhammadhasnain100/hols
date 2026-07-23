@@ -1,39 +1,50 @@
 "use client";
 
 import { PortalShell } from "@/components/platform/provider/PortalShell";
+import { WelcomeChip } from "@/components/platform/provider/student/WelcomeChip";
 import { studentNav } from "@/components/platform/provider/student/studentNav";
 
 type DashboardPageLayoutProps = {
-  displayName: string;
   children: React.ReactNode;
 };
 
-function initialsFor(name: string) {
-  return name
-    .split(" ")
-    .map((part) => part[0])
-    .filter(Boolean)
-    .join("")
-    .slice(0, 2)
-    .toUpperCase();
+function openSidebar() {
+  window.dispatchEvent(new Event("hols-portal-open-sidebar"));
 }
 
-export function DashboardPageLayout({ displayName, children }: DashboardPageLayoutProps) {
-  const initials = initialsFor(displayName) || "S";
-
+export function DashboardPageLayout({ children }: DashboardPageLayoutProps) {
   return (
-    <PortalShell role="student" title="Dashboard" showPageHeader={false} brandBackdrop nav={studentNav}>
+    <PortalShell
+      role="student"
+      title="Dashboard"
+      showPageHeader={false}
+      contentFlush
+      brandBackdrop
+      nav={studentNav}
+    >
       <div className="dashboard-screen">
-        <header className="mb-5 flex flex-wrap items-center justify-between gap-4">
-          <h1 className="font-sans text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl">
-            Dashboard
-          </h1>
+        <header className="mb-4 flex items-center justify-between gap-2 sm:mb-5 sm:gap-4">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              aria-label="Open sidebar"
+              onClick={openSidebar}
+              className="dashboard-icon-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full lg:hidden"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                <path d="M4 7h16M4 12h10M4 17h16" />
+              </svg>
+            </button>
+            <h1 className="font-sans truncate text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl md:text-2xl">
+              Dashboard
+            </h1>
+          </div>
 
-          <div className="flex items-center gap-2.5">
+          <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5">
             <button
               type="button"
               aria-label="Settings"
-              className="dashboard-icon-btn flex h-9 w-9 items-center justify-center rounded-full"
+              className="dashboard-icon-btn hidden h-9 w-9 items-center justify-center rounded-full sm:flex"
             >
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
                 <circle cx="12" cy="12" r="3" />
@@ -51,19 +62,11 @@ export function DashboardPageLayout({ displayName, children }: DashboardPageLayo
               </svg>
             </button>
 
-            <span className="dashboard-welcome-chip flex items-center gap-2.5 rounded-full py-1 pl-1 pr-3.5">
-              <span className="flex h-8 w-8 items-center justify-center rounded-full bg-[#DDE466] text-brand-caption font-semibold text-[#152744]">
-                {initials}
-              </span>
-              <span className="hidden flex-col leading-tight sm:flex">
-                <span className="text-[11px] text-[color:var(--dash-faint)]">Welcome back,</span>
-                <span className="font-sans text-sm font-semibold text-[color:var(--dash-text)]">{displayName}</span>
-              </span>
-            </span>
+            <WelcomeChip />
           </div>
         </header>
 
-        <div className="grid w-full gap-4 lg:grid-cols-[1.9fr_1fr]">{children}</div>
+        <div className="grid w-full min-w-0 gap-3 sm:gap-4 xl:grid-cols-[1.9fr_1fr]">{children}</div>
       </div>
     </PortalShell>
   );

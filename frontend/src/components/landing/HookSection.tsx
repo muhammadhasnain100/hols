@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import {
   useCallback,
   useEffect,
@@ -11,6 +10,12 @@ import {
 } from "react";
 import { useGSAP } from "@gsap/react";
 import { HeroButton } from "@/components/hero/HeroButton";
+import { HookHolsBall } from "@/components/landing/HookHolsBall";
+import { HookInteractiveDashboard, HOOK_PORTAL_SIZE } from "@/components/landing/HookInteractiveDashboard";
+import {
+  HookScatteredCard,
+  HookScatteredCardInline,
+} from "@/components/landing/HookScatteredCard";
 import { gsap, registerGsap, ScrollTrigger } from "@/lib/gsap";
 import { landingContent } from "@/content/landing";
 import { brand } from "@/config/brand";
@@ -19,9 +24,20 @@ import { prefersReducedMotion } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 const HOOK_PATH_SYNC = "hook-path-sync";
-const HOOK_ACCENT = brand.colors.accent.lemonLime;
+/** Diagram strokes + struct capsule + title "becomes" */
+const HOOK_LINE = brand.colors.primary.duskBlue;
 const BLUE = brand.colors.primary.duskBlue;
-const GREY = "#C7D6E6";
+/** Match PillarsSection surface */
+const HOOK_BG = "#E5E5E5";
+
+const HOOK_CAPSULE_BASE =
+  "inline-flex max-w-full items-center justify-center rounded-full px-3.5 py-1.5 text-center font-sans text-[10px] font-bold uppercase tracking-[0.12em] sm:px-4 sm:py-2 sm:text-xs";
+/**
+ * Both Hook capsules — frosted glass (same family as What You Get / heroGlassPanel).
+ * Uses `glass-capsule` (light-surface glass + dark text) rather than
+ * `glass-capsule-overlay` / accent / solid duskBlue fills.
+ */
+const HOOK_CAPSULE_CLASS = cn(HOOK_CAPSULE_BASE, "glass-capsule text-primary");
 
 type LineGroup = "card" | "trunk" | "branch";
 type DiagramPath = { id: string; group: LineGroup; d: string };
@@ -124,6 +140,12 @@ function syncArrowToLine(line: SVGPathElement | undefined, arrow: SVGPolygonElem
 
 /** Gap before target border so tip + arrow sit in open space (not under chrome). */
 const ARROW_CLEAR_PX = 14;
+/** Extra clearance on mobile vertical stems into dashboard / CTA. */
+const MOBILE_ARROW_CLEAR_PX = 18;
+/** Space between struct capsule bottom and the short trunk stem. */
+const MOBILE_TRUNK_AFTER_LABEL_PX = 10;
+/** Space below dashboard before the branch stem starts. */
+const MOBILE_BRANCH_AFTER_DASH_PX = 10;
 
 function buildDiagramGeometry(
   cardRects: DOMRect[],
@@ -195,11 +217,101 @@ function buildDiagramGeometry(
   return { paths, arrows };
 }
 
+/**
+ * Mobile: wires drop from each card's bottom edge onto the ball's top arc.
+ * Trunk is a short stem below the struct capsule → dashboard (never through the capsule).
+ * Branch is a short stem below the dashboard → CTA.
+ */
+function buildVerticalDiagramGeometry(
+  cardRects: DOMRect[],
+  ballRect: DOMRect,
+  dashRect: DOMRect | null,
+  ctaRect: DOMRect | null,
+  svgRect: DOMRect,
+  structLabelRect: DOMRect | null = null,
+): { paths: DiagramPath[]; arrows: DiagramArrow[] } {
+  if (svgRect.width <= 0 || svgRect.height <= 0 || !ballRect.width) {
+    return { paths: [], arrows: [] };
+  }
+
+  const toSvg = (x: number, y: number): Point => ({
+    x: x - svgRect.left,
+    y: y - svgRect.top,
+  });
+
+  const ballCX = ballRect.left + ballRect.width / 2;
+  const ballCY = ballRect.top + ballRect.height / 2;
+  const center = toSvg(ballCX, ballCY);
+  const rx = (ballRect.width / 2) * 0.92;
+  const ry = (ballRect.height / 2) * 0.92;
+
+  const paths: DiagramPath[] = [];
+  const arrows: DiagramArrow[] = [];
+  const count = cardRects.length;
+
+  cardRects.forEach((rect, i) => {
+    const start = toSvg(rect.left + rect.width / 2, rect.bottom);
+    const t = count > 1 ? i / (count - 1) : 0.5;
+    const jitter = seededUnit(i * 13 + 5) - 0.5;
+    const angleDeg = 200 + t * 140 + jitter * 8;
+    const angle = (angleDeg * Math.PI) / 180;
+    const entry: Point = {
+      x: center.x + Math.cos(angle) * rx,
+      y: center.y + Math.sin(angle) * ry,
+    };
+    paths.push({ id: `card-${i}`, group: "card", d: buildConvergePath(start, entry, center, i + 1) });
+  });
+
+  if (dashRect && dashRect.width) {
+    const flowX = dashRect.left + dashRect.width / 2;
+    const trunkTipY = dashRect.top - MOBILE_ARROW_CLEAR_PX;
+    // Start just below the capsule so the stem never pierces "ONE TRUSTED SYSTEM".
+    const trunkStartY =
+      structLabelRect && structLabelRect.height > 0
+        ? structLabelRect.bottom + MOBILE_TRUNK_AFTER_LABEL_PX
+        : trunkTipY - 44;
+
+    if (trunkStartY < trunkTipY - 4) {
+      const start = toSvg(flowX, trunkStartY);
+      const trunkTip = toSvg(flowX, trunkTipY);
+      paths.push({ id: "trunk", group: "trunk", d: buildStraightLine(start, trunkTip) });
+      arrows.push({
+        id: "trunk-arrow",
+        group: "trunk",
+        points: buildArrowPolygon(trunkTip, start),
+        tipX: trunkTip.x,
+        tipY: trunkTip.y,
+      });
+    }
+
+    if (ctaRect && ctaRect.width) {
+      const branchStartY = dashRect.bottom + MOBILE_BRANCH_AFTER_DASH_PX;
+      const branchTipY = ctaRect.top - MOBILE_ARROW_CLEAR_PX;
+      if (branchStartY < branchTipY - 4) {
+        const bStart = toSvg(flowX, branchStartY);
+        const branchTip = toSvg(ctaRect.left + ctaRect.width / 2, branchTipY);
+        paths.push({ id: "branch", group: "branch", d: buildStraightLine(bStart, branchTip) });
+        arrows.push({
+          id: "branch-arrow",
+          group: "branch",
+          points: buildArrowPolygon(branchTip, bStart),
+          tipX: branchTip.x,
+          tipY: branchTip.y,
+        });
+      }
+    }
+  }
+
+  return { paths, arrows };
+}
+
 function prepareStroke(path: SVGPathElement, hidden: boolean) {
   const length = path.getTotalLength();
+  // opacity 0 when collapsed — round linecaps still paint a speck at dashoffset=length
   gsap.set(path, {
     strokeDasharray: length,
     strokeDashoffset: hidden ? length : 0,
+    opacity: hidden ? 0 : 1,
   });
 }
 
@@ -211,7 +323,12 @@ function resyncPathStroke(path: SVGPathElement) {
   let drawRatio = 0;
   if (oldLen > 0 && typeof dashoffset === "number") drawRatio = 1 - dashoffset / oldLen;
   drawRatio = Math.min(1, Math.max(0, drawRatio));
-  gsap.set(path, { strokeDasharray: length, strokeDashoffset: length * (1 - drawRatio) });
+  // Keep undrawn strokes fully invisible (round caps otherwise leave speck dots)
+  gsap.set(path, {
+    strokeDasharray: length,
+    strokeDashoffset: length * (1 - drawRatio),
+    opacity: drawRatio > 0.002 ? 1 : 0,
+  });
 }
 
 /* ── Scattered source-card icons ───────────────────────────────────────── */
@@ -301,293 +418,70 @@ function ScatteredCard({
   const pos = CARD_LAYOUT[id] ?? { top: "50%", left: "50%" };
 
   return (
-    <article
-      ref={cardRef}
-      data-hook-card
-      className="absolute inline-flex -translate-y-1/2 items-center gap-2 rounded-full border border-black/[0.06] bg-white px-3 py-2 shadow-[0_10px_30px_-12px_rgba(21,39,68,0.35)]"
-      style={{ top: pos.top, left: pos.left }}
-    >
-      <span
-        className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full"
-        style={{ backgroundColor: `${color}1A`, color }}
-      >
-        {CARD_ICONS[id]}
-      </span>
-      <span className="whitespace-nowrap font-sans text-[13px] font-semibold leading-none text-primary">
-        {title}
-      </span>
-    </article>
+    <HookScatteredCard
+      id={id}
+      title={title}
+      color={color}
+      icon={CARD_ICONS[id]}
+      top={pos.top}
+      left={pos.left}
+      cardRef={cardRef}
+      className="pointer-events-auto"
+    />
   );
 }
 
 /* ── Center HOLS ball ──────────────────────────────────────────────────── */
 /** Labels hang below out of flow so the ball itself stays on the flow axis. */
-function HolsBall({ innerRef }: { innerRef?: (node: HTMLDivElement | null) => void }) {
-  const { hook } = landingContent;
-  return (
-    <div data-hook-hub className="relative flex flex-col items-center">
-      <div
-        ref={innerRef}
-        data-hook-ball
-        className="relative z-10 flex aspect-square w-[120px] items-center justify-center sm:w-[140px] md:w-[160px]"
-      >
-        <div
-          aria-hidden
-          className="absolute inset-[-20%] rounded-full bg-[radial-gradient(circle,rgba(141,195,225,0.45)_0%,rgba(141,195,225,0)_70%)] blur-xl"
-        />
-        <Image
-          src="/assets/ball/ball.png"
-          alt=""
-          width={480}
-          height={480}
-          className="relative z-10 h-full w-full object-contain"
-          sizes="160px"
-          priority
-        />
-      </div>
-      <div className="pointer-events-none absolute top-full left-1/2 mt-3 w-max -translate-x-1/2 text-center">
-        <p className="font-sans text-lg font-bold tracking-[0.04em] text-primary">{hook.hubLabel}</p>
-        <p className="mt-0.5 font-sans text-xs font-medium text-primary/50">{hook.systemLabel}</p>
-      </div>
-    </div>
-  );
+function HolsBall({
+  innerRef,
+  className,
+}: {
+  innerRef?: (node: HTMLDivElement | null) => void;
+  className?: string;
+}) {
+  return <HookHolsBall innerRef={innerRef} className={className} />;
 }
 
-/* ── Dashboard (custom HOLS portal mock — no screenshot image) ─────────── */
-const DASH_NAV_ICONS: Record<string, ReactNode> = {
-  dashboard: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden className="h-3 w-3">
-      <rect x="3" y="3" width="7" height="9" rx="1.5" />
-      <rect x="14" y="3" width="7" height="5" rx="1.5" />
-      <rect x="14" y="12" width="7" height="9" rx="1.5" />
-      <rect x="3" y="16" width="7" height="5" rx="1.5" />
-    </svg>
-  ),
-  lectures: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden className="h-3 w-3">
-      <path d="M4 6h16v11H4zM4 20h16" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  ),
-  calculator: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden className="h-3 w-3">
-      <rect x="5" y="3" width="14" height="18" rx="2" />
-      <path d="M8 8h8M8 12h2M12 12h2M16 12h1M8 16h2M12 16h2M16 16h1" strokeLinecap="round" />
-    </svg>
-  ),
-  adviser: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden className="h-3 w-3">
-      <path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8Z" strokeLinejoin="round" />
-    </svg>
-  ),
-  payment: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden className="h-3 w-3">
-      <rect x="3" y="6" width="18" height="12" rx="2" />
-      <path d="M3 10h18" strokeLinecap="round" />
-    </svg>
-  ),
-  profile: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden className="h-3 w-3">
-      <circle cx="12" cy="9" r="3.2" />
-      <path d="M5.5 19a6.5 6.5 0 0 1 13 0" strokeLinecap="round" />
-    </svg>
-  ),
-  plans: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden className="h-3 w-3">
-      <path d="M12 3l2.2 4.5L19 8.2l-3.5 3.4.8 4.9L12 14.2 7.7 16.5l.8-4.9L5 8.2l4.8-.7Z" strokeLinejoin="round" />
-    </svg>
-  ),
-  orders: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden className="h-3 w-3">
-      <rect x="5" y="3" width="14" height="18" rx="2" />
-      <path d="M9 8h6M9 12h6M9 16h4" strokeLinecap="round" />
-    </svg>
-  ),
-  card: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden className="h-3 w-3">
-      <rect x="3" y="6" width="18" height="12" rx="2" />
-      <path d="M3 10h18M7 14h4" strokeLinecap="round" />
-    </svg>
-  ),
-  account: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden className="h-3 w-3">
-      <circle cx="12" cy="9" r="3.2" />
-      <path d="M5.5 19a6.5 6.5 0 0 1 13 0" strokeLinecap="round" />
-    </svg>
-  ),
-};
+/* ── Interactive portal mock (replaces static dashboard image) ─────────── */
+function DashboardMockup({
+  innerRef,
+  className,
+}: {
+  innerRef?: (node: HTMLDivElement | null) => void;
+  className?: string;
+}) {
+  return <HookInteractiveDashboard innerRef={innerRef} className={className} />;
+}
 
-const DASH_NAVY = "#0B1F3A";
-const DASH_PANEL = "#122845";
-const DASH_PANEL_2 = "#163052";
-const DASH_LIME = HOOK_ACCENT;
-
-function DashboardMockup({ innerRef }: { innerRef?: (node: HTMLDivElement | null) => void }) {
-  const { dashboard } = landingContent.hook;
-
+/* ── Title + description ───────────────────────────────────────────────── */
+function HookCopy({ centered = false }: { centered?: boolean }) {
+  const { hook } = landingContent;
   return (
     <div
-      ref={innerRef}
-      data-hook-dashboard
-      className="w-full max-w-[400px] overflow-hidden rounded-2xl border border-white/10 shadow-[0_24px_60px_-20px_rgba(11,31,58,0.65)] xl:max-w-[440px]"
-      style={{ backgroundColor: DASH_NAVY }}
+      data-hook-copy
+      className={cn(
+        "w-full max-w-3xl lg:max-w-4xl",
+        centered ? "mx-auto text-center" : "text-left",
+      )}
     >
-      {/* Window chrome */}
-      <div className="flex items-center gap-2 border-b border-white/10 px-3 py-2" style={{ backgroundColor: DASH_PANEL }}>
-        <span className="flex gap-1.5">
-          <span className="h-2.5 w-2.5 rounded-full bg-[#FF5F57]" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#FEBC2E]" />
-          <span className="h-2.5 w-2.5 rounded-full bg-[#28C840]" />
-        </span>
-        <div className="ml-1 flex h-5 flex-1 items-center rounded-md border border-white/10 bg-black/20 px-2">
-          <span className="font-sans text-[9px] font-medium text-white/35">app.hols.io/dashboard</span>
-        </div>
-      </div>
-
-      <div className="flex min-h-[220px]">
-        {/* Sidebar */}
-        <aside className="flex w-[28%] shrink-0 flex-col border-r border-white/10 p-2.5" style={{ backgroundColor: DASH_PANEL }}>
-          <div className="mb-3 flex items-center gap-1.5 px-1">
-            <Image
-              src="/assets/logo/hols-logo-mark.png"
-              alt=""
-              width={18}
-              height={18}
-              className="h-3.5 w-3.5 object-contain"
-            />
-            <span className="font-sans text-[11px] font-bold tracking-wide text-white">{dashboard.brand}</span>
-          </div>
-          <nav className="flex flex-1 flex-col gap-0.5">
-            {dashboard.nav.map((item, i) => (
-              <span
-                key={item.id}
-                className={cn(
-                  "flex items-center gap-1.5 rounded-md px-1.5 py-1.5 font-sans text-[9px] font-semibold",
-                  i === 0 ? "text-[#0B1F3A]" : "text-white/55",
-                )}
-                style={i === 0 ? { backgroundColor: DASH_LIME } : undefined}
-              >
-                <span className={i === 0 ? "text-[#0B1F3A]" : "text-white/45"}>{DASH_NAV_ICONS[item.id]}</span>
-                <span className="truncate leading-none">{item.label}</span>
-              </span>
-            ))}
-          </nav>
-          <div className="mt-2 border-t border-white/10 pt-2">
-            <div className="mb-1.5 flex items-center justify-between px-1">
-              <span className="font-sans text-[8px] font-medium text-white/40">Dark mode</span>
-              <span className="relative h-3 w-5 rounded-full" style={{ backgroundColor: DASH_LIME }}>
-                <span className="absolute top-0.5 right-0.5 h-2 w-2 rounded-full bg-[#0B1F3A]" />
-              </span>
-            </div>
-            <span className="flex items-center gap-1.5 px-1.5 py-1 font-sans text-[9px] font-medium text-white/45">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" className="h-3 w-3" aria-hidden>
-                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-              Log out
-            </span>
-          </div>
-        </aside>
-
-        {/* Main column */}
-        <div className="flex min-w-0 flex-1 flex-col gap-2 p-2.5">
-          <div className="flex items-center justify-between">
-            <p className="font-sans text-[11px] font-bold text-white">Dashboard</p>
-            <span className="flex h-5 w-5 items-center justify-center rounded-full text-[8px] font-bold text-[#0B1F3A]" style={{ backgroundColor: DASH_LIME }}>
-              MH
-            </span>
-          </div>
-
-          {/* Membership status */}
-          <div className="rounded-xl border border-white/10 p-2.5" style={{ backgroundColor: DASH_PANEL_2 }}>
-            <p className="font-sans text-[8px] font-semibold uppercase tracking-[0.12em] text-white/40">
-              {dashboard.membership.label}
-            </p>
-            <div className="mt-1 flex items-end justify-between gap-2">
-              <div>
-                <p className="font-sans text-[15px] font-bold leading-none text-white">{dashboard.membership.plan}</p>
-                <p className="mt-1 font-sans text-[9px] font-medium text-white/45">{dashboard.membership.status}</p>
-              </div>
-              <span
-                className="rounded-md px-2 py-1 font-sans text-[9px] font-bold text-[#0B1F3A]"
-                style={{ backgroundColor: DASH_LIME }}
-              >
-                Upgrade
-              </span>
-            </div>
-            <div className="mt-2 flex gap-1.5">
-              <span className="rounded-md bg-white/10 px-2 py-1 font-sans text-[8px] font-semibold text-white/70">Orders</span>
-              <span className="rounded-md bg-white/10 px-2 py-1 font-sans text-[8px] font-semibold text-white/70">Card</span>
-            </div>
-          </div>
-
-          {/* Quick tools */}
-          <div className="rounded-xl border border-white/10 p-2.5" style={{ backgroundColor: DASH_PANEL_2 }}>
-            <div className="mb-2 flex items-center justify-between">
-              <p className="font-sans text-[9px] font-bold text-white">Quick tools</p>
-              <span className="font-sans text-[8px] font-medium text-white/35">View all</span>
-            </div>
-            <div className="grid grid-cols-4 gap-1.5">
-              {dashboard.tools.map((tool) => (
-                <div key={tool.id} className="flex flex-col items-center gap-1">
-                  <span
-                    className="flex h-7 w-7 items-center justify-center rounded-full text-[#0B1F3A]"
-                    style={{ backgroundColor: `${DASH_LIME}CC` }}
-                  >
-                    {DASH_NAV_ICONS[tool.id]}
-                  </span>
-                  <span className="font-sans text-[7px] font-semibold text-white/55">{tool.label}</span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Recent + side actions row */}
-          <div className="grid grid-cols-[1.15fr_0.85fr] gap-2">
-            <div className="rounded-xl border border-white/10 p-2.5" style={{ backgroundColor: DASH_PANEL_2 }}>
-              <div className="mb-1.5 flex items-center justify-between">
-                <p className="font-sans text-[9px] font-bold text-white">Recent activity</p>
-                <span className="font-sans text-[8px] font-medium text-white/35">View all</span>
-              </div>
-              <p className="font-sans text-[9px] text-white/40">No orders yet.</p>
-            </div>
-            <div className="flex flex-col gap-1 rounded-xl border border-white/10 p-2" style={{ backgroundColor: DASH_PANEL_2 }}>
-              {dashboard.actions.map((action) => (
-                <span key={action.id} className="flex items-center gap-1.5 text-white/55">
-                  <span className="text-white/40">{DASH_NAV_ICONS[action.id]}</span>
-                  <span className="min-w-0 flex-1 truncate font-sans text-[7px] font-semibold">{action.label}</span>
-                  {"badge" in action && action.badge ? (
-                    <span className="rounded bg-white/10 px-1 font-sans text-[7px] text-white/50">{action.badge}</span>
-                  ) : null}
-                </span>
-              ))}
-              <span
-                className="mt-0.5 rounded-md py-1 text-center font-sans text-[8px] font-bold text-[#0B1F3A]"
-                style={{ backgroundColor: DASH_LIME }}
-              >
-                Upgrade plan
-              </span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-/* ── Title + description (copy unchanged; left-aligned like Pillars) ───── */
-function HookCopy() {
-  const { hook } = landingContent;
-  return (
-    <div data-hook-copy className="w-full max-w-3xl text-left lg:max-w-4xl">
       <h2 className="font-sans text-[1.875rem] font-bold leading-[1.05] tracking-[0.01em] text-primary sm:text-[2.25rem] md:text-[3.75rem]">
         <span>{hook.beforeLabel}</span>
-        <span className="text-accent" style={{ color: HOOK_ACCENT }}>
+        <span style={{ color: HOOK_LINE }}>
           {" "}
           becomes{" "}
         </span>
         <span>{hook.afterLabel}</span>
         <span>.</span>
       </h2>
-      <p className="text-brand-body mt-4 max-w-xl text-primary/75 md:mt-5">{hook.solution}</p>
+      <p
+        className={cn(
+          "text-brand-body mt-4 max-w-xl text-primary/75 md:mt-5",
+          centered && "mx-auto",
+        )}
+      >
+        {hook.solution}
+      </p>
     </div>
   );
 }
@@ -644,6 +538,30 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
     window.dispatchEvent(new Event(HOOK_PATH_SYNC));
   }, [paths, arrows]);
 
+  // Hide stroke caps before paint; preserve in-progress draws on geometry updates
+  useLayoutEffect(() => {
+    const svg = svgRef.current;
+    if (!svg || paths.length === 0) return;
+    svg.querySelectorAll<SVGPathElement>("[data-hook-line]").forEach((p) => {
+      const existing = gsap.getProperty(p, "strokeDasharray");
+      const hasDash =
+        existing !== undefined &&
+        existing !== null &&
+        existing !== "none" &&
+        String(existing) !== "0" &&
+        String(existing) !== "";
+      if (hasDash) {
+        resyncPathStroke(p);
+      } else {
+        prepareStroke(p, true);
+      }
+    });
+    svg.querySelectorAll<SVGPolygonElement>("[data-hook-arrow]").forEach((a) => {
+      const op = a.getAttribute("opacity");
+      if (op === null || op === "") a.setAttribute("opacity", "0");
+    });
+  }, [paths, arrows]);
+
   useLayoutEffect(() => {
     syncPaths();
     const diagram = diagramRef.current;
@@ -656,15 +574,18 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
     if (ctaRef.current) observer.observe(ctaRef.current);
     cardRefs.current.forEach((c) => c && observer.observe(c));
 
+    const onCardMove = () => syncPaths();
     window.addEventListener("resize", syncPaths);
+    window.addEventListener(HOOK_PATH_SYNC, onCardMove);
     return () => {
       observer.disconnect();
       window.removeEventListener("resize", syncPaths);
+      window.removeEventListener(HOOK_PATH_SYNC, onCardMove);
     };
   }, [syncPaths]);
 
   return (
-    <div ref={diagramRef} className="relative flex h-full min-h-0 w-full flex-col">
+    <div ref={diagramRef} className="relative flex h-full min-h-0 w-full flex-col overflow-hidden">
       <svg
         ref={svgRef}
         aria-hidden
@@ -675,8 +596,8 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
       >
         <defs>
           <linearGradient id="hook-card-gradient" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stopColor={GREY} stopOpacity="0.4" />
-            <stop offset="100%" stopColor={GREY} stopOpacity="0.95" />
+            <stop offset="0%" stopColor={HOOK_LINE} stopOpacity="0.35" />
+            <stop offset="100%" stopColor={HOOK_LINE} stopOpacity="0.95" />
           </linearGradient>
         </defs>
 
@@ -689,7 +610,7 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
                 data-group="card"
                 d={path.d}
                 stroke="url(#hook-card-gradient)"
-                strokeWidth={1.4}
+                strokeWidth={1.6}
                 strokeLinecap="round"
               />
             );
@@ -700,10 +621,9 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
               data-hook-line
               data-group={path.group}
               d={path.d}
-              stroke={BLUE}
+              stroke={HOOK_LINE}
               strokeWidth={2}
               strokeLinecap="round"
-              opacity={0.9}
             />
           );
         })}
@@ -715,29 +635,30 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
             data-hook-arrow
             data-group={arrow.group}
             points={arrow.points}
-            fill={BLUE}
+            fill={HOOK_LINE}
             opacity={0}
           />
         ))}
       </svg>
 
-      {/* Column labels aligned to their columns across full width */}
-      <div className="relative z-10 mb-3 grid w-full grid-cols-[minmax(16rem,20rem)_minmax(8rem,1fr)_auto_minmax(6rem,1fr)_auto_minmax(4rem,0.7fr)_auto] items-end gap-x-2 xl:grid-cols-[minmax(18rem,22rem)_minmax(10rem,1.2fr)_auto_minmax(8rem,1fr)_auto_minmax(5rem,0.8fr)_auto] xl:gap-x-3">
-        <p
-          data-hook-scatter-label
-          className="font-sans text-xs font-bold uppercase tracking-[0.14em] text-primary/70 sm:text-sm"
-        >
-          {hook.scatteredLabel}
-        </p>
+      {/* Column labels — capsules centered over the cards column / dashboard mockup */}
+      <div className="relative z-10 mb-4 grid w-full grid-cols-[minmax(16rem,20rem)_minmax(8rem,1fr)_auto_minmax(6rem,1fr)_auto_minmax(4rem,0.7fr)_auto] items-end gap-x-2 xl:mb-5 xl:grid-cols-[minmax(18rem,22rem)_minmax(10rem,1.2fr)_auto_minmax(8rem,1fr)_auto_minmax(5rem,0.8fr)_auto] xl:gap-x-3">
+        <div className="flex w-full justify-center">
+          <span data-hook-scatter-label className={cn(HOOK_CAPSULE_CLASS, "opacity-0")}>
+            {hook.scatteredLabel}
+          </span>
+        </div>
         <div aria-hidden />
         <div aria-hidden className="w-[120px] sm:w-[140px] md:w-[160px]" />
         <div aria-hidden />
-        <p
-          data-hook-struct-label
-          className="w-[min(100%,400px)] font-sans text-xs font-bold uppercase tracking-[0.14em] text-primary/70 xl:w-[440px] sm:text-sm"
+        <div
+          className="flex justify-center justify-self-center"
+          style={{ width: HOOK_PORTAL_SIZE.width }}
         >
-          {hook.structuredLabel}
-        </p>
+          <span data-hook-struct-label className={cn(HOOK_CAPSULE_CLASS, "opacity-0")}>
+            {hook.structuredLabel}
+          </span>
+        </div>
         <div aria-hidden />
         <div aria-hidden className="w-[9.5rem]" />
       </div>
@@ -757,15 +678,23 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
 
         {/* 3 · HOLS ball — geometric center is the trunk origin */}
         <div className="relative z-10 shrink-0 self-center">
-          <HolsBall innerRef={(n) => (ballRef.current = n)} />
+          <HolsBall innerRef={(n) => (ballRef.current = n)} className="opacity-0" />
         </div>
 
         {/* 4 · Flexible gap for ball → dashboard line */}
         <div aria-hidden className="h-full w-full" />
 
-        {/* 5 · Dashboard — left/right borders are trunk/branch anchors */}
-        <div className="relative z-10 shrink-0 self-center">
-          <DashboardMockup innerRef={(n) => (dashRef.current = n)} />
+        {/* 5 · Dashboard — fixed pixel frame so page switches never reflow geometry */}
+        <div
+          className="relative z-10 shrink-0 justify-self-center self-center"
+          style={{
+            width: HOOK_PORTAL_SIZE.width,
+            height: HOOK_PORTAL_SIZE.height,
+            minWidth: HOOK_PORTAL_SIZE.width,
+            minHeight: HOOK_PORTAL_SIZE.height,
+          }}
+        >
+          <DashboardMockup innerRef={(n) => (dashRef.current = n)} className="opacity-0" />
         </div>
 
         {/* 6 · Flexible gap for dashboard → CTA line */}
@@ -775,7 +704,7 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
         <div
           ref={ctaRef}
           data-hook-cta
-          className="pointer-events-auto relative z-10 shrink-0 justify-self-end self-center"
+          className="pointer-events-auto relative z-10 shrink-0 justify-self-end self-center opacity-0"
         >
           <HeroButton href={hook.cta.href} variant="primary" className="whitespace-nowrap px-6 md:px-8">
             {hook.cta.label}
@@ -786,51 +715,228 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
   );
 }
 
-/* ── Static (mobile / reduced motion) fallback ─────────────────────────── */
-function StaticArrow({ className }: { className?: string }) {
-  return (
-    <svg aria-hidden viewBox="0 0 64 24" fill="none" className={cn("text-[#3853A4]", className)}>
-      <path d="M2 12h54" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-      <path d="M50 5l8 7-8 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  );
-}
-
-function HookStatic() {
+/* ── Mobile vertical flow (centered + card→ball lines) ─────────────────── */
+function MobileFlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
   const { hook } = landingContent;
+  const diagramRef = useRef<HTMLDivElement>(null);
+  const svgRef = useRef<SVGSVGElement>(null);
+  const ballRef = useRef<HTMLDivElement | null>(null);
+  const dashRef = useRef<HTMLDivElement | null>(null);
+  const ctaRef = useRef<HTMLDivElement>(null);
+  const structLabelRef = useRef<HTMLSpanElement>(null);
+  const cardRefs = useRef<Array<HTMLElement | null>>([]);
+  const [paths, setPaths] = useState<DiagramPath[]>([]);
+  const [arrows, setArrows] = useState<DiagramArrow[]>([]);
+  const [viewBox, setViewBox] = useState("0 0 400 800");
+
+  const syncPaths = useCallback(() => {
+    const diagram = diagramRef.current;
+    const svg = svgRef.current;
+    const ball = ballRef.current;
+    if (!diagram || !svg || !ball) return;
+
+    const svgRect = svg.getBoundingClientRect();
+    if (svgRect.width <= 0) return;
+
+    const cardRects = cardRefs.current
+      .filter((c): c is HTMLElement => Boolean(c))
+      .map((c) => c.getBoundingClientRect());
+    const ballRect = ball.getBoundingClientRect();
+    const dashRect = dashRef.current?.getBoundingClientRect() ?? null;
+    const ctaRect = ctaRef.current?.getBoundingClientRect() ?? null;
+    const structLabelRect = structLabelRef.current?.getBoundingClientRect() ?? null;
+
+    const next = buildVerticalDiagramGeometry(
+      cardRects,
+      ballRect,
+      dashRect,
+      ctaRect,
+      svgRect,
+      structLabelRect,
+    );
+    setViewBox(`0 0 ${svgRect.width.toFixed(1)} ${svgRect.height.toFixed(1)}`);
+    setPaths((cur) => (JSON.stringify(cur) === JSON.stringify(next.paths) ? cur : next.paths));
+    setArrows((cur) => (JSON.stringify(cur) === JSON.stringify(next.arrows) ? cur : next.arrows));
+  }, []);
+
+  useEffect(() => {
+    if (paths.length > 0) onPathsReady?.();
+  }, [paths.length, onPathsReady]);
+
+  const setCardRef = useCallback(
+    (index: number) => (node: HTMLElement | null) => {
+      cardRefs.current[index] = node;
+      if (node) requestAnimationFrame(syncPaths);
+    },
+    [syncPaths],
+  );
+
+  useLayoutEffect(() => {
+    window.dispatchEvent(new Event(HOOK_PATH_SYNC));
+  }, [paths, arrows]);
+
+  // Hide stroke caps before paint; preserve in-progress draws on geometry updates
+  useLayoutEffect(() => {
+    const svg = svgRef.current;
+    if (!svg || paths.length === 0) return;
+    svg.querySelectorAll<SVGPathElement>("[data-hook-line]").forEach((p) => {
+      const existing = gsap.getProperty(p, "strokeDasharray");
+      const hasDash =
+        existing !== undefined &&
+        existing !== null &&
+        existing !== "none" &&
+        String(existing) !== "0" &&
+        String(existing) !== "";
+      if (hasDash) {
+        resyncPathStroke(p);
+      } else {
+        prepareStroke(p, true);
+      }
+    });
+    svg.querySelectorAll<SVGPolygonElement>("[data-hook-arrow]").forEach((a) => {
+      const op = a.getAttribute("opacity");
+      if (op === null || op === "") a.setAttribute("opacity", "0");
+    });
+  }, [paths, arrows]);
+
+  useLayoutEffect(() => {
+    syncPaths();
+    const diagram = diagramRef.current;
+    if (!diagram) return;
+
+    const observer = new ResizeObserver(syncPaths);
+    observer.observe(diagram);
+    if (ballRef.current) observer.observe(ballRef.current);
+    if (dashRef.current) observer.observe(dashRef.current);
+    if (ctaRef.current) observer.observe(ctaRef.current);
+    if (structLabelRef.current) observer.observe(structLabelRef.current);
+    cardRefs.current.forEach((c) => c && observer.observe(c));
+
+    const onCardMove = () => syncPaths();
+    window.addEventListener("resize", syncPaths);
+    window.addEventListener(HOOK_PATH_SYNC, onCardMove);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener("resize", syncPaths);
+      window.removeEventListener(HOOK_PATH_SYNC, onCardMove);
+    };
+  }, [syncPaths]);
+
   return (
-    <div className="w-full py-12 md:py-14 lg:py-16">
-      <div className={cn("flex w-full flex-col", heroLayout.gutterX)}>
-        <HookCopy />
-        <div className="mt-10 flex flex-col items-start gap-6">
-          <p className="font-sans text-xs font-bold uppercase tracking-[0.14em] text-primary/70 sm:text-sm">
+    <div ref={diagramRef} className="relative flex w-full flex-col items-center overflow-hidden">
+      <svg
+        ref={svgRef}
+        aria-hidden
+        viewBox={viewBox}
+        preserveAspectRatio="none"
+        className="pointer-events-none absolute inset-0 z-[5] h-full w-full overflow-visible"
+        fill="none"
+      >
+        <defs>
+          <linearGradient id="hook-card-gradient-mobile" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" stopColor={HOOK_LINE} stopOpacity="0.35" />
+            <stop offset="100%" stopColor={HOOK_LINE} stopOpacity="0.95" />
+          </linearGradient>
+        </defs>
+
+        {paths.map((path) =>
+          path.group === "card" ? (
+            <path
+              key={path.id}
+              data-hook-line
+              data-group="card"
+              d={path.d}
+              stroke="url(#hook-card-gradient-mobile)"
+              strokeWidth={1.6}
+              strokeLinecap="round"
+            />
+          ) : (
+            <path
+              key={path.id}
+              data-hook-line
+              data-group={path.group}
+              d={path.d}
+              stroke={HOOK_LINE}
+              strokeWidth={2}
+              strokeLinecap="round"
+            />
+          ),
+        )}
+
+        {arrows.map((arrow) => (
+          <polygon
+            key={arrow.id}
+            data-hook-arrow
+            data-group={arrow.group}
+            points={arrow.points}
+            fill={HOOK_LINE}
+            opacity={0}
+          />
+        ))}
+      </svg>
+
+      <div className="relative z-10 flex w-full flex-col items-center">
+        {/* Scattered cluster header — centered above the card wrap */}
+        <div className="mb-4 flex w-full max-w-md flex-col items-center sm:max-w-lg">
+          <span data-hook-scatter-label className={cn(HOOK_CAPSULE_CLASS, "opacity-0")}>
             {hook.scatteredLabel}
-          </p>
-          <div className="flex flex-wrap gap-2">
-            {hook.sourceCards.map((card) => (
-              <span
+          </span>
+        </div>
+
+        <div className="flex max-w-md flex-wrap items-center justify-center gap-2.5 px-1 sm:max-w-lg sm:gap-3">
+          {hook.sourceCards.map((card, i) => {
+            const color = CARD_COLORS[card.id] ?? BLUE;
+            return (
+              <HookScatteredCardInline
                 key={card.id}
-                className="inline-flex items-center gap-2 rounded-full border border-black/[0.06] bg-white px-3 py-2 shadow-sm"
-              >
-                <span
-                  className="flex h-6 w-6 items-center justify-center rounded-full"
-                  style={{ backgroundColor: `${CARD_COLORS[card.id]}1A`, color: CARD_COLORS[card.id] }}
-                >
-                  {CARD_ICONS[card.id]}
-                </span>
-                <span className="text-[13px] font-semibold text-primary">{card.title}</span>
-              </span>
-            ))}
-          </div>
-          <StaticArrow className="h-5 w-10 rotate-90 self-start" />
-          <HolsBall />
-          <StaticArrow className="h-5 w-10 rotate-90 self-start" />
-          <p className="font-sans text-xs font-bold uppercase tracking-[0.14em] text-primary/70 sm:text-sm">
-            {hook.structuredLabel}
-          </p>
-          <DashboardMockup />
-          <StaticArrow className="h-5 w-10 rotate-90 self-start" />
-          <HeroButton href={hook.cta.href} variant="primary" className="px-8">
+                id={card.id}
+                title={card.title}
+                color={color}
+                icon={CARD_ICONS[card.id]}
+                cardRef={setCardRef(i)}
+              />
+            );
+          })}
+        </div>
+
+        <div aria-hidden className="h-16 w-full sm:h-20" />
+
+        <div className="relative z-10">
+          <HolsBall innerRef={(n) => (ballRef.current = n)} className="opacity-0" />
+        </div>
+
+        {/* Clearance under HOLS wordmark — no trunk through this gap */}
+        <div aria-hidden className="h-14 w-full sm:h-16" />
+
+        {/* Capsule sits alone; short trunk starts below it into the dashboard */}
+        <span
+          ref={structLabelRef}
+          data-hook-struct-label
+          className={cn(HOOK_CAPSULE_CLASS, "opacity-0")}
+        >
+          {hook.structuredLabel}
+        </span>
+
+        {/* Room for short stem + arrowhead into dashboard chrome */}
+        <div aria-hidden className="h-14 w-full sm:h-16" />
+
+        <div
+          className="relative z-10 shrink-0"
+          style={{
+            width: HOOK_PORTAL_SIZE.width,
+            height: HOOK_PORTAL_SIZE.height,
+            minWidth: HOOK_PORTAL_SIZE.width,
+            minHeight: HOOK_PORTAL_SIZE.height,
+          }}
+        >
+          <DashboardMockup innerRef={(n) => (dashRef.current = n)} className="opacity-0" />
+        </div>
+
+        {/* Room for short branch stem + arrowhead into Explore Courses */}
+        <div aria-hidden className="h-14 w-full sm:h-16" />
+
+        <div ref={ctaRef} data-hook-cta className="relative z-10 opacity-0">
+          <HeroButton href={hook.cta.href} variant="primary" className="whitespace-nowrap px-8">
             {hook.cta.label}
           </HeroButton>
         </div>
@@ -839,12 +945,70 @@ function HookStatic() {
   );
 }
 
+/* ── Reduced-motion fallback ───────────────────────────────────────────── */
+function HookStatic() {
+  const { hook } = landingContent;
+  return (
+    <section id="problem" className="relative z-10" style={{ backgroundColor: HOOK_BG }}>
+      <div className="w-full py-12 md:py-14 lg:py-16">
+        <div className={cn("flex w-full flex-col items-center", heroLayout.gutterX)}>
+          <HookCopy centered />
+          <div className="mt-10 flex w-full flex-col items-center gap-6">
+            <div className="flex w-full max-w-md flex-col items-center sm:max-w-lg">
+              <span className={HOOK_CAPSULE_CLASS}>
+                {hook.scatteredLabel}
+              </span>
+            </div>
+            <div className="flex max-w-md flex-wrap justify-center gap-2 sm:max-w-lg">
+              {hook.sourceCards.map((card) => (
+                <span
+                  key={card.id}
+                  className="inline-flex items-center gap-2 rounded-full border border-black/[0.06] bg-white px-3 py-2 shadow-sm"
+                >
+                  <span
+                    className="flex h-6 w-6 items-center justify-center rounded-full"
+                    style={{ backgroundColor: `${CARD_COLORS[card.id]}1A`, color: CARD_COLORS[card.id] }}
+                  >
+                    {CARD_ICONS[card.id]}
+                  </span>
+                  <span className="text-[13px] font-semibold text-primary">{card.title}</span>
+                </span>
+              ))}
+            </div>
+            <HolsBall />
+            <span className={HOOK_CAPSULE_CLASS}>
+              {hook.structuredLabel}
+            </span>
+            <div
+              className="shrink-0"
+              style={{
+                width: HOOK_PORTAL_SIZE.width,
+                height: HOOK_PORTAL_SIZE.height,
+                minWidth: HOOK_PORTAL_SIZE.width,
+                minHeight: HOOK_PORTAL_SIZE.height,
+              }}
+            >
+              <DashboardMockup />
+            </div>
+            <HeroButton href={hook.cta.href} variant="primary" className="px-8">
+              {hook.cta.label}
+            </HeroButton>
+          </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 export function HookSection() {
   const sectionRef = useRef<HTMLElement>(null);
   const pinWrapRef = useRef<HTMLDivElement>(null);
+  const mobileWrapRef = useRef<HTMLDivElement>(null);
   const [reduceMotion, setReduceMotion] = useState(false);
-  const [diagramReady, setDiagramReady] = useState(false);
-  const markDiagramReady = useCallback(() => setDiagramReady(true), []);
+  const [desktopReady, setDesktopReady] = useState(false);
+  const [mobileReady, setMobileReady] = useState(false);
+  const markDesktopReady = useCallback(() => setDesktopReady(true), []);
+  const markMobileReady = useCallback(() => setMobileReady(true), []);
 
   useEffect(() => {
     setReduceMotion(prefersReducedMotion());
@@ -852,9 +1016,8 @@ export function HookSection() {
 
   const hookScrollDistance = () => window.innerHeight * 2.4;
 
-  // Single pin — same pattern as the previously working HookSection.
-  // pinWrap MUST be the direct (visible) child of section or pinSpacing
-  // breaks and subsequent landing sections lose their ScrollTriggers.
+  // Desktop pin only — never unmount pinWrap; CSS hides it on mobile.
+  // pinWrap MUST stay a direct child of section or sibling ScrollTriggers break.
   useGSAP(
     () => {
       if (reduceMotion) return;
@@ -865,29 +1028,39 @@ export function HookSection() {
       const pinWrap = pinWrapRef.current;
       if (!section || !pinWrap) return;
 
-      const pinTrigger = ScrollTrigger.create({
-        id: "hook-pin",
-        trigger: section,
-        start: "top top",
-        end: () => `+=${hookScrollDistance()}`,
-        pin: pinWrap,
-        pinSpacing: true,
-        anticipatePin: 1,
-        invalidateOnRefresh: true,
+      const mm = gsap.matchMedia();
+
+      mm.add("(min-width: 1024px)", () => {
+        const pinTrigger = ScrollTrigger.create({
+          id: "hook-pin",
+          trigger: section,
+          start: "top top",
+          end: () => `+=${hookScrollDistance()}`,
+          pin: pinWrap,
+          pinSpacing: true,
+          anticipatePin: 1,
+          invalidateOnRefresh: true,
+        });
+
+        requestAnimationFrame(() => ScrollTrigger.refresh());
+
+        return () => {
+          pinTrigger.kill();
+          requestAnimationFrame(() => ScrollTrigger.refresh());
+        };
       });
 
-      requestAnimationFrame(() => ScrollTrigger.refresh());
-
       return () => {
-        pinTrigger.kill();
+        mm.revert();
       };
     },
     { scope: sectionRef, dependencies: [reduceMotion] },
   );
 
+  // Desktop scrub timeline (pinned horizontal diagram).
   useGSAP(
     () => {
-      if (reduceMotion || !diagramReady) return;
+      if (reduceMotion || !desktopReady) return;
 
       registerGsap();
 
@@ -895,118 +1068,221 @@ export function HookSection() {
       const pinWrap = pinWrapRef.current;
       if (!section || !pinWrap) return;
 
-      const q = <T extends Element>(sel: string) =>
-        gsap.utils.toArray<T>(pinWrap.querySelectorAll(sel));
+      const mm = gsap.matchMedia();
 
-      const cards = q<HTMLElement>("[data-hook-card]");
-      const cardLines = q<SVGPathElement>('[data-hook-line][data-group="card"]');
-      const trunkLines = q<SVGPathElement>('[data-hook-line][data-group="trunk"]');
-      const branchLines = q<SVGPathElement>('[data-hook-line][data-group="branch"]');
-      const trunkArrows = q<SVGPolygonElement>('[data-hook-arrow][data-group="trunk"]');
-      const branchArrows = q<SVGPolygonElement>('[data-hook-arrow][data-group="branch"]');
-      const hub = q<HTMLElement>("[data-hook-hub]");
-      const dashboard = q<HTMLElement>("[data-hook-dashboard]");
-      const scatterLabel = q<HTMLElement>("[data-hook-scatter-label]");
-      const structLabel = q<HTMLElement>("[data-hook-struct-label]");
-      const cta = q<HTMLElement>("[data-hook-cta]");
-      const allLines = [...cardLines, ...trunkLines, ...branchLines];
-      const allArrows = [...trunkArrows, ...branchArrows];
+      mm.add("(min-width: 1024px)", () => {
+        const q = <T extends Element>(sel: string) =>
+          gsap.utils.toArray<T>(pinWrap.querySelectorAll(sel));
 
-      // Desktop-only scroll animation; mobile shows everything statically.
-      const isDesktop = window.matchMedia("(min-width: 1024px)").matches;
-      if (!isDesktop || cards.length === 0) {
-        gsap.set([cards, hub, dashboard, scatterLabel, structLabel, cta], {
-          autoAlpha: 1,
-          y: 0,
-          scale: 1,
-          yPercent: 0,
+        const cards = q<HTMLElement>("[data-hook-card]");
+        const cardLines = q<SVGPathElement>('[data-hook-line][data-group="card"]');
+        const trunkLines = q<SVGPathElement>('[data-hook-line][data-group="trunk"]');
+        const branchLines = q<SVGPathElement>('[data-hook-line][data-group="branch"]');
+        const trunkArrows = q<SVGPolygonElement>('[data-hook-arrow][data-group="trunk"]');
+        const branchArrows = q<SVGPolygonElement>('[data-hook-arrow][data-group="branch"]');
+        const hub = q<HTMLElement>("[data-hook-hub]");
+        const dashboard = q<HTMLElement>("[data-hook-dashboard]");
+        const scatterLabel = q<HTMLElement>("[data-hook-scatter-label]");
+        const structLabel = q<HTMLElement>("[data-hook-struct-label]");
+        const cta = q<HTMLElement>("[data-hook-cta]");
+        const allLines = [...cardLines, ...trunkLines, ...branchLines];
+        const allArrows = [...trunkArrows, ...branchArrows];
+
+        if (cards.length === 0) return;
+
+        allLines.forEach((p) => prepareStroke(p, true));
+        allArrows.forEach((arrow) => arrow.setAttribute("opacity", "0"));
+        gsap.set(cards, { autoAlpha: 0, y: 14, yPercent: -50 });
+        gsap.set(scatterLabel, { autoAlpha: 0, y: 8 });
+        gsap.set(structLabel, { autoAlpha: 0, y: 8 });
+        gsap.set(hub, { autoAlpha: 0, scale: 0.9 });
+        gsap.set(dashboard, { autoAlpha: 0, y: 16, scale: 0.97 });
+        gsap.set(cta, { autoAlpha: 0, y: 12 });
+
+        const syncAllArrows = () => {
+          syncArrowToLine(trunkLines[0], trunkArrows[0]);
+          syncArrowToLine(branchLines[0], branchArrows[0]);
+        };
+
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            id: "hook-timeline",
+            trigger: section,
+            start: "top top",
+            end: () => `+=${hookScrollDistance()}`,
+            scrub: 0.8,
+            invalidateOnRefresh: true,
+          },
+          onUpdate: syncAllArrows,
         });
-        allLines.forEach((p) => prepareStroke(p, false));
-        syncArrowToLine(trunkLines[0], trunkArrows[0]);
-        syncArrowToLine(branchLines[0], branchArrows[0]);
-        return;
-      }
 
-      allLines.forEach((p) => prepareStroke(p, true));
-      // Arrows start hidden; syncArrowToLine reveals + moves them with the stroke tip.
-      allArrows.forEach((arrow) => arrow.setAttribute("opacity", "0"));
-      gsap.set(cards, { autoAlpha: 0, y: 14, yPercent: -50 });
-      gsap.set(scatterLabel, { autoAlpha: 0, y: 8 });
-      gsap.set(structLabel, { autoAlpha: 0, y: 8 });
-      gsap.set(hub, { autoAlpha: 0, scale: 0.9 });
-      gsap.set(dashboard, { autoAlpha: 0, y: 16, scale: 0.97 });
-      gsap.set(cta, { autoAlpha: 0, y: 12 });
+        tl.to(scatterLabel, { autoAlpha: 1, y: 0, duration: 0.3 }, 0.0);
+        cards.forEach((card, i) => {
+          tl.to(card, { autoAlpha: 1, y: 0, duration: 0.3, ease: "none" }, 0.15 + i * 0.07);
+        });
+        cardLines.forEach((p, i) => {
+          tl.to(p, { strokeDashoffset: 0, opacity: 1, duration: 0.6, ease: "none" }, 0.85 + i * 0.05);
+        });
+        tl.to(hub, { autoAlpha: 1, scale: 1, duration: 0.4, ease: "none" }, 1.25);
+        tl.to(trunkLines, { strokeDashoffset: 0, opacity: 1, duration: 0.6, ease: "none" }, 1.6);
+        tl.to(structLabel, { autoAlpha: 1, y: 0, duration: 0.3 }, 2.0);
+        tl.to(dashboard, { autoAlpha: 1, y: 0, scale: 1, duration: 0.5, ease: "none" }, 2.05);
+        tl.to(branchLines, { strokeDashoffset: 0, opacity: 1, duration: 0.6, ease: "none" }, 2.5);
+        tl.to(cta, { autoAlpha: 1, y: 0, duration: 0.4, ease: "none" }, 2.9);
+        tl.to({}, { duration: 0.45 });
 
-      const syncTrunkArrow = () => syncArrowToLine(trunkLines[0], trunkArrows[0]);
-      const syncBranchArrow = () => syncArrowToLine(branchLines[0], branchArrows[0]);
-      const syncAllArrows = () => {
-        syncTrunkArrow();
-        syncBranchArrow();
-      };
+        const onSync = () => {
+          allLines.forEach(resyncPathStroke);
+          syncAllArrows();
+        };
+        window.addEventListener(HOOK_PATH_SYNC, onSync);
+        requestAnimationFrame(() => {
+          onSync();
+          ScrollTrigger.refresh();
+        });
 
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          id: "hook-timeline",
-          trigger: section,
-          start: "top top",
-          end: () => `+=${hookScrollDistance()}`,
-          scrub: 0.8,
-          invalidateOnRefresh: true,
-        },
-        onUpdate: syncAllArrows,
-      });
-
-      tl.to(scatterLabel, { autoAlpha: 1, y: 0, duration: 0.3 }, 0.0);
-      cards.forEach((card, i) => {
-        tl.to(card, { autoAlpha: 1, y: 0, duration: 0.3, ease: "none" }, 0.15 + i * 0.07);
-      });
-      cardLines.forEach((p, i) => {
-        tl.to(p, { strokeDashoffset: 0, duration: 0.6, ease: "none" }, 0.85 + i * 0.05);
-      });
-      tl.to(hub, { autoAlpha: 1, scale: 1, duration: 0.4, ease: "none" }, 1.25);
-
-      // Line draws; arrowhead rides the growing tip (moves with the stroke).
-      tl.to(trunkLines, { strokeDashoffset: 0, duration: 0.6, ease: "none" }, 1.6);
-      tl.to(structLabel, { autoAlpha: 1, y: 0, duration: 0.3 }, 2.0);
-      tl.to(dashboard, { autoAlpha: 1, y: 0, scale: 1, duration: 0.5, ease: "none" }, 2.05);
-
-      tl.to(branchLines, { strokeDashoffset: 0, duration: 0.6, ease: "none" }, 2.5);
-      tl.to(cta, { autoAlpha: 1, y: 0, duration: 0.4, ease: "none" }, 2.9);
-      tl.to({}, { duration: 0.45 });
-
-      const onSync = () => {
-        allLines.forEach(resyncPathStroke);
-        syncAllArrows();
-      };
-      window.addEventListener(HOOK_PATH_SYNC, onSync);
-      requestAnimationFrame(() => {
-        onSync();
-        ScrollTrigger.refresh();
+        return () => {
+          window.removeEventListener(HOOK_PATH_SYNC, onSync);
+          tl.scrollTrigger?.kill();
+          tl.kill();
+        };
       });
 
       return () => {
-        window.removeEventListener(HOOK_PATH_SYNC, onSync);
-        tl.scrollTrigger?.kill();
-        tl.kill();
+        mm.revert();
       };
     },
-    { scope: sectionRef, dependencies: [reduceMotion, diagramReady] },
+    { scope: sectionRef, dependencies: [reduceMotion, desktopReady] },
+  );
+
+  // Mobile scrub timeline (no pin — natural scroll keeps sibling sections healthy).
+  useGSAP(
+    () => {
+      if (reduceMotion || !mobileReady) return;
+
+      registerGsap();
+
+      const section = sectionRef.current;
+      const mobileWrap = mobileWrapRef.current;
+      if (!section || !mobileWrap) return;
+
+      const mm = gsap.matchMedia();
+
+      mm.add("(max-width: 1023px)", () => {
+        const q = <T extends Element>(sel: string) =>
+          gsap.utils.toArray<T>(mobileWrap.querySelectorAll(sel));
+
+        const cards = q<HTMLElement>("[data-hook-card]");
+        const cardLines = q<SVGPathElement>('[data-hook-line][data-group="card"]');
+        const trunkLines = q<SVGPathElement>('[data-hook-line][data-group="trunk"]');
+        const branchLines = q<SVGPathElement>('[data-hook-line][data-group="branch"]');
+        const trunkArrows = q<SVGPolygonElement>('[data-hook-arrow][data-group="trunk"]');
+        const branchArrows = q<SVGPolygonElement>('[data-hook-arrow][data-group="branch"]');
+        const hub = q<HTMLElement>("[data-hook-hub]");
+        const dashboard = q<HTMLElement>("[data-hook-dashboard]");
+        const scatterLabel = q<HTMLElement>("[data-hook-scatter-label]");
+        const structLabel = q<HTMLElement>("[data-hook-struct-label]");
+        const cta = q<HTMLElement>("[data-hook-cta]");
+        const allLines = [...cardLines, ...trunkLines, ...branchLines];
+        const allArrows = [...trunkArrows, ...branchArrows];
+
+        if (cards.length === 0) return;
+
+        allLines.forEach((p) => prepareStroke(p, true));
+        allArrows.forEach((arrow) => arrow.setAttribute("opacity", "0"));
+        gsap.set(cards, { autoAlpha: 0, y: 14 });
+        gsap.set(scatterLabel, { autoAlpha: 0, y: 8 });
+        gsap.set(structLabel, { autoAlpha: 0, y: 8 });
+        gsap.set(hub, { autoAlpha: 0, scale: 0.9 });
+        gsap.set(dashboard, { autoAlpha: 0, y: 16, scale: 0.97 });
+        gsap.set(cta, { autoAlpha: 0, y: 12 });
+
+        const syncAllArrows = () => {
+          syncArrowToLine(trunkLines[0], trunkArrows[0]);
+          syncArrowToLine(branchLines[0], branchArrows[0]);
+        };
+
+        const tl = gsap.timeline({
+          scrollTrigger: {
+            id: "hook-timeline-mobile",
+            trigger: section,
+            start: "top 75%",
+            end: "bottom 40%",
+            scrub: 0.8,
+            invalidateOnRefresh: true,
+          },
+          onUpdate: syncAllArrows,
+        });
+
+        tl.to(scatterLabel, { autoAlpha: 1, y: 0, duration: 0.3 }, 0.0);
+        cards.forEach((card, i) => {
+          tl.to(card, { autoAlpha: 1, y: 0, duration: 0.3, ease: "none" }, 0.15 + i * 0.07);
+        });
+        cardLines.forEach((p, i) => {
+          tl.to(p, { strokeDashoffset: 0, opacity: 1, duration: 0.6, ease: "none" }, 0.85 + i * 0.05);
+        });
+        tl.to(hub, { autoAlpha: 1, scale: 1, duration: 0.4, ease: "none" }, 1.25);
+        tl.to(trunkLines, { strokeDashoffset: 0, opacity: 1, duration: 0.6, ease: "none" }, 1.6);
+        tl.to(structLabel, { autoAlpha: 1, y: 0, duration: 0.3 }, 2.0);
+        tl.to(dashboard, { autoAlpha: 1, y: 0, scale: 1, duration: 0.5, ease: "none" }, 2.05);
+        tl.to(branchLines, { strokeDashoffset: 0, opacity: 1, duration: 0.6, ease: "none" }, 2.5);
+        tl.to(cta, { autoAlpha: 1, y: 0, duration: 0.4, ease: "none" }, 2.9);
+        tl.to({}, { duration: 0.45 });
+
+        const onSync = () => {
+          allLines.forEach(resyncPathStroke);
+          syncAllArrows();
+        };
+        window.addEventListener(HOOK_PATH_SYNC, onSync);
+        requestAnimationFrame(() => {
+          onSync();
+          ScrollTrigger.refresh();
+        });
+
+        return () => {
+          window.removeEventListener(HOOK_PATH_SYNC, onSync);
+          tl.scrollTrigger?.kill();
+          tl.kill();
+        };
+      });
+
+      return () => {
+        mm.revert();
+      };
+    },
+    { scope: sectionRef, dependencies: [reduceMotion, mobileReady] },
   );
 
   if (reduceMotion) return <HookStatic />;
 
   return (
-    <section ref={sectionRef} id="problem" className="relative z-10 bg-white">
+    <section ref={sectionRef} id="problem" className="relative z-10" style={{ backgroundColor: HOOK_BG }}>
+      {/* Desktop: stable pin target — always mounted, CSS-hidden below lg */}
       <div
         ref={pinWrapRef}
-        className="relative flex h-[100dvh] w-full flex-col overflow-hidden bg-white"
+        className="relative hidden h-[100dvh] w-full flex-col overflow-hidden lg:flex"
+        style={{ backgroundColor: HOOK_BG }}
       >
         <div className={cn("flex w-full shrink-0 flex-col pt-8 md:pt-10 xl:pt-12", heroLayout.gutterX)}>
           <HookCopy />
         </div>
+        <div className={cn("mt-4 flex min-h-0 w-full flex-1 flex-col overflow-hidden pb-6 md:mt-6", heroLayout.gutterX)}>
+          <FlowDiagram onPathsReady={markDesktopReady} />
+        </div>
+      </div>
 
-        <div className={cn("mt-4 flex min-h-0 w-full flex-1 flex-col pb-6 md:mt-6", heroLayout.gutterX)}>
-          <FlowDiagram onPathsReady={markDiagramReady} />
+      {/* Mobile: natural-height vertical flow — never pinned */}
+      <div
+        ref={mobileWrapRef}
+        className={cn(
+          "flex w-full flex-col items-center overflow-hidden py-12 md:py-14 lg:hidden",
+          heroLayout.gutterX,
+        )}
+        style={{ backgroundColor: HOOK_BG }}
+      >
+        <HookCopy centered />
+        <div className="mt-8 w-full md:mt-10">
+          <MobileFlowDiagram onPathsReady={markMobileReady} />
         </div>
       </div>
     </section>

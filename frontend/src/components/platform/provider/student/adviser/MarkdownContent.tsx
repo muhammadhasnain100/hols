@@ -195,22 +195,28 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
           case "heading": {
             const Tag = `h${block.level}` as "h1" | "h2" | "h3" | "h4";
             return (
-              <Tag key={index} className={cn("mt-5 first:mt-0", headingClass[block.level])}>
+              <Tag key={index} className={cn("mt-5 first:mt-0 leading-[1.5]", headingClass[block.level])}>
                 {renderInline(block.text)}
               </Tag>
             );
           }
           case "paragraph":
             return (
-              <p key={index} className="text-brand-body leading-relaxed text-[color:var(--dash-muted)]">
+              <p
+                key={index}
+                className="text-brand-body text-justify leading-[1.5] text-[color:var(--dash-muted)] [text-align-last:left]"
+              >
                 {renderInline(block.text)}
               </p>
             );
           case "ul":
             return (
-              <ul key={index} className="text-brand-body my-1 list-disc space-y-1.5 pl-5 leading-relaxed text-[color:var(--dash-muted)] marker:text-[color:var(--dash-dim)]">
+              <ul
+                key={index}
+                className="text-brand-body my-1 list-disc space-y-1.5 pl-5 leading-[1.5] text-[color:var(--dash-muted)] marker:text-[color:var(--dash-dim)]"
+              >
                 {block.items.map((item, itemIndex) => (
-                  <li key={itemIndex} className="pl-0.5">
+                  <li key={itemIndex} className="pl-0.5 text-justify [text-align-last:left]">
                     {renderInline(item)}
                   </li>
                 ))}
@@ -218,9 +224,12 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
             );
           case "ol":
             return (
-              <ol key={index} className="text-brand-body my-1 list-decimal space-y-1.5 pl-5 leading-relaxed text-[color:var(--dash-muted)] marker:font-medium marker:text-[color:var(--dash-faint)]">
+              <ol
+                key={index}
+                className="text-brand-body my-1 list-decimal space-y-1.5 pl-5 leading-[1.5] text-[color:var(--dash-muted)] marker:font-medium marker:text-[color:var(--dash-faint)]"
+              >
                 {block.items.map((item, itemIndex) => (
-                  <li key={itemIndex} className="pl-0.5">
+                  <li key={itemIndex} className="pl-0.5 text-justify [text-align-last:left]">
                     {renderInline(item)}
                   </li>
                 ))}
@@ -230,7 +239,7 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
             return (
               <blockquote
                 key={index}
-                className="border-l-2 border-[color:var(--dash-surface-border)] pl-3 text-brand-body italic leading-relaxed text-[color:var(--dash-faint)]"
+                className="border-l-2 border-[color:var(--dash-surface-border)] pl-3 text-brand-body text-justify italic leading-[1.5] text-[color:var(--dash-faint)] [text-align-last:left]"
               >
                 {renderInline(block.text)}
               </blockquote>
@@ -241,7 +250,7 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
             return (
               <pre
                 key={index}
-                className="overflow-x-auto rounded-xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] p-3 text-sm leading-relaxed text-[color:var(--dash-text)]"
+                className="overflow-x-auto rounded-xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] p-3 text-sm leading-[1.5] text-[color:var(--dash-text)]"
               >
                 <code className="font-mono whitespace-pre">{block.text}</code>
               </pre>

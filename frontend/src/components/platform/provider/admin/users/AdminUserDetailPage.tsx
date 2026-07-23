@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { PortalShell } from "@/components/platform/provider/PortalShell";
 import { adminNav } from "@/components/platform/provider/admin/adminNav";
-import { Button } from "@/components/ui/Button";
+import { WelcomeChip } from "@/components/platform/provider/student/WelcomeChip";
 import { ApiRequestError } from "@/lib/integrate/client";
 import type { UserRole } from "@/lib/integrate/auth/types";
 import {
@@ -15,7 +15,7 @@ import {
   type ProfileAccess,
 } from "@/lib/integrate/provider/admin/profile/api";
 import { formatDate } from "@/lib/integrate/provider/student/payment/types";
-import { inputClassName, selectClassName } from "@/lib/form-styles";
+import { cn } from "@/lib/utils";
 
 type AdminUserDetailPageProps = {
   userId: string;
@@ -41,6 +41,54 @@ function profileToForm(profile: AdminProfile): FormState {
     invitation_quota: profile.invitation_quota != null ? String(profile.invitation_quota) : "",
     role: (profile.role as UserRole) ?? "student",
   };
+}
+
+function openSidebar() {
+  window.dispatchEvent(new Event("hols-portal-open-sidebar"));
+}
+
+function initials(profile: AdminProfile | null) {
+  const first = profile?.first_name?.[0] ?? "";
+  const last = profile?.last_name?.[0] ?? "";
+  return `${first}${last}`.toUpperCase() || "U";
+}
+
+function DashField({
+  id,
+  label,
+  value,
+  onChange,
+  type = "text",
+  required = false,
+  min,
+  step,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  type?: string;
+  required?: boolean;
+  min?: string | number;
+  step?: string | number;
+}) {
+  return (
+    <div className="grid min-w-0 gap-2">
+      <label htmlFor={id} className="dashboard-field-label">
+        {label}
+      </label>
+      <input
+        id={id}
+        type={type}
+        value={value}
+        required={required}
+        min={min}
+        step={step}
+        onChange={(event) => onChange(event.target.value)}
+        className="dashboard-field"
+      />
+    </div>
+  );
 }
 
 export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
@@ -79,7 +127,7 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!access?.can_edit) return;
+    if (!access?.can_edit || profile?.role === "student") return;
 
     setSaving(true);
     setError(null);
@@ -113,200 +161,282 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
     }
   }
 
+  const fullName = profile
+    ? [profile.first_name, profile.last_name].filter(Boolean).join(" ") || "User profile"
+    : "User profile";
+  const isStudent = profile?.role === "student";
+  // Student profiles are view-only from the admin directory.
+  const allowEdit = Boolean(access?.can_edit) && !isStudent;
+  const backHref = profile?.role === "affiliate" ? "/admin/affiliates" : "/admin/students";
+  const backLabelFull = profile?.role === "affiliate" ? "Back to affiliates" : "Back to students";
+  const backLabelShort = profile?.role === "affiliate" ? "Affiliates" : "Students";
+
   return (
     <PortalShell
       role="admin"
       title="User Profile"
-      subtitle="GET/PUT /api/auth/profile/{user_id}"
+      showPageHeader={false}
+      contentFlush
+      brandBackdrop
       nav={adminNav}
     >
-      {loading ? (
-        <div className="glass-panel rounded-3xl p-10 text-center">
-          <p className="text-sm text-muted">Loading user…</p>
-        </div>
-      ) : (
-        <div className="mx-auto grid max-w-3xl gap-6">
+      <div className="dashboard-screen profile-page min-w-0 overflow-x-hidden">
+        <header className="mb-4 flex items-center justify-between gap-2 sm:mb-5 sm:gap-4">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              aria-label="Open sidebar"
+              onClick={openSidebar}
+              className="dashboard-icon-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full lg:hidden"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                <path d="M4 7h16M4 12h10M4 17h16" />
+              </svg>
+            </button>
+            <h1 className="font-sans truncate text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl md:text-2xl">
+              User profile
+            </h1>
+          </div>
+          <WelcomeChip fallbackName="Admin" />
+        </header>
+
+        <div className="grid w-full min-w-0 gap-3 sm:gap-4">
           {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
           {success ? <AuthAlert variant="success">{success}</AuthAlert> : null}
 
-          {profile ? (
-            <div className="glass-panel rounded-3xl p-6">
-              <h2 className="font-sans text-lg font-semibold text-primary">
-                {profile.first_name} {profile.last_name}
-              </h2>
-              {profile.profile_pic ? (
-                <div className="mt-4">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={profile.profile_pic}
-                    alt={`${profile.first_name} ${profile.last_name}`}
-                    className="h-16 w-16 rounded-2xl border border-primary/10 object-cover"
-                  />
-                </div>
-              ) : null}
-              <dl className="mt-4 grid gap-3 text-sm sm:grid-cols-2">
-                <div>
-                  <dt className="text-muted">Email</dt>
-                  <dd className="mt-1 font-medium text-primary">{profile.email}</dd>
-                </div>
-                <div>
-                  <dt className="text-muted">Role</dt>
-                  <dd className="mt-1 font-medium capitalize text-primary">{profile.role}</dd>
-                </div>
-                <div>
-                  <dt className="text-muted">Joined</dt>
-                  <dd className="mt-1 font-medium text-primary">{formatDate(profile.created_at)}</dd>
-                </div>
-                {profile.student_count != null ? (
-                  <div>
-                    <dt className="text-muted">Student count</dt>
-                    <dd className="mt-1 font-medium text-primary">{profile.student_count}</dd>
-                  </div>
-                ) : null}
-                {profile.invitation_quota != null ? (
-                  <div>
-                    <dt className="text-muted">Invitation quota</dt>
-                    <dd className="mt-1 font-medium text-primary">{profile.invitation_quota}</dd>
-                  </div>
-                ) : null}
-                {profile.referred_by_affiliate_id ? (
-                  <div>
-                    <dt className="text-muted">Referred by</dt>
-                    <dd className="mt-1 font-medium text-primary">{profile.referred_by_affiliate_id}</dd>
-                  </div>
-                ) : null}
-              </dl>
+          {loading ? (
+            <div className="dashboard-surface rounded-2xl p-10 text-center" aria-busy="true">
+              <span className="dashboard-skeleton-block mx-auto block h-8 w-8 rounded-full" />
             </div>
-          ) : null}
-
-          {access?.can_edit ? (
-            <form className="glass-panel rounded-3xl p-6 md:p-8" onSubmit={handleSubmit}>
-              <h2 className="font-sans text-lg font-semibold text-primary">Edit User</h2>
-              <p className="mt-1 text-sm text-muted">
-                Editable fields: {access.editable_fields.join(", ")}
-              </p>
-
-              <div className="mt-6 grid gap-5 md:grid-cols-2">
-                {canEdit("first_name") ? (
-                  <div>
-                    <label htmlFor="first-name" className="mb-2 block text-sm font-medium text-primary">
-                      First name
-                    </label>
-                    <input
-                      id="first-name"
-                      required
-                      value={form.first_name}
-                      onChange={(e) => setForm((prev) => ({ ...prev, first_name: e.target.value }))}
-                      className={inputClassName}
-                    />
-                  </div>
-                ) : null}
-                {canEdit("last_name") ? (
-                  <div>
-                    <label htmlFor="last-name" className="mb-2 block text-sm font-medium text-primary">
-                      Last name
-                    </label>
-                    <input
-                      id="last-name"
-                      required
-                      value={form.last_name}
-                      onChange={(e) => setForm((prev) => ({ ...prev, last_name: e.target.value }))}
-                      className={inputClassName}
-                    />
-                  </div>
-                ) : null}
-              </div>
-
-              {canEdit("margin_percent") ? (
-                <div className="mt-5">
-                  <label htmlFor="margin-percent" className="mb-2 block text-sm font-medium text-primary">
-                    Margin percent
-                  </label>
-                  <input
-                    id="margin-percent"
-                    type="number"
-                    step="0.01"
-                    value={form.margin_percent}
-                    onChange={(e) => setForm((prev) => ({ ...prev, margin_percent: e.target.value }))}
-                    className={inputClassName}
-                  />
-                </div>
-              ) : null}
-
-              {canEdit("invite_code") ? (
-                <div className="mt-5">
-                  <label htmlFor="invite-code" className="mb-2 block text-sm font-medium text-primary">
-                    Invite code
-                  </label>
-                  <input
-                    id="invite-code"
-                    value={form.invite_code}
-                    onChange={(e) => setForm((prev) => ({ ...prev, invite_code: e.target.value }))}
-                    className={inputClassName}
-                  />
-                </div>
-              ) : null}
-
-              {canEdit("invitation_quota") ? (
-                <div className="mt-5">
-                  <label htmlFor="invitation-quota" className="mb-2 block text-sm font-medium text-primary">
-                    Invitation quota
-                  </label>
-                  <input
-                    id="invitation-quota"
-                    type="number"
-                    min="0"
-                    value={form.invitation_quota}
-                    onChange={(e) => setForm((prev) => ({ ...prev, invitation_quota: e.target.value }))}
-                    className={inputClassName}
-                  />
-                </div>
-              ) : null}
-
-              {canEdit("role") ? (
-                <div className="mt-5">
-                  <label htmlFor="role" className="mb-2 block text-sm font-medium text-primary">
-                    Role
-                  </label>
-                  <select
-                    id="role"
-                    value={form.role}
-                    onChange={(e) => setForm((prev) => ({ ...prev, role: e.target.value as UserRole }))}
-                    className={selectClassName}
-                  >
-                    <option value="student">Student</option>
-                    <option value="affiliate">Affiliate</option>
-                    <option value="admin">Admin</option>
-                  </select>
-                </div>
-              ) : null}
-
-              {canEdit("marketing_pref") ? (
-                <label className="mt-5 flex cursor-pointer items-start gap-3 rounded-xl border border-border/40 bg-white/60 px-4 py-3.5">
-                  <input
-                    type="checkbox"
-                    checked={form.marketing_pref}
-                    onChange={(e) => setForm((prev) => ({ ...prev, marketing_pref: e.target.checked }))}
-                    className="mt-0.5 h-4 w-4 rounded border-border text-primary"
-                  />
-                  <span className="text-sm text-muted">Marketing emails enabled</span>
-                </label>
-              ) : null}
-
-              <div className="mt-8 flex flex-col gap-3 border-t border-border/40 pt-6 sm:flex-row sm:items-center sm:justify-between">
-                <Link href="/admin/students" className="text-sm font-medium text-primary underline-offset-2 hover:underline">
-                  Back to users
-                </Link>
-                <Button type="submit" variant="primary" size="lg" disabled={saving}>
-                  {saving ? "Saving…" : "Save changes"}
-                </Button>
-              </div>
-            </form>
           ) : (
-            <AuthAlert variant="info">You do not have permission to edit this profile.</AuthAlert>
+            <>
+              <section className="dashboard-hero relative overflow-hidden rounded-2xl p-3.5 sm:p-5 md:p-6">
+                <div className="flex flex-col gap-3.5 sm:gap-5 lg:flex-row lg:items-end lg:justify-between">
+                  <div className="flex min-w-0 flex-col items-center gap-3 sm:flex-row sm:items-center sm:gap-5">
+                    <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-4 border-white/70 bg-white/40 font-sans text-sm font-bold text-[color:var(--dash-text)] shadow-[0_8px_20px_rgba(21,39,68,0.12)] sm:h-20 sm:w-20 sm:text-lg">
+                      {profile?.profile_pic ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img src={profile.profile_pic} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        initials(profile)
+                      )}
+                    </span>
+                    <div className="min-w-0 flex-1 text-center sm:text-left">
+                      <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
+                        Managed account
+                      </p>
+                      <div className="mt-1.5 flex flex-col items-center gap-1.5 sm:mt-2 sm:flex-row sm:flex-wrap sm:items-end sm:gap-x-2">
+                        <span className="font-sans max-w-full break-words text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl md:text-[2.25rem] md:leading-none">
+                          {fullName}
+                        </span>
+                        <span className="inline-flex rounded-full bg-[#DDE466]/25 px-2.5 py-0.5 text-brand-caption font-semibold capitalize text-[color:var(--dash-accent)]">
+                          {profile?.role || "user"}
+                        </span>
+                      </div>
+                      <p className="text-brand-body mt-1.5 break-all text-[color:var(--dash-muted)] sm:mt-2 sm:truncate sm:break-normal">
+                        {profile?.email}
+                      </p>
+                      {profile?.created_at ? (
+                        <p className="text-brand-caption mt-1 text-[color:var(--dash-faint)]">
+                          Joined {formatDate(profile.created_at)}
+                        </p>
+                      ) : null}
+                    </div>
+                  </div>
+
+                  <Link
+                    href={backHref}
+                    className="dashboard-pill-soft font-sans inline-flex min-h-11 w-full items-center justify-center rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] transition sm:min-h-10 sm:w-auto lg:shrink-0"
+                  >
+                    <span className="sm:hidden">{backLabelShort}</span>
+                    <span className="hidden sm:inline">{backLabelFull}</span>
+                  </Link>
+                </div>
+              </section>
+
+              <div
+                className={cn(
+                  "grid w-full min-w-0 items-start gap-3 sm:gap-4",
+                  allowEdit && "lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]",
+                )}
+              >
+                <section className="dashboard-surface order-2 min-w-0 rounded-2xl p-3.5 sm:p-5 md:p-6 lg:order-1">
+                  <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+                    Account
+                  </p>
+                  <h2 className="font-sans mt-1 text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg">
+                    Details
+                  </h2>
+                  <div className="mt-3 space-y-2 sm:mt-4 sm:space-y-2.5">
+                    <DetailRow label="Email" value={profile?.email} />
+                    <DetailRow label="Role" value={<span className="capitalize">{profile?.role}</span>} />
+                    <DetailRow label="Joined" value={formatDate(profile?.created_at)} />
+                    {profile?.student_count != null ? (
+                      <DetailRow label="Student count" value={String(profile.student_count)} />
+                    ) : null}
+                    {profile?.invitation_quota != null ? (
+                      <DetailRow label="Invitation quota" value={String(profile.invitation_quota)} />
+                    ) : null}
+                    {profile?.margin_percent != null ? (
+                      <DetailRow label="Margin" value={`${profile.margin_percent}%`} />
+                    ) : null}
+                    {profile?.invite_code ? (
+                      <DetailRow label="Invite code" value={profile.invite_code} />
+                    ) : null}
+                    {profile?.referred_by_affiliate_id ? (
+                      <DetailRow label="Referred by" value={profile.referred_by_affiliate_id} />
+                    ) : null}
+                    <DetailRow
+                      label="Marketing"
+                      value={profile?.marketing_pref ? "Subscribed" : "Off"}
+                    />
+                  </div>
+                </section>
+
+                {allowEdit ? (
+                  <section className="dashboard-surface order-1 min-w-0 rounded-2xl p-3.5 sm:p-5 md:p-6 lg:order-2">
+                    <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+                      Edit
+                    </p>
+                    <h2 className="font-sans mt-1 text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg md:text-xl">
+                      Update fields
+                    </h2>
+                    <p className="text-brand-body mt-1 break-words text-sm text-[color:var(--dash-muted)] [overflow-wrap:anywhere]">
+                      Editable: {access?.editable_fields.join(", ")}
+                    </p>
+
+                    <form className="mt-4 grid gap-3 sm:mt-5 sm:gap-4" onSubmit={handleSubmit}>
+                      <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+                        {canEdit("first_name") ? (
+                          <DashField
+                            id="first-name"
+                            label="First name"
+                            value={form.first_name}
+                            required
+                            onChange={(value) => setForm((prev) => ({ ...prev, first_name: value }))}
+                          />
+                        ) : null}
+                        {canEdit("last_name") ? (
+                          <DashField
+                            id="last-name"
+                            label="Last name"
+                            value={form.last_name}
+                            required
+                            onChange={(value) => setForm((prev) => ({ ...prev, last_name: value }))}
+                          />
+                        ) : null}
+                      </div>
+
+                      {canEdit("margin_percent") ? (
+                        <DashField
+                          id="margin-percent"
+                          label="Margin percent"
+                          type="number"
+                          step="0.01"
+                          value={form.margin_percent}
+                          onChange={(value) => setForm((prev) => ({ ...prev, margin_percent: value }))}
+                        />
+                      ) : null}
+
+                      {canEdit("invite_code") ? (
+                        <DashField
+                          id="invite-code"
+                          label="Invite code"
+                          value={form.invite_code}
+                          onChange={(value) => setForm((prev) => ({ ...prev, invite_code: value }))}
+                        />
+                      ) : null}
+
+                      {canEdit("invitation_quota") ? (
+                        <DashField
+                          id="invitation-quota"
+                          label="Invitation quota"
+                          type="number"
+                          min={0}
+                          value={form.invitation_quota}
+                          onChange={(value) =>
+                            setForm((prev) => ({ ...prev, invitation_quota: value }))
+                          }
+                        />
+                      ) : null}
+
+                      {canEdit("role") ? (
+                        <div className="grid min-w-0 gap-2">
+                          <label htmlFor="role" className="dashboard-field-label">
+                            Role
+                          </label>
+                          <select
+                            id="role"
+                            value={form.role}
+                            onChange={(e) =>
+                              setForm((prev) => ({ ...prev, role: e.target.value as UserRole }))
+                            }
+                            className={cn("dashboard-field", "dashboard-field-select")}
+                          >
+                            <option value="student">Student</option>
+                            <option value="affiliate">Affiliate</option>
+                            <option value="admin">Admin</option>
+                          </select>
+                        </div>
+                      ) : null}
+
+                      {canEdit("marketing_pref") ? (
+                        <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] px-3 py-3 sm:px-3.5">
+                          <input
+                            type="checkbox"
+                            checked={form.marketing_pref}
+                            onChange={(e) =>
+                              setForm((prev) => ({ ...prev, marketing_pref: e.target.checked }))
+                            }
+                            className="mt-0.5 h-4 w-4 shrink-0 rounded border-[color:var(--dash-dim)] accent-[#DDE466]"
+                          />
+                          <span className="min-w-0">
+                            <span className="font-sans block text-sm font-medium text-[color:var(--dash-text)]">
+                              Marketing emails enabled
+                            </span>
+                          </span>
+                        </label>
+                      ) : null}
+
+                      <div className="mt-1 flex flex-col-reverse gap-2 border-t border-[color:var(--dash-surface-border)] pt-4 sm:flex-row sm:items-center sm:justify-between">
+                        <Link
+                          href={backHref}
+                          className="dashboard-pill-soft font-sans inline-flex min-h-11 w-full items-center justify-center rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] transition sm:w-auto"
+                        >
+                          <span className="sm:hidden">{backLabelShort}</span>
+                          <span className="hidden sm:inline">{backLabelFull}</span>
+                        </Link>
+                        <button
+                          type="submit"
+                          disabled={saving}
+                          className="font-sans inline-flex min-h-11 w-full items-center justify-center rounded-full bg-[#DDE466] px-6 text-sm font-medium text-[#152744] transition hover:brightness-105 disabled:pointer-events-none disabled:opacity-60 sm:w-auto sm:min-w-[10rem]"
+                        >
+                          {saving ? "Saving…" : "Save changes"}
+                        </button>
+                      </div>
+                    </form>
+                  </section>
+                ) : !isStudent ? (
+                  <section className="dashboard-surface order-1 min-w-0 rounded-2xl p-4 sm:p-5 lg:order-2">
+                    <AuthAlert variant="info">You do not have permission to edit this profile.</AuthAlert>
+                  </section>
+                ) : null}
+              </div>
+            </>
           )}
         </div>
-      )}
+      </div>
     </PortalShell>
+  );
+}
+
+function DetailRow({ label, value }: { label: string; value: React.ReactNode }) {
+  return (
+    <div className="dashboard-row flex min-w-0 flex-col items-start gap-1 rounded-xl px-2.5 py-2.5 sm:flex-row sm:items-start sm:justify-between sm:gap-3 sm:px-3.5 sm:py-3">
+      <p className="text-brand-caption shrink-0 font-medium text-[color:var(--dash-faint)]">{label}</p>
+      <div className="font-sans min-w-0 w-full break-words text-sm font-medium text-[color:var(--dash-text)] [overflow-wrap:anywhere] sm:w-auto sm:text-right">
+        {value || "—"}
+      </div>
+    </div>
   );
 }

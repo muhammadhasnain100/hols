@@ -3,7 +3,14 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
-import { CoursePageLayout } from "@/components/platform/provider/student/lectures/CoursePageLayout";
+import {
+  TestResultRowsSkeleton,
+  TestResultsPageSkeleton,
+} from "@/components/platform/provider/student/DashboardSkeletons";
+import {
+  CoursePageLayout,
+  useOpenCourseCalculator,
+} from "@/components/platform/provider/student/lectures/CoursePageLayout";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
   getCourse,
@@ -84,20 +91,15 @@ export function StudentTestResultPage({ courseId }: StudentTestResultPageProps) 
       description="Quiz scores saved from completed lesson quizzes."
       courseId={courseId}
       courseNavActive="test-result"
-      backHref={`/student/lectures/${courseId}`}
-      backLabel="Course overview"
     >
       {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
 
       {loading ? (
-        <div className="dashboard-surface rounded-2xl p-10 text-center">
-          <div className="mx-auto h-8 w-8 animate-pulse rounded-full bg-[color:var(--dash-soft)]" />
-          <p className="text-brand-body mt-3 text-[color:var(--dash-faint)]">Loading results…</p>
-        </div>
+        <TestResultsPageSkeleton />
       ) : (
-        <div className="grid w-full items-start gap-4 lg:grid-cols-[1.9fr_1fr]">
-          <div className="flex flex-col gap-4">
-            <section className="dashboard-surface rounded-2xl p-5 md:p-6">
+        <div className="grid w-full min-w-0 items-start gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
+          <div className="flex min-w-0 flex-col gap-3 sm:gap-4">
+            <section className="dashboard-surface min-w-0 rounded-2xl p-3.5 sm:p-5 md:p-6">
               <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
                 Quiz progress
               </p>
@@ -105,35 +107,30 @@ export function StudentTestResultPage({ courseId }: StudentTestResultPageProps) 
                 <span className="font-sans text-2xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] md:text-[2.25rem] md:leading-none">
                   {averageScore}%
                 </span>
-                <span className="mb-1 text-brand-caption font-medium text-[color:var(--dash-faint)]">
+                <span className="mb-0.5 text-brand-caption font-medium text-[color:var(--dash-faint)] sm:mb-1">
                   average score
                 </span>
               </div>
-              <p className="text-brand-body mt-2 text-[color:var(--dash-muted)]">
+              <p className="text-brand-body mt-2 text-sm text-[color:var(--dash-muted)] sm:text-base">
                 {summary?.lessons_quizzed ?? 0} of{" "}
                 {summary?.total_lessons ?? course?.lesson_count ?? 0} lessons quizzed
                 {summary?.passed_count != null ? ` · ${summary.passed_count} passed` : ""}
               </p>
 
-              <div className="mt-5 flex flex-wrap gap-2.5">
+              <div className="mt-4 flex flex-col gap-2 sm:mt-5 sm:flex-row sm:flex-wrap sm:gap-2.5">
                 <Link
                   href={`/student/lectures/${courseId}/lessons`}
-                  className="font-sans inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full bg-[#DDE466] px-5 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105"
+                  className="font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full bg-[#DDE466] px-5 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 sm:w-auto"
                 >
                   Continue lessons
                 </Link>
-                <Link
-                  href="/student/calculator"
-                  className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition"
-                >
-                  Open calculator
-                </Link>
+                <OpenCalculatorButton />
               </div>
             </section>
 
-            <section className="dashboard-surface rounded-2xl p-5 md:p-6">
-              <div className="flex items-center justify-between gap-3">
-                <h2 className="font-sans text-lg font-semibold tracking-[0.005em] text-[color:var(--dash-text)]">
+            <section className="dashboard-surface min-w-0 rounded-2xl p-3.5 sm:p-5 md:p-6">
+              <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 sm:gap-3">
+                <h2 className="font-sans text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg">
                   Saved quiz attempts
                 </h2>
                 {pagination ? (
@@ -144,22 +141,20 @@ export function StudentTestResultPage({ courseId }: StudentTestResultPageProps) 
               </div>
 
               {loadingResults ? (
-                <div className="flex justify-center py-8">
-                  <div className="h-8 w-8 animate-pulse rounded-full bg-[color:var(--dash-soft)]" />
-                </div>
+                <TestResultRowsSkeleton />
               ) : results?.items.length ? (
                 <>
-                  <div className="mt-4 space-y-2.5">
+                  <div className="mt-3 space-y-2 sm:mt-4 sm:space-y-2.5">
                     {results.items.map((item) => (
                       <Link
                         key={item.lesson_id}
                         href={lessonHref(courseId, item.lesson_id)}
-                        className="dashboard-row flex items-center justify-between gap-3 rounded-xl px-3.5 py-3 transition"
+                        className="dashboard-row flex min-w-0 items-start justify-between gap-2 rounded-xl px-3 py-2.5 transition sm:items-center sm:gap-3 sm:px-3.5 sm:py-3"
                       >
-                        <div className="flex min-w-0 items-center gap-3">
+                        <div className="flex min-w-0 items-start gap-2.5 sm:items-center sm:gap-3">
                           <span
                             className={cn(
-                              "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold",
+                              "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-xs font-semibold sm:mt-0",
                               item.passed
                                 ? "bg-emerald-500/15 text-emerald-600"
                                 : "bg-amber-500/15 text-amber-600",
@@ -168,10 +163,10 @@ export function StudentTestResultPage({ courseId }: StudentTestResultPageProps) 
                             {item.score_percent}%
                           </span>
                           <div className="min-w-0">
-                            <p className="font-sans truncate text-sm font-medium text-[color:var(--dash-text)]">
+                            <p className="font-sans line-clamp-2 text-sm font-medium text-[color:var(--dash-text)] sm:truncate">
                               {item.lesson_title}
                             </p>
-                            <p className="text-brand-caption truncate text-[color:var(--dash-faint)]">
+                            <p className="text-brand-caption mt-0.5 text-[color:var(--dash-faint)]">
                               Lesson {item.lesson_order} · {item.correct_count}/{item.total_questions}{" "}
                               correct
                             </p>
@@ -180,7 +175,7 @@ export function StudentTestResultPage({ courseId }: StudentTestResultPageProps) 
 
                         <span
                           className={cn(
-                            "text-brand-caption shrink-0 rounded-full px-2.5 py-1 font-semibold",
+                            "text-brand-caption shrink-0 rounded-full px-2 py-1 font-semibold sm:px-2.5",
                             item.passed
                               ? "bg-emerald-500/15 text-emerald-600"
                               : "bg-amber-500/15 text-amber-600",
@@ -200,7 +195,7 @@ export function StudentTestResultPage({ courseId }: StudentTestResultPageProps) 
                       >
                         Previous
                       </PagerButton>
-                      <p className="text-brand-caption text-[color:var(--dash-faint)]">
+                      <p className="text-brand-caption text-center text-[color:var(--dash-faint)]">
                         Page {pagination.page} of {pagination.total_pages}
                       </p>
                       <PagerButton
@@ -213,19 +208,19 @@ export function StudentTestResultPage({ courseId }: StudentTestResultPageProps) 
                   ) : null}
                 </>
               ) : (
-                <p className="text-brand-body mt-4 py-6 text-center text-[color:var(--dash-faint)]">
+                <p className="text-brand-body mt-4 px-1 py-6 text-center text-sm text-[color:var(--dash-faint)] sm:text-base">
                   No quiz results yet. Complete a lesson quiz and your score will appear here.
                 </p>
               )}
             </section>
           </div>
 
-          <div className="flex flex-col gap-4">
-            <section className="dashboard-surface rounded-2xl p-5">
+          <div className="flex min-w-0 flex-col gap-3 sm:gap-4 lg:sticky lg:top-4">
+            <section className="dashboard-surface min-w-0 rounded-2xl p-3.5 sm:p-5">
               <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
                 Summary
               </p>
-              <div className="mt-4 space-y-3">
+              <div className="mt-3 grid grid-cols-1 gap-2 sm:mt-4 sm:gap-3">
                 <SummaryRow
                   label="Lessons quizzed"
                   value={`${summary?.lessons_quizzed ?? 0} / ${summary?.total_lessons ?? course?.lesson_count ?? 0}`}
@@ -236,7 +231,7 @@ export function StudentTestResultPage({ courseId }: StudentTestResultPageProps) 
               </div>
             </section>
 
-            <section className="dashboard-surface rounded-2xl p-5">
+            <section className="dashboard-surface min-w-0 rounded-2xl p-3.5 sm:p-5">
               <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
                 Quick actions
               </p>
@@ -262,18 +257,27 @@ export function StudentTestResultPage({ courseId }: StudentTestResultPageProps) 
 
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="dashboard-row flex items-center justify-between rounded-xl px-3 py-2.5">
-      <span className="text-brand-body text-[color:var(--dash-muted)]">{label}</span>
-      <span className="font-sans text-sm font-semibold text-[color:var(--dash-text)]">{value}</span>
+    <div className="dashboard-row flex min-w-0 items-center justify-between gap-3 rounded-xl px-3 py-2.5">
+      <span className="text-brand-body min-w-0 text-sm text-[color:var(--dash-muted)] sm:text-base">
+        {label}
+      </span>
+      <span className="font-sans shrink-0 text-sm font-semibold text-[color:var(--dash-text)]">
+        {value}
+      </span>
     </div>
   );
 }
 
 function QuickLink({ href, label, hint }: { href: string; label: string; hint: string }) {
   return (
-    <Link href={href} className="dashboard-row group flex items-center gap-3 rounded-xl px-3 py-3 transition">
+    <Link
+      href={href}
+      className="dashboard-row group flex min-w-0 items-center gap-3 rounded-xl px-3 py-3 transition"
+    >
       <span className="min-w-0 flex-1">
-        <span className="font-sans block text-sm font-medium text-[color:var(--dash-text)]">{label}</span>
+        <span className="font-sans block text-sm font-medium text-[color:var(--dash-text)]">
+          {label}
+        </span>
         <span className="text-brand-caption block text-[color:var(--dash-faint)]">{hint}</span>
       </span>
       <svg
@@ -306,9 +310,21 @@ function PagerButton({
       type="button"
       disabled={disabled}
       onClick={onClick}
-      className="dashboard-pill-soft font-sans inline-flex min-h-9 items-center justify-center rounded-full px-4 text-sm font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50"
+      className="dashboard-pill-soft font-sans inline-flex min-h-9 min-w-[4.5rem] items-center justify-center rounded-full px-3 text-sm font-medium text-[color:var(--dash-text)] transition sm:px-4 disabled:pointer-events-none disabled:opacity-50"
     >
       {children}
     </button>
+  );
+}
+
+function OpenCalculatorButton() {
+  const { calculatorHref } = useOpenCourseCalculator();
+  return (
+    <Link
+      href={calculatorHref}
+      className="dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition sm:w-auto"
+    >
+      Open calculator
+    </Link>
   );
 }

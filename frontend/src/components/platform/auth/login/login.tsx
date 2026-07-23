@@ -2,11 +2,19 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
+import { AuthButton } from "@/components/platform/auth/AuthButton";
 import { AuthField } from "@/components/platform/auth/AuthField";
-import { authFieldClass, authFooterTextClass, authHelperTextClass, authIconButtonClass, authLabelClass, authLinkClass, authRoleButtonClass } from "@/components/platform/auth/auth-styles";
-import { Button } from "@/components/ui/Button";
+import {
+  authFieldClass,
+  authFooterTextClass,
+  authHelperTextClass,
+  authIconButtonClass,
+  authLabelClass,
+  authLinkClass,
+  authRoleButtonClass,
+} from "@/components/platform/auth/auth-styles";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
   isOtpRequired,
@@ -25,12 +33,21 @@ const roles: { value: UserRole; label: string }[] = [
   { value: "affiliate", label: "Affiliate" },
 ];
 
+const RESEND_COOLDOWN_SEC = 30;
+
+function formatCountdown(totalSeconds: number) {
+  const minutes = Math.floor(totalSeconds / 60);
+  const seconds = totalSeconds % 60;
+  return `${minutes}:${seconds.toString().padStart(2, "0")}`;
+}
+
 type LoginFormProps = {
   className?: string;
   initialMessage?: string;
+  onOtpStepChange?: (active: boolean) => void;
 };
 
-export function LoginForm({ className, initialMessage }: LoginFormProps) {
+export function LoginForm({ className, initialMessage, onOtpStepChange }: LoginFormProps) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -45,6 +62,50 @@ export function LoginForm({ className, initialMessage }: LoginFormProps) {
   const [otpCode, setOtpCode] = useState("");
   const [otpMessage, setOtpMessage] = useState("");
   const [resendLoading, setResendLoading] = useState(false);
+  const [expiresAt, setExpiresAt] = useState<number | null>(null);
+  const [secondsLeft, setSecondsLeft] = useState(0);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  function enterOtpStep(token: string, message: string, expiresIn: number) {
+    setOtpToken(token);
+    setOtpMessage(message);
+    setOtpCode("");
+    setOtpStep(true);
+    onOtpStepChange?.(true);
+    const safeExpires = Math.max(1, expiresIn || 300);
+    setExpiresAt(Date.now() + safeExpires * 1000);
+    setSecondsLeft(safeExpires);
+    setResendCooldown(Math.min(RESEND_COOLDOWN_SEC, safeExpires));
+  }
+
+  function leaveOtpStep() {
+    setOtpStep(false);
+    setOtpCode("");
+    setError(null);
+    setInfo(null);
+    setExpiresAt(null);
+    setSecondsLeft(0);
+    setResendCooldown(0);
+    onOtpStepChange?.(false);
+  }
+
+  useEffect(() => {
+    if (!otpStep || expiresAt == null) return;
+    const tick = () => {
+      setSecondsLeft(Math.max(0, Math.ceil((expiresAt - Date.now()) / 1000)));
+    };
+    tick();
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, [otpStep, expiresAt]);
+
+  useEffect(() => {
+    if (!otpStep) return;
+    const id = window.setInterval(() => {
+      setResendCooldown((prev) => (prev > 0 ? prev - 1 : 0));
+    }, 1000);
+    return () => window.clearInterval(id);
+  }, [otpStep]);
 
   const passwordToggle = (
     <button
@@ -89,10 +150,7 @@ export function LoginForm({ className, initialMessage }: LoginFormProps) {
       const result = await login({ email, password, role });
 
       if (isOtpRequired(result)) {
-        setOtpToken(result.otp_token);
-        setOtpMessage(result.message);
-        setOtpStep(true);
-        setOtpCode("");
+        enterOtpStep(result.otp_token, result.message, result.expires_in);
         return;
       }
 
@@ -122,6 +180,7 @@ export function LoginForm({ className, initialMessage }: LoginFormProps) {
   }
 
   async function handleResendOtp() {
+    if (resendCooldown > 0) return;
     setError(null);
     setResendLoading(true);
 
@@ -129,7 +188,11 @@ export function LoginForm({ className, initialMessage }: LoginFormProps) {
       const result = await resendOtp(otpToken);
       setOtpToken(result.otp_token);
       setOtpMessage(result.message);
-      setInfo("Code sent.");
+      setInfo("A new code was sent to your email.");
+      const safeExpires = Math.max(1, result.expires_in || 300);
+      setExpiresAt(Date.now() + safeExpires * 1000);
+      setSecondsLeft(safeExpires);
+      setResendCooldown(Math.min(RESEND_COOLDOWN_SEC, safeExpires));
     } catch (err) {
       setError(err instanceof ApiRequestError ? err.message : "Could not resend code.");
     } finally {
@@ -138,6 +201,8 @@ export function LoginForm({ className, initialMessage }: LoginFormProps) {
   }
 
   if (otpStep) {
+    const expired = secondsLeft <= 0;
+
     return (
       <form className={cn("w-full", className)} onSubmit={handleOtpSubmit}>
         <p className={authHelperTextClass}>
@@ -147,6 +212,13 @@ export function LoginForm({ className, initialMessage }: LoginFormProps) {
         <div className="mt-6 grid gap-5">
           {info ? <AuthAlert variant="info">{info}</AuthAlert> : null}
           {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
+          {expired ? (
+            <AuthAlert variant="error">This code has expired. Please resend a new one.</AuthAlert>
+          ) : (
+            <p className={cn(authHelperTextClass, "text-center tabular-nums text-primary/60")}>
+              Code expires in {formatCountdown(secondsLeft)}
+            </p>
+          )}
 
           <div className="grid gap-2">
             <label htmlFor="otp" className={authLabelClass}>
@@ -158,50 +230,44 @@ export function LoginForm({ className, initialMessage }: LoginFormProps) {
               type="text"
               inputMode="numeric"
               autoComplete="one-time-code"
+              autoFocus
               required
               maxLength={6}
               pattern="\d{6}"
-              placeholder="000000"
+              placeholder="••••••"
               value={otpCode}
               onChange={(event) => setOtpCode(event.target.value.replace(/\D/g, "").slice(0, 6))}
               className={cn(
                 authFieldClass,
-                "px-4 text-center text-lg font-semibold tracking-[0.4em]",
+                "px-3 text-center text-xl font-semibold tracking-[0.28em] sm:px-4 sm:text-2xl sm:tracking-[0.35em]",
               )}
             />
           </div>
         </div>
 
         <div className="mt-7 grid gap-3">
-          <Button
-            type="submit"
-            variant="primary"
-            size="lg"
-            disabled={loading || otpCode.length !== 6}
-            className="w-full justify-center"
-          >
+          <AuthButton type="submit" disabled={loading || otpCode.length !== 6 || expired}>
             {loading ? "Verifying…" : "Verify"}
-          </Button>
-          <div className={cn("flex items-center justify-between", authHelperTextClass)}>
+          </AuthButton>
+          <div className={cn("flex items-center justify-between gap-3", authHelperTextClass)}>
             <button
               type="button"
-              onClick={() => {
-                setOtpStep(false);
-                setOtpCode("");
-                setError(null);
-                setInfo(null);
-              }}
+              onClick={leaveOtpStep}
               className="font-sans font-medium text-primary/70 transition hover:text-primary"
             >
               Back
             </button>
             <button
               type="button"
-              disabled={resendLoading}
+              disabled={resendLoading || resendCooldown > 0}
               onClick={handleResendOtp}
-              className={cn(authLinkClass, "disabled:opacity-60")}
+              className={cn(authLinkClass, "disabled:no-underline disabled:opacity-60")}
             >
-              {resendLoading ? "Sending…" : "Resend code"}
+              {resendLoading
+                ? "Sending…"
+                : resendCooldown > 0
+                  ? `Resend in ${resendCooldown}s`
+                  : "Resend code"}
             </button>
           </div>
         </div>
@@ -218,7 +284,7 @@ export function LoginForm({ className, initialMessage }: LoginFormProps) {
         <div className="grid gap-2">
           <span className={authLabelClass}>Account type</span>
           <div
-            className="grid grid-cols-3 gap-1 rounded-2xl border border-primary/10 bg-white p-1"
+            className="grid grid-cols-3 gap-1 rounded-2xl border border-primary/10 bg-[#f7f9fc] p-1"
             role="radiogroup"
             aria-label="Account type"
           >
@@ -235,7 +301,7 @@ export function LoginForm({ className, initialMessage }: LoginFormProps) {
                     authRoleButtonClass,
                     selected
                       ? "bg-primary text-white shadow-sm"
-                      : "text-primary/55 hover:text-primary",
+                      : "text-primary/55 hover:bg-white/80 hover:text-primary",
                   )}
                 >
                   {option.label}
@@ -251,7 +317,7 @@ export function LoginForm({ className, initialMessage }: LoginFormProps) {
           type="email"
           value={email}
           onChange={setEmail}
-          placeholder="@example.com"
+          placeholder="you@example.com"
           autoComplete="email"
           icon="email"
           required
@@ -271,15 +337,9 @@ export function LoginForm({ className, initialMessage }: LoginFormProps) {
         />
       </div>
 
-      <Button
-        type="submit"
-        variant="primary"
-        size="lg"
-        disabled={loading}
-        className="mt-7 w-full justify-center"
-      >
+      <AuthButton type="submit" disabled={loading} className="mt-7">
         {loading ? "Signing in…" : "Log in"}
-      </Button>
+      </AuthButton>
 
       <p className={cn("mt-6", authFooterTextClass)}>
         No account?{" "}

@@ -3,16 +3,10 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
-import { AuthField } from "@/components/platform/auth/AuthField";
-import { authFieldClass, authLabelClass } from "@/components/platform/auth/auth-styles";
-import {
-  portalInlineMetaClass,
-  portalSectionDescClass,
-  portalSectionTitleClass,
-} from "@/components/platform/provider/portal-styles";
 import { PortalShell } from "@/components/platform/provider/PortalShell";
+import { ProfilePageSkeleton } from "@/components/platform/provider/student/DashboardSkeletons";
+import { WelcomeChip } from "@/components/platform/provider/student/WelcomeChip";
 import { studentNav } from "@/components/platform/provider/student/studentNav";
-import { Button } from "@/components/ui/Button";
 import {
   DEFAULT_COUNTRY_CODE,
   MANUAL_VALUE,
@@ -34,14 +28,6 @@ import {
 } from "@/lib/integrate/provider/student/profile/api";
 import { formatDate } from "@/lib/integrate/provider/student/payment/types";
 import { cn } from "@/lib/utils";
-
-const selectArrow =
-  "url(\"data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='none' stroke='%23152744' stroke-width='2' viewBox='0 0 24 24'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E\")";
-
-const selectClass = cn(
-  authFieldClass,
-  "appearance-none bg-[length:1rem] bg-[right_1rem_center] bg-no-repeat px-4 pr-10",
-);
 
 type ProfileFormState = {
   first_name: string;
@@ -188,6 +174,10 @@ function initials(profile: StudentProfile | null) {
   return `${first}${last}`.toUpperCase() || "S";
 }
 
+function openSidebar() {
+  window.dispatchEvent(new Event("hols-portal-open-sidebar"));
+}
+
 function formatAddress(address?: StudentAddress) {
   if (!address) return "No address added";
   const stateLabel = getStateName(address.state ?? "") || address.state;
@@ -199,6 +189,76 @@ function formatAddress(address?: StudentAddress) {
   ]
     .filter(Boolean)
     .join("\n");
+}
+
+function DashField({
+  id,
+  label,
+  value,
+  onChange,
+  placeholder,
+  autoComplete,
+  required = false,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  placeholder?: string;
+  autoComplete?: string;
+  required?: boolean;
+}) {
+  return (
+    <div className="grid min-w-0 gap-2">
+      <label htmlFor={id} className="dashboard-field-label">
+        {label}
+      </label>
+      <input
+        id={id}
+        name={id}
+        type="text"
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        placeholder={placeholder}
+        autoComplete={autoComplete}
+        required={required}
+        className="dashboard-field"
+      />
+    </div>
+  );
+}
+
+function DashSelect({
+  id,
+  label,
+  value,
+  onChange,
+  disabled,
+  children,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="grid min-w-0 gap-2">
+      <label htmlFor={id} className="dashboard-field-label">
+        {label}
+      </label>
+      <select
+        id={id}
+        value={value}
+        disabled={disabled}
+        onChange={(event) => onChange(event.target.value)}
+        className={cn("dashboard-field dashboard-field-select", disabled && "opacity-50")}
+      >
+        {children}
+      </select>
+    </div>
+  );
 }
 
 const mailIcon = (
@@ -275,13 +335,13 @@ function ProfileDetailRow({
   value: React.ReactNode;
 }) {
   return (
-    <div className="dashboard-row flex items-start gap-3 rounded-xl px-3.5 py-3">
-      <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[color:var(--dash-soft)] text-[color:var(--dash-muted)]">
+    <div className="dashboard-row flex items-start gap-2.5 rounded-xl px-2.5 py-2.5 sm:gap-3 sm:px-3.5 sm:py-3">
+      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--dash-soft)] text-[color:var(--dash-muted)] sm:h-9 sm:w-9">
         {icon}
       </span>
-      <div className="min-w-0 flex-1">
+      <div className="min-w-0 flex-1 overflow-hidden">
         <p className="text-brand-caption font-medium text-[color:var(--dash-faint)]">{label}</p>
-        <div className="font-sans mt-0.5 text-sm font-medium text-[color:var(--dash-text)]">
+        <div className="font-sans mt-0.5 break-words text-sm font-medium text-[color:var(--dash-text)] [overflow-wrap:anywhere]">
           {value || "—"}
         </div>
       </div>
@@ -303,9 +363,9 @@ function AccountLinkRow({
   return (
     <Link
       href={href}
-      className="dashboard-row group flex items-center gap-3 rounded-xl px-3 py-3 transition"
+      className="dashboard-row group flex min-h-12 items-center gap-2.5 rounded-xl px-2.5 py-2.5 transition sm:gap-3 sm:px-3 sm:py-3"
     >
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[color:var(--dash-soft)] text-[color:var(--dash-muted)] transition group-hover:bg-[#DDE466]/15 group-hover:text-[color:var(--dash-accent)]">
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--dash-soft)] text-[color:var(--dash-muted)] transition group-hover:bg-[#DDE466]/15 group-hover:text-[color:var(--dash-accent)] sm:h-9 sm:w-9">
         {icon}
       </span>
       <span className="min-w-0 flex-1">
@@ -351,53 +411,16 @@ function VerifiedBadge({ verified }: { verified?: boolean }) {
   );
 }
 
-function FieldSelect({
-  id,
-  label,
-  value,
-  onChange,
-  disabled,
-  children,
-}: {
-  id: string;
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  disabled?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="grid gap-2">
-      <label htmlFor={id} className={authLabelClass}>
-        {label}
-      </label>
-      <select
-        id={id}
-        value={value}
-        disabled={disabled}
-        onChange={(event) => onChange(event.target.value)}
-        className={cn(selectClass, disabled && "opacity-50")}
-        style={{ backgroundImage: selectArrow }}
-      >
-        {children}
-      </select>
-    </div>
-  );
-}
-
 export function StudentProfilePage() {
-  const cached = (getCachedStudentProfile()?.profile as StudentProfile | undefined) ?? storedProfileFallback();
+  // Keep SSR and first client paint identical — never read session/local cache during render.
   const [mode, setMode] = useState<"read" | "edit">("read");
-  const [refreshing, setRefreshing] = useState(!cached);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [profile, setProfile] = useState<StudentProfile | null>(cached);
-  const [baseline, setBaseline] = useState<ProfileFormState>(
-    cached ? profileToForm(cached) : emptyForm(),
-  );
-  const [form, setForm] = useState<ProfileFormState>(baseline);
-  const [location, setLocation] = useState<LocationUiState>(toLocationUi(baseline));
+  const [profile, setProfile] = useState<StudentProfile | null>(null);
+  const [baseline, setBaseline] = useState<ProfileFormState>(emptyForm);
+  const [form, setForm] = useState<ProfileFormState>(emptyForm);
+  const [location, setLocation] = useState<LocationUiState>(() => toLocationUi(emptyForm()));
   const [profilePicFile, setProfilePicFile] = useState<File | null>(null);
   const [profilePicPreview, setProfilePicPreview] = useState<string | null>(null);
   const previewUrlRef = useRef<string | null>(null);
@@ -414,10 +437,15 @@ export function StudentProfilePage() {
 
   useEffect(() => {
     const controller = new AbortController();
+    const cached =
+      (getCachedStudentProfile()?.profile as StudentProfile | undefined) ?? storedProfileFallback();
+
+    if (cached) {
+      applyProfile(cached);
+    }
 
     async function load() {
       setError(null);
-      if (!cached) setRefreshing(true);
 
       try {
         const data = await getStudentProfile(controller.signal);
@@ -429,14 +457,11 @@ export function StudentProfilePage() {
         if (!cached) {
           setError(err instanceof ApiRequestError ? err.message : "Failed to load profile.");
         }
-      } finally {
-        if (!controller.signal.aborted) setRefreshing(false);
       }
     }
 
     void load();
     return () => controller.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [applyProfile]);
 
   useEffect(() => {
@@ -505,7 +530,7 @@ export function StudentProfilePage() {
         previewUrlRef.current = null;
       }
       setProfilePicPreview(null);
-      setSuccess("Saved.");
+      setSuccess("Profile updated.");
       setMode("read");
     } catch (err) {
       setError(err instanceof ApiRequestError ? err.message : "Could not update profile.");
@@ -533,86 +558,110 @@ export function StudentProfilePage() {
   const fullName = [profile?.first_name, profile?.last_name].filter(Boolean).join(" ") || "Your profile";
 
   return (
-    <PortalShell role="student" title="Profile" showPageHeader={false} brandBackdrop nav={studentNav}>
-      <div className="dashboard-screen">
-        <header className="mb-5 flex flex-wrap items-center justify-between gap-4">
-          <h1 className="font-sans text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl">
-            {mode === "edit" ? "Edit profile" : "Profile"}
-          </h1>
-
-          <span className="dashboard-welcome-chip flex items-center gap-2.5 rounded-full py-1 pl-1 pr-3.5">
-            <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-[#DDE466] text-brand-caption font-semibold text-[#152744]">
-              {avatarSrc ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
+    <PortalShell
+      role="student"
+      title="Profile"
+      showPageHeader={false}
+      contentFlush
+      brandBackdrop
+      nav={studentNav}
+    >
+      <div className="dashboard-screen profile-page min-w-0 overflow-x-hidden">
+        <header className="mb-3 flex items-center justify-between gap-2 sm:mb-5 sm:gap-4">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              aria-label="Open sidebar"
+              onClick={openSidebar}
+              className="dashboard-icon-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full lg:hidden"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                <path d="M4 7h16M4 12h10M4 17h16" />
+              </svg>
+            </button>
+            <h1 className="font-sans truncate text-base font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl md:text-2xl">
+              {mode === "edit" ? (
+                <>
+                  <span className="sm:hidden">Edit</span>
+                  <span className="hidden sm:inline">Edit profile</span>
+                </>
               ) : (
-                initials(profile)
+                "Profile"
               )}
-            </span>
-            <span className="hidden flex-col leading-tight sm:flex">
-              <span className="text-[11px] text-[color:var(--dash-faint)]">Welcome back,</span>
-              <span className="font-sans text-sm font-semibold text-[color:var(--dash-text)]">
-                {fullName}
-              </span>
-            </span>
-          </span>
+            </h1>
+          </div>
+
+          <WelcomeChip />
         </header>
 
-        <div className="grid w-full gap-4">
+        <div className="grid w-full min-w-0 gap-3 sm:gap-4">
           {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
           {success ? <AuthAlert variant="success">{success}</AuthAlert> : null}
 
-          {!profile && refreshing ? (
-            <section className="dashboard-surface rounded-2xl p-10 text-center">
-              <div className="mx-auto h-8 w-8 animate-pulse rounded-full bg-[color:var(--dash-soft)]" />
-            </section>
+          {!profile ? (
+            <ProfilePageSkeleton />
           ) : mode === "read" ? (
-            <div className="grid w-full items-start gap-4 lg:grid-cols-[1.9fr_1fr]">
-              <div className="flex flex-col gap-4">
-                <section className="dashboard-hero relative overflow-hidden rounded-2xl p-5 md:p-6">
-                  <div className="flex flex-col items-center gap-4 sm:flex-row sm:gap-5">
-                    <span className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-4 border-white/70 bg-white/40 font-sans text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] shadow-[0_8px_20px_rgba(21,39,68,0.12)]">
-                      {avatarSrc ? (
-                        // eslint-disable-next-line @next/next/no-img-element
-                        <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
-                      ) : (
-                        initials(profile)
-                      )}
-                    </span>
-                    <div className="min-w-0 flex-1 text-center sm:text-left">
-                      <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
-                        Your profile
-                      </p>
-                      <p className="font-sans mt-1 truncate text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] md:text-2xl">
-                        {fullName}
-                      </p>
-                      <p className="text-brand-body mt-0.5 truncate text-[color:var(--dash-muted)]">
-                        {profile?.email}
-                      </p>
-                      <div className="mt-3 flex flex-wrap items-center justify-center gap-2 sm:justify-start">
-                        <VerifiedBadge verified={profile?.email_verified} />
-                        {profile?.created_at ? (
-                          <span className="text-brand-caption rounded-full bg-white/40 px-2.5 py-1 font-medium text-[color:var(--dash-muted)]">
-                            Member since {formatDate(profile.created_at)}
+            <div className="grid w-full min-w-0 items-start gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
+              <div className="flex min-w-0 flex-col gap-3 sm:gap-4">
+                <section className="dashboard-hero relative overflow-hidden rounded-2xl p-3.5 sm:p-5 md:p-6">
+                  <div className="flex flex-col gap-3.5 sm:gap-5 lg:flex-row lg:items-end lg:justify-between">
+                    <div className="flex min-w-0 flex-col items-center gap-3 sm:flex-row sm:items-center sm:gap-5">
+                      <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-4 border-white/70 bg-white/40 font-sans text-sm font-bold tracking-[0.01em] text-[color:var(--dash-text)] shadow-[0_8px_20px_rgba(21,39,68,0.12)] sm:h-20 sm:w-20 sm:text-lg">
+                        {avatarSrc ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          initials(profile)
+                        )}
+                      </span>
+                      <div className="min-w-0 flex-1 text-center sm:text-left">
+                        <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
+                          Your profile
+                        </p>
+                        <div className="mt-1.5 flex flex-col items-center gap-1.5 sm:mt-2 sm:flex-row sm:flex-wrap sm:items-end sm:justify-start sm:gap-x-2 sm:gap-y-1">
+                          <span className="font-sans max-w-full break-words text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl md:text-[2.25rem] md:leading-none">
+                            {fullName}
                           </span>
+                          <span
+                            className={cn(
+                              "inline-flex rounded-full px-2.5 py-0.5 text-brand-caption font-semibold sm:mb-0.5",
+                              profile?.email_verified
+                                ? "bg-[#DDE466]/25 text-[color:var(--dash-accent)]"
+                                : "bg-[color:var(--dash-soft)] text-[color:var(--dash-faint)]",
+                            )}
+                          >
+                            {profile?.email_verified ? "Verified" : "Unverified"}
+                          </span>
+                        </div>
+                        <p className="text-brand-body mt-1.5 break-all text-[color:var(--dash-muted)] sm:mt-2 sm:truncate sm:break-normal">
+                          {profile?.email}
+                        </p>
+                        {profile?.created_at ? (
+                          <p className="text-brand-caption mt-1 text-[color:var(--dash-faint)]">
+                            Member since {formatDate(profile.created_at)}
+                          </p>
                         ) : null}
                       </div>
                     </div>
+
                     <button
                       type="button"
                       onClick={startEdit}
-                      className="font-sans inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-full bg-[#DDE466] px-5 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105"
+                      className="font-sans inline-flex min-h-11 w-full items-center justify-center rounded-full bg-[#DDE466] px-5 text-sm font-medium text-[#152744] transition hover:brightness-105 sm:min-h-10 sm:w-auto lg:shrink-0"
                     >
                       Edit profile
                     </button>
                   </div>
                 </section>
 
-                <section className="dashboard-surface rounded-2xl p-5">
-                  <h2 className="font-sans text-lg font-semibold tracking-[0.005em] text-[color:var(--dash-text)]">
+                <section className="dashboard-surface rounded-2xl p-3.5 sm:p-5 md:p-6">
+                  <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+                    Account
+                  </p>
+                  <h2 className="font-sans mt-1 text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg md:text-xl">
                     Account details
                   </h2>
-                  <div className="mt-4 space-y-2.5">
+                  <div className="mt-3 space-y-2 sm:mt-4 sm:space-y-2.5">
                     <ProfileDetailRow icon={mailIcon} label="Email address" value={profile?.email} />
                     <ProfileDetailRow
                       icon={shieldIcon}
@@ -641,12 +690,15 @@ export function StudentProfilePage() {
                 </section>
               </div>
 
-              <div className="flex flex-col gap-4">
-                <section className="dashboard-surface rounded-2xl p-5">
-                  <h2 className="font-sans text-lg font-semibold tracking-[0.005em] text-[color:var(--dash-text)]">
-                    Account shortcuts
+              <div className="flex min-w-0 flex-col gap-3 sm:gap-4">
+                <section className="dashboard-surface rounded-2xl p-3.5 sm:p-5 md:p-6">
+                  <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+                    Shortcuts
+                  </p>
+                  <h2 className="font-sans mt-1 text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg">
+                    Billing & payment
                   </h2>
-                  <div className="mt-3 space-y-1">
+                  <div className="mt-2.5 space-y-1 sm:mt-3">
                     {accountLinks.map((link) => (
                       <AccountLinkRow
                         key={link.href}
@@ -661,225 +713,307 @@ export function StudentProfilePage() {
               </div>
             </div>
           ) : (
-            <section className="dashboard-surface rounded-2xl p-5 md:p-6">
-              <form className="mx-auto w-full max-w-3xl" onSubmit={handleSubmit}>
-                <div className="dashboard-row mb-5 flex flex-col gap-3 rounded-xl border border-[color:var(--dash-surface-border)] p-4 sm:flex-row sm:items-center sm:gap-4">
-                  <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] text-xs font-semibold text-[color:var(--dash-text)]">
-                    {avatarSrc ? (
-                      // eslint-disable-next-line @next/next/no-img-element
-                      <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
-                    ) : (
-                      initials(profile)
-                    )}
-                  </span>
-                  <div className="min-w-0 flex-1">
-                    <p className={portalSectionTitleClass}>Profile photo</p>
-                    <p className={cn("mt-0.5 truncate", portalInlineMetaClass)}>{profile?.email}</p>
-                    <div className="mt-2 flex flex-wrap items-center gap-2">
-                      <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/jpeg,image/png,image/webp,image/gif"
-                        className="sr-only"
-                        onChange={(event) => onPickPhoto(event.target.files?.[0] ?? null)}
-                      />
-                      <Button
-                        type="button"
-                        variant="secondary"
-                        size="md"
-                        onClick={() => fileInputRef.current?.click()}
-                      >
-                        Change photo
-                      </Button>
-                      {profilePicFile ? (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            onPickPhoto(null);
-                            if (fileInputRef.current) fileInputRef.current.value = "";
-                          }}
-                          className="text-brand-body font-medium text-[color:var(--dash-faint)] transition hover:text-[color:var(--dash-text)]"
-                        >
-                          Remove
-                        </button>
-                      ) : null}
+            <>
+              <section className="dashboard-hero relative overflow-hidden rounded-2xl p-3.5 sm:p-5 md:p-6">
+                <div className="flex flex-col gap-3.5 sm:gap-5 lg:flex-row lg:items-end lg:justify-between">
+                  <div className="min-w-0">
+                    <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
+                      Account settings
+                    </p>
+                    <div className="mt-1.5 flex flex-wrap items-end gap-x-2 gap-y-1 sm:mt-2">
+                      <span className="font-sans text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl md:text-[2.25rem] md:leading-none">
+                        Edit profile
+                      </span>
+                      <span className="mb-0.5 inline-flex rounded-full bg-[#DDE466]/25 px-2.5 py-0.5 text-brand-caption font-semibold text-[color:var(--dash-accent)]">
+                        Editing
+                      </span>
                     </div>
+                    <p className="text-brand-body mt-1.5 text-sm text-[color:var(--dash-muted)] sm:mt-2 sm:text-base">
+                      <span className="sm:hidden">Update name, photo, and address.</span>
+                      <span className="hidden sm:inline">
+                        Update your name, photo, mailing address, and email preferences.
+                      </span>
+                    </p>
+                  </div>
+
+                  <div className="hidden w-full grid-cols-2 gap-2 sm:grid sm:w-auto sm:flex-wrap sm:gap-2.5 lg:flex">
+                    <button
+                      type="button"
+                      onClick={cancelEdit}
+                      className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center rounded-full px-3 text-sm font-medium text-[color:var(--dash-text)] transition sm:px-5"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      form="profile-edit-form"
+                      disabled={saving || !hasChanges}
+                      className="font-sans inline-flex min-h-10 items-center justify-center rounded-full bg-[#DDE466] px-3 text-sm font-medium text-[#152744] transition hover:brightness-105 disabled:pointer-events-none disabled:opacity-60 sm:px-5"
+                    >
+                      {saving ? "Saving…" : "Save changes"}
+                    </button>
                   </div>
                 </div>
+              </section>
 
-                <div className="grid gap-4">
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <AuthField
-                      id="first_name"
-                      label="First name"
-                      value={form.first_name}
-                      onChange={(value) => setForm((prev) => ({ ...prev, first_name: value }))}
-                      placeholder="First name"
-                      autoComplete="given-name"
-                      icon="user"
-                      required
-                    />
-                    <AuthField
-                      id="last_name"
-                      label="Last name"
-                      value={form.last_name}
-                      onChange={(value) => setForm((prev) => ({ ...prev, last_name: value }))}
-                      placeholder="Last name"
-                      autoComplete="family-name"
-                      icon="user"
-                      required
-                    />
-                  </div>
+              <div className="grid w-full min-w-0 items-start gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
+                <div className="order-2 flex min-w-0 flex-col gap-3 sm:gap-4 lg:order-1">
+                  <section className="dashboard-surface rounded-2xl p-3.5 sm:p-5 md:p-6">
+                    <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+                      Profile photo
+                    </p>
+                    <h2 className="font-sans mt-1 text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg">
+                      Avatar
+                    </h2>
 
-                  <AuthField
-                    id="line1"
-                    label="Address line 1"
-                    value={form.line1}
-                    onChange={(value) => setForm((prev) => ({ ...prev, line1: value }))}
-                    placeholder="Street address"
-                    autoComplete="address-line1"
-                  />
-                  <AuthField
-                    id="line2"
-                    label="Address line 2"
-                    value={form.line2}
-                    onChange={(value) => setForm((prev) => ({ ...prev, line2: value }))}
-                    placeholder="Apt, suite, etc. (optional)"
-                    autoComplete="address-line2"
-                  />
+                    <div className="mt-3 flex flex-col items-center gap-3 sm:mt-4 sm:flex-row sm:items-center sm:gap-4">
+                      <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] font-sans text-base font-bold text-[color:var(--dash-text)] sm:h-20 sm:w-20 sm:text-lg">
+                        {avatarSrc ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          initials(profile)
+                        )}
+                      </span>
+                      <div className="min-w-0 w-full flex-1 text-center sm:text-left">
+                        <p className="text-brand-body break-all text-sm text-[color:var(--dash-muted)] sm:truncate sm:break-normal">
+                          {profile?.email}
+                        </p>
+                        <p className="text-brand-caption mt-1 text-[color:var(--dash-faint)]">
+                          JPEG, PNG, WebP, or GIF
+                        </p>
+                        <div className="mt-3 flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-start">
+                          <input
+                            ref={fileInputRef}
+                            type="file"
+                            accept="image/jpeg,image/png,image/webp,image/gif"
+                            className="sr-only"
+                            onChange={(event) => onPickPhoto(event.target.files?.[0] ?? null)}
+                          />
+                          <button
+                            type="button"
+                            onClick={() => fileInputRef.current?.click()}
+                            className="dashboard-pill-soft font-sans inline-flex min-h-11 w-full items-center justify-center rounded-full px-4 text-sm font-medium text-[color:var(--dash-text)] transition sm:min-h-10 sm:w-auto"
+                          >
+                            Change photo
+                          </button>
+                          {profilePicFile ? (
+                            <button
+                              type="button"
+                              onClick={() => {
+                                onPickPhoto(null);
+                                if (fileInputRef.current) fileInputRef.current.value = "";
+                              }}
+                              className="text-brand-body inline-flex min-h-10 items-center justify-center text-sm font-medium text-[color:var(--dash-faint)] transition hover:text-[color:var(--dash-text)]"
+                            >
+                              Remove
+                            </button>
+                          ) : null}
+                        </div>
+                      </div>
+                    </div>
+                  </section>
 
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <FieldSelect
-                      id="state"
-                      label="State"
-                      value={location.stateSelect}
-                      onChange={(value) => {
-                        setLocation({
-                          stateSelect: value,
-                          stateManual: value === MANUAL_VALUE ? location.stateManual : "",
-                          citySelect: "",
-                          cityManual: "",
-                        });
-                      }}
-                    >
-                      <option value="">Select state</option>
-                      {US_STATES.map((state) => (
-                        <option key={state.code} value={state.code}>
-                          {state.name}
-                        </option>
-                      ))}
-                      <option value={MANUAL_VALUE}>Other (manual)</option>
-                    </FieldSelect>
+                  <section className="dashboard-surface hidden rounded-2xl p-4 sm:p-5 lg:block">
+                    <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+                      Current
+                    </p>
+                    <p className="font-sans mt-2 text-lg font-semibold text-[color:var(--dash-text)]">
+                      {fullName}
+                    </p>
+                    <p className="text-brand-body mt-1 whitespace-pre-line text-sm text-[color:var(--dash-muted)]">
+                      {formatAddress(profile?.address)}
+                    </p>
+                  </section>
+                </div>
 
-                    {location.stateSelect === MANUAL_VALUE ? (
-                      <AuthField
-                        id="state_manual"
-                        label="State"
-                        value={location.stateManual}
-                        onChange={(value) => setLocation((prev) => ({ ...prev, stateManual: value }))}
-                        placeholder="Enter state"
+                <section className="dashboard-surface order-1 min-w-0 rounded-2xl p-3.5 sm:p-5 md:p-6 lg:order-2">
+                  <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+                    Profile details
+                  </p>
+                  <h2 className="font-sans mt-1 text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg md:text-xl">
+                    Personal information
+                  </h2>
+                  <p className="text-brand-body mt-1 text-sm text-[color:var(--dash-muted)] sm:text-base">
+                    Name and mailing address for your account.
+                  </p>
+
+                  <form id="profile-edit-form" className="mt-4 grid gap-3 sm:mt-5 sm:gap-4" onSubmit={handleSubmit}>
+                    <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+                      <DashField
+                        id="first_name"
+                        label="First name"
+                        value={form.first_name}
+                        onChange={(value) => setForm((prev) => ({ ...prev, first_name: value }))}
+                        placeholder="First name"
+                        autoComplete="given-name"
+                        required
                       />
-                    ) : (
-                      <FieldSelect
-                        id="city"
-                        label="City"
-                        value={location.citySelect}
-                        disabled={!location.stateSelect}
+                      <DashField
+                        id="last_name"
+                        label="Last name"
+                        value={form.last_name}
+                        onChange={(value) => setForm((prev) => ({ ...prev, last_name: value }))}
+                        placeholder="Last name"
+                        autoComplete="family-name"
+                        required
+                      />
+                    </div>
+
+                    <DashField
+                      id="line1"
+                      label="Address line 1"
+                      value={form.line1}
+                      onChange={(value) => setForm((prev) => ({ ...prev, line1: value }))}
+                      placeholder="Street address"
+                      autoComplete="address-line1"
+                    />
+                    <DashField
+                      id="line2"
+                      label="Address line 2"
+                      value={form.line2}
+                      onChange={(value) => setForm((prev) => ({ ...prev, line2: value }))}
+                      placeholder="Apt, suite, etc. (optional)"
+                      autoComplete="address-line2"
+                    />
+
+                    <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+                      <DashSelect
+                        id="state"
+                        label="State"
+                        value={location.stateSelect}
                         onChange={(value) => {
-                          setLocation((prev) => ({
-                            ...prev,
-                            citySelect: value,
-                            cityManual: value === MANUAL_VALUE ? prev.cityManual : "",
-                          }));
+                          setLocation({
+                            stateSelect: value,
+                            stateManual: value === MANUAL_VALUE ? location.stateManual : "",
+                            citySelect: "",
+                            cityManual: "",
+                          });
                         }}
                       >
-                        <option value="">
-                          {location.stateSelect ? "Select city" : "Select state first"}
-                        </option>
-                        {usCities.map((city) => (
-                          <option key={city} value={city}>
-                            {city}
+                        <option value="">Select state</option>
+                        {US_STATES.map((state) => (
+                          <option key={state.code} value={state.code}>
+                            {state.name}
                           </option>
                         ))}
                         <option value={MANUAL_VALUE}>Other (manual)</option>
-                      </FieldSelect>
-                    )}
-                  </div>
+                      </DashSelect>
 
-                  {location.stateSelect === MANUAL_VALUE ? (
-                    <AuthField
-                      id="city_manual"
-                      label="City"
-                      value={location.cityManual}
-                      onChange={(value) => setLocation((prev) => ({ ...prev, cityManual: value }))}
-                      placeholder="Enter city"
-                    />
-                  ) : location.citySelect === MANUAL_VALUE ? (
-                    <AuthField
-                      id="city_manual_other"
-                      label="City"
-                      value={location.cityManual}
-                      onChange={(value) => setLocation((prev) => ({ ...prev, cityManual: value }))}
-                      placeholder="Enter city"
-                    />
-                  ) : null}
-
-                  <div className="grid gap-4 sm:grid-cols-2">
-                    <AuthField
-                      id="postal_code"
-                      label="ZIP / Postal code"
-                      value={form.postal_code}
-                      onChange={(value) => setForm((prev) => ({ ...prev, postal_code: value }))}
-                      placeholder="ZIP code"
-                      autoComplete="postal-code"
-                    />
-
-                    <div className="grid gap-2">
-                      <label htmlFor="country" className={authLabelClass}>
-                        Country
-                      </label>
-                      <input
-                        id="country"
-                        value="United States"
-                        disabled
-                        className={cn(authFieldClass, "px-4 opacity-70")}
-                      />
+                      {location.stateSelect === MANUAL_VALUE ? (
+                        <DashField
+                          id="state_manual"
+                          label="State"
+                          value={location.stateManual}
+                          onChange={(value) => setLocation((prev) => ({ ...prev, stateManual: value }))}
+                          placeholder="Enter state"
+                        />
+                      ) : (
+                        <DashSelect
+                          id="city"
+                          label="City"
+                          value={location.citySelect}
+                          disabled={!location.stateSelect}
+                          onChange={(value) => {
+                            setLocation((prev) => ({
+                              ...prev,
+                              citySelect: value,
+                              cityManual: value === MANUAL_VALUE ? prev.cityManual : "",
+                            }));
+                          }}
+                        >
+                          <option value="">
+                            {location.stateSelect ? "Select city" : "Select state first"}
+                          </option>
+                          {usCities.map((city) => (
+                            <option key={city} value={city}>
+                              {city}
+                            </option>
+                          ))}
+                          <option value={MANUAL_VALUE}>Other (manual)</option>
+                        </DashSelect>
+                      )}
                     </div>
-                  </div>
 
-                  <label className={cn("flex cursor-pointer items-center gap-3", portalSectionDescClass)}>
-                    <input
-                      type="checkbox"
-                      checked={form.marketing_pref}
-                      onChange={(e) =>
-                        setForm((prev) => ({ ...prev, marketing_pref: e.target.checked }))
-                      }
-                      className="h-4 w-4 rounded border-border text-primary focus:ring-primary-light/20"
-                    />
-                    Email me product updates
-                  </label>
-                </div>
+                    {location.stateSelect === MANUAL_VALUE ? (
+                      <DashField
+                        id="city_manual"
+                        label="City"
+                        value={location.cityManual}
+                        onChange={(value) => setLocation((prev) => ({ ...prev, cityManual: value }))}
+                        placeholder="Enter city"
+                      />
+                    ) : location.citySelect === MANUAL_VALUE ? (
+                      <DashField
+                        id="city_manual_other"
+                        label="City"
+                        value={location.cityManual}
+                        onChange={(value) => setLocation((prev) => ({ ...prev, cityManual: value }))}
+                        placeholder="Enter city"
+                      />
+                    ) : null}
 
-                <div className="mt-6 flex flex-col-reverse gap-3 border-t border-[color:var(--dash-surface-border)] pt-5 sm:flex-row sm:items-center sm:justify-between">
-                  <button
-                    type="button"
-                    onClick={cancelEdit}
-                    className="text-brand-body font-medium text-[color:var(--dash-faint)] transition hover:text-[color:var(--dash-text)]"
-                  >
-                    Cancel
-                  </button>
-                  <Button
-                    type="submit"
-                    variant="primary"
-                    size="md"
-                    disabled={saving || !hasChanges}
-                    className="w-full justify-center sm:w-auto sm:min-w-[8.5rem]"
-                  >
-                    {saving ? "Saving…" : "Save changes"}
-                  </Button>
-                </div>
-              </form>
-            </section>
+                    <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+                      <DashField
+                        id="postal_code"
+                        label="ZIP / Postal code"
+                        value={form.postal_code}
+                        onChange={(value) => setForm((prev) => ({ ...prev, postal_code: value }))}
+                        placeholder="ZIP code"
+                        autoComplete="postal-code"
+                      />
+                      <div className="grid min-w-0 gap-2">
+                        <label htmlFor="country" className="dashboard-field-label">
+                          Country
+                        </label>
+                        <input
+                          id="country"
+                          value="United States"
+                          disabled
+                          className="dashboard-field opacity-70"
+                        />
+                      </div>
+                    </div>
+
+                    <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] px-3 py-3 sm:px-3.5">
+                      <input
+                        type="checkbox"
+                        checked={form.marketing_pref}
+                        onChange={(event) =>
+                          setForm((prev) => ({ ...prev, marketing_pref: event.target.checked }))
+                        }
+                        className="mt-0.5 h-4 w-4 shrink-0 rounded border-[color:var(--dash-dim)] accent-[#DDE466]"
+                      />
+                      <span className="min-w-0">
+                        <span className="font-sans block text-sm font-medium text-[color:var(--dash-text)]">
+                          Email me product updates
+                        </span>
+                        <span className="text-brand-caption mt-0.5 block text-[color:var(--dash-faint)]">
+                          Occasional news about courses and membership.
+                        </span>
+                      </span>
+                    </label>
+
+                    <div className="mt-1 flex flex-col-reverse gap-2 border-t border-[color:var(--dash-surface-border)] pt-4 sm:flex-row sm:items-center sm:justify-between sm:gap-2.5">
+                      <button
+                        type="button"
+                        onClick={cancelEdit}
+                        className="dashboard-pill-soft font-sans inline-flex min-h-11 w-full items-center justify-center rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] transition sm:w-auto"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={saving || !hasChanges}
+                        className="font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full bg-[#DDE466] px-6 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 disabled:pointer-events-none disabled:opacity-60 sm:w-auto sm:min-w-[10rem]"
+                      >
+                        {saving ? "Saving…" : "Save changes"}
+                      </button>
+                    </div>
+                  </form>
+                </section>
+              </div>
+            </>
           )}
         </div>
       </div>

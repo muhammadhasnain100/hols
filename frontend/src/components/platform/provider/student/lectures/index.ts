@@ -3,3 +3,4 @@ export { StudentCoursePage } from "@/components/platform/provider/student/lectur
 export { StudentLessonsPage } from "@/components/platform/provider/student/lectures/StudentLessonsPage";
 export { StudentLessonPage } from "@/components/platform/provider/student/lectures/StudentLessonPage";
 export { StudentTestResultPage } from "@/components/platform/provider/student/lectures/StudentTestResultPage";
+export { StudentCourseCalculatorPage } from "@/components/platform/provider/student/lectures/StudentCourseCalculatorPage";

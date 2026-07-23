@@ -3,7 +3,7 @@ export const landingContent = {
     eyebrow: "HOUSE OF LIFE SCIENCES",
     headline: "Run peptides in your clinic with confidence.",
     subhead:
-      "Get your whole team trained, keep the dosing right, and hand patients clean, branded materials without becoming the peptide expert yourself.",
+      "Get your whole team trained, keep the dosing right, and give patients clean, branded materials — without becoming the peptide expert yourself.",
     primaryCta: { label: "Get Started", href: "/register" },
     secondaryCta: {
       label: "Book a Demo",
@@ -27,7 +27,7 @@ export const landingContent = {
     afterLabel: "one trusted system",
     hubLabel: "HOLS",
     scatteredLabel: "Scattered Information",
-    structuredLabel: "Structured Learning",
+    structuredLabel: "One Trusted System",
     systemLabel: "One trusted system",
     sourceCards: [
       {
@@ -105,7 +105,7 @@ export const landingContent = {
     },
     cta: {
       label: "Explore Courses",
-      href: "#everything-inside",
+      href: "/#everything-inside",
     },
   },
   whatYouGet: {

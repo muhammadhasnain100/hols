@@ -1,8 +1,10 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+import { LessonLearningSkeleton } from "@/components/platform/provider/student/DashboardSkeletons";
 import type { LessonDetail } from "@/lib/integrate/provider/student/lectures";
 import { cn } from "@/lib/utils";
+import { LessonProse } from "./lessonProse";
 import {
   LessonMarkerOverlay,
   MARKER_COLORS,
@@ -55,6 +57,15 @@ function loadPrefs(): Partial<LearningPrefs> {
   }
 }
 
+function resolveInitialTheme(saved: Partial<LearningPrefs>): ReadingTheme {
+  if (saved.theme) return saved.theme;
+  if (typeof document !== "undefined") {
+    const portal = document.querySelector(".portal-shell");
+    if (portal?.getAttribute("data-theme") === "dark") return "dark";
+  }
+  return "light";
+}
+
 function savePrefs(prefs: LearningPrefs) {
   if (typeof window === "undefined") return;
   sessionStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
@@ -63,11 +74,8 @@ function savePrefs(prefs: LearningPrefs) {
 function buildReadingSections(lesson: LessonDetail): ReadingSection[] {
   const sections: ReadingSection[] = [];
   if (lesson.fact?.trim()) sections.push({ title: null, body: lesson.fact.trim() });
-  if (lesson.text_content?.trim()) sections.push({ title: "Full text", body: lesson.text_content.trim() });
-  if (lesson.study_bullets?.trim()) sections.push({ title: "Study bullets", body: lesson.study_bullets.trim() });
-  if (lesson.supporting_content?.trim()) {
-    sections.push({ title: "Supporting content", body: lesson.supporting_content.trim() });
-  }
+  if (lesson.text_content?.trim()) sections.push({ title: "Full Text", body: lesson.text_content.trim() });
+  if (lesson.study_bullets?.trim()) sections.push({ title: "Study Bullets", body: lesson.study_bullets.trim() });
   return sections;
 }
 
@@ -207,10 +215,10 @@ function ToolButton({
       title={label}
       aria-pressed={active}
       className={cn(
-        "lesson-learning-tool inline-flex h-9 w-9 items-center justify-center rounded-full transition",
+        "lesson-learning-tool inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition",
         active
           ? "bg-[#DDE466] text-[#152744]"
-          : "bg-black/[0.04] text-current hover:bg-black/[0.08]",
+          : "text-current",
         disabled && "cursor-not-allowed opacity-40",
         className,
       )}
@@ -235,7 +243,7 @@ function IconSegmentedControl<T extends string>({
     <div
       role="group"
       aria-label={ariaLabel}
-      className="inline-flex items-center gap-0.5 rounded-full bg-black/[0.04] p-0.5"
+      className="lesson-learning-seg inline-flex shrink-0 items-center gap-0.5 rounded-full p-0.5"
     >
       {options.map((option) => (
         <button
@@ -246,10 +254,10 @@ function IconSegmentedControl<T extends string>({
           aria-pressed={value === option.id}
           onClick={() => onChange(option.id)}
           className={cn(
-            "inline-flex h-8 w-8 items-center justify-center rounded-full transition",
+            "lesson-learning-seg-btn inline-flex h-8 w-8 items-center justify-center rounded-full transition",
             value === option.id
               ? "bg-[#DDE466] text-[#152744] shadow-sm"
-              : "text-current/70 hover:bg-black/[0.06] hover:text-current",
+              : "text-current/70",
           )}
         >
           {option.icon}
@@ -274,7 +282,7 @@ function TextSegmentedControl<T extends string>({
     <div
       role="group"
       aria-label={ariaLabel}
-      className="inline-flex items-center gap-0.5 rounded-full bg-black/[0.04] p-0.5"
+      className="lesson-learning-seg inline-flex shrink-0 items-center gap-0.5 rounded-full p-0.5"
     >
       {options.map((option) => (
         <button
@@ -282,10 +290,10 @@ function TextSegmentedControl<T extends string>({
           type="button"
           onClick={() => onChange(option.id)}
           className={cn(
-            "font-sans inline-flex h-8 items-center rounded-full px-2.5 text-xs font-medium transition",
+            "lesson-learning-seg-btn font-sans inline-flex h-8 items-center rounded-full px-2.5 text-xs font-medium transition",
             value === option.id
               ? "bg-[#DDE466] text-[#152744] shadow-sm"
-              : "text-current/70 hover:bg-black/[0.06] hover:text-current",
+              : "text-current/70",
           )}
         >
           {option.label}
@@ -314,7 +322,7 @@ export function LessonLearningView({
   const [markerSize, setMarkerSize] = useState<MarkerSizeId>(saved.markerSize ?? "medium");
   const [markerStrokes, setMarkerStrokes] = useState<MarkerStroke[]>([]);
   const [layout, setLayout] = useState<LayoutWidth>(saved.layout ?? "center");
-  const [theme, setTheme] = useState<ReadingTheme>(saved.theme ?? "light");
+  const [theme, setTheme] = useState<ReadingTheme>(() => resolveInitialTheme(saved));
   const [spacing, setSpacing] = useState<LineSpacing>(saved.spacing ?? "normal");
   const [focusMode, setFocusMode] = useState(saved.focusMode ?? false);
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -446,27 +454,30 @@ export function LessonLearningView({
       aria-modal="true"
       aria-label="Learning mode"
     >
-      <header className="lesson-learning-header shrink-0 border-b px-3 py-2.5 shadow-[0_1px_8px_rgba(21,39,68,0.06)] backdrop-blur-sm md:px-4">
-        <div className="mx-auto flex max-w-6xl flex-wrap items-center gap-2">
-          <button
-            type="button"
-            onClick={onExit}
-            className="lesson-learning-exit font-sans inline-flex min-h-9 items-center gap-1.5 rounded-full px-3.5 text-sm font-medium transition"
-          >
-            {Icons.exit}
-            Back to lesson
-          </button>
+      <header className="lesson-learning-header shrink-0 border-b px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))] shadow-[0_1px_8px_rgba(21,39,68,0.06)] backdrop-blur-sm md:px-4 md:py-2.5">
+        <div className="mx-auto flex max-w-6xl flex-col gap-2 md:flex-row md:flex-wrap md:items-center md:gap-2">
+          <div className="flex items-center gap-2 md:contents">
+            <button
+              type="button"
+              onClick={onExit}
+              className="lesson-learning-exit font-sans inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full px-3 text-sm font-medium transition sm:px-3.5"
+            >
+              {Icons.exit}
+              <span className="sm:hidden">Back</span>
+              <span className="hidden sm:inline">Back to lesson</span>
+            </button>
 
-          <div className="lesson-learning-meta mx-auto flex items-center gap-2 text-sm font-medium md:mx-0">
-            <span className="inline-flex h-7 items-center rounded-full bg-black/[0.05] px-2.5 text-xs font-semibold">
-              {currentIndex && total ? `${currentIndex} / ${total}` : `Lesson ${lesson.order}`}
-            </span>
-            {scrollProgress > 0 ? (
-              <span className="text-xs opacity-70">{Math.round(scrollProgress)}% read</span>
-            ) : null}
+            <div className="lesson-learning-meta flex min-w-0 flex-1 items-center gap-2 text-sm font-medium md:flex-initial">
+              <span className="lesson-learning-chip inline-flex h-7 shrink-0 items-center rounded-full px-2.5 text-xs font-semibold">
+                {currentIndex && total ? `${currentIndex} / ${total}` : `Lesson ${lesson.order}`}
+              </span>
+              {scrollProgress > 0 ? (
+                <span className="truncate text-xs opacity-70">{Math.round(scrollProgress)}% read</span>
+              ) : null}
+            </div>
           </div>
 
-          <div className="ml-auto flex flex-wrap items-center gap-1.5">
+          <div className="lesson-learning-toolbar -mx-3 flex items-center gap-1.5 overflow-x-auto overscroll-x-contain px-3 pb-0.5 [scrollbar-width:none] md:mx-0 md:ml-auto md:flex-wrap md:overflow-visible md:px-0 md:pb-0 [&::-webkit-scrollbar]:hidden">
             <IconSegmentedControl
               ariaLabel="Reading width"
               value={layout}
@@ -499,12 +510,12 @@ export function LessonLearningView({
               ]}
             />
 
-            <div className="inline-flex items-center gap-0.5 rounded-full bg-black/[0.04] p-0.5">
+            <div className="lesson-learning-seg inline-flex shrink-0 items-center gap-0.5 rounded-full p-0.5">
               <ToolButton
                 label="Zoom out"
                 disabled={zoomIndex <= 0}
                 onClick={() => setZoomIndex((index) => Math.max(0, index - 1))}
-                className="!bg-transparent hover:!bg-black/[0.06]"
+                className="!bg-transparent"
               >
                 {Icons.zoomOut}
               </ToolButton>
@@ -515,7 +526,7 @@ export function LessonLearningView({
                 label="Zoom in"
                 disabled={zoomIndex >= ZOOM_STEPS.length - 1}
                 onClick={() => setZoomIndex((index) => Math.min(ZOOM_STEPS.length - 1, index + 1))}
-                className="!bg-transparent hover:!bg-black/[0.06]"
+                className="!bg-transparent"
               >
                 {Icons.zoomIn}
               </ToolButton>
@@ -547,7 +558,7 @@ export function LessonLearningView({
 
             {markerMode ? (
               <>
-                <div className="flex items-center gap-1 px-0.5" role="group" aria-label="Marker colors">
+                <div className="flex shrink-0 items-center gap-1 px-0.5" role="group" aria-label="Marker colors">
                   {MARKER_COLORS.map((option) => (
                     <button
                       key={option.id}
@@ -594,12 +605,18 @@ export function LessonLearningView({
         />
       </div>
 
-      <div ref={scrollRef} className={cn("flex-1 overflow-y-auto", markerMode && "lesson-learning-marker-scroll")}>
+      <div
+        ref={scrollRef}
+        className={cn(
+          "lesson-learning-stage min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-[max(1rem,env(safe-area-inset-bottom))] sm:px-4 md:px-6",
+          markerMode && "lesson-learning-marker-scroll",
+        )}
+      >
         <article
           ref={articleRef}
           className={cn(
-            "relative mx-auto py-5 transition-[max-width,padding] duration-200 md:py-8",
-            layout === "center" ? "max-w-3xl px-5 md:px-8" : "w-full max-w-none px-5 md:px-8 lg:px-12",
+            "lesson-learning-page relative mx-auto my-4 w-full px-4 py-5 transition-[max-width,padding,box-shadow] duration-300 sm:my-6 sm:px-6 sm:py-7 md:my-8 md:px-10 md:py-9",
+            layout === "center" ? "max-w-3xl" : "max-w-none lg:max-w-5xl",
           )}
         >
           {!focusMode ? (
@@ -617,17 +634,14 @@ export function LessonLearningView({
           ) : null}
 
           <h1
-            className="lesson-learning-title font-sans font-bold leading-tight tracking-[0.01em]"
+            className="lesson-learning-title font-sans font-bold leading-tight tracking-[0.01em] text-balance"
             style={{ fontSize: `${fontSize * 1.35}px`, lineHeight: 1.25 }}
           >
             {lesson.title}
           </h1>
 
           {detailLoading ? (
-            <div className="mt-8 text-center">
-              <div className="mx-auto h-8 w-8 animate-pulse rounded-full bg-black/10" />
-              <p className="lesson-learning-meta mt-4 text-sm opacity-70">Loading lesson…</p>
-            </div>
+            <LessonLearningSkeleton />
           ) : sections.length === 0 ? (
             <p className="lesson-learning-body mt-6" style={{ fontSize: `${fontSize}px`, lineHeight }}>
               No lesson content available yet.
@@ -635,7 +649,7 @@ export function LessonLearningView({
           ) : (
             <div
               ref={contentRef}
-              className={cn("mt-6 space-y-7", highlightMode && "lesson-learning-highlight-mode")}
+              className={cn("mt-5 space-y-6 sm:mt-6 sm:space-y-7", highlightMode && "lesson-learning-highlight-mode")}
               onMouseUp={applyHighlight}
             >
               {sections.map((section, index) => (
@@ -643,16 +657,16 @@ export function LessonLearningView({
                   {!focusMode && section.title ? (
                     <h2
                       className="lesson-learning-section-label mb-2.5 font-semibold uppercase tracking-[0.1em]"
-                      style={{ fontSize: `${fontSize * 0.7}px` }}
+                      style={{ fontSize: `${Math.max(11, fontSize * 0.7)}px` }}
                     >
                       {section.title}
                     </h2>
                   ) : null}
                   <div
-                    className="lesson-learning-body whitespace-pre-wrap"
+                    className="lesson-learning-body"
                     style={{ fontSize: `${fontSize}px`, lineHeight }}
                   >
-                    {section.body}
+                    <LessonProse text={section.body} />
                   </div>
                 </div>
               ))}

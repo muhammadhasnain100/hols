@@ -19,10 +19,11 @@ type InjectionAnimationProps = {
 
 const STATUS = [
   { label: "Positioning syringe over bacteriostatic water…", at: 0 },
-  { label: "Drawing sterile water into syringe…", at: 900 },
-  { label: "Moving to medication vial…", at: 2900 },
-  { label: "Injecting water and mixing medication…", at: 4300 },
-  { label: "Reconstitution complete", at: 6300 },
+  { label: "Drawing sterile water into the syringe…", at: 800 },
+  { label: "Moving to the medication vial…", at: 3100 },
+  { label: "Injecting water and reconstituting…", at: 4400 },
+  { label: "Swirling gently to dissolve…", at: 6200 },
+  { label: "Reconstitution complete", at: 7200 },
 ];
 
 type SceneState = {
@@ -30,15 +31,17 @@ type SceneState = {
   waterEmpty: boolean;
   medFill: number;
   medPowder: boolean;
+  syringeFill: number;
   waterActive: boolean;
   medActive: boolean;
 };
 
 const INITIAL_SCENE: SceneState = {
-  waterFill: 0.58,
+  waterFill: 0.6,
   waterEmpty: false,
   medFill: 0.14,
   medPowder: true,
+  syringeFill: 0,
   waterActive: true,
   medActive: false,
 };
@@ -99,6 +102,7 @@ export function InjectionAnimation({
           insert: 0,
           waterFill: INITIAL_SCENE.waterFill,
           medFill: INITIAL_SCENE.medFill,
+          syringeFill: INITIAL_SCENE.syringeFill,
         };
 
         let waterActive = true;
@@ -112,6 +116,7 @@ export function InjectionAnimation({
             waterEmpty,
             medFill: proxy.medFill,
             medPowder,
+            syringeFill: proxy.syringeFill,
             waterActive,
             medActive,
           });
@@ -140,53 +145,39 @@ export function InjectionAnimation({
                 completed.current = true;
                 onComplete();
               }
-            }, 800);
+            }, 700);
           },
         });
 
         moveSyringe();
 
-        tl.to(
-          proxy,
-          {
-            insert: 32,
-            duration: 0.75,
-            ease: "power3.out",
-            onUpdate: moveSyringe,
-          },
-          0.15,
-        )
+        tl
+          // Lower needle through the water-vial stopper.
+          .to(proxy, { insert: 30, duration: 0.7, ease: "power3.out", onUpdate: moveSyringe }, 0.2)
+          // Draw sterile water: barrel fills as the vial empties.
           .to(
             proxy,
             {
-              waterFill: 0.34,
-              insert: 20,
-              duration: 1.6,
+              waterFill: 0.28,
+              syringeFill: 0.62,
+              insert: 22,
+              duration: 1.7,
               ease: "power1.inOut",
               onUpdate: moveSyringe,
             },
-            0.95,
+            0.9,
           )
-          .to(
-            proxy,
-            {
-              insert: 26,
-              duration: 0.14,
-              yoyo: true,
-              repeat: 1,
-              ease: "sine.inOut",
-              onUpdate: moveSyringe,
-            },
-            1.15,
-          )
+          // Tiny settle before withdrawing.
+          .to(proxy, { insert: 26, duration: 0.14, yoyo: true, repeat: 1, ease: "sine.inOut", onUpdate: moveSyringe }, 2.6)
+          // Withdraw the needle from the water vial.
+          .to(proxy, { insert: 4, duration: 0.5, ease: "power2.in", onUpdate: moveSyringe }, 2.85)
+          // Travel across to the medication vial.
           .to(
             proxy,
             {
               stopperX: med.x,
               stopperY: med.y,
-              insert: 16,
-              waterFill: 0,
-              duration: 1.2,
+              duration: 1.1,
               ease: "power2.inOut",
               onStart: () => {
                 waterActive = false;
@@ -194,27 +185,25 @@ export function InjectionAnimation({
               },
               onUpdate: moveSyringe,
             },
-            2.6,
+            3.35,
           )
-          .call(() => {
-            medActive = true;
-            syncScene();
-          }, undefined, 3.65)
-          .to(
-            proxy,
-            {
-              insert: 34,
-              duration: 0.55,
-              ease: "power2.out",
-              onUpdate: moveSyringe,
+          .call(
+            () => {
+              medActive = true;
+              syncScene();
             },
-            3.95,
+            undefined,
+            4.3,
           )
+          // Lower needle into the medication vial.
+          .to(proxy, { insert: 32, duration: 0.55, ease: "power3.out", onUpdate: moveSyringe }, 4.45)
+          // Inject water: barrel empties, powder dissolves into solution.
           .to(
             proxy,
             {
-              medFill: 0.76,
-              insert: 22,
+              syringeFill: 0,
+              medFill: 0.74,
+              insert: 24,
               duration: 1.6,
               ease: "power1.inOut",
               onStart: () => {
@@ -222,30 +211,12 @@ export function InjectionAnimation({
               },
               onUpdate: moveSyringe,
             },
-            4.2,
+            4.85,
           )
-          .to(
-            proxy,
-            {
-              insert: 30,
-              duration: 0.16,
-              yoyo: true,
-              repeat: 2,
-              ease: "sine.inOut",
-              onUpdate: moveSyringe,
-            },
-            4.4,
-          )
-          .to(
-            proxy,
-            {
-              insert: 10,
-              duration: 0.55,
-              ease: "power2.out",
-              onUpdate: moveSyringe,
-            },
-            6,
-          );
+          // Swirl / mix wiggle.
+          .to(proxy, { insert: 30, duration: 0.16, yoyo: true, repeat: 3, ease: "sine.inOut", onUpdate: moveSyringe }, 6.5)
+          // Withdraw the needle, finished.
+          .to(proxy, { insert: -6, duration: 0.6, ease: "power2.in", onUpdate: moveSyringe }, 7.0);
       };
 
       const frame = window.requestAnimationFrame(() => {
@@ -262,20 +233,24 @@ export function InjectionAnimation({
   );
 
   return (
-    <div className="mx-auto mt-2 w-full max-w-md sm:max-w-lg">
-      <p className="mb-4 text-center text-[13px] font-medium text-primary" aria-live="polite">
+    <div className="mx-auto mt-2 w-full min-w-0 max-w-sm sm:max-w-md md:max-w-lg">
+      <p
+        className="mb-3 px-1 text-center text-xs font-medium text-[color:var(--dash-muted)] sm:mb-4 sm:text-[13px]"
+        aria-live="polite"
+      >
         {status}
       </p>
 
       <div
         ref={stageRef}
-        className="relative mx-auto w-full overflow-visible rounded-2xl border border-primary/[0.06] bg-[#EEF2F4]/60 px-3 py-4 sm:px-8 sm:py-6"
+        className="dashboard-glass-card relative mx-auto w-full overflow-visible rounded-2xl px-2 py-3 sm:px-6 sm:py-5 md:px-8 md:py-6"
       >
         <CalculatorReconScene
           layout="draw"
           drawSyringeLarge
           sceneRef={sceneRef}
           syringeMl={syringeMl}
+          syringeFill={scene.syringeFill}
           waterFill={scene.waterFill}
           waterEmpty={scene.waterEmpty}
           medFill={scene.medFill}
@@ -283,7 +258,7 @@ export function InjectionAnimation({
           peptideUnit={peptideUnit}
           waterActive={scene.waterActive}
           medActive={scene.medActive}
-          showSyringeFill={false}
+          showSyringeFill
           syringeWrapRef={syringeWrapRef}
           instantFill
         />

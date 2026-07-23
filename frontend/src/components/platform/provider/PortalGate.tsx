@@ -14,33 +14,33 @@ type PortalGateProps = {
 
 export function PortalGate({ role, children }: PortalGateProps) {
   const router = useRouter();
-  const [ready, setReady] = useState(false);
+  const [blocked, setBlocked] = useState(false);
 
   useEffect(() => {
     const user = getStoredUser();
-    let readyTimer: number | null = null;
 
     if (!user) {
       stopPortalAuthRuntime();
+      setBlocked(true);
       router.replace("/login");
       return undefined;
     }
 
     if (user.role !== role) {
+      setBlocked(true);
       router.replace(getPortalPath(user.role));
       return undefined;
     }
 
+    setBlocked(false);
     startPortalAuthRuntime(role);
-    readyTimer = window.setTimeout(() => setReady(true), 0);
-    return () => {
-      if (readyTimer) window.clearTimeout(readyTimer);
-    };
+    return undefined;
   }, [role, router]);
 
   useEffect(() => {
     function handleAuthLogout() {
       stopPortalAuthRuntime();
+      setBlocked(true);
       router.replace("/login");
     }
 
@@ -48,16 +48,7 @@ export function PortalGate({ role, children }: PortalGateProps) {
     return () => window.removeEventListener("hols-auth-logout", handleAuthLogout);
   }, [router]);
 
-  if (!ready) {
-    return (
-      <div className="flex min-h-svh items-center justify-center bg-gradient-science-haze">
-        <div className="glass-panel rounded-3xl px-8 py-10 text-center">
-          <div className="mx-auto h-10 w-10 animate-pulse rounded-full bg-accent/40" />
-          <p className="mt-4 text-sm text-muted">Loading portal…</p>
-        </div>
-      </div>
-    );
-  }
+  if (blocked) return null;
 
   return children;
 }

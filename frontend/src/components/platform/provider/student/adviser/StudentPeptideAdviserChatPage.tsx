@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { AdviserChatPageLayout } from "@/components/platform/provider/student/adviser/AdviserChatPageLayout";
 import { AdviserChatPanel } from "@/components/platform/provider/student/adviser/AdviserChatPanel";
+import { ChatMessagesSkeleton } from "@/components/platform/provider/student/DashboardSkeletons";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
   ACTIVE_PATIENT_STORAGE_KEY,
@@ -90,9 +91,7 @@ export function StudentPeptideAdviserChatPage({ patientId }: StudentPeptideAdvis
   if (!patient) {
     return (
       <AdviserChatPageLayout patientName="Consultation chat">
-        <div className="dashboard-surface rounded-2xl p-8 text-center">
-          <p className="text-brand-body text-[color:var(--dash-faint)]">Loading chat…</p>
-        </div>
+        <ChatMessagesSkeleton />
       </AdviserChatPageLayout>
     );
   }

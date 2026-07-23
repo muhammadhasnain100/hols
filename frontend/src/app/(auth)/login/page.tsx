@@ -1,18 +1,8 @@
-import { Suspense } from "react";
-import { AuthShell } from "@/components/platform/auth/AuthShell";
-import { LoginForm } from "@/components/platform/auth/login";
+import { LoginAuthClient } from "@/components/platform/auth/login/LoginAuthClient";
 
 type LoginPageProps = {
   searchParams: Promise<{ registered?: string }>;
 };
-
-function LoginFormFallback() {
-  return (
-    <div className="w-full">
-      <div className="h-56 animate-pulse rounded-2xl bg-primary/5" />
-    </div>
-  );
-}
 
 export default async function LoginPage({ searchParams }: LoginPageProps) {
   const params = await searchParams;
@@ -21,14 +11,5 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
       ? "Your account was created successfully. Please log in to continue."
       : undefined;
 
-  return (
-    <AuthShell
-      eyebrow="Sign in"
-      title="Welcome back"
-    >
-      <Suspense fallback={<LoginFormFallback />}>
-        <LoginForm initialMessage={initialMessage} />
-      </Suspense>
-    </AuthShell>
-  );
+  return <LoginAuthClient initialMessage={initialMessage} />;
 }

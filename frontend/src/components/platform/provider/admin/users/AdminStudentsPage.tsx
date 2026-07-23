@@ -1,11 +1,18 @@
 "use client";
 
+import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { PortalShell } from "@/components/platform/provider/PortalShell";
-import { PortalStatCard } from "@/components/platform/provider/PortalStatCard";
-import { PaginationControls, UserLink } from "@/components/platform/provider/admin/shared";
+import {
+  DataField,
+  DirectoryListSkeleton,
+  PaginationControls,
+  StatPill,
+  StatusBadge,
+} from "@/components/platform/provider/admin/shared";
 import { adminNav } from "@/components/platform/provider/admin/adminNav";
+import { WelcomeChip } from "@/components/platform/provider/student/WelcomeChip";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
   getCachedStudents,
@@ -14,15 +21,29 @@ import {
 } from "@/lib/integrate/provider/admin/users/api";
 import { formatDate } from "@/lib/integrate/provider/student/payment/types";
 
+function openSidebar() {
+  window.dispatchEvent(new Event("hols-portal-open-sidebar"));
+}
+
+function initials(first: string, last: string) {
+  return `${first?.[0] ?? ""}${last?.[0] ?? ""}`.toUpperCase() || "S";
+}
+
+function affiliateLabel(student: StudentSummary) {
+  if (student.affiliate) {
+    return `${student.affiliate.first_name} ${student.affiliate.last_name}`;
+  }
+  return null;
+}
+
 export function AdminStudentsPage() {
-  const cachedFirstPage = getCachedStudents({ page: 1, limit: 15 });
-  const [loading, setLoading] = useState(!cachedFirstPage);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [students, setStudents] = useState<StudentSummary[]>(cachedFirstPage?.items ?? []);
+  const [students, setStudents] = useState<StudentSummary[]>([]);
   const [page, setPage] = useState(1);
-  const [total, setTotal] = useState(cachedFirstPage?.pagination.total ?? 0);
-  const [hasNext, setHasNext] = useState(cachedFirstPage?.pagination.has_next ?? false);
-  const [hasPrevious, setHasPrevious] = useState(cachedFirstPage?.pagination.has_previous ?? false);
+  const [total, setTotal] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
+  const [hasPrevious, setHasPrevious] = useState(false);
 
   const loadStudents = useCallback(async () => {
     const cachedPage = getCachedStudents({ page, limit: 15 });
@@ -66,82 +87,231 @@ export function AdminStudentsPage() {
     <PortalShell
       role="admin"
       title="Students"
-      subtitle="Review student accounts and affiliate referral details."
+      showPageHeader={false}
+      contentFlush
+      brandBackdrop
       nav={adminNav}
     >
-      <div className="mx-auto grid w-full max-w-5xl gap-5">
-        {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
+      <div className="dashboard-screen min-w-0 overflow-x-hidden">
+        <header className="mb-3 flex items-center justify-between gap-2 sm:mb-5 sm:gap-4">
+          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+            <button
+              type="button"
+              aria-label="Open sidebar"
+              onClick={openSidebar}
+              className="dashboard-icon-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full lg:hidden"
+            >
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                <path d="M4 7h16M4 12h10M4 17h16" />
+              </svg>
+            </button>
+            <h1 className="font-sans truncate text-base font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl md:text-2xl">
+              Students
+            </h1>
+          </div>
+          <WelcomeChip fallbackName="Admin" />
+        </header>
 
-        <div className="grid gap-4 sm:grid-cols-3">
-          <PortalStatCard label="Total students" value={String(total)} hint="Registered learners" />
-          <PortalStatCard label="Visible referred" value={String(visibleReferredCount)} hint="Current page referrals" />
-          <PortalStatCard label="Marketing opt-in" value={String(visibleMarketingCount)} hint="Current page students" />
-        </div>
+        <div className="grid w-full min-w-0 gap-3 sm:gap-4">
+          {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
 
-        <section className="rounded-2xl border border-black/[0.06] bg-white p-5 md:p-6">
-          <div className="mb-5">
-            <h2 className="text-[15px] font-semibold text-primary">Student directory</h2>
-            <p className="mt-1 text-[13px] text-primary/45">
-              Open any profile to view details or edit admin-controlled fields.
-            </p>
+          <section className="dashboard-hero relative overflow-hidden rounded-2xl p-3.5 sm:p-5 md:p-6">
+            <div className="flex flex-col gap-3.5 sm:gap-5 lg:flex-row lg:items-end lg:justify-between">
+              <div className="min-w-0">
+                <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
+                  Student directory
+                </p>
+                <div className="mt-2 flex flex-wrap items-end gap-x-2 gap-y-1">
+                  <span className="font-sans text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl md:text-[2.25rem] md:leading-none">
+                    {loading ? "—" : total}
+                  </span>
+                  <span className="mb-0.5 text-brand-caption font-medium text-[color:var(--dash-faint)]">
+                    {total === 1 ? "student" : "students"}
+                  </span>
+                </div>
+                <p className="text-brand-body mt-2 text-sm text-[color:var(--dash-muted)] sm:text-base">
+                  Full account details for each learner — open a profile to view fields.
+                </p>
+              </div>
+
+              <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:gap-2.5">
+                <Link
+                  href="/admin/affiliates"
+                  className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center rounded-full px-3 text-sm font-medium text-[color:var(--dash-text)] transition sm:px-5"
+                >
+                  Affiliates
+                </Link>
+                <Link
+                  href="/admin"
+                  className="font-sans inline-flex min-h-10 items-center justify-center rounded-full bg-[#DDE466] px-3 text-sm font-medium text-[#152744] transition hover:brightness-105 sm:px-5"
+                >
+                  Dashboard
+                </Link>
+              </div>
+            </div>
+          </section>
+
+          <div className="grid min-w-0 gap-2.5 sm:grid-cols-3 sm:gap-3">
+            <StatPill label="Total students" value={String(total)} />
+            <StatPill
+              label={
+                <>
+                  <span className="sm:hidden">Referred</span>
+                  <span className="hidden sm:inline">Referred (this page)</span>
+                </>
+              }
+              value={String(visibleReferredCount)}
+            />
+            <StatPill
+              label={
+                <>
+                  <span className="sm:hidden">Marketing</span>
+                  <span className="hidden sm:inline">Marketing opt-in</span>
+                </>
+              }
+              value={String(visibleMarketingCount)}
+            />
           </div>
 
-          {loading ? (
-            <div className="rounded-2xl border border-black/[0.06] bg-white p-10 text-center">
-              <div className="mx-auto h-8 w-8 animate-pulse rounded-full bg-primary/10" />
+          <section className="dashboard-surface min-w-0 rounded-2xl p-4 sm:p-5 md:p-6">
+            <div className="flex flex-wrap items-end justify-between gap-2">
+              <div className="min-w-0">
+                <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+                  Accounts
+                </p>
+                <h2 className="font-sans mt-1 text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg md:text-xl">
+                  All students
+                </h2>
+              </div>
+              <span className="text-brand-caption font-medium text-[color:var(--dash-accent)]">
+                Page {page}
+              </span>
             </div>
-          ) : students.length === 0 ? (
-            <div className="rounded-2xl border border-border/50 bg-white/70 p-6 text-sm text-muted">
-              No students found.
-            </div>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="min-w-full text-left text-sm">
-                <thead>
-                  <tr className="text-muted">
-                    <th className="pb-3 pr-4 font-medium">Name</th>
-                    <th className="pb-3 pr-4 font-medium">Email</th>
-                    <th className="pb-3 pr-4 font-medium">Affiliate</th>
-                    <th className="pb-3 pr-4 font-medium">Marketing</th>
-                    <th className="pb-3 font-medium">Joined</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {students.map((student) => (
-                    <tr key={student.user_id} className="border-t border-primary/10 align-top">
-                      <td className="py-3 pr-4">
-                        <UserLink
-                          userId={student.user_id}
-                          label={`${student.first_name} ${student.last_name}`}
-                        />
-                      </td>
-                      <td className="py-3 pr-4 text-muted">{student.email}</td>
-                      <td className="py-3 pr-4 text-muted">
-                        {student.affiliate
-                          ? `${student.affiliate.first_name} ${student.affiliate.last_name}`
-                          : student.referred_by_affiliate_id ?? "-"}
-                      </td>
-                      <td className="py-3 pr-4 text-primary">
-                        {student.marketing_pref ? "Yes" : "No"}
-                      </td>
-                      <td className="py-3 text-muted">{formatDate(student.created_at)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
 
-          <PaginationControls
-            page={page}
-            total={total}
-            hasNext={hasNext}
-            hasPrevious={hasPrevious}
-            loading={loading}
-            onPrevious={() => setPage((current) => Math.max(1, current - 1))}
-            onNext={() => setPage((current) => current + 1)}
-          />
-        </section>
+            <div className="mt-4 space-y-3 sm:mt-5 sm:space-y-4">
+              {loading && students.length === 0 ? (
+                <DirectoryListSkeleton />
+              ) : students.length === 0 ? (
+                <p className="text-brand-body py-10 text-center text-[color:var(--dash-faint)]">
+                  No students found.
+                </p>
+              ) : (
+                students.map((student) => {
+                  const referredName = affiliateLabel(student);
+                  const fullName = `${student.first_name} ${student.last_name}`.trim() || "Student";
+                  const profileHref = student.user_id
+                    ? `/admin/users/${encodeURIComponent(student.user_id)}`
+                    : null;
+
+                  return (
+                    <article
+                      key={student.user_id || student.email}
+                      className="relative z-0 min-w-0 overflow-hidden rounded-2xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)]/35 p-3.5 transition hover:bg-[color:var(--dash-soft)]/55 sm:p-5"
+                    >
+                      <div className="relative z-10 flex flex-col gap-3.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
+                        <div className="flex min-w-0 items-start gap-3 sm:gap-4">
+                          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#DDE466]/20 font-sans text-sm font-bold text-[color:var(--dash-accent)] sm:h-14 sm:w-14 sm:text-base">
+                            {initials(student.first_name, student.last_name)}
+                          </span>
+                          <div className="min-w-0 flex-1">
+                            <div className="flex min-w-0 flex-wrap items-center gap-2">
+                              {profileHref ? (
+                                <Link
+                                  href={profileHref}
+                                  className="font-sans min-w-0 max-w-full break-words text-base font-bold tracking-[0.01em] text-[color:var(--dash-text)] underline-offset-2 transition hover:text-[color:var(--dash-accent)] hover:underline sm:text-lg"
+                                >
+                                  {fullName}
+                                </Link>
+                              ) : (
+                                <h3 className="font-sans min-w-0 max-w-full break-words text-base font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-lg">
+                                  {fullName}
+                                </h3>
+                              )}
+                              <StatusBadge tone={student.marketing_pref ? "accent" : "muted"}>
+                                <span className="sm:hidden">{student.marketing_pref ? "On" : "Off"}</span>
+                                <span className="hidden sm:inline">
+                                  {student.marketing_pref ? "Marketing on" : "Marketing off"}
+                                </span>
+                              </StatusBadge>
+                            </div>
+                            <p className="text-brand-body mt-1 break-all text-sm text-[color:var(--dash-muted)] sm:break-normal sm:truncate">
+                              {student.email}
+                            </p>
+                          </div>
+                        </div>
+
+                        {profileHref ? (
+                          <Link
+                            href={profileHref}
+                            prefetch
+                            className="relative z-20 font-sans inline-flex min-h-11 w-full shrink-0 items-center justify-center rounded-full bg-[#DDE466] px-5 text-sm font-medium text-[#152744] transition hover:brightness-105 sm:min-h-10 sm:w-auto"
+                          >
+                            View profile
+                          </Link>
+                        ) : (
+                          <span className="font-sans inline-flex min-h-11 w-full shrink-0 items-center justify-center rounded-full bg-[color:var(--dash-soft)] px-5 text-sm font-medium text-[color:var(--dash-faint)] sm:min-h-10 sm:w-auto">
+                            Unavailable
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="mt-3.5 grid grid-cols-1 gap-3 border-t border-[color:var(--dash-surface-border)] pt-3.5 min-[420px]:grid-cols-2 lg:grid-cols-4 sm:mt-4 sm:pt-4">
+                        <DataField label="Email" value={student.email} />
+                        <DataField
+                          label="Affiliate"
+                          value={
+                            referredName ? (
+                              <span>{referredName}</span>
+                            ) : student.referred_by_affiliate_id ? (
+                              <span className="font-mono text-xs">{student.referred_by_affiliate_id}</span>
+                            ) : (
+                              <span className="text-[color:var(--dash-faint)]">Direct signup</span>
+                            )
+                          }
+                        />
+                        <DataField
+                          label="Marketing"
+                          value={
+                            student.marketing_pref ? (
+                              <StatusBadge tone="accent">Subscribed</StatusBadge>
+                            ) : (
+                              <StatusBadge tone="muted">Opted out</StatusBadge>
+                            )
+                          }
+                        />
+                        <DataField
+                          label="Joined"
+                          value={student.created_at ? formatDate(student.created_at) : "—"}
+                        />
+                      </div>
+
+                      {student.affiliate?.invite_code || student.affiliate?.email ? (
+                        <div className="mt-3 grid grid-cols-1 gap-3 rounded-xl bg-[color:var(--dash-soft)] px-3 py-3 min-[420px]:grid-cols-2 sm:px-3.5">
+                          {student.affiliate.email ? (
+                            <DataField label="Affiliate email" value={student.affiliate.email} />
+                          ) : null}
+                          {student.affiliate.invite_code ? (
+                            <DataField label="Invite code" value={student.affiliate.invite_code} />
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </article>
+                  );
+                })
+              )}
+            </div>
+
+            <PaginationControls
+              page={page}
+              total={total}
+              hasNext={hasNext}
+              hasPrevious={hasPrevious}
+              loading={loading}
+              onPrevious={() => setPage((current) => Math.max(1, current - 1))}
+              onNext={() => setPage((current) => current + 1)}
+            />
+          </section>
+        </div>
       </div>
     </PortalShell>
   );

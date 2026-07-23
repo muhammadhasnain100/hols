@@ -1,53 +1,19 @@
 "use client";
 
-import { getStoredUser } from "@/lib/integrate/auth/storage";
-
-function initialsFor(name: string) {
-  return (
-    name
-      .split(" ")
-      .map((part) => part[0])
-      .filter(Boolean)
-      .join("")
-      .slice(0, 2)
-      .toUpperCase() || "S"
-  );
-}
+import { WelcomeChip } from "@/components/platform/provider/student/WelcomeChip";
 
 type StudentPageHeaderProps = {
   title: string;
 };
 
 export function StudentPageHeader({ title }: StudentPageHeaderProps) {
-  const user = getStoredUser();
-  const firstName = typeof user?.profile?.first_name === "string" ? user.profile.first_name : "";
-  const lastName = typeof user?.profile?.last_name === "string" ? user.profile.last_name : "";
-  const displayName = firstName && lastName ? `${firstName} ${lastName}` : firstName || "Student";
-  const avatarSrc =
-    typeof user?.profile?.profile_pic === "string" ? user.profile.profile_pic : undefined;
-
   return (
-    <header className="mb-5 flex flex-wrap items-center justify-between gap-4">
-      <h1 className="font-sans text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl">
+    <header className="mb-3 flex flex-wrap items-center justify-between gap-2 sm:mb-5 sm:gap-4">
+      <h1 className="font-sans truncate text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl">
         {title}
       </h1>
 
-      <span className="dashboard-welcome-chip flex items-center gap-2.5 rounded-full py-1 pl-1 pr-3.5">
-        <span className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-full bg-[#DDE466] text-brand-caption font-semibold text-[#152744]">
-          {avatarSrc ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
-          ) : (
-            initialsFor(displayName)
-          )}
-        </span>
-        <span className="hidden flex-col leading-tight sm:flex">
-          <span className="text-[11px] text-[color:var(--dash-faint)]">Welcome back,</span>
-          <span className="font-sans text-sm font-semibold text-[color:var(--dash-text)]">
-            {displayName}
-          </span>
-        </span>
-      </span>
+      <WelcomeChip />
     </header>
   );
 }

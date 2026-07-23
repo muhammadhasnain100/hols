@@ -2,8 +2,10 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useGSAP } from "@gsap/react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
+import { LessonsWorkspaceSkeleton } from "@/components/platform/provider/student/DashboardSkeletons";
 import { CoursePageLayout } from "@/components/platform/provider/student/lectures/CoursePageLayout";
 import { LessonContentPanel } from "@/components/platform/provider/student/lectures/LessonContentPanel";
 import {
@@ -11,6 +13,7 @@ import {
   LessonLearningView,
 } from "@/components/platform/provider/student/lectures/LessonLearningView";
 import { ApiRequestError } from "@/lib/integrate/client";
+import { gsap, registerGsap } from "@/lib/gsap";
 import {
   getCachedLesson,
   getCourseBundle,
@@ -18,6 +21,7 @@ import {
   type CourseSummary,
   type LessonDetail,
 } from "@/lib/integrate/provider/student/lectures";
+import { prefersReducedMotion } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 type StudentLessonsWorkspaceProps = {
@@ -49,6 +53,7 @@ export function StudentLessonsWorkspace({
   selectedLessonId,
 }: StudentLessonsWorkspaceProps) {
   const router = useRouter();
+  const stageRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [course, setCourse] = useState<CourseSummary | null>(null);
@@ -174,6 +179,23 @@ export function StudentLessonsWorkspace({
     return () => window.clearTimeout(timer);
   }, [activeLesson, activeLessonId, courseId]);
 
+  useGSAP(
+    () => {
+      registerGsap();
+      if (prefersReducedMotion() || !stageRef.current || loading) return;
+      const index = stageRef.current.querySelector("[data-book-index]");
+      const page = stageRef.current.querySelector("[data-book-reading]");
+      const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
+      if (index) {
+        tl.fromTo(index, { opacity: 0, x: -16 }, { opacity: 1, x: 0, duration: 0.5 }, 0);
+      }
+      if (page) {
+        tl.fromTo(page, { opacity: 0, x: 20 }, { opacity: 1, x: 0, duration: 0.55 }, 0.08);
+      }
+    },
+    { dependencies: [loading, course?.course_id], scope: stageRef },
+  );
+
   function navigateLesson(lessonId: string) {
     setActiveLessonId(lessonId);
     router.replace(buildLessonsHref(courseId, lessonId, topicId, l1Name));
@@ -187,10 +209,6 @@ export function StudentLessonsWorkspace({
     setActiveLessonId(lessonId);
     router.push(buildLessonsHref(courseId, lessonId, topicId, l1Name));
   }
-
-  const heroDescription = course
-    ? `${filteredLessons.length} lesson${filteredLessons.length === 1 ? "" : "s"}${filterLabel ? ` · ${filterLabel}` : ""}`
-    : "Browse and open lessons.";
 
   const displayLesson = lessonDetail ?? activeLesson;
   const prevLesson = activeIndex > 0 ? filteredLessons[activeIndex - 1] : null;
@@ -212,151 +230,149 @@ export function StudentLessonsWorkspace({
       ) : null}
 
       <CoursePageLayout
-      title={course ? `Lessons · ${course.title}` : "Lessons"}
-      description={heroDescription}
-      courseId={courseId}
-      courseNavActive="lessons"
-      backHref={`/student/lectures/${courseId}`}
-      backLabel="Course overview"
-      heroActions={
-        <>
-          <Link
-            href={`/student/lectures/${courseId}`}
-            className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition"
-          >
-            Overview
-          </Link>
-          <Link
-            href={`/student/lectures/${courseId}/test-result`}
-            className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition"
-          >
-            Test results
-          </Link>
-          <Link
-            href="/student/calculator"
-            className="font-sans inline-flex min-h-10 items-center gap-1.5 rounded-full bg-[#DDE466] px-5 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105"
-          >
-            Calculator
-          </Link>
-        </>
-      }
-    >
-      {(topicId || l1Name) && (
-        <div className="dashboard-surface flex flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-3">
-          <p className="text-brand-body text-[color:var(--dash-muted)]">
-            Showing lessons for{" "}
-            <span className="font-medium text-[color:var(--dash-text)]">{filterLabel}</span>
-          </p>
-          <Link
-            href={`/student/lectures/${courseId}/lessons`}
-            className="dashboard-pill-soft font-sans inline-flex min-h-9 items-center gap-1 rounded-full px-4 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-muted)] transition hover:text-[color:var(--dash-text)]"
-          >
-            Clear filter
-          </Link>
-        </div>
-      )}
-
-      {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
-
-      {loading ? (
-        <div className="dashboard-surface rounded-2xl p-10 text-center">
-          <div className="mx-auto h-8 w-8 animate-pulse rounded-full bg-[color:var(--dash-soft)]" />
-          <p className="text-brand-body mt-3 text-[color:var(--dash-faint)]">Loading lessons…</p>
-        </div>
-      ) : filteredLessons.length === 0 ? (
-        <div className="dashboard-surface rounded-2xl p-10 text-center">
-          <p className="text-brand-body text-[color:var(--dash-faint)]">No lessons found.</p>
-          {(topicId || l1Name) && (
+        title={course ? course.title : "Lessons"}
+        description=""
+        courseId={courseId}
+        courseNavActive="lessons"
+        backHref={`/student/lectures/${courseId}`}
+        backLabel="Back to cover"
+        hideHero
+      >
+        {(topicId || l1Name) && (
+          <div className="course-book-filter mb-4 flex flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-3">
+            <p className="text-brand-body text-[color:var(--dash-muted)]">
+              Reading{" "}
+              <span className="font-medium text-[color:var(--dash-text)]">{filterLabel}</span>
+            </p>
             <Link
               href={`/student/lectures/${courseId}/lessons`}
-              className="dashboard-pill-soft font-sans mt-4 inline-flex min-h-10 items-center justify-center rounded-full px-5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition"
+              className="dashboard-pill-soft font-sans inline-flex min-h-9 items-center gap-1 rounded-full px-4 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-muted)] transition hover:text-[color:var(--dash-text)]"
             >
-              View all lessons
+              Show full volume
             </Link>
-          )}
-        </div>
-      ) : (
-        <div className="grid gap-4 lg:grid-cols-[minmax(240px,300px)_minmax(0,1fr)] lg:items-start">
-          <aside className="dashboard-surface flex flex-col rounded-2xl p-5 lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)]">
-            <div className="flex shrink-0 items-center justify-between gap-2">
-              <h2 className="font-sans text-lg font-semibold tracking-[0.005em] text-[color:var(--dash-text)]">
-                Lesson list
-              </h2>
-              <span className="text-brand-caption font-medium text-[color:var(--dash-accent)]">
-                {filteredLessons.length}
-              </span>
-            </div>
-            <p className="text-brand-caption mt-0.5 text-[color:var(--dash-faint)]">
-              {filterLabel ? filterLabel : "All lessons"}
-            </p>
+          </div>
+        )}
 
-            <div className="mt-4 shrink-0">
-              <LearningModeToggle
-                active={learningMode}
-                onToggle={() => setLearningMode((value) => !value)}
-                disabled={!displayLesson || detailLoading}
-              />
-            </div>
+        {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
 
-            <div className="mt-4 min-h-0 space-y-2.5 overflow-y-auto overscroll-contain [scrollbar-width:thin] lg:max-h-[calc(100dvh-14rem)]">
-              {filteredLessons.map((lesson, index) => {
-                const selected = lesson.lesson_id === activeLessonId;
-                return (
-                  <button
-                    key={lesson.lesson_id}
-                    type="button"
-                    onClick={() => selectLesson(lesson.lesson_id)}
-                    className={cn(
-                      "dashboard-row flex w-full items-center justify-between gap-3 rounded-xl px-3.5 py-3 text-left transition",
-                      selected && "bg-[color:var(--dash-soft)]",
-                    )}
-                    aria-current={selected ? "true" : undefined}
-                  >
-                    <div className="flex min-w-0 items-center gap-3">
+        {loading ? (
+          <LessonsWorkspaceSkeleton />
+        ) : filteredLessons.length === 0 ? (
+          <div className="course-book-page rounded-2xl p-10 text-center">
+            <p className="text-brand-body text-[color:var(--dash-faint)]">No lessons found.</p>
+            {(topicId || l1Name) && (
+              <Link
+                href={`/student/lectures/${courseId}/lessons`}
+                className="dashboard-pill-soft font-sans mt-4 inline-flex min-h-10 items-center justify-center rounded-full px-5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition"
+              >
+                View all lessons
+              </Link>
+            )}
+          </div>
+        ) : (
+          <div ref={stageRef} className="grid gap-4 lg:grid-cols-[minmax(220px,280px)_minmax(0,1fr)] lg:items-start">
+            <aside
+              data-book-index
+              className="course-book-index relative order-2 flex max-h-[min(42vh,22rem)] flex-col overflow-hidden rounded-2xl lg:order-1 lg:sticky lg:top-4 lg:max-h-[calc(100dvh-2rem)]"
+            >
+              <div className="course-book-index-spine pointer-events-none absolute inset-y-0 left-0 w-2.5" aria-hidden />
+              <div className="relative flex shrink-0 flex-col gap-3 border-b border-[color:var(--dash-surface-border)] px-4 py-4 pl-5 sm:px-5 sm:pl-6">
+                <div>
+                  <p className="text-brand-caption font-semibold uppercase tracking-[0.14em] text-[color:var(--dash-faint)]">
+                    Index
+                  </p>
+                  <h2 className="font-sans mt-1 text-lg font-semibold tracking-[0.005em] text-[color:var(--dash-text)]">
+                    {course?.title ?? "Lessons"}
+                  </h2>
+                  <p className="text-brand-caption mt-1 text-[color:var(--dash-muted)]">
+                    {filteredLessons.length} page{filteredLessons.length === 1 ? "" : "s"}
+                    {filterLabel ? ` · ${filterLabel}` : ""}
+                  </p>
+                </div>
+                <LearningModeToggle
+                  active={learningMode}
+                  onToggle={() => setLearningMode((value) => !value)}
+                  disabled={!displayLesson || detailLoading}
+                />
+              </div>
+
+              <div className="relative min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain p-3 pl-4 [scrollbar-width:thin] sm:pl-5">
+                {filteredLessons.map((lesson, index) => {
+                  const selected = lesson.lesson_id === activeLessonId;
+                  return (
+                    <button
+                      key={lesson.lesson_id}
+                      type="button"
+                      onClick={() => selectLesson(lesson.lesson_id)}
+                      className={cn(
+                        "lesson-index-row group flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left",
+                        selected
+                          ? "bg-[color:var(--dash-soft)] shadow-[inset_3px_0_0_0_#DDE466]"
+                          : "hover:bg-[color:var(--dash-soft)]",
+                      )}
+                      aria-current={selected ? "true" : undefined}
+                    >
                       <span
                         className={cn(
-                          "flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-sm font-semibold",
+                          "lesson-index-badge mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-xs font-semibold tabular-nums",
                           selected
                             ? "bg-[#DDE466] text-[#152744]"
                             : "bg-[#DDE466]/15 text-[color:var(--dash-accent)]",
                         )}
                       >
-                        {index + 1}
+                        {selected ? (
+                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
+                            <path d="M20 6 9 17l-5-5" />
+                          </svg>
+                        ) : (
+                          index + 1
+                        )}
                       </span>
-                      <p className="font-sans line-clamp-2 text-sm font-medium text-[color:var(--dash-text)]">
-                        {lesson.title}
-                      </p>
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </aside>
-
-          <main className="min-w-0">
-            {displayLesson ? (
-              <LessonContentPanel
-                lesson={displayLesson}
-                detailLoading={detailLoading}
-                currentIndex={activeIndex >= 0 ? activeIndex + 1 : null}
-                total={filteredLessons.length}
-                prevLessonId={prevLesson?.lesson_id ?? null}
-                nextLessonId={nextLesson?.lesson_id ?? null}
-                courseId={courseId}
-                topicId={topicId}
-                l1Name={l1Name}
-              />
-            ) : (
-              <div className="dashboard-surface rounded-2xl p-10 text-center">
-                <p className="text-brand-body text-[color:var(--dash-faint)]">
-                  Select a lesson from the list to view content.
-                </p>
+                      <span className="min-w-0 flex-1">
+                        <span
+                          className={cn(
+                            "font-sans line-clamp-2 text-sm font-medium leading-snug text-[color:var(--dash-text)]",
+                            selected && "text-[color:var(--dash-accent)]",
+                          )}
+                        >
+                          {lesson.title}
+                        </span>
+                        {lesson.l2_name ? (
+                          <span className="text-brand-caption mt-0.5 block line-clamp-1 text-[color:var(--dash-faint)]">
+                            {lesson.l2_name}
+                          </span>
+                        ) : null}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
-            )}
-          </main>
-        </div>
-      )}
-    </CoursePageLayout>
+            </aside>
+
+            <main data-book-reading className="order-1 min-w-0 lg:order-2">
+              {displayLesson ? (
+                <LessonContentPanel
+                  lesson={displayLesson}
+                  detailLoading={detailLoading}
+                  currentIndex={activeIndex >= 0 ? activeIndex + 1 : null}
+                  total={filteredLessons.length}
+                  prevLessonId={prevLesson?.lesson_id ?? null}
+                  nextLessonId={nextLesson?.lesson_id ?? null}
+                  courseId={courseId}
+                  topicId={topicId}
+                  l1Name={l1Name}
+                />
+              ) : (
+                <div className="course-book-page rounded-2xl p-10 text-center">
+                  <p className="text-brand-body text-[color:var(--dash-faint)]">
+                    Select a page from the index to begin reading.
+                  </p>
+                </div>
+              )}
+            </main>
+          </div>
+        )}
+      </CoursePageLayout>
     </>
   );
 }

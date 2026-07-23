@@ -1,6 +1,12 @@
 import type { Metadata } from "next";
+import { cookies } from "next/headers";
 import { DM_Sans, Outfit } from "next/font/google";
 import { BrandStyles } from "@/components/BrandStyles";
+import {
+  parsePortalTheme,
+  PORTAL_THEME_BOOTSTRAP_SCRIPT,
+  PORTAL_THEME_COOKIE,
+} from "@/components/platform/provider/portal-theme";
 import { brand } from "@/config/brand";
 import "./globals.css";
 
@@ -26,17 +32,25 @@ export const metadata: Metadata = {
   description: brand.description,
 };
 
-export default function RootLayout({
+export default async function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const jar = await cookies();
+  const portalTheme = parsePortalTheme(jar.get(PORTAL_THEME_COOKIE)?.value) ?? "dark";
+
   return (
     <html
       lang="en"
+      data-portal-theme={portalTheme}
+      suppressHydrationWarning
       className={`${primaryFont.variable} ${secondaryFont.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col">
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: PORTAL_THEME_BOOTSTRAP_SCRIPT }} />
+      </head>
+      <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <BrandStyles />
         {children}
       </body>

@@ -12,7 +12,12 @@ function RegisterFormFallback() {
 
 export default function RegisterPage() {
   return (
-    <AuthShell eyebrow="Sign up" title="Create account" contentWidth="md">
+    <AuthShell
+      eyebrow="Sign up"
+      title="Create account"
+      subtitle="Join HOLS to access courses, tools, and your learning portal."
+      contentWidth="md"
+    >
       <Suspense fallback={<RegisterFormFallback />}>
         <RegisterForm />
       </Suspense>

@@ -8,6 +8,7 @@ import { CreatePatientDialog } from "@/components/platform/provider/student/advi
 import { IntakeOnboardingDialog } from "@/components/platform/provider/student/adviser/IntakeOnboardingDialog";
 import { INTAKE_STAGES } from "@/components/platform/provider/student/adviser/IntakeWizard";
 import { PatientListPanel } from "@/components/platform/provider/student/adviser/PatientListPanel";
+import { AdviserHubPageSkeleton } from "@/components/platform/provider/student/DashboardSkeletons";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
   ACTIVE_PATIENT_STORAGE_KEY,
@@ -102,6 +103,7 @@ export function StudentPeptideAdviserHubPage() {
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [createDialogError, setCreateDialogError] = useState<string | null>(null);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
+  const [loading, setLoading] = useState(true);
 
   const refreshPatients = useCallback(async () => {
     const result = await listPatients();
@@ -134,6 +136,7 @@ export function StudentPeptideAdviserHubPage() {
           setInfo(cached.info);
           setFlow(cached.flow);
           setPatients(cached.patients);
+          setLoading(false);
           if (cached.active_patient && !cached.active_patient.recommendation) {
             openOnboarding(cached.active_patient);
           }
@@ -159,6 +162,8 @@ export function StudentPeptideAdviserHubPage() {
             ? err.message
             : "Could not connect to the peptide adviser service.",
         );
+      } finally {
+        if (!cancelled) setLoading(false);
       }
     }
 
@@ -313,48 +318,65 @@ export function StudentPeptideAdviserHubPage() {
 
       {loadError ? (
         <AuthAlert variant="error">{loadError}</AuthAlert>
+      ) : loading ? (
+        <AdviserHubPageSkeleton />
       ) : (
         <>
-          <section className="dashboard-hero relative overflow-hidden rounded-2xl p-5 md:p-6">
-            <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
-              Clinical adviser
-            </p>
-            <div className="mt-2 flex flex-wrap items-end gap-2">
-              <span className="font-sans text-2xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] md:text-[2.25rem] md:leading-none">
-                Peptide adviser
-              </span>
-              <span className="mb-1 text-brand-caption font-medium text-[color:var(--dash-faint)]">
-                {info ? "System online" : "Connecting…"}
-              </span>
-            </div>
-            <p className="text-brand-body mt-2 max-w-2xl text-[color:var(--dash-muted)]">
-              Create a patient to start structured intake. Onboarding progress opens in a popup —
-              patients with a recommendation open directly in chat.
-            </p>
-            <div className="mt-5 flex flex-wrap gap-2.5">
-              <button
-                type="button"
-                onClick={openCreateDialog}
-                disabled={isCreating}
-                className="font-sans inline-flex min-h-10 items-center gap-1.5 rounded-full bg-[#DDE466] px-5 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60"
-              >
-                {isCreating ? "Creating…" : "New patient"}
-              </button>
-              {activePatient && !activePatient.recommendation ? (
+          <section className="dashboard-hero relative min-w-0 overflow-hidden rounded-2xl p-3.5 sm:p-5 md:p-6">
+            <div className="flex min-w-0 flex-col gap-3 sm:gap-4 md:flex-row md:items-end md:justify-between md:gap-5">
+              <div className="min-w-0">
+                <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
+                  Clinical adviser
+                </p>
+                <div className="mt-1.5 flex flex-wrap items-end gap-x-2 gap-y-1 sm:mt-2">
+                  <span className="font-sans text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl md:text-[2.25rem] md:leading-none">
+                    Peptide Adviser
+                  </span>
+                  <span
+                    className={
+                      info
+                        ? "mb-0.5 inline-flex rounded-full bg-[#DDE466]/25 px-2.5 py-0.5 text-brand-caption font-semibold text-[color:var(--dash-accent)]"
+                        : "mb-0.5 inline-flex rounded-full bg-[color:var(--dash-soft)] px-2.5 py-0.5 text-brand-caption font-semibold text-[color:var(--dash-faint)]"
+                    }
+                  >
+                    {info ? "Online" : "Connecting"}
+                  </span>
+                </div>
+                <p className="text-brand-body mt-1.5 max-w-2xl text-sm text-[color:var(--dash-muted)] sm:mt-2 sm:text-base">
+                  Create a patient to start structured intake. Drafts continue in onboarding;
+                  completed cases open directly in chat.
+                </p>
+              </div>
+
+              <div className="flex w-full shrink-0 flex-col gap-2 min-[420px]:flex-row sm:w-auto sm:flex-wrap sm:gap-2.5">
                 <button
                   type="button"
-                  onClick={() => setOnboardingOpen(true)}
-                  className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center gap-1.5 rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] transition"
+                  onClick={openCreateDialog}
+                  disabled={isCreating}
+                  className="font-sans inline-flex min-h-10 w-full items-center justify-center rounded-full bg-[#DDE466] px-4 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60 min-[420px]:w-auto sm:px-5"
                 >
-                  Continue onboarding · {activePatient.display_name}
+                  {isCreating ? "Creating…" : "New patient"}
                 </button>
-              ) : null}
+                {activePatient && !activePatient.recommendation ? (
+                  <button
+                    type="button"
+                    onClick={() => setOnboardingOpen(true)}
+                    className="dashboard-pill-soft font-sans inline-flex min-h-10 w-full min-w-0 items-center justify-center truncate rounded-full px-4 text-sm font-medium text-[color:var(--dash-text)] transition min-[420px]:max-w-[16rem] min-[420px]:w-auto sm:max-w-none sm:px-5"
+                  >
+                    <span className="truncate">Continue · {activePatient.display_name}</span>
+                  </button>
+                ) : (
+                  <span className="dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center rounded-full px-4 text-sm font-medium text-[color:var(--dash-muted)] min-[420px]:w-auto sm:px-5">
+                    {patients.length} {patients.length === 1 ? "patient" : "patients"}
+                  </span>
+                )}
+              </div>
             </div>
           </section>
 
           {actionError && !onboardingOpen ? <AuthAlert variant="error">{actionError}</AuthAlert> : null}
 
-          <div className="grid gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(16rem,0.8fr)]">
+          <div className="grid min-w-0 gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(14rem,0.8fr)]">
             <PatientListPanel
               patients={patients}
               activePatientId={activePatient?.patient_id ?? null}
@@ -369,35 +391,37 @@ export function StudentPeptideAdviserHubPage() {
               }
             />
 
-            <aside className="dashboard-surface rounded-2xl p-5">
+            <aside className="dashboard-surface order-last min-w-0 rounded-2xl p-3.5 sm:p-5 lg:order-none">
               <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
                 System status
               </p>
-              <div className="mt-4 space-y-3">
+              <div className="mt-3 space-y-3 sm:mt-4">
                 <div className="flex items-center justify-between gap-2 text-brand-caption text-[color:var(--dash-muted)]">
                   <span>Service</span>
-                  <span className="font-semibold text-emerald-600">
+                  <span className="font-semibold text-[color:var(--dash-accent)]">
                     {info ? "Online" : "Connecting…"}
                   </span>
                 </div>
                 <div className="flex items-center justify-between gap-2 text-brand-caption text-[color:var(--dash-muted)]">
                   <span>Knowledge base</span>
-                  <span>{vectors != null ? `${vectors.toLocaleString()} vectors` : "—"}</span>
+                  <span className="text-[color:var(--dash-text)]">
+                    {vectors != null ? `${vectors.toLocaleString()} vectors` : "—"}
+                  </span>
                 </div>
                 {info ? (
                   <div className="flex items-center justify-between gap-2 text-brand-caption text-[color:var(--dash-muted)]">
                     <span>Model</span>
-                    <span className="truncate text-right text-[color:var(--dash-text)]">
+                    <span className="max-w-[55%] truncate text-right text-[color:var(--dash-text)]">
                       {info.chat_model}
                     </span>
                   </div>
                 ) : null}
               </div>
 
-              <div className="mt-5 rounded-xl bg-[color:var(--dash-soft)] px-3.5 py-3">
+              <div className="mt-4 rounded-xl bg-[color:var(--dash-soft)] px-3.5 py-3 sm:mt-5">
                 <p className="text-brand-caption text-[color:var(--dash-muted)]">
-                  Select a draft patient to resume onboarding in the popup, or open a completed
-                  case to continue in chat.
+                  Select a draft patient to resume onboarding, or open a completed case to continue
+                  in chat.
                 </p>
               </div>
             </aside>

@@ -4,7 +4,7 @@ import {
   WhatYouGetSection,
   PillarsSection,
   WhoItsForSection,
-  CertificationSection,
+  // CertificationSection,
   FAQsSection,
   FinalCTASection,
 } from "@/components/landing";
@@ -12,7 +12,7 @@ import {
 export const metadata = {
   title: "House of Life Sciences | Run peptides in your clinic with confidence",
   description:
-    "Train your team, keep dosing right, and hand patients branded materials — without becoming the peptide expert yourself.",
+    "Get your whole team trained, keep the dosing right, and give patients clean, branded materials — without becoming the peptide expert yourself.",
 };
 
 export default function HomePage() {
@@ -24,7 +24,8 @@ export default function HomePage() {
       <PillarsSection />
       <WhoItsForSection />
       <FAQsSection />
-      <CertificationSection />
+      {/* Temporarily hidden — re-enable when ready */}
+      {/* <CertificationSection /> */}
       <FinalCTASection />
     </>
   );

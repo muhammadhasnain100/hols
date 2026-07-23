@@ -156,18 +156,18 @@ export function affiliateQuotaLabel(profile: AffiliateProfile | null) {
 }
 
 export function affiliateInviteLink(profile: AffiliateProfile | null) {
-  if (!profile?.invite_code) return "";
-  if (typeof window === "undefined") return `/signup?ref=${profile.invite_code}`;
-  return `${window.location.origin}/signup?ref=${profile.invite_code}`;
+  if (!profile?.user_id) return "";
+  const params = new URLSearchParams({ affiliate_id: profile.user_id });
+  if (profile.invite_code) params.set("ref", profile.invite_code);
+  const path = `/signup?${params.toString()}`;
+  if (typeof window === "undefined") return path;
+  return `${window.location.origin}${path}`;
 }
 
 export function useAffiliateProfile() {
-  const cached =
-    (getCachedAffiliateProfile()?.profile as AffiliateProfile | undefined) ??
-    storedAffiliateProfileFallback();
-  const [profile, setProfile] = useState<AffiliateProfile | null>(cached);
+  const [profile, setProfile] = useState<AffiliateProfile | null>(null);
   const [inviteInfo, setInviteInfo] = useState<AffiliateInviteUrl | null>(null);
-  const [refreshing, setRefreshing] = useState(!cached);
+  const [refreshing, setRefreshing] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const applyProfile = useCallback((nextProfile: AffiliateProfile) => {
@@ -179,8 +179,17 @@ export function useAffiliateProfile() {
     const controller = new AbortController();
 
     async function load() {
+      // Seed from cache/storage only after mount so SSR and client first paint match.
+      const cached =
+        (getCachedAffiliateProfile()?.profile as AffiliateProfile | undefined) ??
+        storedAffiliateProfileFallback();
+      if (cached) {
+        applyProfile(cached);
+        setRefreshing(false);
+      } else {
+        setRefreshing(true);
+      }
       setError(null);
-      if (!cached) setRefreshing(true);
 
       try {
         const [profileResult, inviteResult] = await Promise.allSettled([
@@ -209,7 +218,6 @@ export function useAffiliateProfile() {
 
     void load();
     return () => controller.abort();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [applyProfile]);
 
   const inviteLink = useMemo(

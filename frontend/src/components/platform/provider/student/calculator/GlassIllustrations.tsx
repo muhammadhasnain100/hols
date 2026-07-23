@@ -8,7 +8,7 @@ export function GlassSyringe({
   fillRatio = 0.45,
   className,
   label,
-  active = false,
+  active: _active = false,
 }: {
   fillRatio?: number;
   className?: string;
@@ -23,8 +23,7 @@ export function GlassSyringe({
   return (
     <div
       className={cn(
-        "relative flex flex-col items-center transition duration-500",
-        active && "scale-[1.04]",
+        "relative flex flex-col items-center",
         className,
       )}
     >
@@ -79,7 +78,7 @@ export function GlassSyringe({
       </svg>
 
       {label ? (
-        <p className="mt-2 max-w-[11rem] text-center text-[11px] font-medium text-primary/55">
+        <p className="mt-2 max-w-[11rem] text-center text-[11px] font-medium text-[color:var(--dash-muted)]">
           {label}
         </p>
       ) : null}
@@ -92,7 +91,7 @@ export function GlassVial({
   fillRatio = 0.75,
   variant = "teal",
   powder = false,
-  active = false,
+  active: _active = false,
   label,
   className,
 }: {
@@ -111,8 +110,7 @@ export function GlassVial({
   return (
     <div
       className={cn(
-        "relative flex flex-col items-center transition duration-500",
-        active && "scale-105",
+        "relative flex flex-col items-center",
         className,
       )}
     >
@@ -132,7 +130,6 @@ export function GlassVial({
           </clipPath>
         </defs>
 
-        {active ? <circle cx="60" cy="118" r="56" fill="#9ED6D4" opacity="0.12" /> : null}
         <rect x="24" y="56" width="72" height="14" rx="5" fill="#F7FCFC" stroke="#153238" strokeWidth="4" />
         <path
           d="M32 70 Q32 80 24 88 L24 157 Q24 170 37 170 H83 Q96 170 96 157 V88 Q88 80 88 70 Z"
@@ -173,7 +170,7 @@ export function GlassVial({
       </svg>
 
       {label ? (
-        <p className="mt-1.5 max-w-[7.5rem] text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-primary/50">
+        <p className="mt-1.5 max-w-[7.5rem] text-center text-[10px] font-semibold uppercase tracking-[0.12em] text-[color:var(--dash-muted)]">
           {label}
         </p>
       ) : null}
