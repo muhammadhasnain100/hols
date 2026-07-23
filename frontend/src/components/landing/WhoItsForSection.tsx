@@ -255,6 +255,9 @@ export function WhoItsForSection() {
       const pinWrap = pinWrapRef.current;
       if (!pinWrap) return;
 
+      // Prevent duplicate pins if this effect re-runs (Strict Mode / refresh).
+      ScrollTrigger.getById("who-its-for-timeline")?.kill();
+
       const slides = gsap.utils.toArray<HTMLElement>(
         pinWrap.querySelectorAll("[data-wif-slide]"),
       );
@@ -280,6 +283,9 @@ export function WhoItsForSection() {
         if (dots.length > 0) gsap.set(dots, { autoAlpha: 0, scale: 0.4 });
       });
 
+      let lastIndex = 0;
+      setActiveIndex(0);
+
       const timeline = gsap.timeline({
         scrollTrigger: {
           id: "who-its-for-timeline",
@@ -296,6 +302,8 @@ export function WhoItsForSection() {
               slides.length - 1,
               Math.round(self.progress * (slides.length - 1)),
             );
+            if (index === lastIndex) return;
+            lastIndex = index;
             setActiveIndex(index);
           },
         },
@@ -360,6 +368,12 @@ export function WhoItsForSection() {
       timeline.to({}, { duration: 0.3 });
 
       requestAnimationFrame(() => ScrollTrigger.refresh());
+
+      return () => {
+        timeline.scrollTrigger?.kill();
+        timeline.kill();
+        ScrollTrigger.getById("who-its-for-timeline")?.kill();
+      };
     },
     { scope: sectionRef, dependencies: [reduceMotion, slideCount] },
   );

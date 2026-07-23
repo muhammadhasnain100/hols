@@ -574,7 +574,7 @@ export function PillarsSection() {
     <section
       ref={sectionRef}
       id="everything-inside"
-      className="flex min-h-svh w-full flex-col justify-center bg-[#E5E5E5] py-10 sm:py-12 md:py-14 lg:py-16"
+      className="relative z-0 flex min-h-svh w-full flex-col justify-center bg-[#E5E5E5] py-10 sm:py-12 md:py-14 lg:py-16"
     >
       <div className={cn("flex w-full flex-col", heroLayout.gutterX)}>
         <div className="w-full max-w-3xl text-left lg:max-w-4xl">

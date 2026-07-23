@@ -1,7 +1,12 @@
 "use client";
 
 import Image from "next/image";
-import { useState, type ReactNode } from "react";
+import {
+  useLayoutEffect,
+  useRef,
+  useState,
+  type ReactNode,
+} from "react";
 import { landingContent } from "@/content/landing";
 import { brand } from "@/config/brand";
 import { cn } from "@/lib/utils";
@@ -11,11 +16,91 @@ const NAVY = "#0B1F3A";
 const PANEL = "#122845";
 const PANEL_2 = "#163052";
 
-/** Locked to dashboard frame — never reflows when switching portal pages. */
+/** Locked desktop frame — never reflows when switching portal pages. */
 export const HOOK_PORTAL_SIZE = {
   width: 400,
   height: 288,
 } as const;
+
+/**
+ * Desktop: exact 400×288 slot (no scale).
+ * Mobile (`responsive`): scales the locked frame down to fit container width.
+ */
+export function HookPortalShell({
+  children,
+  className,
+  responsive = false,
+}: {
+  children: ReactNode;
+  className?: string;
+  responsive?: boolean;
+}) {
+  const wrapRef = useRef<HTMLDivElement>(null);
+  const [scale, setScale] = useState(1);
+
+  useLayoutEffect(() => {
+    if (!responsive) return;
+    const el = wrapRef.current;
+    if (!el) return;
+
+    const update = () => {
+      const w = el.clientWidth;
+      if (w <= 0) return;
+      const next = Math.min(1, w / HOOK_PORTAL_SIZE.width);
+      setScale((prev) => (Math.abs(prev - next) < 0.001 ? prev : next));
+    };
+
+    update();
+    const ro = new ResizeObserver(update);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [responsive]);
+
+  // Remeasure hook wires after scale settles (fixed child size won't fire ResizeObserver).
+  // Debounce so we don't thrash ScrollTrigger / sibling landing sections.
+  useLayoutEffect(() => {
+    if (!responsive) return;
+    const id = window.setTimeout(() => {
+      window.dispatchEvent(new Event("hook-path-sync"));
+    }, 50);
+    return () => window.clearTimeout(id);
+  }, [responsive, scale]);
+
+  if (!responsive) {
+    return (
+      <div
+        className={cn("relative shrink-0", className)}
+        style={{
+          width: HOOK_PORTAL_SIZE.width,
+          height: HOOK_PORTAL_SIZE.height,
+          minWidth: HOOK_PORTAL_SIZE.width,
+          minHeight: HOOK_PORTAL_SIZE.height,
+        }}
+      >
+        {children}
+      </div>
+    );
+  }
+
+  return (
+    <div
+      ref={wrapRef}
+      className={cn("relative w-full max-w-[400px] shrink-0", className)}
+      style={{ height: HOOK_PORTAL_SIZE.height * scale }}
+    >
+      <div
+        className="origin-top-left will-change-transform"
+        style={{
+          width: HOOK_PORTAL_SIZE.width,
+          height: HOOK_PORTAL_SIZE.height,
+          transform: `scale(${scale})`,
+        }}
+      >
+        {children}
+      </div>
+    </div>
+  );
+}
 
 const NAV_ICONS: Record<string, ReactNode> = {
   dashboard: (

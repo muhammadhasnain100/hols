@@ -21,6 +21,7 @@ export default function HomePage() {
       <HeroSection />
       <HookSection />
       <WhatYouGetSection />
+      {/* Six Pillars — must stay between What You Get and Who It's For */}
       <PillarsSection />
       <WhoItsForSection />
       <FAQsSection />

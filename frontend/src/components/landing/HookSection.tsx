@@ -11,7 +11,11 @@ import {
 import { useGSAP } from "@gsap/react";
 import { HeroButton } from "@/components/hero/HeroButton";
 import { HookHolsBall } from "@/components/landing/HookHolsBall";
-import { HookInteractiveDashboard, HOOK_PORTAL_SIZE } from "@/components/landing/HookInteractiveDashboard";
+import {
+  HookInteractiveDashboard,
+  HookPortalShell,
+  HOOK_PORTAL_SIZE,
+} from "@/components/landing/HookInteractiveDashboard";
 import {
   HookScatteredCard,
   HookScatteredCardInline,
@@ -684,18 +688,10 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
         {/* 4 · Flexible gap for ball → dashboard line */}
         <div aria-hidden className="h-full w-full" />
 
-        {/* 5 · Dashboard — fixed pixel frame so page switches never reflow geometry */}
-        <div
-          className="relative z-10 shrink-0 justify-self-center self-center"
-          style={{
-            width: HOOK_PORTAL_SIZE.width,
-            height: HOOK_PORTAL_SIZE.height,
-            minWidth: HOOK_PORTAL_SIZE.width,
-            minHeight: HOOK_PORTAL_SIZE.height,
-          }}
-        >
+        {/* 5 · Dashboard — desktop keeps locked 400×288 (no responsive scale) */}
+        <HookPortalShell className="relative z-10 justify-self-center self-center">
           <DashboardMockup innerRef={(n) => (dashRef.current = n)} className="opacity-0" />
-        </div>
+        </HookPortalShell>
 
         {/* 6 · Flexible gap for dashboard → CTA line */}
         <div aria-hidden className="h-full w-full" />
@@ -920,17 +916,9 @@ function MobileFlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
         {/* Room for short stem + arrowhead into dashboard chrome */}
         <div aria-hidden className="h-14 w-full sm:h-16" />
 
-        <div
-          className="relative z-10 shrink-0"
-          style={{
-            width: HOOK_PORTAL_SIZE.width,
-            height: HOOK_PORTAL_SIZE.height,
-            minWidth: HOOK_PORTAL_SIZE.width,
-            minHeight: HOOK_PORTAL_SIZE.height,
-          }}
-        >
+        <HookPortalShell responsive className="relative z-10">
           <DashboardMockup innerRef={(n) => (dashRef.current = n)} className="opacity-0" />
-        </div>
+        </HookPortalShell>
 
         {/* Room for short branch stem + arrowhead into Explore Courses */}
         <div aria-hidden className="h-14 w-full sm:h-16" />
@@ -979,17 +967,9 @@ function HookStatic() {
             <span className={HOOK_CAPSULE_CLASS}>
               {hook.structuredLabel}
             </span>
-            <div
-              className="shrink-0"
-              style={{
-                width: HOOK_PORTAL_SIZE.width,
-                height: HOOK_PORTAL_SIZE.height,
-                minWidth: HOOK_PORTAL_SIZE.width,
-                minHeight: HOOK_PORTAL_SIZE.height,
-              }}
-            >
+            <HookPortalShell responsive>
               <DashboardMockup />
-            </div>
+            </HookPortalShell>
             <HeroButton href={hook.cta.href} variant="primary" className="px-8">
               {hook.cta.label}
             </HeroButton>
@@ -1007,8 +987,16 @@ export function HookSection() {
   const [reduceMotion, setReduceMotion] = useState(false);
   const [desktopReady, setDesktopReady] = useState(false);
   const [mobileReady, setMobileReady] = useState(false);
-  const markDesktopReady = useCallback(() => setDesktopReady(true), []);
-  const markMobileReady = useCallback(() => setMobileReady(true), []);
+  const markDesktopReady = useCallback(() => {
+    if (typeof window !== "undefined" && window.matchMedia("(min-width: 1024px)").matches) {
+      setDesktopReady(true);
+    }
+  }, []);
+  const markMobileReady = useCallback(() => {
+    if (typeof window !== "undefined" && window.matchMedia("(max-width: 1023px)").matches) {
+      setMobileReady(true);
+    }
+  }, []);
 
   useEffect(() => {
     setReduceMotion(prefersReducedMotion());
