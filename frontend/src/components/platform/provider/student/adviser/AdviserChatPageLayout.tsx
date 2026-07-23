@@ -40,9 +40,9 @@ export function AdviserChatPageLayout({ patientName, children }: AdviserChatPage
               <Link
                 href="/student/adviser"
                 aria-label="Back to Peptide Adviser"
-                className="dashboard-icon-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-0 bg-[#DDE466] text-[#152744] transition hover:brightness-105"
               >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <path d="M15 18l-6-6 6-6" />
                 </svg>
               </Link>
