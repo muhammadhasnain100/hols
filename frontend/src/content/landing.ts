@@ -285,7 +285,6 @@ export const landingContent = {
     ],
   },
   finalCta: {
-    eyebrow: "The HOLS Approach",
     headline: "Clinics go further when they practice with confidence.",
     headlineAccent: "with confidence",
     image: "/assets/ball/ball.png",
