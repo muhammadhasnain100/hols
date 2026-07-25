@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type RefObject } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap, registerGsap, ScrollTrigger } from "@/lib/gsap";
 import { landingContent } from "@/content/landing";
@@ -33,10 +33,10 @@ function StepCapsule({ step }: { step: number }) {
 }
 
 function ScrollProgressLine({
-  progress,
+  fillRef,
   className,
 }: {
-  progress: number;
+  fillRef: RefObject<HTMLDivElement | null>;
   className?: string;
 }) {
   return (
@@ -47,10 +47,8 @@ function ScrollProgressLine({
       )}
       aria-hidden
     >
-      <div
-        className="h-full bg-white/70 transition-[width] duration-300 ease-out"
-        style={{ width: `${Math.max(8, progress * 100)}%` }}
-      />
+      {/* Width driven by ScrollTrigger onUpdate — no CSS transition / React thrash */}
+      <div ref={fillRef} className="h-full w-[8%] bg-white/70" />
     </div>
   );
 }
@@ -237,10 +235,9 @@ export function WhoItsForSection() {
 
   const sectionRef = useRef<HTMLElement>(null);
   const pinWrapRef = useRef<HTMLDivElement>(null);
+  const progressFillRef = useRef<HTMLDivElement>(null);
 
   const slideCount = whoItsFor.slides.length;
-  const progress =
-    slideCount <= 1 ? 1 : activeIndex / Math.max(slideCount - 1, 1);
 
   useEffect(() => {
     setReduceMotion(prefersReducedMotion());
@@ -264,12 +261,13 @@ export function WhoItsForSection() {
 
       if (slides.length === 0) return;
 
+      // Extra scroll room so each crossfade can breathe (matches Hook feel).
       const scrollDistance = () =>
-        window.innerHeight * Math.max(slides.length, 1) * 0.9;
+        window.innerHeight * Math.max(slides.length, 1) * 1.55;
 
-      // Own the visibility on the slide wrappers so React re-renders
+      // Own visibility on slide wrappers so React re-renders
       // (step capsule / progress) cannot fight the timeline.
-      gsap.set(slides, { autoAlpha: 0, y: 28 });
+      gsap.set(slides, { autoAlpha: 0, y: 14 });
       gsap.set(slides[0], { autoAlpha: 1, y: 0 });
 
       slides.forEach((slide) => {
@@ -279,12 +277,15 @@ export function WhoItsForSection() {
         const dots = gsap.utils.toArray<HTMLElement>(
           slide.querySelectorAll("[data-wif-dot]"),
         );
-        if (bullets.length > 0) gsap.set(bullets, { autoAlpha: 0, y: 16 });
-        if (dots.length > 0) gsap.set(dots, { autoAlpha: 0, scale: 0.4 });
+        if (bullets.length > 0) gsap.set(bullets, { autoAlpha: 0, y: 10 });
+        if (dots.length > 0) gsap.set(dots, { autoAlpha: 0, scale: 0.55 });
       });
 
       let lastIndex = 0;
       setActiveIndex(0);
+      if (progressFillRef.current) {
+        progressFillRef.current.style.width = "8%";
+      }
 
       const timeline = gsap.timeline({
         scrollTrigger: {
@@ -294,10 +295,16 @@ export function WhoItsForSection() {
           end: () => `+=${scrollDistance()}`,
           pin: pinWrap,
           pinSpacing: true,
-          scrub: 0.85,
+          // Same scrub lag as Hook / What You Get — eases toward scroll, no snap.
+          scrub: 1.8,
           anticipatePin: 1,
           invalidateOnRefresh: true,
           onUpdate: (self) => {
+            const fill = progressFillRef.current;
+            if (fill) {
+              fill.style.width = `${Math.max(8, self.progress * 100)}%`;
+            }
+
             const index = Math.min(
               slides.length - 1,
               Math.round(self.progress * (slides.length - 1)),
@@ -309,8 +316,11 @@ export function WhoItsForSection() {
         },
       });
 
+      // Long overlapping beats so slide changes feel continuous, not stepped.
+      const beat = 1.35;
+
       slides.forEach((slide, index) => {
-        const start = index;
+        const t = index * beat;
         const bullets = gsap.utils.toArray<HTMLElement>(
           slide.querySelectorAll("[data-wif-bullet]"),
         );
@@ -319,53 +329,95 @@ export function WhoItsForSection() {
         );
 
         if (index === 0) {
-          timeline.to(slide, { autoAlpha: 1, y: 0, duration: 0.35 }, 0);
+          timeline.to(
+            slide,
+            { autoAlpha: 1, y: 0, duration: 0.85, ease: "power1.out" },
+            0,
+          );
         } else {
+          // Start incoming early so it crossfades with the outgoing slide.
           timeline.fromTo(
             slide,
-            { autoAlpha: 0, y: 28 },
-            { autoAlpha: 1, y: 0, duration: 0.5, ease: "power2.out" },
-            start,
+            { autoAlpha: 0, y: 14 },
+            {
+              autoAlpha: 1,
+              y: 0,
+              duration: 1.05,
+              ease: "power1.out",
+            },
+            t - 0.4,
           );
         }
 
         if (bullets.length > 0) {
+          const bulletAt = index === 0 ? 0.12 : t - 0.22;
           timeline.fromTo(
             bullets,
-            { autoAlpha: 0, y: 16 },
+            { autoAlpha: 0, y: 10 },
             {
               autoAlpha: 1,
               y: 0,
-              duration: 0.35,
+              duration: 0.7,
               stagger: 0.12,
-              ease: "power2.out",
+              ease: "power1.out",
             },
-            start + 0.12,
+            bulletAt,
           );
           timeline.fromTo(
             dots,
-            { autoAlpha: 0, scale: 0.4 },
+            { autoAlpha: 0, scale: 0.55 },
             {
               autoAlpha: 1,
               scale: 1,
-              duration: 0.3,
+              duration: 0.65,
               stagger: 0.12,
-              ease: "back.out(2)",
+              ease: "power1.out",
             },
-            start + 0.2,
+            bulletAt + 0.08,
           );
         }
 
         if (index < slides.length - 1) {
           timeline.to(
             slide,
-            { autoAlpha: 0, y: -20, duration: 0.4, ease: "power2.in" },
-            start + 0.65,
+            {
+              autoAlpha: 0,
+              y: -10,
+              duration: 1.05,
+              ease: "power1.inOut",
+            },
+            t + 0.55,
           );
+
+          if (bullets.length > 0) {
+            timeline.to(
+              bullets,
+              {
+                autoAlpha: 0,
+                y: -8,
+                duration: 0.7,
+                stagger: 0.06,
+                ease: "power1.in",
+              },
+              t + 0.55,
+            );
+            timeline.to(
+              dots,
+              {
+                autoAlpha: 0,
+                scale: 0.55,
+                duration: 0.55,
+                stagger: 0.06,
+                ease: "power1.in",
+              },
+              t + 0.55,
+            );
+          }
         }
       });
 
-      timeline.to({}, { duration: 0.3 });
+      // End hold so the last slide doesn't vanish the instant pin ends.
+      timeline.to({}, { duration: 0.9 });
 
       requestAnimationFrame(() => ScrollTrigger.refresh());
 
@@ -427,7 +479,7 @@ export function WhoItsForSection() {
           </div>
 
           <div className="flex shrink-0 flex-col items-center gap-4 pb-[max(1.5rem,env(safe-area-inset-bottom))] sm:gap-6 sm:pb-10 md:pb-12">
-            <ScrollProgressLine progress={progress} />
+            <ScrollProgressLine fillRef={progressFillRef} />
           </div>
         </div>
       </div>

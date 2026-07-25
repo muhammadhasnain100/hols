@@ -13,6 +13,9 @@ type FAQItemProps = {
   variant?: "default" | "card";
 };
 
+/** Height-only accordion — no opacity fade (that caused the blink). */
+const PANEL_EASE = "duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none";
+
 export function FAQItem({
   question,
   answer,
@@ -39,12 +42,15 @@ export function FAQItem({
     <div
       className={cn(
         isCard &&
-          "group overflow-hidden rounded-2xl border border-primary/8 bg-white/80 shadow-[0_4px_18px_rgba(21,39,68,0.05)] backdrop-blur-sm transition-[border-color,box-shadow,background-color,transform] duration-300",
-        isCard && "hover:border-primary/14 hover:bg-white hover:shadow-[0_10px_28px_rgba(21,39,68,0.08)]",
-        isCard && open && "border-primary/12 bg-white shadow-[0_14px_36px_rgba(21,39,68,0.1)]",
+          "group overflow-hidden rounded-2xl border border-primary/8 bg-white shadow-[0_4px_18px_rgba(21,39,68,0.05)] transition-[border-color,box-shadow] duration-500 ease-out motion-reduce:transition-none",
+        isCard &&
+          "hover:border-primary/14 hover:shadow-[0_10px_28px_rgba(21,39,68,0.08)]",
+        isCard &&
+          open &&
+          "border-primary/12 shadow-[0_14px_36px_rgba(21,39,68,0.1)]",
         !isCard && "border-b border-border/40",
         glass &&
-          "glass rounded-2xl border-white/50 shadow-[0_4px_20px_rgba(21,39,68,0.05)]",
+          "rounded-2xl border-white/50 bg-white shadow-[0_4px_20px_rgba(21,39,68,0.05)]",
       )}
     >
       <button
@@ -52,17 +58,19 @@ export function FAQItem({
         onClick={handleToggle}
         className={cn(
           "flex w-full items-center justify-between gap-3 text-left outline-none sm:gap-4",
-          isCard ? "px-4 py-3.5 sm:px-5 sm:py-4 md:px-6 md:py-5" : "py-4 sm:py-5",
+          isCard
+            ? "px-4 py-3.5 sm:px-5 sm:py-4 md:px-6 md:py-5"
+            : "py-4 sm:py-5",
           "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
         )}
         aria-expanded={open}
       >
-        <span className="min-w-0 flex-1 font-sans text-[0.9375rem] font-semibold leading-[1.3] tracking-[0.005em] text-primary transition-colors duration-300 sm:text-base sm:leading-[1.25] md:text-[1.125rem]">
+        <span className="min-w-0 flex-1 font-sans text-[0.9375rem] font-semibold leading-[1.3] tracking-[0.005em] text-primary sm:text-base sm:leading-[1.25] md:text-[1.125rem]">
           {question}
         </span>
         <span
           className={cn(
-            "relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-all duration-300 sm:h-9 sm:w-9 md:h-10 md:w-10",
+            "relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-[transform,background-color,color] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] motion-reduce:transition-none sm:h-9 sm:w-9 md:h-10 md:w-10",
             isCard
               ? cn(
                   "bg-[#E5E5E5] text-primary",
@@ -82,8 +90,9 @@ export function FAQItem({
 
       <div
         className={cn(
-          "grid transition-[grid-template-rows,opacity] duration-300 ease-out",
-          open ? "grid-rows-[1fr] opacity-100" : "grid-rows-[0fr] opacity-0",
+          "grid transition-[grid-template-rows]",
+          PANEL_EASE,
+          open ? "grid-rows-[1fr]" : "grid-rows-[0fr]",
         )}
       >
         <div className="min-h-0 overflow-hidden">

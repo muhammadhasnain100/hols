@@ -32,6 +32,10 @@ export function FAQsSection() {
             </p>
           </div>
 
+          {/*
+            Accordion only — do not call ScrollTrigger.refresh on toggle.
+            Refresh mid-scroll scrambles pinned sections above (Hook / Who It's For).
+          */}
           <div className="flex min-w-0 flex-col gap-2.5 sm:gap-3">
             {landingFaqs.map((item, index) => (
               <FAQItem

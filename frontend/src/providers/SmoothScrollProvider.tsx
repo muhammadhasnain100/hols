@@ -56,10 +56,13 @@ export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
     }
 
     const instance = new Lenis({
-      duration: 1.1,
-      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      // Longer, softer inertia so section-to-section motion stays continuous
+      // instead of feeling like discrete page snaps.
+      duration: 1.45,
+      easing: (t) => 1 - Math.pow(1 - t, 3),
       smoothWheel: true,
-      touchMultiplier: 1.2,
+      wheelMultiplier: 0.85,
+      touchMultiplier: 1.05,
       autoRaf: false,
     });
 

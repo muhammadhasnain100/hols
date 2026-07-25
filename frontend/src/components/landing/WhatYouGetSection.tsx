@@ -237,7 +237,7 @@ function bindStepReveal(
 
   // Own visibility entirely in GSAP — cards stay hidden until their
   // step crosses the viewport center (same axis as the spine line).
-  gsap.set(steps, { autoAlpha: 0, y: 36, x: 0 });
+  gsap.set(steps, { autoAlpha: 0, y: 28, x: 0 });
 
   if (lineFill) {
     gsap.set(lineFill, { scaleY: 0, transformOrigin: "top center" });
@@ -246,9 +246,9 @@ function bindStepReveal(
       ease: "none",
       scrollTrigger: {
         trigger: timeline,
-        start: "top center",
+        start: "top 85%",
         end: "bottom center",
-        scrub: 0.65,
+        scrub: 1.8,
         invalidateOnRefresh: true,
       },
     });
@@ -274,24 +274,25 @@ function bindStepReveal(
         | null) ?? null;
     const fromX =
       slideFromSides && side === "left"
-        ? -40
+        ? -32
         : slideFromSides && side === "right"
-          ? 40
+          ? 32
           : 0;
 
+    // Wider window + softer scrub lag + eased motion → smooth glide, no snap.
     gsap.fromTo(
       step,
-      { autoAlpha: 0, y: 36, x: fromX },
+      { autoAlpha: 0, y: 28, x: fromX },
       {
         autoAlpha: 1,
         y: 0,
         x: 0,
-        ease: "none",
+        ease: "power1.out",
         scrollTrigger: {
           trigger: step,
-          start: "top 78%",
-          end: "top 48%",
-          scrub: 0.65,
+          start: "top 88%",
+          end: "top 52%",
+          scrub: 1.8,
           invalidateOnRefresh: true,
         },
       },
@@ -308,9 +309,9 @@ function bindStepReveal(
           ease: "none",
           scrollTrigger: {
             trigger: step,
-            start: "top 78%",
-            end: "top 48%",
-            scrub: 0.65,
+            start: "top 82%",
+            end: "top 50%",
+            scrub: 1.8,
             invalidateOnRefresh: true,
           },
         },

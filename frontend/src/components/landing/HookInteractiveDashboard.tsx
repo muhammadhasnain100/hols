@@ -121,6 +121,7 @@ export function HookPortalShell({
   if (!responsive) {
     return (
       <div
+        data-hook-portal-shell
         className={cn("relative shrink-0", className)}
         style={{
           width: HOOK_PORTAL_SIZE.width,
@@ -137,10 +138,12 @@ export function HookPortalShell({
   return (
     <div
       ref={wrapRef}
+      data-hook-portal-shell
       className={cn("relative w-full max-w-[460px] shrink-0", className)}
       style={{ height: HOOK_PORTAL_SIZE.height * scale }}
     >
       <div
+        data-hook-portal-scale
         className="origin-top-left will-change-transform"
         style={{
           width: HOOK_PORTAL_SIZE.width,

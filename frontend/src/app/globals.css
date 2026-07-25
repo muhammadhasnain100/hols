@@ -2789,6 +2789,14 @@ html.lenis body {
   height: auto;
 }
 
+/* Never use native section snap on the marketing landing —
+   Lenis + ScrollTrigger already own the scroll experience. */
+html.lenis,
+html.lenis body,
+html.lenis main {
+  scroll-snap-type: none !important;
+}
+
 .lenis.lenis-smooth {
   scroll-behavior: auto !important;
 }

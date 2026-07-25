@@ -21,7 +21,9 @@ import { cn } from "@/lib/utils";
 type PillarItem = (typeof landingContent.pillars.items)[number];
 
 const AUTO_PLAY_HOLD_MS = 2000;
-const SLIDE_DURATION_S = 0.85;
+/** Soft glide between cards — matched to card face CSS transitions below */
+const SLIDE_DURATION_S = 1.15;
+const SLIDE_DURATION_MS = Math.round(SLIDE_DURATION_S * 1000);
 /** Desktop (lg+) — keep identical to current desktop carousel */
 const DESKTOP_VISIBLE_CARDS = 4;
 const TABLET_VISIBLE_CARDS = 2;
@@ -170,15 +172,21 @@ function PillarImage({
         src={src}
         alt={alt}
         fill
-        className={cn("object-cover", blurred && "scale-105 blur-[2px]")}
+        className={cn(
+          "object-cover transition-[filter,transform] ease-in-out",
+          blurred && "scale-105 blur-[2px]",
+        )}
+        style={{ transitionDuration: `${SLIDE_DURATION_MS}ms` }}
         sizes="(max-width: 767px) 92vw, (max-width: 1023px) 45vw, 25vw"
       />
-      {blurred ? (
-        <div
-          className="pointer-events-none absolute inset-0 bg-white/35"
-          aria-hidden
-        />
-      ) : null}
+      <div
+        className={cn(
+          "pointer-events-none absolute inset-0 bg-white/35 transition-opacity ease-in-out",
+          blurred ? "opacity-100" : "opacity-0",
+        )}
+        style={{ transitionDuration: `${SLIDE_DURATION_MS}ms` }}
+        aria-hidden
+      />
     </div>
   );
 }
@@ -186,28 +194,43 @@ function PillarImage({
 function PillarCardFace({
   item,
   isActive,
+  heightTitle,
 }: {
   item: PillarItem;
   isActive: boolean;
+  /** Longest pillar title — keeps every card the same height (no row resize). */
+  heightTitle: string;
 }) {
   return (
     <div
       aria-hidden={!isActive}
       className={cn(
         "h-full w-full cursor-default rounded-2xl bg-white p-3.5 text-left select-none sm:p-4 lg:p-5",
+        "transition-shadow ease-in-out",
         isActive
           ? "shadow-[0_12px_32px_rgba(21,39,68,0.1)]"
           : "shadow-[0_4px_16px_rgba(21,39,68,0.05)]",
       )}
+      style={{ transitionDuration: `${SLIDE_DURATION_MS}ms` }}
     >
       <PillarImage src={item.image} alt={item.title} blurred={!isActive} />
+      {/*
+        Always the full title. Swapping to shortTitle on inactive cards
+        (esp. Community / Assistant) resized the flex row mid-slide = snap.
+        Invisible tallest title locks every card to one shared height.
+      */}
       <h3
         className={cn(
-          "mt-3 font-sans text-base font-bold leading-[1.2] tracking-[0.005em] sm:mt-4 sm:text-lg md:text-[1.375rem]",
+          "relative mt-3 font-sans text-base font-bold leading-[1.2] tracking-[0.005em] sm:mt-4 sm:text-lg md:text-[1.375rem]",
+          "transition-colors ease-in-out",
           isActive ? "text-primary" : "text-primary/45",
         )}
+        style={{ transitionDuration: `${SLIDE_DURATION_MS}ms` }}
       >
-        {isActive ? item.title : item.shortTitle}
+        <span className="invisible block" aria-hidden>
+          {heightTitle}
+        </span>
+        <span className="absolute inset-x-0 top-0">{item.title}</span>
       </h3>
     </div>
   );
@@ -248,7 +271,17 @@ function PillarsCarousel({
 }) {
   const itemCount = items.length;
   const extendedItems = useMemo(() => buildExtendedItems(items), [items]);
+  const heightTitle = useMemo(
+    () =>
+      items.reduce(
+        (longest, item) =>
+          item.title.length > longest.length ? item.title : longest,
+        "",
+      ),
+    [items],
+  );
   const centerIndex = Math.floor((itemCount - 1) / 2);
+  /** Always start in the middle copy so we can loop both directions forever. */
   const startIndex = itemCount + centerIndex;
 
   const [trackIndex, setTrackIndex] = useState(startIndex);
@@ -267,12 +300,16 @@ function PillarsCarousel({
   const hoverPauseRef = useRef(false);
   const touchStartXRef = useRef<number | null>(null);
   const touchDeltaXRef = useRef(0);
+  const getTranslateXRef = useRef<(index: number) => number>(() => 0);
+  const scheduleAutoplayRef = useRef<(delay?: number) => void>(() => {});
+  const applyTransformRef = useRef<(index: number, animate: boolean) => void>(() => {});
+  const advanceRef = useRef<() => void>(() => {});
 
   useEffect(() => {
     pauseAutoplayRef.current = pauseAutoplay;
   }, [pauseAutoplay]);
 
-  const activeItem = extendedItems[trackIndex] ?? items[centerIndex];
+  const activeItem = items[trackIndex % itemCount] ?? items[centerIndex];
 
   const getVisibleCards = useCallback(() => resolveVisibleCards(), []);
 
@@ -289,27 +326,7 @@ function PillarsCarousel({
     },
     [getVisibleCards],
   );
-
-  const snapTrackIfNeeded = useCallback(() => {
-    const current = trackIndexRef.current;
-    let snapped = current;
-
-    if (current >= itemCount * 2) {
-      snapped = current - itemCount;
-    } else if (current < itemCount) {
-      snapped = current + itemCount;
-    }
-
-    if (snapped === current) return;
-
-    trackIndexRef.current = snapped;
-    setTrackIndex(snapped);
-
-    const track = trackRef.current;
-    if (track) {
-      gsap.set(track, { x: getTranslateX(snapped) });
-    }
-  }, [getTranslateX, itemCount]);
+  getTranslateXRef.current = getTranslateX;
 
   const clearAutoplay = useCallback(() => {
     if (autoplayTimerRef.current !== null) {
@@ -331,8 +348,34 @@ function PillarsCarousel({
     },
     [clearAutoplay],
   );
+  scheduleAutoplayRef.current = scheduleAutoplay;
 
-  const advanceRef = useRef<() => void>(() => {});
+  /**
+   * Before animating past the middle copy, silently jump by ±itemCount.
+   * Ref-only (no setState) so React doesn't flash active styles mid-loop.
+   */
+  const prepareInfiniteIndex = useCallback(
+    (direction: 1 | -1) => {
+      const current = trackIndexRef.current;
+      const track = trackRef.current;
+      if (!track || itemCount <= 0) return current;
+
+      const wouldLeaveMiddle =
+        (direction > 0 && current >= itemCount * 2 - 1) ||
+        (direction < 0 && current <= itemCount);
+
+      if (!wouldLeaveMiddle) return current;
+
+      const relocated = current + (direction > 0 ? -itemCount : itemCount);
+      trackIndexRef.current = relocated;
+      gsap.set(track, {
+        x: getTranslateXRef.current(relocated),
+        force3D: true,
+      });
+      return relocated;
+    },
+    [itemCount],
+  );
 
   const applyTransform = useCallback(
     (index: number, animate: boolean) => {
@@ -346,13 +389,18 @@ function PillarsCarousel({
       const cardSlot = viewport.clientWidth / nextVisibleCards;
       const x = getTranslateX(index);
 
-      setVisibleCards(nextVisibleCards);
-      setSlotWidth(cardSlot);
+      // Layout state only — avoid redundant setState during every slide.
+      setVisibleCards((prev) =>
+        prev === nextVisibleCards ? prev : nextVisibleCards,
+      );
+      setSlotWidth((prev) =>
+        Math.abs(prev - cardSlot) < 0.5 ? prev : cardSlot,
+      );
 
       slideTweenRef.current?.kill();
 
       if (!animate) {
-        gsap.set(track, { x });
+        gsap.set(track, { x, force3D: true });
         isAnimatingRef.current = false;
         return;
       }
@@ -361,35 +409,38 @@ function PillarsCarousel({
       slideTweenRef.current = gsap.to(track, {
         x,
         duration: SLIDE_DURATION_S,
-        ease: "power2.inOut",
+        ease: "power1.inOut",
         overwrite: true,
+        force3D: true,
         onComplete: () => {
           isAnimatingRef.current = false;
-          snapTrackIfNeeded();
-          scheduleAutoplay();
+          scheduleAutoplayRef.current();
         },
       });
     },
-    [getTranslateX, getVisibleCards, scheduleAutoplay, snapTrackIfNeeded],
+    [getTranslateX, getVisibleCards],
   );
+  applyTransformRef.current = applyTransform;
 
   const advance = useCallback(() => {
     if (isAnimatingRef.current) return;
 
-    const nextIndex = trackIndexRef.current + 1;
+    const prepared = prepareInfiniteIndex(1);
+    const nextIndex = prepared + 1;
     trackIndexRef.current = nextIndex;
     setTrackIndex(nextIndex);
-    applyTransform(nextIndex, true);
-  }, [applyTransform]);
+    applyTransformRef.current(nextIndex, true);
+  }, [prepareInfiniteIndex]);
 
   const retreat = useCallback(() => {
     if (isAnimatingRef.current) return;
 
-    const nextIndex = trackIndexRef.current - 1;
+    const prepared = prepareInfiniteIndex(-1);
+    const nextIndex = prepared - 1;
     trackIndexRef.current = nextIndex;
     setTrackIndex(nextIndex);
-    applyTransform(nextIndex, true);
-  }, [applyTransform]);
+    applyTransformRef.current(nextIndex, true);
+  }, [prepareInfiniteIndex]);
 
   advanceRef.current = advance;
 
@@ -397,6 +448,7 @@ function PillarsCarousel({
     if (pauseAutoplay) {
       clearAutoplay();
       slideTweenRef.current?.kill();
+      isAnimatingRef.current = false;
       return;
     }
 
@@ -405,12 +457,14 @@ function PillarsCarousel({
     }
   }, [pauseAutoplay, clearAutoplay, scheduleAutoplay]);
 
+  // Mount / item-count only — do NOT reset when transform helpers change identity,
+  // or the carousel will jump back to the start mid-loop.
   useEffect(() => {
     registerGsap();
     trackIndexRef.current = startIndex;
     setTrackIndex(startIndex);
-    applyTransform(startIndex, false);
-    scheduleAutoplay();
+    applyTransformRef.current(startIndex, false);
+    scheduleAutoplayRef.current();
 
     const viewport = viewportRef.current;
     if (!viewport) return;
@@ -418,14 +472,14 @@ function PillarsCarousel({
     const observer = new ResizeObserver(() => {
       slideTweenRef.current?.kill();
       isAnimatingRef.current = false;
-      applyTransform(trackIndexRef.current, false);
+      applyTransformRef.current(trackIndexRef.current, false);
     });
     observer.observe(viewport);
 
     const onResize = () => {
       slideTweenRef.current?.kill();
       isAnimatingRef.current = false;
-      applyTransform(trackIndexRef.current, false);
+      applyTransformRef.current(trackIndexRef.current, false);
     };
     window.addEventListener("resize", onResize);
 
@@ -435,7 +489,8 @@ function PillarsCarousel({
       clearAutoplay();
       slideTweenRef.current?.kill();
     };
-  }, [applyTransform, clearAutoplay, scheduleAutoplay, startIndex]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- intentional: only remount on loop structure change
+  }, [startIndex, itemCount, clearAutoplay]);
 
   const onMouseEnter = () => {
     hoverPauseRef.current = true;
@@ -513,6 +568,7 @@ function PillarsCarousel({
         tabIndex={0}
         role="region"
         aria-label="Six pillars carousel"
+        aria-roledescription="carousel"
         className="w-full cursor-default select-none outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-2 focus-visible:ring-offset-[#E5E5E5]"
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
@@ -532,7 +588,11 @@ function PillarsCarousel({
                   width: slotWidth || `${100 / visibleCards}%`,
                 }}
               >
-                <PillarCardFace item={item} isActive={index === trackIndex} />
+                <PillarCardFace
+                  item={item}
+                  isActive={index % itemCount === trackIndex % itemCount}
+                  heightTitle={heightTitle}
+                />
               </div>
             ))}
           </div>
@@ -645,7 +705,7 @@ export function PillarsSection() {
     <section
       ref={sectionRef}
       id="everything-inside"
-      className="relative z-0 flex min-h-svh w-full flex-col justify-center bg-[#E5E5E5] py-10 sm:py-12 md:py-14 lg:py-16"
+      className="relative z-0 flex w-full flex-col justify-center bg-[#E5E5E5] py-10 sm:py-12 md:py-14 lg:py-16"
     >
       <div className={cn("flex w-full flex-col", heroLayout.gutterX)}>
         <div className="w-full max-w-3xl text-left lg:max-w-4xl">

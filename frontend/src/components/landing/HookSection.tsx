@@ -142,14 +142,33 @@ function syncArrowToLine(line: SVGPathElement | undefined, arrow: SVGPolygonElem
   arrow.setAttribute("opacity", "1");
 }
 
-/** Gap before target border so tip + arrow sit in open space (not under chrome). */
+/** Gap before target border so tip + arrow sit in open space (not under chrome). Desktop only. */
 const ARROW_CLEAR_PX = 14;
-/** Extra clearance on mobile vertical stems into dashboard / CTA. */
+/** Clearance on mobile vertical stems into dashboard / CTA — same gap on both targets. */
 const MOBILE_ARROW_CLEAR_PX = 18;
-/** Space between struct capsule bottom and the short trunk stem. */
+/** Space between struct capsule bottom and the short trunk stem (mobile). */
 const MOBILE_TRUNK_AFTER_LABEL_PX = 10;
-/** Space below dashboard before the branch stem starts. */
+/** Space below dashboard before the branch stem starts (mobile). */
 const MOBILE_BRANCH_AFTER_DASH_PX = 10;
+
+/** Layout box for the portal — prefer the shell (no GSAP scale on the dashboard). */
+function getPortalLayoutRect(dashEl: HTMLElement | null): DOMRect | null {
+  if (!dashEl) return null;
+  const shell = dashEl.closest<HTMLElement>("[data-hook-portal-shell]");
+  if (!shell) return dashEl.getBoundingClientRect();
+  // Mobile responsive: visual box is the CSS-scaled wrapper (origin top-left).
+  const scaled = shell.querySelector<HTMLElement>("[data-hook-portal-scale]");
+  if (scaled) return scaled.getBoundingClientRect();
+  // Desktop: shell is the exact resting slot (immune to GSAP scale on the child).
+  return shell.getBoundingClientRect();
+}
+
+/** Prefer the real CTA control box over the animated wrapper. */
+function getCtaLayoutRect(ctaEl: HTMLElement | null): DOMRect | null {
+  if (!ctaEl) return null;
+  const btn = ctaEl.querySelector<HTMLElement>("a, button");
+  return (btn ?? ctaEl).getBoundingClientRect();
+}
 
 function buildDiagramGeometry(
   cardRects: DOMRect[],
@@ -193,6 +212,7 @@ function buildDiagramGeometry(
   });
 
   // Stem only — arrowhead travels with the stroke tip via syncArrowToLine.
+  // Desktop: tips clear the portal/CTA borders (ARROW_CLEAR_PX) — do not use mobile gaps here.
   if (dashRect && dashRect.width) {
     const flowY = ballCY;
     const start = toSvg(ballCX, flowY);
@@ -271,6 +291,7 @@ function buildVerticalDiagramGeometry(
 
   if (dashRect && dashRect.width) {
     const flowX = dashRect.left + dashRect.width / 2;
+    // Same clearance above portal and above Explore Courses (visible gap, no overlap).
     const trunkTipY = dashRect.top - MOBILE_ARROW_CLEAR_PX;
     // Start just below the capsule so the stem never pierces "ONE TRUSTED SYSTEM".
     const trunkStartY =
@@ -519,8 +540,8 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
       .filter((c): c is HTMLElement => Boolean(c))
       .map((c) => c.getBoundingClientRect());
     const ballRect = ball.getBoundingClientRect();
-    const dashRect = dashRef.current?.getBoundingClientRect() ?? null;
-    const ctaRect = ctaRef.current?.getBoundingClientRect() ?? null;
+    const dashRect = getPortalLayoutRect(dashRef.current);
+    const ctaRect = getCtaLayoutRect(ctaRef.current);
 
     const next = buildDiagramGeometry(cardRects, ballRect, dashRect, ctaRect, svgRect);
     setViewBox(`0 0 ${svgRect.width.toFixed(1)} ${svgRect.height.toFixed(1)}`);
@@ -699,13 +720,18 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
         {/* 6 · Flexible gap for dashboard → CTA line */}
         <div aria-hidden className="h-full w-full" />
 
-        {/* 7 · Explore Courses — mid-Y locked to the same flow axis as the ball */}
+        {/* 7 · Explore Courses — mid-Y locked to the same flow axis as the ball.
+            Kill soft shadow / backdrop blur so no translucent ghost sits past the pill. */}
         <div
           ref={ctaRef}
           data-hook-cta
           className="pointer-events-auto relative z-10 shrink-0 justify-self-end self-center opacity-0"
         >
-          <HeroButton href={hook.cta.href} variant="primary" className="whitespace-nowrap px-6 md:px-8">
+          <HeroButton
+            href={hook.cta.href}
+            variant="primary"
+            className="whitespace-nowrap px-6 !shadow-none ![backdrop-filter:none] ![-webkit-backdrop-filter:none] md:px-8"
+          >
             {hook.cta.label}
           </HeroButton>
         </div>
@@ -741,8 +767,8 @@ function MobileFlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
       .filter((c): c is HTMLElement => Boolean(c))
       .map((c) => c.getBoundingClientRect());
     const ballRect = ball.getBoundingClientRect();
-    const dashRect = dashRef.current?.getBoundingClientRect() ?? null;
-    const ctaRect = ctaRef.current?.getBoundingClientRect() ?? null;
+    const dashRect = getPortalLayoutRect(dashRef.current);
+    const ctaRect = getCtaLayoutRect(ctaRef.current);
     const structLabelRect = structLabelRef.current?.getBoundingClientRect() ?? null;
 
     const next = buildVerticalDiagramGeometry(
@@ -828,7 +854,9 @@ function MobileFlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
         aria-hidden
         viewBox={viewBox}
         preserveAspectRatio="none"
-        className="pointer-events-none absolute inset-0 z-[5] h-full w-full overflow-visible"
+        // Above portal/CTA so branch tip paints ON the Explore Courses border
+        // (z-5 was under the button and hid the arrowhead). Desktop SVG stays z-5.
+        className="pointer-events-none absolute inset-0 z-20 h-full w-full overflow-visible"
         fill="none"
       >
         <defs>
@@ -926,8 +954,13 @@ function MobileFlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
         {/* Room for short branch stem + arrowhead into Explore Courses */}
         <div aria-hidden className="h-14 w-full sm:h-16" />
 
+        {/* z-10 keeps layout; SVG at z-20 draws the tip on top of this border */}
         <div ref={ctaRef} data-hook-cta className="relative z-10 opacity-0">
-          <HeroButton href={hook.cta.href} variant="primary" className="whitespace-nowrap px-8">
+          <HeroButton
+            href={hook.cta.href}
+            variant="primary"
+            className="whitespace-nowrap px-8 !shadow-none ![backdrop-filter:none] ![-webkit-backdrop-filter:none]"
+          >
             {hook.cta.label}
           </HeroButton>
         </div>
@@ -973,7 +1006,11 @@ function HookStatic() {
             <HookPortalShell responsive>
               <DashboardMockup />
             </HookPortalShell>
-            <HeroButton href={hook.cta.href} variant="primary" className="px-8">
+            <HeroButton
+              href={hook.cta.href}
+              variant="primary"
+              className="px-8 !shadow-none ![backdrop-filter:none] ![-webkit-backdrop-filter:none]"
+            >
               {hook.cta.label}
             </HeroButton>
           </div>
@@ -1083,12 +1120,12 @@ export function HookSection() {
 
         allLines.forEach((p) => prepareStroke(p, true));
         allArrows.forEach((arrow) => arrow.setAttribute("opacity", "0"));
-        gsap.set(cards, { autoAlpha: 0, y: 14, yPercent: -50 });
-        gsap.set(scatterLabel, { autoAlpha: 0, y: 8 });
-        gsap.set(structLabel, { autoAlpha: 0, y: 8 });
-        gsap.set(hub, { autoAlpha: 0, scale: 0.9 });
-        gsap.set(dashboard, { autoAlpha: 0, y: 16, scale: 0.97 });
-        gsap.set(cta, { autoAlpha: 0, y: 12 });
+        gsap.set(cards, { autoAlpha: 0, y: 10, yPercent: -50 });
+        gsap.set(scatterLabel, { autoAlpha: 0, y: 6 });
+        gsap.set(structLabel, { autoAlpha: 0, y: 6 });
+        gsap.set(hub, { autoAlpha: 0, scale: 0.94 });
+        gsap.set(dashboard, { autoAlpha: 0, y: 12, scale: 0.98 });
+        gsap.set(cta, { autoAlpha: 0, y: 8 });
 
         const syncAllArrows = () => {
           syncArrowToLine(trunkLines[0], trunkArrows[0]);
@@ -1101,26 +1138,40 @@ export function HookSection() {
             trigger: section,
             start: "top top",
             end: () => `+=${hookScrollDistance()}`,
-            scrub: 0.8,
+            scrub: 1.8,
             invalidateOnRefresh: true,
           },
           onUpdate: syncAllArrows,
         });
 
-        tl.to(scatterLabel, { autoAlpha: 1, y: 0, duration: 0.3 }, 0.0);
+        // Long, overlapping beats so scroll feels continuous — no snap-in pops.
+        tl.to(scatterLabel, { autoAlpha: 1, y: 0, duration: 0.7, ease: "power1.out" }, 0.0);
         cards.forEach((card, i) => {
-          tl.to(card, { autoAlpha: 1, y: 0, duration: 0.3, ease: "none" }, 0.15 + i * 0.07);
+          tl.to(
+            card,
+            { autoAlpha: 1, y: 0, duration: 0.65, ease: "power1.out" },
+            0.12 + i * 0.09,
+          );
         });
         cardLines.forEach((p, i) => {
-          tl.to(p, { strokeDashoffset: 0, opacity: 1, duration: 0.6, ease: "none" }, 0.85 + i * 0.05);
+          tl.to(
+            p,
+            { strokeDashoffset: 0, opacity: 1, duration: 1.1, ease: "none" },
+            0.9 + i * 0.07,
+          );
         });
-        tl.to(hub, { autoAlpha: 1, scale: 1, duration: 0.4, ease: "none" }, 1.25);
-        tl.to(trunkLines, { strokeDashoffset: 0, opacity: 1, duration: 0.6, ease: "none" }, 1.6);
-        tl.to(structLabel, { autoAlpha: 1, y: 0, duration: 0.3 }, 2.0);
-        tl.to(dashboard, { autoAlpha: 1, y: 0, scale: 1, duration: 0.5, ease: "none" }, 2.05);
-        tl.to(branchLines, { strokeDashoffset: 0, opacity: 1, duration: 0.6, ease: "none" }, 2.5);
-        tl.to(cta, { autoAlpha: 1, y: 0, duration: 0.4, ease: "none" }, 2.9);
-        tl.to({}, { duration: 0.45 });
+        tl.to(hub, { autoAlpha: 1, scale: 1, duration: 0.85, ease: "power1.out" }, 1.55);
+        tl.to(trunkLines, { strokeDashoffset: 0, opacity: 1, duration: 1.15, ease: "none" }, 2.05);
+        tl.to(structLabel, { autoAlpha: 1, y: 0, duration: 0.7, ease: "power1.out" }, 2.55);
+        tl.to(
+          dashboard,
+          { autoAlpha: 1, y: 0, scale: 1, duration: 0.95, ease: "power1.out" },
+          2.65,
+        );
+        tl.to(branchLines, { strokeDashoffset: 0, opacity: 1, duration: 1.15, ease: "none" }, 3.25);
+        tl.to(cta, { autoAlpha: 1, y: 0, duration: 0.8, ease: "power1.out" }, 3.85);
+        // Hold the finished frame so the last beat doesn't cut off mid-scroll.
+        tl.to({}, { duration: 0.9 });
 
         const onSync = () => {
           allLines.forEach(resyncPathStroke);
@@ -1181,12 +1232,12 @@ export function HookSection() {
 
         allLines.forEach((p) => prepareStroke(p, true));
         allArrows.forEach((arrow) => arrow.setAttribute("opacity", "0"));
-        gsap.set(cards, { autoAlpha: 0, y: 14 });
-        gsap.set(scatterLabel, { autoAlpha: 0, y: 8 });
-        gsap.set(structLabel, { autoAlpha: 0, y: 8 });
-        gsap.set(hub, { autoAlpha: 0, scale: 0.9 });
-        gsap.set(dashboard, { autoAlpha: 0, y: 16, scale: 0.97 });
-        gsap.set(cta, { autoAlpha: 0, y: 12 });
+        gsap.set(cards, { autoAlpha: 0, y: 10 });
+        gsap.set(scatterLabel, { autoAlpha: 0, y: 6 });
+        gsap.set(structLabel, { autoAlpha: 0, y: 6 });
+        gsap.set(hub, { autoAlpha: 0, scale: 0.94 });
+        gsap.set(dashboard, { autoAlpha: 0, y: 12, scale: 0.98 });
+        gsap.set(cta, { autoAlpha: 0, y: 8 });
 
         const syncAllArrows = () => {
           syncArrowToLine(trunkLines[0], trunkArrows[0]);
@@ -1197,28 +1248,40 @@ export function HookSection() {
           scrollTrigger: {
             id: "hook-timeline-mobile",
             trigger: section,
-            start: "top 75%",
-            end: "bottom 40%",
-            scrub: 0.8,
+            start: "top 80%",
+            end: "bottom 25%",
+            scrub: 1.8,
             invalidateOnRefresh: true,
           },
           onUpdate: syncAllArrows,
         });
 
-        tl.to(scatterLabel, { autoAlpha: 1, y: 0, duration: 0.3 }, 0.0);
+        tl.to(scatterLabel, { autoAlpha: 1, y: 0, duration: 0.7, ease: "power1.out" }, 0.0);
         cards.forEach((card, i) => {
-          tl.to(card, { autoAlpha: 1, y: 0, duration: 0.3, ease: "none" }, 0.15 + i * 0.07);
+          tl.to(
+            card,
+            { autoAlpha: 1, y: 0, duration: 0.65, ease: "power1.out" },
+            0.12 + i * 0.09,
+          );
         });
         cardLines.forEach((p, i) => {
-          tl.to(p, { strokeDashoffset: 0, opacity: 1, duration: 0.6, ease: "none" }, 0.85 + i * 0.05);
+          tl.to(
+            p,
+            { strokeDashoffset: 0, opacity: 1, duration: 1.1, ease: "none" },
+            0.9 + i * 0.07,
+          );
         });
-        tl.to(hub, { autoAlpha: 1, scale: 1, duration: 0.4, ease: "none" }, 1.25);
-        tl.to(trunkLines, { strokeDashoffset: 0, opacity: 1, duration: 0.6, ease: "none" }, 1.6);
-        tl.to(structLabel, { autoAlpha: 1, y: 0, duration: 0.3 }, 2.0);
-        tl.to(dashboard, { autoAlpha: 1, y: 0, scale: 1, duration: 0.5, ease: "none" }, 2.05);
-        tl.to(branchLines, { strokeDashoffset: 0, opacity: 1, duration: 0.6, ease: "none" }, 2.5);
-        tl.to(cta, { autoAlpha: 1, y: 0, duration: 0.4, ease: "none" }, 2.9);
-        tl.to({}, { duration: 0.45 });
+        tl.to(hub, { autoAlpha: 1, scale: 1, duration: 0.85, ease: "power1.out" }, 1.55);
+        tl.to(trunkLines, { strokeDashoffset: 0, opacity: 1, duration: 1.15, ease: "none" }, 2.05);
+        tl.to(structLabel, { autoAlpha: 1, y: 0, duration: 0.7, ease: "power1.out" }, 2.55);
+        tl.to(
+          dashboard,
+          { autoAlpha: 1, y: 0, scale: 1, duration: 0.95, ease: "power1.out" },
+          2.65,
+        );
+        tl.to(branchLines, { strokeDashoffset: 0, opacity: 1, duration: 1.15, ease: "none" }, 3.25);
+        tl.to(cta, { autoAlpha: 1, y: 0, duration: 0.8, ease: "power1.out" }, 3.85);
+        tl.to({}, { duration: 0.9 });
 
         const onSync = () => {
           allLines.forEach(resyncPathStroke);

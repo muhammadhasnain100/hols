@@ -69,8 +69,8 @@ export function HeroNavbarMobile({
           aria-label={open ? "Close menu" : "Open menu"}
           onClick={() => setOpen((prev) => !prev)}
           className={cn(
-            "glass-capsule inline-flex h-11 w-11 items-center justify-center rounded-full text-primary",
-            "transition-colors duration-300 hover:bg-white/90",
+            "inline-flex h-11 w-11 items-center justify-center rounded-full border border-primary/15 bg-white text-primary shadow-sm",
+            "transition-colors duration-300 hover:bg-white",
           )}
         >
           <MenuIcon open={open} />
@@ -98,97 +98,95 @@ export function HeroNavbarMobile({
       )}
 
       {open ? (
-        <button
-          type="button"
-          aria-label="Close menu"
-          className={cn(
-            "fixed inset-0 z-40 cursor-default",
-            isLightGlass ? "bg-primary/10" : "bg-black/25",
-          )}
-          onClick={() => setOpen(false)}
-        />
-      ) : null}
-
-      <div
-        data-lenis-prevent
-        className={cn(
-          "fixed inset-x-4 top-20 z-50 transition-all duration-300 sm:inset-x-auto sm:right-6 sm:w-[min(22rem,calc(100vw-3rem))]",
-          open ? "visible translate-y-0 opacity-100" : "invisible -translate-y-2 opacity-0",
-        )}
-      >
-        <div
-          className={cn(
-            "rounded-3xl px-6 py-6",
-            isLightGlass ? "glass-capsule text-primary" : cn("text-white", heroGlassPanel),
-          )}
-        >
-          <nav className="flex flex-col gap-4" aria-label="Mobile">
-            {mainNav.map((item) => (
-              <Link
-                key={item.href}
-                href={item.href}
-                onClick={() => setOpen(false)}
-                className={cn(
-                  "font-sans text-base font-medium transition-colors duration-300",
-                  isLightGlass
-                    ? "text-primary/85 hover:text-primary"
-                    : "text-white/85 hover:text-white",
-                )}
-              >
-                {item.label}
-              </Link>
-            ))}
+        <>
+          <button
+            type="button"
+            aria-label="Close menu"
+            className={cn(
+              "fixed inset-0 z-40 cursor-default",
+              isLightGlass ? "bg-primary/10" : "bg-black/25",
+            )}
+            onClick={() => setOpen(false)}
+          />
+          <div
+            data-lenis-prevent
+            className="fixed inset-x-4 top-20 z-50 sm:inset-x-auto sm:right-6 sm:w-[min(22rem,calc(100vw-3rem))]"
+          >
             <div
               className={cn(
-                "mt-4 flex flex-col gap-3 border-t pt-4",
-                isLightGlass ? "border-primary/10" : "border-white/15",
+                "rounded-3xl px-6 py-6",
+                isLightGlass ? "border border-primary/15 bg-white text-primary shadow-lg" : cn("text-white", heroGlassPanel),
               )}
             >
-              {isLightGlass ? (
-                <>
-                  <Button
-                    href={heroContent.navCtas.login.href}
-                    variant="glass"
-                    size="lg"
-                    className="w-full justify-center"
+              <nav className="flex flex-col gap-4" aria-label="Mobile">
+                {mainNav.map((item) => (
+                  <Link
+                    key={item.href}
+                    href={item.href}
                     onClick={() => setOpen(false)}
+                    className={cn(
+                      "font-sans text-base font-medium transition-colors duration-300",
+                      isLightGlass
+                        ? "text-primary/85 hover:text-primary"
+                        : "text-white/85 hover:text-white",
+                    )}
                   >
-                    {heroContent.navCtas.login.label}
-                  </Button>
-                  <Button
-                    href={heroContent.navCtas.getStarted.href}
-                    variant="primary"
-                    size="lg"
-                    className="w-full justify-center"
-                    onClick={() => setOpen(false)}
-                  >
-                    {heroContent.navCtas.getStarted.label}
-                  </Button>
-                </>
-              ) : (
-                <>
-                  <HeroButton
-                    href={heroContent.navCtas.login.href}
-                    variant="ghost"
-                    className="w-full"
-                    onClick={() => setOpen(false)}
-                  >
-                    {heroContent.navCtas.login.label}
-                  </HeroButton>
-                  <HeroButton
-                    href={heroContent.navCtas.getStarted.href}
-                    variant="primary"
-                    className="w-full"
-                    onClick={() => setOpen(false)}
-                  >
-                    {heroContent.navCtas.getStarted.label}
-                  </HeroButton>
-                </>
-              )}
+                    {item.label}
+                  </Link>
+                ))}
+                <div
+                  className={cn(
+                    "mt-4 flex flex-col gap-3 border-t pt-4",
+                    isLightGlass ? "border-primary/10" : "border-white/15",
+                  )}
+                >
+                  {isLightGlass ? (
+                    <>
+                      <Button
+                        href={heroContent.navCtas.login.href}
+                        variant="glass"
+                        size="lg"
+                        className="w-full justify-center"
+                        onClick={() => setOpen(false)}
+                      >
+                        {heroContent.navCtas.login.label}
+                      </Button>
+                      <Button
+                        href={heroContent.navCtas.getStarted.href}
+                        variant="primary"
+                        size="lg"
+                        className="w-full justify-center"
+                        onClick={() => setOpen(false)}
+                      >
+                        {heroContent.navCtas.getStarted.label}
+                      </Button>
+                    </>
+                  ) : (
+                    <>
+                      <HeroButton
+                        href={heroContent.navCtas.login.href}
+                        variant="ghost"
+                        className="w-full"
+                        onClick={() => setOpen(false)}
+                      >
+                        {heroContent.navCtas.login.label}
+                      </HeroButton>
+                      <HeroButton
+                        href={heroContent.navCtas.getStarted.href}
+                        variant="primary"
+                        className="w-full"
+                        onClick={() => setOpen(false)}
+                      >
+                        {heroContent.navCtas.getStarted.label}
+                      </HeroButton>
+                    </>
+                  )}
+                </div>
+              </nav>
             </div>
-          </nav>
-        </div>
-      </div>
+          </div>
+        </>
+      ) : null}
     </div>
   );
 }

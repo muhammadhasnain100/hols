@@ -4,8 +4,13 @@ import { landingContent } from "@/content/landing";
 import { heroLayout } from "@/lib/hero-styles";
 import { cn } from "@/lib/utils";
 
-const FINAL_CTA_HEADLINE =
-  "font-sans text-[1.5rem] font-normal leading-[1.1] tracking-tight text-white sm:text-[2rem] sm:leading-[1.08] md:text-[3rem] lg:text-[3.5rem] lg:leading-[1.05]";
+const FINAL_CTA_HEADLINE = cn(
+  "font-sans font-normal tracking-tight text-white",
+  "text-[clamp(1.25rem,5.6vw,1.5rem)] leading-[1.15]",
+  "sm:text-[2rem] sm:leading-[1.08]",
+  "md:text-[3rem] md:leading-[1.06]",
+  "lg:text-[3.5rem] lg:leading-[1.05]",
+);
 
 /**
  * ball.png opaque sphere ≈ 70% of the square canvas (~15% transparent padding each side).
@@ -16,9 +21,9 @@ const FINAL_CTA_HEADLINE =
  * The lime connectors sit on the asset’s right — `scale-x-[-1]` mirrors them onto the
  * visible side so they stay in frame after the right-edge crop.
  *
- * - Ball box ≈ 1.33× section height → visible sphere (0.7× box) ≈ 93% of band height,
- *   fully contained (no flat top/bottom cuts).
- * - Phones: translate-x-[52%] ≈ 50% visible; md+: translate-x-[40%] ≈ 65% visible.
+ * Responsive:
+ * - Phones: smaller ball, heavier right crop (~45% visible), copy can wrap.
+ * - md+: larger ball, ~65% visible, headline stays two single lines.
  */
 export function FinalCTASection() {
   const { finalCta } = landingContent;
@@ -34,12 +39,14 @@ export function FinalCTASection() {
     <section className="relative w-full overflow-hidden bg-black">
       <div
         className={cn(
-          "pointer-events-none absolute top-1/2 right-0 z-0 aspect-square -translate-y-1/2 translate-x-[52%] md:translate-x-[40%]",
-          "h-[32rem] w-[32rem]",
-          "sm:h-[37rem] sm:w-[37rem]",
-          "md:h-[45rem] md:w-[45rem]",
-          "lg:h-[53rem] lg:w-[53rem]",
-          "xl:h-[59rem] xl:w-[59rem]",
+          "pointer-events-none absolute top-1/2 right-0 z-0 aspect-square -translate-y-1/2",
+          // Crop more on small screens so copy stays clear of the sphere
+          "translate-x-[58%] sm:translate-x-[52%] md:translate-x-[40%]",
+          "h-[22rem] w-[22rem]",
+          "sm:h-[32rem] sm:w-[32rem]",
+          "md:h-[42rem] md:w-[42rem]",
+          "lg:h-[50rem] lg:w-[50rem]",
+          "xl:h-[56rem] xl:w-[56rem]",
         )}
         aria-hidden
       >
@@ -48,36 +55,56 @@ export function FinalCTASection() {
           alt=""
           fill
           className="scale-x-[-1] object-contain"
-          sizes="(max-width: 640px) 32rem, (max-width: 768px) 37rem, (max-width: 1024px) 45rem, 59rem"
+          sizes="(max-width: 640px) 22rem, (max-width: 768px) 32rem, (max-width: 1024px) 42rem, 56rem"
           priority={false}
         />
       </div>
 
       {/* Soft left vignette keeps copy readable over the ball */}
       <div
-        className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-[58%] bg-[linear-gradient(90deg,rgba(0,0,0,0.6)_0%,rgba(0,0,0,0.28)_55%,transparent_100%)] sm:w-[52%] md:w-[48%]"
+        className={cn(
+          "pointer-events-none absolute inset-y-0 left-0 z-[1]",
+          "w-[72%] bg-[linear-gradient(90deg,rgba(0,0,0,0.78)_0%,rgba(0,0,0,0.42)_48%,transparent_100%)]",
+          "sm:w-[58%] sm:bg-[linear-gradient(90deg,rgba(0,0,0,0.65)_0%,rgba(0,0,0,0.3)_55%,transparent_100%)]",
+          "md:w-[50%]",
+        )}
         aria-hidden
       />
 
       <div
         className={cn(
-          "relative z-10 flex min-h-[24rem] w-full items-center py-14",
-          "sm:min-h-[28rem] sm:py-16",
-          "md:min-h-[34rem] md:py-20",
-          "lg:min-h-[40rem] lg:py-24",
-          "xl:min-h-[44rem]",
+          "relative z-10 flex w-full items-center",
+          "min-h-[18rem] py-12",
+          "sm:min-h-[24rem] sm:py-14",
+          "md:min-h-[32rem] md:py-20",
+          "lg:min-h-[38rem] lg:py-24",
+          "xl:min-h-[42rem]",
           heroLayout.gutterX,
         )}
       >
-        <div className="relative z-10 w-full max-w-[20rem] text-left sm:max-w-md md:max-w-xl lg:max-w-2xl xl:max-w-3xl">
+        <div
+          className={cn(
+            "relative z-10 w-full text-left",
+            // Leave room for the ball; avoid nowrap overflow on phones
+            "max-w-[min(100%,18.5rem)] pr-2",
+            "sm:max-w-md sm:pr-0",
+            "md:max-w-xl",
+            "lg:max-w-2xl",
+            "xl:max-w-3xl",
+          )}
+        >
           <h2 className={FINAL_CTA_HEADLINE}>
-            <span className="block whitespace-nowrap">{whiteText}</span>
+            <span className="block text-pretty sm:whitespace-nowrap">
+              {whiteText}
+            </span>
             {accentText ? (
-              <span className="block whitespace-nowrap text-accent">{accentText}</span>
+              <span className="mt-1 block text-pretty text-accent sm:mt-0 sm:whitespace-nowrap">
+                {accentText}
+              </span>
             ) : null}
           </h2>
 
-          <div className="mt-8 sm:mt-10 md:mt-12">
+          <div className="mt-7 sm:mt-9 md:mt-12">
             <HeroButton href={finalCta.primaryCta.href} variant="primary">
               {finalCta.primaryCta.label}
             </HeroButton>
