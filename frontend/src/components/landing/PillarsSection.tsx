@@ -121,17 +121,31 @@ function PillarsHeadline({
 
   return (
     <h2 className="font-sans text-[1.5rem] font-normal leading-[1.12] tracking-tight text-primary sm:text-[2rem] sm:leading-[1.08] md:text-[2.75rem] lg:text-[3.75rem] lg:leading-[1.05]">
-      {prefix}{" "}
-      <span className="relative inline-block h-[1.08em] overflow-hidden align-bottom [perspective:900px]">
-        <span
-          ref={wordRef}
-          className="inline-block origin-bottom whitespace-nowrap will-change-transform"
-          style={{ color: PILLARS_WORD_COLOR }}
-        >
-          {displayWord}
+      <span className="block whitespace-nowrap">
+        {prefix}{" "}
+        <span className="relative inline-grid align-bottom [perspective:900px]">
+          <span aria-hidden className="invisible col-start-1 row-start-1 grid">
+            {words.map((word, index) => (
+              <span
+                key={`${word}-${index}`}
+                className="col-start-1 row-start-1 whitespace-nowrap"
+              >
+                {word}
+              </span>
+            ))}
+          </span>
+          <span className="col-start-1 row-start-1 flex h-[1.08em] items-end overflow-hidden">
+            <span
+              ref={wordRef}
+              className="inline-block origin-bottom whitespace-nowrap will-change-transform"
+              style={{ color: PILLARS_WORD_COLOR }}
+            >
+              {displayWord}
+            </span>
+          </span>
         </span>
-      </span>{" "}
-      {suffix}
+      </span>
+      <span className="block">{suffix}</span>
     </h2>
   );
 }
