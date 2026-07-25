@@ -42,8 +42,8 @@ const THEME = {
     switchOff: "rgba(20, 38, 68, 0.12)",
   },
   dark: {
-    chromeBg: "#141a24",
-    chromeUrl: "rgba(0, 0, 0, 0.28)",
+    chromeBg: "#142644",
+    chromeUrl: "rgba(255, 255, 255, 0.08)",
     pageBg:
       "radial-gradient(100% 90% at 100% 0%, rgba(221, 228, 102, 0.28) 0%, transparent 55%), radial-gradient(90% 85% at 0% 100%, rgba(141, 195, 225, 0.22) 0%, transparent 58%), linear-gradient(150deg, #142644 0%, #1a2f55 40%, #162848 100%)",
     pageBgSolid: "#142644",
@@ -59,10 +59,10 @@ const THEME = {
     cardBorder: "rgba(141, 195, 225, 0.2)",
     text: "#f4f7fb",
     muted: "rgba(244, 247, 251, 0.72)",
-    faint: "rgba(244, 247, 251, 0.5)",
+    faint: "rgba(244, 247, 251, 0.55)",
     accent: "#dde466",
     soft: "rgba(255, 255, 255, 0.08)",
-    softBorder: "rgba(255, 255, 255, 0.12)",
+    softBorder: "rgba(255, 255, 255, 0.14)",
     shellBorder: "rgba(255, 255, 255, 0.12)",
     switchOff: "rgba(255, 255, 255, 0.12)",
   },
@@ -314,7 +314,11 @@ export function HookInteractiveDashboard({
         >
           <div className="mb-2 flex shrink-0 items-center gap-1.5 px-1">
             <Image
-              src="/assets/logo/hols-logo-mark.png"
+              src={
+                darkMode
+                  ? "/assets/logo/hols-logo-mark-light.png"
+                  : "/assets/logo/hols-logo-mark.png"
+              }
               alt=""
               width={18}
               height={18}
@@ -333,7 +337,7 @@ export function HookInteractiveDashboard({
                   key={item.id}
                   type="button"
                   onClick={() => setActiveNav(item.id)}
-                  className="flex shrink-0 items-center gap-1.5 rounded-md px-1.5 py-1.5 text-left font-sans text-[9px] font-semibold transition"
+                  className="flex shrink-0 cursor-pointer items-center gap-1.5 rounded-md px-1.5 py-1.5 text-left font-sans text-[9px] font-semibold outline-none transition-[background-color,color,box-shadow] duration-150 focus-visible:ring-1 focus-visible:ring-[#DDE466]/70"
                   style={
                     active
                       ? {
@@ -341,21 +345,33 @@ export function HookInteractiveDashboard({
                           color: t.sidebarText,
                           boxShadow: t.sidebarActiveShadow,
                         }
-                      : { color: t.sidebarMuted }
+                      : {
+                          backgroundColor: "transparent",
+                          color: t.sidebarMuted,
+                          boxShadow: "none",
+                        }
                   }
                   onMouseEnter={(event) => {
-                    if (!active) event.currentTarget.style.backgroundColor = t.sidebarHover;
+                    if (active) return;
+                    event.currentTarget.style.backgroundColor = t.sidebarHover;
+                    event.currentTarget.style.color = t.sidebarText;
                   }}
                   onMouseLeave={(event) => {
-                    if (!active) event.currentTarget.style.backgroundColor = "transparent";
+                    if (active) return;
+                    event.currentTarget.style.backgroundColor = "transparent";
+                    event.currentTarget.style.color = t.sidebarMuted;
                   }}
                 >
                   <span
-                    className="flex h-4 w-4 shrink-0 items-center justify-center rounded-md"
+                    className="flex h-4 w-4 shrink-0 items-center justify-center rounded-md transition-[background-color,color,box-shadow] duration-150"
                     style={
                       active
-                        ? { backgroundColor: LIME, color: NAVY, boxShadow: "0 2px 6px rgba(221, 228, 102, 0.38)" }
-                        : { color: t.sidebarMuted }
+                        ? {
+                            backgroundColor: LIME,
+                            color: NAVY,
+                            boxShadow: "0 2px 6px rgba(221, 228, 102, 0.38)",
+                          }
+                        : { backgroundColor: "transparent", color: t.sidebarMuted, boxShadow: "none" }
                     }
                   >
                     {NAV_ICONS[item.id]}
@@ -373,14 +389,14 @@ export function HookInteractiveDashboard({
             <button
               type="button"
               onClick={() => setDarkMode((value) => !value)}
-              className="flex w-full items-center justify-between gap-1"
+              className="flex w-full cursor-pointer items-center justify-between gap-1 rounded-md outline-none transition-opacity duration-150 hover:opacity-90 focus-visible:ring-1 focus-visible:ring-[#DDE466]/70"
               aria-pressed={darkMode}
             >
               <span className="font-sans text-[8px] font-medium" style={{ color: t.sidebarText }}>
                 Dark mode
               </span>
               <span
-                className="relative h-3.5 w-6 shrink-0 rounded-full border transition"
+                className="relative h-3.5 w-6 shrink-0 rounded-full border transition-[background-color,border-color] duration-150"
                 style={{
                   backgroundColor: darkMode ? LIME : t.switchOff,
                   borderColor: darkMode ? "transparent" : t.sidebarBorder,
@@ -388,8 +404,8 @@ export function HookInteractiveDashboard({
               >
                 <span
                   className={cn(
-                    "absolute top-[2px] h-2.5 w-2.5 rounded-full shadow-sm transition",
-                    darkMode ? "right-[2px] bg-[#142644]" : "left-[2px] bg-white",
+                    "absolute top-[1px] h-2.5 w-2.5 rounded-full shadow-sm transition-[left,right,background-color] duration-150",
+                    darkMode ? "right-[1px] bg-[#142644]" : "left-[1px] bg-white",
                   )}
                 />
               </span>
@@ -440,7 +456,7 @@ export function HookInteractiveDashboard({
                       <button
                         type="button"
                         onClick={() => setActiveNav("payment")}
-                        className="rounded-full px-2.5 py-1 font-sans text-[9px] font-bold transition hover:brightness-105"
+                        className="cursor-pointer rounded-full px-2.5 py-1 font-sans text-[9px] font-bold outline-none transition-opacity duration-150 hover:opacity-90 focus-visible:ring-1 focus-visible:ring-[#DDE466]/80"
                         style={{ backgroundColor: LIME, color: TEXT_NAVY }}
                       >
                         Upgrade
@@ -463,10 +479,25 @@ export function HookInteractiveDashboard({
                           key={tool.id}
                           type="button"
                           onClick={() => openTool(tool.id)}
-                          className="group flex flex-col items-center gap-1 rounded-lg p-1 transition"
+                          className="group flex cursor-pointer flex-col items-center gap-1 rounded-lg p-1 outline-none transition-colors duration-150 focus-visible:ring-1 focus-visible:ring-[#DDE466]/70"
+                          onMouseEnter={(event) => {
+                            const icon = event.currentTarget.querySelector<HTMLElement>("[data-hook-tool-icon]");
+                            if (!icon) return;
+                            icon.style.backgroundColor = LIME;
+                            icon.style.borderColor = "rgba(221, 228, 102, 0.65)";
+                            icon.style.color = TEXT_NAVY;
+                          }}
+                          onMouseLeave={(event) => {
+                            const icon = event.currentTarget.querySelector<HTMLElement>("[data-hook-tool-icon]");
+                            if (!icon) return;
+                            icon.style.backgroundColor = t.soft;
+                            icon.style.borderColor = t.softBorder;
+                            icon.style.color = t.text;
+                          }}
                         >
                           <span
-                            className="flex h-7 w-7 items-center justify-center rounded-full border transition group-hover:border-[#DDE466]/65 group-hover:bg-[#DDE466] group-hover:text-[#152744]"
+                            data-hook-tool-icon
+                            className="flex h-7 w-7 items-center justify-center rounded-full border transition-[background-color,border-color,color] duration-150"
                             style={{
                               backgroundColor: t.soft,
                               borderColor: t.softBorder,
@@ -498,10 +529,18 @@ export function HookInteractiveDashboard({
                           key={action.id}
                           type="button"
                           onClick={() => openTool(action.id)}
-                          className="flex items-center gap-1.5 rounded-md px-1 py-0.5 text-left transition hover:bg-white/5"
-                          style={{ color: t.muted }}
+                          className="flex cursor-pointer items-center gap-1.5 rounded-md px-1 py-0.5 text-left outline-none transition-[background-color] duration-150 focus-visible:ring-1 focus-visible:ring-[#DDE466]/70"
+                          style={{ color: t.muted, backgroundColor: "transparent" }}
+                          onMouseEnter={(event) => {
+                            event.currentTarget.style.backgroundColor = t.soft;
+                            event.currentTarget.style.color = t.text;
+                          }}
+                          onMouseLeave={(event) => {
+                            event.currentTarget.style.backgroundColor = "transparent";
+                            event.currentTarget.style.color = t.muted;
+                          }}
                         >
-                          <span>{NAV_ICONS[action.id] ?? NAV_ICONS.payment}</span>
+                          <span className="shrink-0">{NAV_ICONS[action.id] ?? NAV_ICONS.payment}</span>
                           <span className="min-w-0 flex-1 truncate font-sans text-[7px] font-semibold">
                             {action.label}
                           </span>
@@ -518,8 +557,18 @@ export function HookInteractiveDashboard({
                     <button
                       key={course.id}
                       type="button"
-                      className="shrink-0 rounded-xl border p-2.5 text-left transition hover:brightness-105"
+                      className="shrink-0 cursor-pointer rounded-xl border p-2.5 text-left outline-none transition-[border-color,background-color] duration-150 focus-visible:ring-1 focus-visible:ring-[#DDE466]/70"
                       style={{ backgroundColor: t.cardBg, borderColor: t.cardBorder }}
+                      onMouseEnter={(event) => {
+                        event.currentTarget.style.borderColor = "rgba(221, 228, 102, 0.55)";
+                        event.currentTarget.style.backgroundColor = darkMode
+                          ? "rgba(221, 228, 102, 0.08)"
+                          : "rgba(221, 228, 102, 0.12)";
+                      }}
+                      onMouseLeave={(event) => {
+                        event.currentTarget.style.borderColor = t.cardBorder;
+                        event.currentTarget.style.backgroundColor = t.cardBg;
+                      }}
                     >
                       <p className="font-sans text-[10px] font-bold" style={{ color: t.text }}>
                         {course.title}
@@ -549,7 +598,7 @@ export function HookInteractiveDashboard({
                       step={25}
                       value={doseMg}
                       onChange={(event) => setDoseMg(Number(event.target.value))}
-                      className="mt-1 w-full accent-[#DDE466]"
+                      className="mt-1 w-full cursor-pointer accent-[#DDE466]"
                     />
                     <span className="font-sans text-[10px] font-bold" style={{ color: t.text }}>
                       {doseMg} mcg
@@ -566,8 +615,12 @@ export function HookInteractiveDashboard({
                         max={20}
                         value={vialMg}
                         onChange={(event) => setVialMg(Math.max(1, Number(event.target.value) || 1))}
-                        className="mt-1 w-full rounded-md border bg-transparent px-2 py-1 font-sans text-[10px] outline-none"
-                        style={{ borderColor: t.softBorder, color: t.text }}
+                        className="mt-1 w-full rounded-md border bg-transparent px-2 py-1 font-sans text-[10px] outline-none transition-[border-color] duration-150 focus:border-[#DDE466]/70"
+                        style={{
+                          borderColor: t.softBorder,
+                          color: t.text,
+                          colorScheme: darkMode ? "dark" : "light",
+                        }}
                       />
                     </label>
                     <label>
@@ -581,8 +634,12 @@ export function HookInteractiveDashboard({
                         step={0.5}
                         value={waterMl}
                         onChange={(event) => setWaterMl(Math.max(0.5, Number(event.target.value) || 0.5))}
-                        className="mt-1 w-full rounded-md border bg-transparent px-2 py-1 font-sans text-[10px] outline-none"
-                        style={{ borderColor: t.softBorder, color: t.text }}
+                        className="mt-1 w-full rounded-md border bg-transparent px-2 py-1 font-sans text-[10px] outline-none transition-[border-color] duration-150 focus:border-[#DDE466]/70"
+                        style={{
+                          borderColor: t.softBorder,
+                          color: t.text,
+                          colorScheme: darkMode ? "dark" : "light",
+                        }}
                       />
                     </label>
                   </div>
@@ -610,21 +667,24 @@ export function HookInteractiveDashboard({
                     </p>
                   </div>
                   <div className="flex shrink-0 flex-wrap gap-1.5">
-                    {ADVISOR_PROMPTS.map((prompt) => (
-                      <button
-                        key={prompt}
-                        type="button"
-                        onClick={() => askAdvisor(prompt)}
-                        className="rounded-full border px-2 py-1 font-sans text-[7px] font-semibold transition hover:brightness-105"
-                        style={{
-                          borderColor: t.cardBorder,
-                          backgroundColor: advisorPrompt === prompt ? LIME : t.cardBg,
-                          color: advisorPrompt === prompt ? TEXT_NAVY : t.muted,
-                        }}
-                      >
-                        {prompt}
-                      </button>
-                    ))}
+                    {ADVISOR_PROMPTS.map((prompt) => {
+                      const selected = advisorPrompt === prompt;
+                      return (
+                        <button
+                          key={prompt}
+                          type="button"
+                          onClick={() => askAdvisor(prompt)}
+                          className="cursor-pointer rounded-full border px-2 py-1 font-sans text-[7px] font-semibold outline-none transition-opacity duration-150 hover:opacity-90 focus-visible:ring-1 focus-visible:ring-[#DDE466]/70"
+                          style={{
+                            borderColor: selected ? "transparent" : t.cardBorder,
+                            backgroundColor: selected ? LIME : t.cardBg,
+                            color: selected ? TEXT_NAVY : t.muted,
+                          }}
+                        >
+                          {prompt}
+                        </button>
+                      );
+                    })}
                   </div>
                 </div>
               ) : null}
@@ -638,8 +698,18 @@ export function HookInteractiveDashboard({
                     <button
                       key={plan.id}
                       type="button"
-                      className="flex shrink-0 items-center justify-between rounded-xl border p-2.5 text-left transition hover:brightness-105"
+                      className="flex shrink-0 cursor-pointer items-center justify-between rounded-xl border p-2.5 text-left outline-none transition-[border-color,background-color] duration-150 focus-visible:ring-1 focus-visible:ring-[#DDE466]/70"
                       style={{ backgroundColor: t.cardBg, borderColor: t.cardBorder }}
+                      onMouseEnter={(event) => {
+                        event.currentTarget.style.borderColor = "rgba(221, 228, 102, 0.55)";
+                        event.currentTarget.style.backgroundColor = darkMode
+                          ? "rgba(221, 228, 102, 0.08)"
+                          : "rgba(221, 228, 102, 0.12)";
+                      }}
+                      onMouseLeave={(event) => {
+                        event.currentTarget.style.borderColor = t.cardBorder;
+                        event.currentTarget.style.backgroundColor = t.cardBg;
+                      }}
                     >
                       <span>
                         <span className="block font-sans text-[10px] font-bold" style={{ color: t.text }}>
@@ -673,11 +743,11 @@ export function HookInteractiveDashboard({
                         className="h-full w-full object-cover"
                       />
                     </span>
-                    <div>
-                      <p className="font-sans text-[10px] font-bold" style={{ color: t.text }}>
+                    <div className="min-w-0">
+                      <p className="truncate font-sans text-[10px] font-bold" style={{ color: t.text }}>
                         {DEMO_PROFILE.name}
                       </p>
-                      <p className="font-sans text-[8px]" style={{ color: t.muted }}>
+                      <p className="truncate font-sans text-[8px]" style={{ color: t.muted }}>
                         {DEMO_PROFILE.role}
                       </p>
                     </div>
@@ -689,13 +759,13 @@ export function HookInteractiveDashboard({
                     ].map(([label, value]) => (
                       <div
                         key={label}
-                        className="flex items-center justify-between rounded-lg border px-2 py-1.5"
+                        className="flex min-w-0 items-center justify-between gap-2 rounded-lg border px-2 py-1.5"
                         style={{ borderColor: t.cardBorder }}
                       >
-                        <span className="font-sans text-[8px]" style={{ color: t.muted }}>
+                        <span className="shrink-0 font-sans text-[8px]" style={{ color: t.muted }}>
                           {label}
                         </span>
-                        <span className="font-sans text-[8px] font-semibold" style={{ color: t.text }}>
+                        <span className="min-w-0 truncate text-right font-sans text-[8px] font-semibold" style={{ color: t.text }}>
                           {value}
                         </span>
                       </div>

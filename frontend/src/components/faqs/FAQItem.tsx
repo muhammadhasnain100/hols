@@ -59,13 +59,13 @@ export function FAQItem({
         className={cn(
           "flex w-full items-center justify-between gap-3 text-left outline-none sm:gap-4",
           isCard
-            ? "px-4 py-3.5 sm:px-5 sm:py-4 md:px-6 md:py-5"
+            ? "px-3.5 py-3.5 sm:px-5 sm:py-4 md:px-6 md:py-5"
             : "py-4 sm:py-5",
           "focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2",
         )}
         aria-expanded={open}
       >
-        <span className="min-w-0 flex-1 font-sans text-[0.9375rem] font-semibold leading-[1.3] tracking-[0.005em] text-primary sm:text-base sm:leading-[1.25] md:text-[1.125rem]">
+        <span className="min-w-0 flex-1 font-sans text-[0.9375rem] font-semibold leading-[1.35] tracking-[0.005em] text-primary sm:text-base sm:leading-[1.3] md:text-[1.125rem]">
           {question}
         </span>
         <span
@@ -98,9 +98,9 @@ export function FAQItem({
         <div className="min-h-0 overflow-hidden">
           <p
             className={cn(
-              "text-brand-body text-primary/75",
+              "text-brand-body text-pretty text-primary/75",
               isCard
-                ? "px-4 pb-4 pt-0 sm:px-5 sm:pb-5 md:px-6 md:pb-6"
+                ? "px-3.5 pb-3.5 pt-0 sm:px-5 sm:pb-5 md:px-6 md:pb-6"
                 : "pb-4 sm:pb-5",
             )}
           >

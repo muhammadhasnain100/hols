@@ -123,10 +123,12 @@ function PillarsHeadline({
   );
 
   return (
-    <h2 className="font-sans text-[1.5rem] font-normal leading-[1.12] tracking-tight text-primary sm:text-[2rem] sm:leading-[1.08] md:text-[2.75rem] lg:text-[3.75rem] lg:leading-[1.05]">
-      <span className="block whitespace-nowrap">
-        {prefix}{" "}
-        <span className="relative inline-grid align-bottom [perspective:900px]">
+    <h2 className="font-sans text-[1.5rem] font-normal leading-[1.15] tracking-tight text-primary sm:text-[2rem] sm:leading-[1.1] md:text-[2.75rem] md:leading-[1.08] lg:text-[3.75rem] lg:leading-[1.05]">
+      {/* lg+: prefix and rotating word share one line (2-line headline).
+          Below lg: the word drops to its own line (3-line headline). */}
+      <span className="block lg:whitespace-nowrap">
+        <span className="block lg:inline">{prefix}</span>{" "}
+        <span className="relative grid w-fit align-bottom [perspective:900px] lg:inline-grid lg:w-auto">
           <span aria-hidden className="invisible col-start-1 row-start-1 grid">
             {words.map((word, index) => (
               <span
@@ -148,7 +150,7 @@ function PillarsHeadline({
           </span>
         </span>
       </span>
-      <span className="block">{suffix}</span>
+      <span className="mt-1 block sm:mt-0">{suffix}</span>
     </h2>
   );
 }
@@ -177,7 +179,7 @@ function PillarImage({
           blurred && "scale-105 blur-[2px]",
         )}
         style={{ transitionDuration: `${SLIDE_DURATION_MS}ms` }}
-        sizes="(max-width: 767px) 92vw, (max-width: 1023px) 45vw, 25vw"
+        sizes="(max-width: 639px) 92vw, (max-width: 1023px) 48vw, 25vw"
       />
       <div
         className={cn(
@@ -195,25 +197,31 @@ function PillarCardFace({
   item,
   isActive,
   heightTitle,
+  onSelect,
 }: {
   item: PillarItem;
   isActive: boolean;
   /** Longest pillar title — keeps every card the same height (no row resize). */
   heightTitle: string;
+  onSelect: () => void;
 }) {
   return (
-    <div
-      aria-hidden={!isActive}
+    <button
+      type="button"
+      onClick={onSelect}
+      aria-current={isActive ? "true" : undefined}
+      aria-label={item.title}
       className={cn(
-        "h-full w-full cursor-default rounded-2xl bg-white p-3.5 text-left select-none sm:p-4 lg:p-5",
+        "h-full w-full rounded-2xl bg-white p-3 sm:p-3.5 md:p-4 lg:p-5 text-left select-none",
         "transition-shadow ease-in-out",
+        "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary/40",
         isActive
-          ? "shadow-[0_12px_32px_rgba(21,39,68,0.1)]"
-          : "shadow-[0_4px_16px_rgba(21,39,68,0.05)]",
+          ? "cursor-default shadow-[0_12px_32px_rgba(21,39,68,0.1)]"
+          : "cursor-pointer shadow-[0_4px_16px_rgba(21,39,68,0.05)] hover:shadow-[0_8px_24px_rgba(21,39,68,0.08)]",
       )}
       style={{ transitionDuration: `${SLIDE_DURATION_MS}ms` }}
     >
-      <PillarImage src={item.image} alt={item.title} blurred={!isActive} />
+      <PillarImage src={item.image} alt="" blurred={!isActive} />
       {/*
         Always the full title. Swapping to shortTitle on inactive cards
         (esp. Community / Assistant) resized the flex row mid-slide = snap.
@@ -221,7 +229,7 @@ function PillarCardFace({
       */}
       <h3
         className={cn(
-          "relative mt-3 font-sans text-base font-bold leading-[1.2] tracking-[0.005em] sm:mt-4 sm:text-lg md:text-[1.375rem]",
+          "relative mt-2.5 font-sans text-[0.9375rem] font-bold leading-[1.2] tracking-[0.005em] sm:mt-3 sm:text-base md:mt-4 md:text-lg lg:text-[1.375rem]",
           "transition-colors ease-in-out",
           isActive ? "text-primary" : "text-primary/45",
         )}
@@ -232,7 +240,7 @@ function PillarCardFace({
         </span>
         <span className="absolute inset-x-0 top-0">{item.title}</span>
       </h3>
-    </div>
+    </button>
   );
 }
 
@@ -258,7 +266,7 @@ function PillarDetailPanel({
 function resolveVisibleCards() {
   if (typeof window === "undefined") return DESKTOP_VISIBLE_CARDS;
   if (window.matchMedia("(min-width: 1024px)").matches) return DESKTOP_VISIBLE_CARDS;
-  if (window.matchMedia("(min-width: 768px)").matches) return TABLET_VISIBLE_CARDS;
+  if (window.matchMedia("(min-width: 640px)").matches) return TABLET_VISIBLE_CARDS;
   return MOBILE_VISIBLE_CARDS;
 }
 
@@ -300,6 +308,8 @@ function PillarsCarousel({
   const hoverPauseRef = useRef(false);
   const touchStartXRef = useRef<number | null>(null);
   const touchDeltaXRef = useRef(0);
+  /** Ignore the click that follows a swipe on touch devices. */
+  const suppressCardClickRef = useRef(false);
   const getTranslateXRef = useRef<(index: number) => number>(() => 0);
   const scheduleAutoplayRef = useRef<(delay?: number) => void>(() => {});
   const applyTransformRef = useRef<(index: number, animate: boolean) => void>(() => {});
@@ -442,6 +452,21 @@ function PillarsCarousel({
     applyTransformRef.current(nextIndex, true);
   }, [prepareInfiniteIndex]);
 
+  /** Mouse / tap a visible card to center it (desktop + responsive). */
+  const goToIndex = useCallback((absoluteIndex: number) => {
+    if (suppressCardClickRef.current) {
+      suppressCardClickRef.current = false;
+      return;
+    }
+    if (isAnimatingRef.current) return;
+    if (absoluteIndex === trackIndexRef.current) return;
+
+    clearAutoplay();
+    trackIndexRef.current = absoluteIndex;
+    setTrackIndex(absoluteIndex);
+    applyTransformRef.current(absoluteIndex, true);
+  }, [clearAutoplay]);
+
   advanceRef.current = advance;
 
   useEffect(() => {
@@ -548,6 +573,8 @@ function PillarsCarousel({
       return;
     }
 
+    // Swipe steers the carousel — don't also fire the card's click.
+    suppressCardClickRef.current = true;
     if (delta < 0) {
       advance();
     } else {
@@ -562,14 +589,14 @@ function PillarsCarousel({
   );
 
   return (
-    <div className="mt-6 md:mt-8">
+    <div className="mt-5 sm:mt-6 md:mt-8">
       <div
         ref={viewportRef}
         tabIndex={0}
         role="region"
         aria-label="Six pillars carousel"
         aria-roledescription="carousel"
-        className="w-full cursor-default select-none outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-2 focus-visible:ring-offset-[#E5E5E5]"
+        className="w-full select-none outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-2 focus-visible:ring-offset-[#E5E5E5]"
         onMouseEnter={onMouseEnter}
         onMouseLeave={onMouseLeave}
         onKeyDown={onKeyDown}
@@ -583,7 +610,7 @@ function PillarsCarousel({
             {extendedItems.map((item, index) => (
               <div
                 key={`${item.id}-${index}`}
-                className="shrink-0 px-1.5 sm:px-2 lg:px-2.5"
+                className="shrink-0 px-1 sm:px-1.5 md:px-2 lg:px-2.5"
                 style={{
                   width: slotWidth || `${100 / visibleCards}%`,
                 }}
@@ -592,18 +619,19 @@ function PillarsCarousel({
                   item={item}
                   isActive={index % itemCount === trackIndex % itemCount}
                   heightTitle={heightTitle}
+                  onSelect={() => goToIndex(index)}
                 />
               </div>
             ))}
           </div>
         </div>
 
-        {/* Detail: full width on mobile/tablet; desktop keeps one-card slot width */}
-        <div className="mt-4 flex justify-center">
+        {/* Detail: full width below lg; desktop keeps one-card slot width */}
+        <div className="mt-3 flex justify-center sm:mt-4">
           <div
             className={cn(
-              "px-0 sm:px-2 lg:px-2.5",
-              visibleCards < DESKTOP_VISIBLE_CARDS ? "w-full" : undefined,
+              "px-0 sm:px-1.5 md:px-2 lg:px-2.5",
+              visibleCards < DESKTOP_VISIBLE_CARDS ? "w-full max-w-2xl" : undefined,
             )}
             style={
               visibleCards >= DESKTOP_VISIBLE_CARDS
@@ -615,7 +643,7 @@ function PillarsCarousel({
           </div>
         </div>
 
-        <div className="mt-5 flex items-center justify-center lg:mt-6">
+        <div className="mt-4 flex items-center justify-center sm:mt-5 lg:mt-6">
           <div
             className="glass-capsule inline-flex overflow-hidden rounded-full"
             role="group"
