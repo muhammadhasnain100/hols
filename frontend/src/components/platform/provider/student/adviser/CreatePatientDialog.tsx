@@ -78,7 +78,7 @@ export function CreatePatientDialog({
         <div className="flex items-start justify-between gap-3 border-b border-[color:var(--dash-surface-border)] px-4 py-3.5 sm:gap-4 sm:px-5 sm:py-4 md:px-6">
           <div className="min-w-0">
             <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-              Peptide Adviser
+              Peptide Advisor
             </p>
             <h2
               id={titleId}

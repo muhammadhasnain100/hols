@@ -326,11 +326,11 @@ export function StudentPeptideAdviserHubPage() {
             <div className="flex min-w-0 flex-col gap-3 sm:gap-4 md:flex-row md:items-end md:justify-between md:gap-5">
               <div className="min-w-0">
                 <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
-                  Clinical adviser
+                  Clinical advisor
                 </p>
                 <div className="mt-1.5 flex flex-wrap items-end gap-x-2 gap-y-1 sm:mt-2">
                   <span className="font-sans text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl md:text-[2.25rem] md:leading-none">
-                    Peptide Adviser
+                    Peptide Advisor
                   </span>
                   <span
                     className={

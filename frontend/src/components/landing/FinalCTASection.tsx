@@ -8,11 +8,17 @@ const FINAL_CTA_HEADLINE =
   "font-sans text-[1.5rem] font-normal leading-[1.1] tracking-tight text-white sm:text-[2rem] sm:leading-[1.08] md:text-[3rem] lg:text-[3.5rem] lg:leading-[1.05]";
 
 /**
- * ball.png opaque sphere ≈ 70% of the canvas (~15% transparent padding each side).
+ * ball.png opaque sphere ≈ 70% of the square canvas (~15% transparent padding each side).
  *
- * - Box is sized ~1.65× section height so the opaque sphere reads zoomed-in.
- * - translate-x ≈ 40% = right padding (15%) + 35% of opaque (24.5%), so ~65%
- *   of the real sphere stays in view and ~35% clips past the right edge.
+ * Composition: ball hangs off the right edge so the curved silhouette faces the copy
+ * (never a hard vertical clip through the sphere).
+ *
+ * The lime connectors sit on the asset’s right — `scale-x-[-1]` mirrors them onto the
+ * visible side so they stay in frame after the right-edge crop.
+ *
+ * - Ball box ≈ 1.33× section height → visible sphere (0.7× box) ≈ 93% of band height,
+ *   fully contained (no flat top/bottom cuts).
+ * - Phones: translate-x-[52%] ≈ 50% visible; md+: translate-x-[40%] ≈ 65% visible.
  */
 export function FinalCTASection() {
   const { finalCta } = landingContent;
@@ -26,24 +32,14 @@ export function FinalCTASection() {
 
   return (
     <section className="relative w-full overflow-hidden bg-black">
-      {/* Soft glow behind the ball */}
-      <div
-        className="pointer-events-none absolute top-1/2 right-[-5%] z-0 h-[85%] w-[50%] -translate-y-1/2 rounded-full bg-[radial-gradient(circle_at_40%_50%,rgba(141,195,225,0.32)_0%,rgba(56,83,164,0.14)_45%,transparent_70%)] blur-3xl"
-        aria-hidden
-      />
-
-      {/*
-        Ball shell — rem sizes track section min-heights × ~1.45 so the
-        opaque sphere (not the transparent padding) fills the vertical space.
-      */}
       <div
         className={cn(
-          "pointer-events-none absolute top-1/2 right-0 z-0 aspect-square -translate-y-1/2 translate-x-[40%]",
-          "h-[37rem] w-[37rem]",
-          "sm:h-[44rem] sm:w-[44rem]",
-          "md:h-[53rem] md:w-[53rem]",
-          "lg:h-[63rem] lg:w-[63rem]",
-          "xl:h-[70rem] xl:w-[70rem]",
+          "pointer-events-none absolute top-1/2 right-0 z-0 aspect-square -translate-y-1/2 translate-x-[52%] md:translate-x-[40%]",
+          "h-[32rem] w-[32rem]",
+          "sm:h-[37rem] sm:w-[37rem]",
+          "md:h-[45rem] md:w-[45rem]",
+          "lg:h-[53rem] lg:w-[53rem]",
+          "xl:h-[59rem] xl:w-[59rem]",
         )}
         aria-hidden
       >
@@ -51,19 +47,25 @@ export function FinalCTASection() {
           src={finalCta.image}
           alt=""
           fill
-          className="object-contain drop-shadow-[0_28px_80px_rgba(0,0,0,0.55)]"
-          sizes="(max-width: 640px) 37rem, (max-width: 768px) 44rem, (max-width: 1024px) 53rem, 70rem"
+          className="scale-x-[-1] object-contain"
+          sizes="(max-width: 640px) 32rem, (max-width: 768px) 37rem, (max-width: 1024px) 45rem, 59rem"
           priority={false}
         />
       </div>
 
+      {/* Soft left vignette keeps copy readable over the ball */}
+      <div
+        className="pointer-events-none absolute inset-y-0 left-0 z-[1] w-[58%] bg-[linear-gradient(90deg,rgba(0,0,0,0.6)_0%,rgba(0,0,0,0.28)_55%,transparent_100%)] sm:w-[52%] md:w-[48%]"
+        aria-hidden
+      />
+
       <div
         className={cn(
-          "relative z-10 flex min-h-[22rem] w-full items-center py-14",
-          "sm:min-h-[26rem] sm:py-16",
-          "md:min-h-[32rem] md:py-20",
-          "lg:min-h-[38rem] lg:py-24",
-          "xl:min-h-[42rem]",
+          "relative z-10 flex min-h-[24rem] w-full items-center py-14",
+          "sm:min-h-[28rem] sm:py-16",
+          "md:min-h-[34rem] md:py-20",
+          "lg:min-h-[40rem] lg:py-24",
+          "xl:min-h-[44rem]",
           heroLayout.gutterX,
         )}
       >

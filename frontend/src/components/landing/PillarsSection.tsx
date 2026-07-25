@@ -7,6 +7,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type KeyboardEvent,
   type TouchEvent,
 } from "react";
 import { useGSAP } from "@gsap/react";
@@ -19,7 +20,7 @@ import { cn } from "@/lib/utils";
 
 type PillarItem = (typeof landingContent.pillars.items)[number];
 
-const AUTO_PLAY_HOLD_MS = 3000;
+const AUTO_PLAY_HOLD_MS = 2000;
 const SLIDE_DURATION_S = 0.85;
 /** Desktop (lg+) — keep identical to current desktop carousel */
 const DESKTOP_VISIBLE_CARDS = 4;
@@ -221,7 +222,7 @@ function PillarDetailPanel({
 }) {
   return (
     <div className={cn("glass-panel rounded-2xl p-4 sm:p-5 lg:p-6", className)}>
-      <span className="glass-capsule inline-flex items-center rounded-full px-3.5 py-1.5 text-brand-caption font-semibold uppercase tracking-[0.08em] text-primary sm:px-4">
+      <span className="glass-capsule-accent inline-flex items-center rounded-full px-3.5 py-1.5 text-brand-caption font-semibold uppercase tracking-[0.08em] text-primary sm:px-4">
         {item.overviewLabel}
       </span>
       <p className="text-brand-body mt-3 text-sm text-primary/75 sm:text-[1.125rem]">
@@ -260,7 +261,10 @@ function PillarsCarousel({
   const autoplayTimerRef = useRef<number | null>(null);
   const slideTweenRef = useRef<gsap.core.Tween | null>(null);
   const isAnimatingRef = useRef(false);
+  /** Hard pause — section out of view / reduce motion */
   const pauseAutoplayRef = useRef(pauseAutoplay);
+  /** Soft pause — hover only blocks the timer, never manual nav */
+  const hoverPauseRef = useRef(false);
   const touchStartXRef = useRef<number | null>(null);
   const touchDeltaXRef = useRef(0);
 
@@ -269,7 +273,6 @@ function PillarsCarousel({
   }, [pauseAutoplay]);
 
   const activeItem = extendedItems[trackIndex] ?? items[centerIndex];
-  const logicalIndex = ((trackIndex % itemCount) + itemCount) % itemCount;
 
   const getVisibleCards = useCallback(() => resolveVisibleCards(), []);
 
@@ -318,10 +321,11 @@ function PillarsCarousel({
   const scheduleAutoplay = useCallback(
     (delay = AUTO_PLAY_HOLD_MS) => {
       clearAutoplay();
-      if (pauseAutoplayRef.current) return;
+      if (pauseAutoplayRef.current || hoverPauseRef.current) return;
 
       autoplayTimerRef.current = window.setTimeout(() => {
         autoplayTimerRef.current = null;
+        if (pauseAutoplayRef.current || hoverPauseRef.current) return;
         advanceRef.current();
       }, delay);
     },
@@ -329,7 +333,6 @@ function PillarsCarousel({
   );
 
   const advanceRef = useRef<() => void>(() => {});
-  const goToRef = useRef<(logical: number) => void>(() => {});
 
   const applyTransform = useCallback(
     (index: number, animate: boolean) => {
@@ -371,7 +374,7 @@ function PillarsCarousel({
   );
 
   const advance = useCallback(() => {
-    if (isAnimatingRef.current || pauseAutoplayRef.current) return;
+    if (isAnimatingRef.current) return;
 
     const nextIndex = trackIndexRef.current + 1;
     trackIndexRef.current = nextIndex;
@@ -380,7 +383,7 @@ function PillarsCarousel({
   }, [applyTransform]);
 
   const retreat = useCallback(() => {
-    if (isAnimatingRef.current || pauseAutoplayRef.current) return;
+    if (isAnimatingRef.current) return;
 
     const nextIndex = trackIndexRef.current - 1;
     trackIndexRef.current = nextIndex;
@@ -388,28 +391,7 @@ function PillarsCarousel({
     applyTransform(nextIndex, true);
   }, [applyTransform]);
 
-  const goToLogical = useCallback(
-    (logical: number) => {
-      if (isAnimatingRef.current || pauseAutoplayRef.current) return;
-
-      const currentLogical =
-        ((trackIndexRef.current % itemCount) + itemCount) % itemCount;
-      if (logical === currentLogical) {
-        scheduleAutoplay();
-        return;
-      }
-
-      // Stay in the middle copy of the extended track for smooth motion
-      const nextIndex = itemCount + logical;
-      trackIndexRef.current = nextIndex;
-      setTrackIndex(nextIndex);
-      applyTransform(nextIndex, true);
-    },
-    [applyTransform, itemCount, scheduleAutoplay],
-  );
-
   advanceRef.current = advance;
-  goToRef.current = goToLogical;
 
   useEffect(() => {
     if (pauseAutoplay) {
@@ -455,6 +437,40 @@ function PillarsCarousel({
     };
   }, [applyTransform, clearAutoplay, scheduleAutoplay, startIndex]);
 
+  const onMouseEnter = () => {
+    hoverPauseRef.current = true;
+    clearAutoplay();
+  };
+
+  const onMouseLeave = () => {
+    hoverPauseRef.current = false;
+    if (!pauseAutoplayRef.current && !isAnimatingRef.current) {
+      scheduleAutoplay();
+    }
+  };
+
+  const onKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.key === "ArrowLeft") {
+      event.preventDefault();
+      clearAutoplay();
+      retreat();
+    } else if (event.key === "ArrowRight") {
+      event.preventDefault();
+      clearAutoplay();
+      advance();
+    }
+  };
+
+  const onPrevClick = () => {
+    clearAutoplay();
+    retreat();
+  };
+
+  const onNextClick = () => {
+    clearAutoplay();
+    advance();
+  };
+
   const onTouchStart = (event: TouchEvent) => {
     touchStartXRef.current = event.touches[0]?.clientX ?? null;
     touchDeltaXRef.current = 0;
@@ -484,11 +500,23 @@ function PillarsCarousel({
     }
   };
 
+  const arrowButtonClass = cn(
+    "inline-flex h-11 w-12 items-center justify-center text-primary/70",
+    "transition-colors duration-200 hover:bg-white/50 hover:text-primary",
+    "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary/40",
+  );
+
   return (
     <div className="mt-6 md:mt-8">
       <div
         ref={viewportRef}
-        className="w-full cursor-default select-none"
+        tabIndex={0}
+        role="region"
+        aria-label="Six pillars carousel"
+        className="w-full cursor-default select-none outline-none focus-visible:ring-2 focus-visible:ring-primary/20 focus-visible:ring-offset-2 focus-visible:ring-offset-[#E5E5E5]"
+        onMouseEnter={onMouseEnter}
+        onMouseLeave={onMouseLeave}
+        onKeyDown={onKeyDown}
         onTouchStart={onTouchStart}
         onTouchMove={onTouchMove}
         onTouchEnd={onTouchEnd}
@@ -527,31 +555,60 @@ function PillarsCarousel({
           </div>
         </div>
 
-        {/* Progress dots — helpful on smaller screens */}
-        <div
-          className="mt-5 flex items-center justify-center gap-2 lg:mt-6"
-          role="tablist"
-          aria-label="Pillar modules"
-        >
-          {items.map((item, index) => {
-            const isActiveDot = index === logicalIndex;
-            return (
-              <button
-                key={item.id}
-                type="button"
-                role="tab"
-                aria-selected={isActiveDot}
-                aria-label={`Show ${item.shortTitle}`}
-                className={cn(
-                  "h-2 rounded-full transition-all duration-300",
-                  isActiveDot
-                    ? "w-6 bg-primary-light"
-                    : "w-2 bg-primary-light/25 hover:bg-primary-light/45",
-                )}
-                onClick={() => goToLogical(index)}
-              />
-            );
-          })}
+        <div className="mt-5 flex items-center justify-center lg:mt-6">
+          <div
+            className="glass-capsule inline-flex overflow-hidden rounded-full"
+            role="group"
+            aria-label="Pillar navigation"
+          >
+            <button
+              type="button"
+              aria-label="Previous pillar"
+              className={cn(arrowButtonClass, "rounded-l-full")}
+              onClick={onPrevClick}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                aria-hidden
+              >
+                <path
+                  d="M15 18l-6-6 6-6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+            <button
+              type="button"
+              aria-label="Next pillar"
+              className={cn(
+                arrowButtonClass,
+                "rounded-r-full border-l border-primary/10",
+              )}
+              onClick={onNextClick}
+            >
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2.2"
+                aria-hidden
+              >
+                <path
+                  d="M9 18l6-6-6-6"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>

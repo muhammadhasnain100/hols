@@ -16,7 +16,7 @@ import { heroLayout } from "@/lib/hero-styles";
 import { useSmoothScroll } from "@/providers/SmoothScrollProvider";
 import { cn } from "@/lib/utils";
 
-/** Same surface as Six Pillars — do not change */
+/** Same surface as Six Pillars / FAQs — do not change */
 const FOOTER_BG = "#E5E5E5";
 
 type SocialLabel = (typeof footerNav.social)[number]["label"];
@@ -24,6 +24,7 @@ type SocialLabel = (typeof footerNav.social)[number]["label"];
 type FooterItem = {
   label: string;
   href?: string;
+  external?: boolean;
   disabled?: boolean;
 };
 
@@ -40,28 +41,26 @@ const linkColumns: Array<{ title: string; links: FooterItem[] }> = [
   {
     title: "Help",
     links: [
-      { label: footerNav.contact.email, href: footerNav.contact.href },
+      {
+        label: footerNav.contact.email,
+        href: footerNav.contact.href,
+        external: true,
+      },
       { label: "FAQs", href: "/#faqs" },
-      { label: "Medical Disclaimer", disabled: true },
-      { label: "Terms", disabled: true },
-      { label: "Privacy", disabled: true },
+      { label: "Medical Disclaimer", href: "/legal/medical-disclaimer" },
+      { label: "Terms", href: "/legal/terms" },
+      { label: "Privacy", href: "/legal/privacy" },
     ],
   },
   {
     title: "HOLS",
     links: [
-      { label: "House of Life Sciences", disabled: true },
-      { label: "Clinical Education", disabled: true },
+      { label: "House of Life Sciences", href: "/" },
+      { label: "Clinical Education", href: "/#everything-inside" },
       { label: "Built on precision", disabled: true },
     ],
   },
 ];
-
-const disabledLegalLabels = new Set([
-  "Terms",
-  "Privacy",
-  "Medical Disclaimer",
-]);
 
 const SOCIAL_COLORS: Record<SocialLabel, string> = {
   LinkedIn: "#0A66C2",
@@ -243,14 +242,13 @@ function SocialIconLink({
       rel="noopener noreferrer"
       aria-label={label}
       className={cn(
-        "inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/70",
-        "shadow-[0_1px_0_rgba(255,255,255,0.9)_inset] transition-all duration-200",
-        "hover:-translate-y-0.5 hover:bg-white hover:shadow-[0_10px_20px_-12px_rgba(21,39,68,0.35)]",
+        "inline-flex h-9 w-9 items-center justify-center rounded-full bg-white",
+        "transition-all duration-200 hover:-translate-y-0.5",
         "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary/40",
       )}
       style={isGradientBrand ? undefined : { color }}
     >
-      <Icon className="h-5 w-5" />
+      <Icon className="h-[1.125rem] w-[1.125rem]" />
     </Link>
   );
 }
@@ -267,13 +265,8 @@ function NewsletterSignup() {
   };
 
   return (
-    <div
-      className={cn(
-        "w-full max-w-lg rounded-2xl border border-primary/8 bg-white/55 p-4 sm:p-5",
-        "shadow-[0_1px_0_rgba(255,255,255,0.85)_inset] lg:ml-auto lg:max-w-sm lg:rounded-none lg:border-0 lg:bg-transparent lg:p-0 lg:shadow-none",
-      )}
-    >
-      <p className="text-brand-body text-primary/75">
+    <div className="w-full">
+      <p className="text-brand-body text-primary/70">
         Get clinical updates and product news from HOLS.
       </p>
 
@@ -287,7 +280,7 @@ function NewsletterSignup() {
       ) : (
         <form
           onSubmit={onSubmit}
-          className="mt-4 flex w-full flex-col gap-3 sm:flex-row sm:items-center sm:gap-2.5"
+          className="mt-4 flex w-full flex-col gap-2.5 sm:flex-row sm:items-center"
         >
           <label className="sr-only" htmlFor="footer-newsletter-email">
             Email address
@@ -318,7 +311,7 @@ function NewsletterSignup() {
         </form>
       )}
 
-      <div className="mt-5 flex flex-wrap items-center justify-center gap-2 sm:mt-6 sm:justify-start lg:justify-start">
+      <div className="mt-5 flex flex-wrap items-center gap-2">
         {footerNav.social.map((item) => (
           <SocialIconLink
             key={item.href}
@@ -327,6 +320,35 @@ function NewsletterSignup() {
           />
         ))}
       </div>
+    </div>
+  );
+}
+
+function LinkColumn({ title, links }: { title: string; links: FooterItem[] }) {
+  return (
+    <div className="min-w-0">
+      <FooterHeading>{title}</FooterHeading>
+      <ul className="mt-3 space-y-2.5 sm:mt-4">
+        {links.map((item) => (
+          <li key={`${item.label}-${item.href ?? "text"}`} className="min-w-0">
+            {item.disabled || !item.href ? (
+              <span className="text-brand-body cursor-default text-primary/70">
+                {item.label}
+              </span>
+            ) : (
+              <FooterLink
+                href={item.href}
+                external={item.external}
+                className={
+                  item.label.includes("@") ? "break-all" : undefined
+                }
+              >
+                {item.label}
+              </FooterLink>
+            )}
+          </li>
+        ))}
+      </ul>
     </div>
   );
 }
@@ -355,59 +377,26 @@ export function Footer() {
           heroLayout.gutterX,
         )}
       >
-        <div className="mb-8 max-w-xl sm:mb-10 lg:mb-12">
+        {/* Brand block sits above the columns */}
+        <div className="mb-10 max-w-md sm:mb-12 lg:mb-14">
           <Logo variant="dark" className="h-8 sm:h-9 md:h-10" />
-          <p className="text-brand-body mt-3 text-primary/60 sm:mt-4 sm:max-w-md">
+          <p className="text-brand-body mt-3 max-w-sm text-primary/60 sm:mt-4">
             {footerNav.disclaimer}
           </p>
         </div>
 
-        <div className="grid grid-cols-1 gap-8 sm:gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(16rem,22rem)] lg:items-start lg:gap-12 xl:grid-cols-[minmax(0,1fr)_minmax(18rem,24rem)] xl:gap-16">
-          <div className="order-1 lg:order-2">
-            <NewsletterSignup />
-          </div>
+        {/* Explore | Help | HOLS | Newsletter — evenly spread */}
+        <div className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 sm:gap-x-8 lg:grid-cols-4 lg:gap-x-8 xl:gap-x-12">
+          {linkColumns.map((column) => (
+            <LinkColumn
+              key={column.title}
+              title={column.title}
+              links={column.links}
+            />
+          ))}
 
-          <div className="order-2 grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-3 sm:gap-x-8 sm:gap-y-10 lg:order-1">
-            {linkColumns.map((column, index) => (
-              <div
-                key={column.title}
-                className={cn(
-                  "min-w-0",
-                  index === 2 && "col-span-2 sm:col-span-1",
-                )}
-              >
-                <FooterHeading>{column.title}</FooterHeading>
-                <ul className="mt-3 space-y-2.5 sm:mt-4">
-                  {column.links.map((item) => (
-                    <li
-                      key={`${item.label}-${item.href ?? "disabled"}`}
-                      className="min-w-0"
-                    >
-                      {item.disabled || !item.href ? (
-                        <span
-                          aria-disabled="true"
-                          className={cn(
-                            "text-brand-body cursor-default text-primary/70",
-                            item.label.includes("@") && "break-all",
-                          )}
-                        >
-                          {item.label}
-                        </span>
-                      ) : (
-                        <FooterLink
-                          href={item.href}
-                          className={
-                            item.label.includes("@") ? "break-all" : undefined
-                          }
-                        >
-                          {item.label}
-                        </FooterLink>
-                      )}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            ))}
+          <div className="col-span-2 sm:col-span-3 lg:col-span-1">
+            <NewsletterSignup />
           </div>
         </div>
 
@@ -416,30 +405,24 @@ export function Footer() {
             © {year} {brand.name}. All Rights Reserved
           </p>
 
-          <div className="flex flex-wrap items-center gap-x-4 gap-y-2 sm:gap-x-5">
-            {footerNav.legal.map((item) =>
-              disabledLegalLabels.has(item.label) ? (
-                <span
-                  key={item.href}
-                  aria-disabled="true"
-                  className="text-brand-caption cursor-default text-primary/70"
-                >
-                  {item.label}
-                </span>
-              ) : (
-                <FooterLink
-                  key={item.href}
-                  href={item.href}
-                  className="text-brand-caption"
-                >
-                  {item.label}
-                </FooterLink>
-              ),
-            )}
+          <div className="flex flex-wrap items-center gap-x-5 gap-y-2">
+            {footerNav.legal.map((item) => (
+              <FooterLink
+                key={item.href}
+                href={item.href}
+                className="text-brand-caption text-primary/70"
+              >
+                {item.label}
+              </FooterLink>
+            ))}
             <button
               type="button"
               onClick={scrollToTop}
-              className="text-brand-caption text-primary/50 transition-colors duration-200 hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary/40"
+              className={cn(
+                "text-brand-caption text-primary/70 transition-colors duration-200",
+                "hover:text-primary",
+                "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary/40",
+              )}
             >
               Scroll to top
             </button>

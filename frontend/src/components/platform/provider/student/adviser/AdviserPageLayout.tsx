@@ -16,7 +16,7 @@ export function AdviserPageLayout({ children }: AdviserPageLayoutProps) {
   return (
     <PortalShell
       role="student"
-      title="Peptide Adviser"
+      title="Peptide Advisor"
       showPageHeader={false}
       contentFlush
       brandBackdrop
@@ -36,8 +36,8 @@ export function AdviserPageLayout({ children }: AdviserPageLayoutProps) {
               </svg>
             </button>
             <h1 className="font-sans truncate text-base font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl md:text-2xl">
-              <span className="sm:hidden">Adviser</span>
-              <span className="hidden sm:inline">Peptide Adviser</span>
+              <span className="sm:hidden">Advisor</span>
+              <span className="hidden sm:inline">Peptide Advisor</span>
             </h1>
           </div>
 

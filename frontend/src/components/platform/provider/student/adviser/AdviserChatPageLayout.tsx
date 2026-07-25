@@ -18,7 +18,7 @@ export function AdviserChatPageLayout({ patientName, children }: AdviserChatPage
   return (
     <PortalShell
       role="student"
-      title="Peptide Adviser"
+      title={patientName || "Patient"}
       showPageHeader={false}
       contentFlush
       nav={studentNav}
@@ -39,7 +39,7 @@ export function AdviserChatPageLayout({ patientName, children }: AdviserChatPage
               </button>
               <Link
                 href="/student/adviser"
-                aria-label="Back to Peptide Adviser"
+                aria-label="Back to Peptide Advisor"
                 className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-0 bg-[#DDE466] text-[#152744] transition hover:brightness-105"
               >
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -47,27 +47,13 @@ export function AdviserChatPageLayout({ patientName, children }: AdviserChatPage
                 </svg>
               </Link>
               <div className="min-w-0">
-                <h1 className="font-sans truncate text-base font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl md:text-2xl">
-                  <span className="sm:hidden">Adviser</span>
-                  <span className="hidden sm:inline">Peptide Adviser</span>
-                </h1>
-                {patientName ? (
-                  <p
-                    className="mt-0.5 truncate text-[11px] font-medium text-[color:var(--dash-muted)] sm:hidden"
-                    title={patientName}
-                  >
-                    {patientName}
-                  </p>
-                ) : null}
-              </div>
-              {patientName ? (
-                <span
-                  className="hidden max-w-[9rem] truncate rounded-full bg-[color:var(--dash-soft)] px-2.5 py-1 text-brand-caption font-medium text-[color:var(--dash-muted)] sm:inline-flex md:max-w-[14rem]"
-                  title={patientName}
+                <h1
+                  className="font-sans truncate text-base font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl md:text-2xl"
+                  title={patientName || undefined}
                 >
-                  {patientName}
-                </span>
-              ) : null}
+                  {patientName || "Patient"}
+                </h1>
+              </div>
             </div>
 
             <WelcomeChip />
