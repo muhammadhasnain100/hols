@@ -208,7 +208,7 @@ function SectionHeader({
 }) {
   return (
     <div className="mx-auto w-full max-w-4xl shrink-0 px-1 text-center sm:px-0">
-      <h2 className="font-sans text-[1.35rem] font-bold leading-[1.15] tracking-[0.01em] text-accent sm:text-[2.125rem] sm:leading-[1.08] md:text-[2.75rem] lg:text-[3.25rem] xl:text-[3.75rem] xl:leading-[1.05]">
+      <h2 className="font-sans text-[1.35rem] font-normal leading-[1.15] tracking-tight text-accent sm:text-[2.125rem] sm:leading-[1.08] md:text-[2.75rem] lg:text-[3.25rem] xl:text-[3.75rem] xl:leading-[1.05]">
         <span className="block text-balance">{headlineLines[0]}</span>
         <span className="block text-balance">{headlineLines[1]}</span>
       </h2>

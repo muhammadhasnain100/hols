@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/Button";
 import { HeroButton } from "@/components/hero/HeroButton";
 import { HeroLogo } from "@/components/hero/HeroLogo";
@@ -50,55 +51,80 @@ function OverlayNavLinks() {
 export function HeroNavbar({ variant = "landing" }: HeroNavbarProps) {
   const isLanding = variant === "landing";
   const isOverlay = variant === "overlay";
+  const [scrolled, setScrolled] = useState(false);
+
+  useEffect(() => {
+    if (!isOverlay) return;
+
+    const update = () => setScrolled(window.scrollY > 80);
+    update();
+    window.addEventListener("scroll", update, { passive: true });
+    return () => window.removeEventListener("scroll", update);
+  }, [isOverlay]);
 
   if (isOverlay) {
     return (
-      <header className="absolute inset-x-0 top-0 z-50">
-        {/* Desktop */}
-        <div
-          className={cn(
-            "hidden w-full items-center md:grid md:grid-cols-[auto_1fr_auto]",
-            heroLayout.nav.shell,
-          )}
-        >
-          <HeroLogo variant="light" className="h-9 shrink-0 md:h-10" />
+      <>
+        <header className="absolute inset-x-0 top-0 z-50">
+          {/* Desktop */}
+          <div
+            className={cn(
+              "hidden w-full items-center md:grid md:grid-cols-[auto_1fr_auto]",
+              heroLayout.nav.shell,
+            )}
+          >
+            <HeroLogo variant="light" className="h-9 shrink-0 md:h-10" />
 
-          <div className="flex justify-center">
-            <OverlayNavLinks />
+            <div className="flex justify-center">
+              <OverlayNavLinks />
+            </div>
+
+            <div className="flex items-center justify-end gap-3">
+              <HeroButton
+                href={heroContent.navCtas.login.href}
+                variant="ghost"
+                className="shrink-0"
+              >
+                {heroContent.navCtas.login.label}
+              </HeroButton>
+              <span aria-hidden className={heroCtaSeparator}>
+                ·
+              </span>
+              <HeroButton
+                href={heroContent.navCtas.getStarted.href}
+                variant="primary"
+                className="shrink-0"
+              >
+                {heroContent.navCtas.getStarted.label}
+              </HeroButton>
+            </div>
           </div>
 
-          <div className="flex items-center justify-end gap-3">
-            <HeroButton
-              href={heroContent.navCtas.login.href}
-              variant="ghost"
-              className="shrink-0"
-            >
-              {heroContent.navCtas.login.label}
-            </HeroButton>
-            <span aria-hidden className={heroCtaSeparator}>
-              ·
-            </span>
-            <HeroButton
-              href={heroContent.navCtas.getStarted.href}
-              variant="primary"
-              className="shrink-0"
-            >
-              {heroContent.navCtas.getStarted.label}
-            </HeroButton>
+          {/* Mobile */}
+          <div
+            className={cn(
+              "flex w-full items-center justify-between gap-4 md:hidden",
+              heroLayout.nav.shell,
+            )}
+          >
+            <HeroLogo variant="light" className="h-9 shrink-0" />
+            <HeroNavbarMobile tone="overlay" />
           </div>
-        </div>
+        </header>
 
-        {/* Mobile */}
+        {/* Compact desktop nav — same glass menu icon + panel as mobile. */}
         <div
           className={cn(
-            "flex w-full items-center justify-between gap-4 md:hidden",
-            heroLayout.nav.shell,
+            "fixed right-6 top-5 z-[60] hidden transition-all duration-300 md:block",
+            scrolled
+              ? "visible translate-y-0 opacity-100"
+              : "invisible pointer-events-none -translate-y-2 opacity-0",
           )}
+          aria-hidden={!scrolled}
         >
-          <HeroLogo variant="light" className="h-9 shrink-0" />
-          <HeroNavbarMobile tone="overlay" />
+          {scrolled ? <HeroNavbarMobile tone="overlay" floating /> : null}
         </div>
-      </header>
+      </>
     );
   }
 

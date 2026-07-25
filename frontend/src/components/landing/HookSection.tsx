@@ -170,8 +170,10 @@ function buildDiagramGeometry(
   const ballCX = ballRect.left + ballRect.width / 2;
   const ballCY = ballRect.top + ballRect.height / 2;
   const center = toSvg(ballCX, ballCY);
-  const rx = (ballRect.width / 2) * 0.92;
-  const ry = (ballRect.height / 2) * 0.92;
+  // The PNG includes transparent padding, so anchor wires to the visible sphere
+  // rather than the outer image canvas.
+  const rx = (ballRect.width / 2) * 0.72;
+  const ry = (ballRect.height / 2) * 0.72;
 
   const paths: DiagramPath[] = [];
   const arrows: DiagramArrow[] = [];
@@ -246,8 +248,9 @@ function buildVerticalDiagramGeometry(
   const ballCX = ballRect.left + ballRect.width / 2;
   const ballCY = ballRect.top + ballRect.height / 2;
   const center = toSvg(ballCX, ballCY);
-  const rx = (ballRect.width / 2) * 0.92;
-  const ry = (ballRect.height / 2) * 0.92;
+  // The PNG includes transparent padding, so anchor wires to the visible sphere.
+  const rx = (ballRect.width / 2) * 0.72;
+  const ry = (ballRect.height / 2) * 0.72;
 
   const paths: DiagramPath[] = [];
   const arrows: DiagramArrow[] = [];
@@ -469,7 +472,7 @@ function HookCopy({ centered = false }: { centered?: boolean }) {
         centered ? "mx-auto text-center" : "text-left",
       )}
     >
-      <h2 className="font-sans text-[1.875rem] font-bold leading-[1.05] tracking-[0.01em] text-primary sm:text-[2.25rem] md:text-[3.75rem]">
+      <h2 className="font-sans text-[1.875rem] font-normal leading-[1.05] tracking-tight text-primary sm:text-[2.25rem] md:text-[3.75rem]">
         <span>{hook.beforeLabel}</span>
         <span style={{ color: HOOK_LINE }}>
           {" "}
@@ -653,7 +656,7 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
           </span>
         </div>
         <div aria-hidden />
-        <div aria-hidden className="w-[120px] sm:w-[140px] md:w-[160px]" />
+        <div aria-hidden className="w-[150px] sm:w-[180px] md:w-[210px]" />
         <div aria-hidden />
         <div
           className="flex justify-center justify-self-center"
@@ -688,7 +691,7 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
         {/* 4 · Flexible gap for ball → dashboard line */}
         <div aria-hidden className="h-full w-full" />
 
-        {/* 5 · Dashboard — desktop keeps locked 400×288 (no responsive scale) */}
+        {/* 5 · Dashboard — desktop keeps its locked frame (no responsive scale) */}
         <HookPortalShell className="relative z-10 justify-self-center self-center">
           <DashboardMockup innerRef={(n) => (dashRef.current = n)} className="opacity-0" />
         </HookPortalShell>

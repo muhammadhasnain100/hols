@@ -13,20 +13,69 @@ import { cn } from "@/lib/utils";
 
 type HeroNavbarMobileProps = {
   tone?: "default" | "overlay";
+  /** Fixed scrolled desktop control — light glass + dark text for white sections. */
+  floating?: boolean;
 };
 
-export function HeroNavbarMobile({ tone = "default" }: HeroNavbarMobileProps) {
+function MenuIcon({ open }: { open: boolean }) {
+  return (
+    <svg
+      width="18"
+      height="18"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="2"
+      aria-hidden
+    >
+      {open ? (
+        <path d="M6 6l12 12M18 6L6 18" />
+      ) : (
+        <path d="M4 7h16M4 12h16M4 17h16" />
+      )}
+    </svg>
+  );
+}
+
+export function HeroNavbarMobile({
+  tone = "default",
+  floating = false,
+}: HeroNavbarMobileProps) {
   const [open, setOpen] = useState(false);
   const { setPaused } = useSmoothScroll();
-  const isOverlay = tone === "overlay";
+  const isOverlay = tone === "overlay" && !floating;
+  // Scrolled floating menu sits over light sections — use light glass + dark text.
+  const isLightGlass = floating || tone === "default";
 
   useEffect(() => {
     setPaused(open);
   }, [open, setPaused]);
 
+  useEffect(() => {
+    if (!open) return;
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === "Escape") setOpen(false);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [open]);
+
   return (
     <div className="relative z-50">
-      {isOverlay ? (
+      {floating ? (
+        <button
+          type="button"
+          aria-expanded={open}
+          aria-label={open ? "Close menu" : "Open menu"}
+          onClick={() => setOpen((prev) => !prev)}
+          className={cn(
+            "glass-capsule inline-flex h-11 w-11 items-center justify-center rounded-full text-primary",
+            "transition-colors duration-300 hover:bg-white/90",
+          )}
+        >
+          <MenuIcon open={open} />
+        </button>
+      ) : isOverlay ? (
         <HeroButton
           type="button"
           variant="icon"
@@ -34,21 +83,7 @@ export function HeroNavbarMobile({ tone = "default" }: HeroNavbarMobileProps) {
           aria-expanded={open}
           onClick={() => setOpen((prev) => !prev)}
         >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            aria-hidden
-          >
-            {open ? (
-              <path d="M6 6l12 12M18 6L6 18" />
-            ) : (
-              <path d="M4 7h16M4 12h16M4 17h16" />
-            )}
-          </svg>
+          <MenuIcon open={open} />
         </HeroButton>
       ) : (
         <button
@@ -58,35 +93,33 @@ export function HeroNavbarMobile({ tone = "default" }: HeroNavbarMobileProps) {
           onClick={() => setOpen((prev) => !prev)}
           className={getButtonClassName("glass", "h-10 w-10 p-0", "sm")}
         >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            aria-hidden
-          >
-            {open ? (
-              <path d="M6 6l12 12M18 6L6 18" />
-            ) : (
-              <path d="M4 7h16M4 12h16M4 17h16" />
-            )}
-          </svg>
+          <MenuIcon open={open} />
         </button>
       )}
+
+      {open ? (
+        <button
+          type="button"
+          aria-label="Close menu"
+          className={cn(
+            "fixed inset-0 z-40 cursor-default",
+            isLightGlass ? "bg-primary/10" : "bg-black/25",
+          )}
+          onClick={() => setOpen(false)}
+        />
+      ) : null}
 
       <div
         data-lenis-prevent
         className={cn(
-          "fixed inset-x-4 top-20 transition-all duration-300",
-          open ? "visible opacity-100" : "invisible opacity-0",
+          "fixed inset-x-4 top-20 z-50 transition-all duration-300 sm:inset-x-auto sm:right-6 sm:w-[min(22rem,calc(100vw-3rem))]",
+          open ? "visible translate-y-0 opacity-100" : "invisible -translate-y-2 opacity-0",
         )}
       >
         <div
           className={cn(
             "rounded-3xl px-6 py-6",
-            isOverlay ? cn("rounded-3xl px-6 py-6 text-white", heroGlassPanel) : "glass-capsule",
+            isLightGlass ? "glass-capsule text-primary" : cn("text-white", heroGlassPanel),
           )}
         >
           <nav className="flex flex-col gap-4" aria-label="Mobile">
@@ -97,9 +130,9 @@ export function HeroNavbarMobile({ tone = "default" }: HeroNavbarMobileProps) {
                 onClick={() => setOpen(false)}
                 className={cn(
                   "font-sans text-base font-medium transition-colors duration-300",
-                  isOverlay
-                    ? "text-white/85 hover:text-white"
-                    : "text-primary/85 hover:text-primary",
+                  isLightGlass
+                    ? "text-primary/85 hover:text-primary"
+                    : "text-white/85 hover:text-white",
                 )}
               >
                 {item.label}
@@ -108,29 +141,10 @@ export function HeroNavbarMobile({ tone = "default" }: HeroNavbarMobileProps) {
             <div
               className={cn(
                 "mt-4 flex flex-col gap-3 border-t pt-4",
-                isOverlay ? "border-white/15" : "border-primary/10",
+                isLightGlass ? "border-primary/10" : "border-white/15",
               )}
             >
-              {isOverlay ? (
-                <>
-                  <HeroButton
-                    href={heroContent.navCtas.login.href}
-                    variant="ghost"
-                    className="w-full"
-                    onClick={() => setOpen(false)}
-                  >
-                    {heroContent.navCtas.login.label}
-                  </HeroButton>
-                  <HeroButton
-                    href={heroContent.navCtas.getStarted.href}
-                    variant="primary"
-                    className="w-full"
-                    onClick={() => setOpen(false)}
-                  >
-                    {heroContent.navCtas.getStarted.label}
-                  </HeroButton>
-                </>
-              ) : (
+              {isLightGlass ? (
                 <>
                   <Button
                     href={heroContent.navCtas.login.href}
@@ -150,6 +164,25 @@ export function HeroNavbarMobile({ tone = "default" }: HeroNavbarMobileProps) {
                   >
                     {heroContent.navCtas.getStarted.label}
                   </Button>
+                </>
+              ) : (
+                <>
+                  <HeroButton
+                    href={heroContent.navCtas.login.href}
+                    variant="ghost"
+                    className="w-full"
+                    onClick={() => setOpen(false)}
+                  >
+                    {heroContent.navCtas.login.label}
+                  </HeroButton>
+                  <HeroButton
+                    href={heroContent.navCtas.getStarted.href}
+                    variant="primary"
+                    className="w-full"
+                    onClick={() => setOpen(false)}
+                  >
+                    {heroContent.navCtas.getStarted.label}
+                  </HeroButton>
                 </>
               )}
             </div>

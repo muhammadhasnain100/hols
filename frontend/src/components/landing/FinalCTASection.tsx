@@ -5,7 +5,7 @@ import { heroLayout } from "@/lib/hero-styles";
 import { cn } from "@/lib/utils";
 
 const FINAL_CTA_HEADLINE =
-  "font-sans text-[1.875rem] font-bold leading-[1.05] tracking-[0.01em] text-balance text-white sm:text-[2.25rem] md:text-[3.25rem] lg:text-[3.5rem]";
+  "font-sans text-[1.875rem] font-normal leading-[1.05] tracking-tight text-balance text-white sm:text-[2.25rem] md:text-[3.25rem] lg:text-[3.5rem]";
 
 /**
  * ball.png opaque sphere ≈ 70% of the canvas (~15% transparent padding each side).

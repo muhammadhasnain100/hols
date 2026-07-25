@@ -81,7 +81,7 @@ export const landingContent = {
         { id: "dashboard", label: "Dashboard" },
         { id: "lectures", label: "Lectures" },
         { id: "calculator", label: "Calculator" },
-        { id: "adviser", label: "Peptide Adviser" },
+        { id: "advisor", label: "Peptide Advisor" },
         { id: "payment", label: "Payment" },
         { id: "profile", label: "Profile" },
       ],
@@ -93,7 +93,7 @@ export const landingContent = {
       tools: [
         { id: "lectures", label: "Lectures" },
         { id: "calculator", label: "Calculator" },
-        { id: "adviser", label: "Adviser" },
+        { id: "advisor", label: "Advisor" },
         { id: "profile", label: "Profile" },
       ],
       actions: [
