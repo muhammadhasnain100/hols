@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { Icon, Menu, X } from "@/components/icons";
 import { mainNav } from "@/content/navigation";
 import { Button } from "@/components/ui/Button";
 import { useSmoothScroll } from "@/providers/SmoothScrollProvider";
@@ -26,21 +27,7 @@ export function NavbarMobile() {
         className={getButtonClassName("glass", "h-10 w-10 p-0", "sm")}
       >
         <span className="sr-only">Menu</span>
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth="2"
-          aria-hidden
-        >
-          {open ? (
-            <path d="M6 6l12 12M18 6L6 18" />
-          ) : (
-            <path d="M4 7h16M4 12h16M4 17h16" />
-          )}
-        </svg>
+        {open ? <Icon icon={X} size={20} strokeWidth={2} /> : <Icon icon={Menu} size={20} strokeWidth={2} />}
       </button>
 
       <div

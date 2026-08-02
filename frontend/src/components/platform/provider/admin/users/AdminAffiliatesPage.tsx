@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
+import { Icon, Menu } from "@/components/icons";
 import { PortalShell } from "@/components/platform/provider/PortalShell";
 import {
   DataField,
@@ -25,7 +26,7 @@ import {
   updateAffiliateInvitationQuota,
 } from "@/lib/integrate/provider/admin/affiliates/api";
 import type { AffiliateSummary } from "@/lib/integrate/provider/admin/users/types";
-import { formatDate } from "@/lib/integrate/provider/student/payment/types";
+import { formatDate, formatMoney } from "@/lib/integrate/provider/student/payment/types";
 
 function openSidebar() {
   window.dispatchEvent(new Event("hols-portal-open-sidebar"));
@@ -182,6 +183,12 @@ export function AdminAffiliatesPage() {
     (affiliate) =>
       affiliate.invitation_quota != null && affiliate.student_count >= affiliate.invitation_quota,
   ).length;
+  const visibleTotalEarned = affiliates.reduce(
+    (sum, affiliate) => sum + (affiliate.total_earned ?? 0),
+    0,
+  );
+  const earningsCurrency =
+    affiliates.find((affiliate) => affiliate.earnings_currency)?.earnings_currency ?? "USD";
 
   return (
     <PortalShell
@@ -201,9 +208,7 @@ export function AdminAffiliatesPage() {
               onClick={openSidebar}
               className="dashboard-icon-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full lg:hidden"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-                <path d="M4 7h16M4 12h10M4 17h16" />
-              </svg>
+              <Icon icon={Menu} size={18} />
             </button>
             <h1 className="font-sans truncate text-base font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl md:text-2xl">
               Affiliates
@@ -216,9 +221,9 @@ export function AdminAffiliatesPage() {
           {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
           {success ? <AuthAlert variant="success">{success}</AuthAlert> : null}
 
-          <section className="dashboard-hero relative overflow-hidden rounded-2xl p-3.5 sm:p-5 md:p-6">
-            <div className="flex flex-col gap-3.5 sm:gap-5 lg:flex-row lg:items-end lg:justify-between">
-              <div className="min-w-0">
+          <section className="dashboard-hero relative overflow-hidden rounded-2xl px-4 py-3.5 sm:px-5 sm:py-5 md:px-6 md:py-6">
+            <div className="flex w-full flex-col gap-3.5 sm:gap-5 lg:flex-row lg:items-end lg:justify-between">
+              <div className="min-w-0 flex-1">
                 <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
                   Partner network
                 </p>
@@ -231,11 +236,11 @@ export function AdminAffiliatesPage() {
                   </span>
                 </div>
                 <p className="text-brand-body mt-2 text-sm text-[color:var(--dash-muted)] sm:text-base">
-                  Full partner details, referral counts, and invitation quotas in one place.
+                  Full partner details, referral counts, commission earned, and invitation quotas in one place.
                 </p>
               </div>
 
-              <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:gap-2.5">
+              <div className="grid w-full shrink-0 grid-cols-2 gap-2 sm:ml-auto sm:flex sm:w-auto sm:justify-end sm:gap-2.5 lg:shrink-0">
                 <Link
                   href="/admin/students"
                   className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center rounded-full px-3 text-sm font-medium text-[color:var(--dash-text)] transition sm:px-5"
@@ -254,8 +259,8 @@ export function AdminAffiliatesPage() {
             </div>
           </section>
 
-          <div className="grid min-w-0 gap-2.5 grid-cols-2 xl:grid-cols-4 sm:gap-3">
-            <StatPill label="Total affiliates" value={String(total)} />
+          <div className="grid min-w-0 gap-2.5 grid-cols-2 md:grid-cols-3 xl:grid-cols-5 sm:gap-3">
+            <StatPill label="Total affiliates" value={loading ? "—" : String(total)} />
             <StatPill
               label={
                 <>
@@ -263,10 +268,19 @@ export function AdminAffiliatesPage() {
                   <span className="hidden sm:inline">Students (this page)</span>
                 </>
               }
-              value={String(visibleStudentCount)}
+              value={loading ? "—" : String(visibleStudentCount)}
             />
-            <StatPill label="Quota total" value={String(visibleQuotaTotal)} />
-            <StatPill label="At capacity" value={String(atCapacityCount)} />
+            <StatPill
+              label={
+                <>
+                  <span className="sm:hidden">Earned</span>
+                  <span className="hidden sm:inline">Total earned</span>
+                </>
+              }
+              value={loading ? "—" : formatMoney(visibleTotalEarned, earningsCurrency)}
+            />
+            <StatPill label="Quota total" value={loading ? "—" : String(visibleQuotaTotal)} />
+            <StatPill label="At capacity" value={loading ? "—" : String(atCapacityCount)} />
           </div>
 
           <section className="dashboard-surface min-w-0 rounded-2xl p-4 sm:p-5 md:p-6">
@@ -390,6 +404,17 @@ export function AdminAffiliatesPage() {
                             affiliate.margin_percent != null
                               ? `${affiliate.margin_percent}%`
                               : "—"
+                          }
+                        />
+                        <DataField
+                          label="Total earned"
+                          value={
+                            <span className="text-[color:var(--dash-accent)]">
+                              {formatMoney(
+                                affiliate.total_earned ?? 0,
+                                affiliate.earnings_currency ?? "USD",
+                              )}
+                            </span>
                           }
                         />
                         <DataField label="Quota usage" value={formatQuota(affiliate)} />

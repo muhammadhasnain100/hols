@@ -31,7 +31,7 @@ export function BlogCard({
   return (
     <article
       className={cn(
-        "group overflow-hidden rounded-3xl border border-border/50 bg-white shadow-[0_8px_30px_rgba(21,39,68,0.06)] transition-shadow hover:shadow-[0_16px_40px_rgba(21,39,68,0.10)]",
+        "group overflow-hidden rounded-3xl border border-border/50 bg-white",
         featured && "md:grid md:grid-cols-2 md:items-stretch",
       )}
     >

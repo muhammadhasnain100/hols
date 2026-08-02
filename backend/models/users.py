@@ -30,6 +30,8 @@ class AffiliateSummary(BaseModel):
     margin_percent: Optional[float] = None
     invitation_quota: Optional[int] = None
     student_count: int = 0
+    total_earned: float = 0
+    earnings_currency: str = "USD"
     created_at: Optional[str] = None
 
 

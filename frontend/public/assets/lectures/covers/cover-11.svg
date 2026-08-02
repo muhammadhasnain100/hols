@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 520" fill="none">
+  <rect width="400" height="520" fill="#121f36"/>
+  <path d="M0 260c60-120 120-80 200-160s140-60 200-120v520H0Z" fill="#0d1626"/>
+  <path d="M0 300c70-100 130-60 200-140s130-50 200-100" stroke="#8dc3e1" stroke-opacity="0.35" stroke-width="2"/>
+  <path d="M0 340c70-90 130-50 200-120s130-40 200-90" stroke="#dde466" stroke-opacity="0.3" stroke-width="1.5"/>
+  <circle cx="300" cy="120" r="48" fill="#dde466" fill-opacity="0.2"/>
+  <circle cx="300" cy="120" r="18" fill="#dde466"/>
+  <rect x="40" y="420" width="140" height="5" rx="2.5" fill="#ffffff" fill-opacity="0.18"/>
+  <text x="40" y="500" fill="#ffffff" fill-opacity="0.35" font-family="system-ui,sans-serif" font-size="11" letter-spacing="3">HOLS</text>
+</svg>

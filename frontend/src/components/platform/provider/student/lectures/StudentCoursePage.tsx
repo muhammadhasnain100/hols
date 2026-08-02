@@ -1,13 +1,23 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useGSAP } from "@gsap/react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
+import { ChevronDown, Icon, X } from "@/components/icons";
+import {
+  getCoverDisplayTitle,
+  hashCourseId,
+} from "@/components/platform/provider/student/lectures/courseCover";
 import {
   CoursePageLayout,
 } from "@/components/platform/provider/student/lectures/CoursePageLayout";
 import { CoursePageSkeleton } from "@/components/platform/provider/student/DashboardSkeletons";
+import {
+  getPortalThemeSnapshot,
+  subscribePortalTheme,
+} from "@/components/platform/provider/portal-theme-store";
+import { useServerPortalTheme } from "@/components/platform/provider/PortalThemeProvider";
 import { ApiRequestError } from "@/lib/integrate/client";
 import { gsap, registerGsap } from "@/lib/gsap";
 import { prefersReducedMotion } from "@/lib/motion";
@@ -79,6 +89,7 @@ export function StudentCoursePage({ courseId }: StudentCoursePageProps) {
       if (prefersReducedMotion() || !stageRef.current || !course) return;
 
       const cover = stageRef.current.querySelector("[data-book-cover]");
+      const coverArt = stageRef.current.querySelector("[data-book-cover-art]");
       const toc = stageRef.current.querySelector("[data-book-toc]");
       const rows = stageRef.current.querySelectorAll("[data-toc-row]");
 
@@ -89,6 +100,14 @@ export function StudentCoursePage({ courseId }: StudentCoursePageProps) {
           { opacity: 0, y: 28, rotate: -1.5 },
           { opacity: 1, y: 0, rotate: 0, duration: 0.7 },
           0,
+        );
+      }
+      if (coverArt) {
+        tl.fromTo(
+          coverArt,
+          { opacity: 0 },
+          { opacity: 1, duration: 1.1, ease: "power2.out" },
+          0.08,
         );
       }
       if (toc) {
@@ -123,10 +142,9 @@ export function StudentCoursePage({ courseId }: StudentCoursePageProps) {
       {course ? (
         <div
           ref={stageRef}
-          className="grid w-full min-w-0 items-start gap-3 sm:gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.2fr)] xl:gap-5"
-          style={{ perspective: "1500px" }}
+          className="grid w-full min-w-0 max-w-full items-start gap-3 sm:gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.2fr)] xl:gap-5"
         >
-          <BookCover course={course} courseId={courseId} />
+          <HolsVolume course={course} courseId={courseId} topicGroups={topicGroups} />
 
           <TableOfContents
             courseId={courseId}
@@ -142,170 +160,231 @@ export function StudentCoursePage({ courseId }: StudentCoursePageProps) {
   );
 }
 
-function AnimatedStat({ value, label }: { value: number; label: string }) {
-  const ref = useRef<HTMLSpanElement>(null);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    if (prefersReducedMotion()) {
-      el.textContent = String(value);
-      return;
-    }
-    registerGsap();
-    const state = { n: 0 };
-    const tween = gsap.to(state, {
-      n: value,
-      duration: 1.1,
-      delay: 0.35,
-      ease: "power2.out",
-      onUpdate: () => {
-        el.textContent = String(Math.round(state.n));
-      },
-    });
-    return () => {
-      tween.kill();
-    };
-  }, [value]);
-
-  return (
-    <span>
-      <strong ref={ref} className="font-semibold text-[color:var(--cover-text)]">
-        0
-      </strong>{" "}
-      {label}
-    </span>
-  );
-}
-
-function BookCover({
+function HolsVolume({
   course,
   courseId,
+  topicGroups,
 }: {
   course: CourseSummary;
   courseId: string;
+  topicGroups: TopicGroup[];
 }) {
-  const calculatorHref = `/student/lectures/${courseId}/calculator`;
-  const coverRef = useRef<HTMLElement>(null);
-  const sheenRef = useRef<HTMLDivElement>(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const serverTheme = useServerPortalTheme();
+  const paperTheme = useSyncExternalStore(
+    subscribePortalTheme,
+    getPortalThemeSnapshot,
+    () => serverTheme,
+  );
+  const displayTitle = getCoverDisplayTitle(course.title);
+  const volumeIndex = String((hashCourseId(courseId) % 12) + 1).padStart(2, "0");
+  const volumeLabel = course.section?.trim()
+    ? course.section.toUpperCase()
+    : `VOLUME ${volumeIndex}`;
+  const previewTopics = topicGroups.slice(0, 5);
+  const description =
+    course.description?.trim() ||
+    "A curated clinical reference volume from the HOLS library.";
 
-  useEffect(() => {
-    const el = coverRef.current;
-    if (!el || prefersReducedMotion()) return;
-    registerGsap();
-
-    const rotX = gsap.quickTo(el, "rotationX", { duration: 0.6, ease: "power3.out" });
-    const rotY = gsap.quickTo(el, "rotationY", { duration: 0.6, ease: "power3.out" });
-
-    const handleMove = (event: MouseEvent) => {
-      const rect = el.getBoundingClientRect();
-      const px = (event.clientX - rect.left) / rect.width - 0.5;
-      const py = (event.clientY - rect.top) / rect.height - 0.5;
-      rotY(px * 9);
-      rotX(-py * 9);
-      const sheen = sheenRef.current;
-      if (sheen) {
-        sheen.style.setProperty("--mx", `${(px + 0.5) * 100}%`);
-        sheen.style.setProperty("--my", `${(py + 0.5) * 100}%`);
-      }
-    };
-
-    const handleLeave = () => {
-      rotX(0);
-      rotY(0);
-    };
-
-    el.addEventListener("mousemove", handleMove);
-    el.addEventListener("mouseleave", handleLeave);
-    return () => {
-      el.removeEventListener("mousemove", handleMove);
-      el.removeEventListener("mouseleave", handleLeave);
-    };
+  const toggleOpen = useCallback(() => {
+    setIsOpen((current) => !current);
   }, []);
 
+  const handleCoverKeyDown = (event: React.KeyboardEvent<HTMLButtonElement>) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      toggleOpen();
+    }
+  };
+
   return (
-    <section
-      ref={coverRef}
-      data-book-cover
-      className="course-book-cover course-book-cover-3d relative min-w-0 overflow-hidden rounded-2xl"
-      aria-label="Course cover"
-    >
-      <div className="course-book-cover-glow pointer-events-none absolute inset-0" aria-hidden />
-      <div ref={sheenRef} className="course-book-cover-sheen pointer-events-none absolute inset-0 z-[2]" aria-hidden />
-      <div className="course-book-cover-shine pointer-events-none absolute inset-0 z-[2]" aria-hidden />
-      <div className="course-book-cover-grain pointer-events-none absolute inset-0" aria-hidden />
-      <div className="relative flex min-h-[18rem] flex-col justify-between p-3.5 sm:min-h-[28rem] sm:p-7 md:p-8">
-        <div className="flex items-start justify-between gap-2 pl-2.5 sm:gap-3 sm:pl-4">
-          <div className="min-w-0">
-            <p className="text-brand-caption font-semibold uppercase tracking-[0.16em] text-[color:var(--cover-faint)]">
-              HOLS Library
-            </p>
-            <p className="mt-1.5 text-brand-caption font-medium tracking-[0.04em] text-[color:var(--cover-accent)] sm:mt-2">
-              {course.section || "Course volume"}
-            </p>
-          </div>
-          <span className="course-book-seal flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-full border border-[color:var(--cover-border)] bg-[color:var(--cover-surface)] text-[8px] font-bold uppercase leading-tight tracking-[0.14em] text-[color:var(--cover-text)] backdrop-blur-sm sm:h-14 sm:w-14 sm:text-[9px]">
-            <span>HOLS</span>
-            <span className="mt-0.5 text-[7px] font-medium tracking-[0.08em] text-[color:var(--cover-faint)] sm:text-[8px]">Vol.</span>
-          </span>
-        </div>
-
-        <div className="my-5 pl-2.5 sm:my-11 sm:pl-4">
-          <p className="text-brand-caption mb-2.5 font-medium uppercase tracking-[0.18em] text-[color:var(--cover-faint)] sm:mb-3">
-            Front cover
-          </p>
-          <div className="course-book-rule mb-3 h-px w-16 bg-[color:var(--cover-rule)] sm:mb-4 sm:w-20" />
-          <h1 className="font-sans max-w-[18ch] text-[1.5rem] font-bold leading-[1.1] tracking-[0.01em] text-[color:var(--cover-text)] [overflow-wrap:anywhere] sm:max-w-[15ch] sm:text-4xl sm:leading-[1.04] md:text-[2.85rem]">
-            {course.title}
-          </h1>
-          {course.description ? (
-            <p className="text-brand-body mt-3 max-w-md text-sm leading-relaxed text-[color:var(--cover-muted)] sm:mt-4 sm:text-base">
-              {course.description}
-            </p>
-          ) : (
-            <p className="text-brand-body mt-3 max-w-md text-sm leading-relaxed text-[color:var(--cover-muted)] sm:mt-4 sm:text-base">
-              Open this volume to explore chapters, sections, and guided lessons.
-            </p>
-          )}
-        </div>
-
-        <div className="pl-2.5 sm:pl-4">
-          <div className="mb-4 flex flex-wrap gap-x-4 gap-y-2 border-t border-[color:var(--cover-border)] pt-3 text-brand-caption text-[color:var(--cover-faint)] sm:mb-5 sm:gap-x-6 sm:pt-4">
-            <AnimatedStat value={course.topic_count} label="chapters" />
-            <AnimatedStat value={course.section_count} label="sections" />
-            <AnimatedStat value={course.lesson_count} label="pages" />
+    <div className="hols-volume-panel min-w-0 w-full max-w-full px-0.5 sm:px-1">
+      <div
+        data-book-cover
+        data-paper-theme={paperTheme}
+        className={cn("hols-volume", isOpen && "is-open")}
+        aria-label={`${course.title} volume`}
+      >
+        {/* Assembly tilts as one unit (cover + page stack); cover still flips independently when open */}
+        <div className="book-assembly">
+          <div className="book-stack" aria-hidden>
+            <div className="book-page-layer book-page-layer--3" />
+            <div className="book-page-layer book-page-layer--2" />
+            <div className="book-page-layer book-page-layer--1" />
           </div>
 
-          <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
-            <Link
-              href={`/student/lectures/${courseId}/lessons`}
-              className="course-cover-cta font-sans col-span-2 inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full bg-[#DDE466] px-4 text-sm font-medium text-[#152744] hover:brightness-105 sm:col-span-1"
-            >
-              <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                <path d="M2 6a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v14a2 2 0 0 0-2-2H2z" />
-                <path d="M22 6a2 2 0 0 0-2-2h-6a2 2 0 0 0-2 2v14a2 2 0 0 1 2-2h6z" />
-              </svg>
-              Open book
-            </Link>
-            <Link
-              href={`/student/lectures/${courseId}/test-result`}
-              className="course-cover-cta font-sans inline-flex min-h-11 items-center justify-center rounded-full border border-[color:var(--cover-border)] bg-[color:var(--cover-surface)] px-3 text-sm font-medium text-[color:var(--cover-text)] backdrop-blur-sm hover:bg-[color:var(--cover-surface-hover)] sm:px-4"
-            >
-              Results
-            </Link>
-            <Link
-              href={calculatorHref}
-              className="course-cover-cta font-sans inline-flex min-h-11 items-center justify-center rounded-full border border-[color:var(--cover-border)] bg-[color:var(--cover-surface)] px-3 text-sm font-medium text-[color:var(--cover-text)] backdrop-blur-sm hover:bg-[color:var(--cover-surface-hover)] sm:px-4"
-            >
-              Calculator
-            </Link>
+          <div
+            className="book-interior"
+            aria-hidden={!isOpen}
+            inert={!isOpen ? true : undefined}
+          >
+            <div className="book-interior-grain" aria-hidden />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/assets/logo/hols-logo-mark.png"
+              alt=""
+              className="book-interior-watermark"
+              draggable={false}
+              aria-hidden
+            />
+
+            <div className="book-interior-content">
+              <div className="book-interior-header">
+                <p className="book-interior-eyebrow">HOLS Clinical Library</p>
+                <button
+                  type="button"
+                  className="book-interior-close"
+                  onClick={() => setIsOpen(false)}
+                  aria-label="Close volume"
+                >
+                  <Icon icon={X} size={16} strokeWidth={2} />
+                </button>
+              </div>
+
+              <h3 className="book-interior-title font-sans">Volume overview</h3>
+              <p className="book-interior-description">{description}</p>
+
+              {previewTopics.length > 0 ? (
+                <div className="book-interior-section">
+                  <p className="book-interior-section-label">In this volume</p>
+                  <ul className="book-interior-topics">
+                    {previewTopics.map((topic, index) => (
+                      <li key={`${topic.topic_key}-${topic.order}`}>
+                        <span className="book-interior-topic-index">
+                          {String(index + 1).padStart(2, "0")}
+                        </span>
+                        <span className="book-interior-topic-name">{topic.l1_name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ) : null}
+
+              <dl className="book-interior-metrics">
+                <div>
+                  <dt>Chapters</dt>
+                  <dd>{course.topic_count}</dd>
+                </div>
+                <div>
+                  <dt>Lessons</dt>
+                  <dd>{course.lesson_count}</dd>
+                </div>
+              </dl>
+            </div>
           </div>
+
+          <button
+            type="button"
+            className="book-cover"
+            onClick={toggleOpen}
+            onKeyDown={handleCoverKeyDown}
+            aria-expanded={isOpen}
+            aria-label={isOpen ? "Close volume cover" : "Open volume cover"}
+          >
+            <div className="book-cover-face">
+              <div className="book-cover-base" aria-hidden />
+              <div className="book-cover-spotlight" aria-hidden />
+              <div className="book-cover-art-bg" data-book-cover-art aria-hidden>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/assets/lectures/volume-cover-art.png"
+                  alt=""
+                  className="book-cover-art-bg-image"
+                  draggable={false}
+                />
+              </div>
+              <div className="book-cover-vignette" aria-hidden />
+              <div className="book-cover-ambient" aria-hidden />
+              <div className="book-cover-grain" aria-hidden />
+              <div className="book-cover-shine" aria-hidden />
+              <div className="book-cover-foil-edge" aria-hidden />
+
+              {/* Soft embossed mark — brand presence without sticker clutter */}
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/assets/logo/hols-logo-mark.png"
+                alt=""
+                className="book-cover-mark-watermark book-cover-mark-watermark--theme-dark"
+                draggable={false}
+                aria-hidden
+              />
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src="/assets/logo/hols-logo-mark-light.png"
+                alt=""
+                className="book-cover-mark-watermark book-cover-mark-watermark--theme-light"
+                draggable={false}
+                aria-hidden
+              />
+
+              <div className="book-cover-content">
+                <header className="book-cover-header">
+                  <div className="book-cover-brand">
+                    <div className="book-cover-logo-wrap" aria-label="HOLS">
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="/assets/logo/hols-logo-mark.png"
+                        alt=""
+                        className="book-cover-mark book-cover-mark--theme-dark"
+                        draggable={false}
+                      />
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="/assets/logo/hols-logo-mark-light.png"
+                        alt=""
+                        className="book-cover-mark book-cover-mark--theme-light"
+                        draggable={false}
+                      />
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="/assets/logo/hols-logo.png"
+                        alt=""
+                        className="book-cover-logo book-cover-logo--theme-dark"
+                        draggable={false}
+                      />
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src="/assets/logo/hols-logo-light.png"
+                        alt=""
+                        className="book-cover-logo book-cover-logo--theme-light"
+                        draggable={false}
+                      />
+                    </div>
+                    <p className="book-cover-publisher">HOLS Library</p>
+                  </div>
+                  <p className="book-cover-volume-label">
+                    <span className="book-cover-volume-label-text">{volumeLabel}</span>
+                  </p>
+                </header>
+
+                <h2 className="book-cover-title font-sans">{displayTitle}</h2>
+                <div className="book-cover-rule" aria-hidden />
+
+                <footer className="book-cover-footer">
+                  <span className="book-cover-footer-brand">House of Life Sciences</span>
+                  <span className="book-cover-footer-dot" aria-hidden>
+                    •
+                  </span>
+                  <span className="book-cover-footer-meta">
+                    {course.topic_count} chapter{course.topic_count === 1 ? "" : "s"} ·{" "}
+                    {course.lesson_count} lesson{course.lesson_count === 1 ? "" : "s"}
+                  </span>
+                </footer>
+              </div>
+
+              {!isOpen ? (
+                <span className="book-open-hint" aria-hidden>
+                  Open volume
+                </span>
+              ) : null}
+            </div>
+
+            <div className="book-cover-spine" aria-hidden />
+            <div className="book-cover-edge" aria-hidden />
+          </button>
         </div>
       </div>
-
-      <div className="course-book-spine pointer-events-none absolute inset-y-0 left-0 w-3.5 sm:w-4" aria-hidden />
-      <div className="course-book-edge pointer-events-none absolute inset-y-3 right-0 w-2 rounded-l-sm opacity-70 sm:inset-y-4" aria-hidden />
-    </section>
+    </div>
   );
 }
 
@@ -439,9 +518,7 @@ function TopicChapter({
           )}
           aria-hidden
         >
-          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <path d="m6 9 6 6 6-6" />
-          </svg>
+          <Icon icon={ChevronDown} size={14} strokeWidth={2} />
         </span>
       </button>
 

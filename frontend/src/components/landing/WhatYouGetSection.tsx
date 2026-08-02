@@ -65,10 +65,10 @@ function StepCard({
       className={cn(
         "group relative w-full min-w-0 overflow-hidden rounded-2xl text-left sm:rounded-[1.35rem]",
         "border border-white/25 bg-[linear-gradient(165deg,rgba(255,255,255,0.16)_0%,rgba(255,255,255,0.06)_45%,rgba(21,39,68,0.35)_100%)]",
-        "shadow-[0_18px_40px_-16px_rgba(0,0,0,0.5),inset_0_1px_0_rgba(255,255,255,0.28)]",
+        "shadow-[inset_0_1px_0_rgba(255,255,255,0.28)]",
         "backdrop-blur-2xl transition-[transform,box-shadow,border-color] duration-500 ease-out",
         "motion-safe:hover:-translate-y-1.5 motion-safe:hover:border-accent/45",
-        "motion-safe:hover:shadow-[0_28px_70px_-16px_rgba(0,0,0,0.6),0_0_40px_-12px_rgba(221,228,102,0.35),inset_0_1px_0_rgba(255,255,255,0.35)]",
+        "motion-safe:hover:shadow-[inset_0_1px_0_rgba(255,255,255,0.35)]",
         className,
       )}
     >

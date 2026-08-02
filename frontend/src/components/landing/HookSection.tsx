@@ -10,6 +10,17 @@ import {
 } from "react";
 import { useGSAP } from "@gsap/react";
 import { HeroButton } from "@/components/hero/HeroButton";
+import {
+  CirclePlay,
+  FileText,
+  Globe,
+  Icon,
+  Library,
+  MessageSquare,
+  Mic,
+  Newspaper,
+  NotebookPen,
+} from "@/components/icons";
 import { HookHolsBall } from "@/components/landing/HookHolsBall";
 import {
   HookInteractiveDashboard,
@@ -359,54 +370,16 @@ function resyncPathStroke(path: SVGPathElement) {
   });
 }
 
-/* ── Scattered source-card icons ───────────────────────────────────────── */
+/* ── Scattered source-card icons (Lucide vector) ───────────────────────── */
 const CARD_ICONS: Record<string, ReactNode> = {
-  pdfs: (
-    <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75">
-      <path d="M8 3h6l4 4v14H6V5" strokeLinejoin="round" />
-      <path d="M14 3v4h4M9 13h6M9 17h4" strokeLinecap="round" />
-    </svg>
-  ),
-  youtube: (
-    <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4" fill="currentColor">
-      <path d="M21.6 7.2a2.7 2.7 0 0 0-1.9-1.9C18 4.8 12 4.8 12 4.8s-6 0-7.7.5A2.7 2.7 0 0 0 2.4 7.2 28 28 0 0 0 2 12a28 28 0 0 0 .4 4.8 2.7 2.7 0 0 0 1.9 1.9c1.7.5 7.7.5 7.7.5s6 0 7.7-.5a2.7 2.7 0 0 0 1.9-1.9A28 28 0 0 0 22 12a28 28 0 0 0-.4-4.8ZM10 15V9l5.2 3Z" />
-    </svg>
-  ),
-  notes: (
-    <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75">
-      <rect x="5" y="4" width="14" height="16" rx="2" strokeLinejoin="round" />
-      <path d="M9 9h6M9 13h6M9 17h4" strokeLinecap="round" />
-    </svg>
-  ),
-  articles: (
-    <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75">
-      <rect x="4" y="5" width="16" height="14" rx="2" strokeLinejoin="round" />
-      <path d="M8 9h5M8 13h8M8 16h6" strokeLinecap="round" />
-    </svg>
-  ),
-  aichats: (
-    <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75">
-      <path d="M4 6h11a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H9l-4 3v-3H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1Z" strokeLinejoin="round" />
-      <path d="M7 10h.01M10 10h.01M13 10h.01" strokeLinecap="round" />
-    </svg>
-  ),
-  books: (
-    <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75">
-      <path d="M5 5.5A1.5 1.5 0 0 1 6.5 4H11v16H6.5A1.5 1.5 0 0 1 5 18.5ZM19 5.5A1.5 1.5 0 0 0 17.5 4H13v16h4.5A1.5 1.5 0 0 0 19 18.5Z" strokeLinejoin="round" />
-    </svg>
-  ),
-  podcasts: (
-    <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75">
-      <rect x="9" y="3" width="6" height="11" rx="3" />
-      <path d="M6 11a6 6 0 0 0 12 0M12 17v4M9 21h6" strokeLinecap="round" />
-    </svg>
-  ),
-  blogs: (
-    <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75">
-      <circle cx="12" cy="12" r="8" />
-      <path d="M4 12h16M12 4a12 12 0 0 1 0 16M12 4a12 12 0 0 0 0 16" strokeLinecap="round" />
-    </svg>
-  ),
+  pdfs: <Icon icon={FileText} size={16} strokeWidth={1.75} className="h-4 w-4" />,
+  youtube: <Icon icon={CirclePlay} size={16} strokeWidth={1.75} className="h-4 w-4" />,
+  notes: <Icon icon={NotebookPen} size={16} strokeWidth={1.75} className="h-4 w-4" />,
+  articles: <Icon icon={Newspaper} size={16} strokeWidth={1.75} className="h-4 w-4" />,
+  aichats: <Icon icon={MessageSquare} size={16} strokeWidth={1.75} className="h-4 w-4" />,
+  books: <Icon icon={Library} size={16} strokeWidth={1.75} className="h-4 w-4" />,
+  podcasts: <Icon icon={Mic} size={16} strokeWidth={1.75} className="h-4 w-4" />,
+  blogs: <Icon icon={Globe} size={16} strokeWidth={1.75} className="h-4 w-4" />,
 };
 
 const CARD_COLORS: Record<string, string> = {

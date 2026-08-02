@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 520" fill="none">
+  <defs>
+    <radialGradient id="g" cx="30%" cy="20%" r="80%">
+      <stop offset="0%" stop-color="#1a2f55"/>
+      <stop offset="100%" stop-color="#0d1626"/>
+    </radialGradient>
+  </defs>
+  <rect width="400" height="520" fill="url(#g)"/>
+  <path d="M200 40 L340 280 L60 280 Z" fill="#dde466" fill-opacity="0.1" stroke="#dde466" stroke-opacity="0.4" stroke-width="1.5"/>
+  <path d="M200 120 L280 260 L120 260 Z" fill="#8dc3e1" fill-opacity="0.12" stroke="#8dc3e1" stroke-opacity="0.35" stroke-width="1"/>
+  <circle cx="200" cy="200" r="10" fill="#dde466"/>
+  <rect x="60" y="340" width="280" height="1" fill="#ffffff" fill-opacity="0.12"/>
+  <rect x="60" y="370" width="160" height="9" rx="4.5" fill="#ffffff" fill-opacity="0.14"/>
+  <rect x="60" y="392" width="220" height="6" rx="3" fill="#8dc3e1" fill-opacity="0.28"/>
+  <text x="60" y="500" fill="#ffffff" fill-opacity="0.35" font-family="system-ui,sans-serif" font-size="11" letter-spacing="3">HOLS</text>
+</svg>

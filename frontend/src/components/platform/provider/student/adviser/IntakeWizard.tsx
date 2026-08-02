@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo } from "react";
+import { Check, Icon } from "@/components/icons";
 import type {
   FlowQuestion,
   IntakeAnswers,
@@ -464,7 +465,7 @@ export function IntakeStageList({
                   !active && !done && "bg-[color:var(--dash-surface)] text-[color:var(--dash-faint)]",
                 )}
               >
-                {done && !active ? "✓" : index + 1}
+                {done && !active ? <Icon icon={Check} size={10} strokeWidth={2.5} /> : index + 1}
               </span>
               <span className={cn("min-w-0 leading-tight", orientation === "wrap" ? "truncate" : "max-w-[7.5rem] truncate")}>
                 {label}
@@ -499,7 +500,7 @@ export function IntakeStageList({
                 !active && !done && "bg-[color:var(--dash-soft)] text-[color:var(--dash-faint)]",
               )}
             >
-              {done && !active ? "✓" : index + 1}
+              {done && !active ? <Icon icon={Check} size={12} strokeWidth={2.5} /> : index + 1}
             </span>
             <span className="truncate">{label}</span>
           </li>

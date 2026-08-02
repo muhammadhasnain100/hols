@@ -19,6 +19,7 @@ import {
   type CourseTestResultsData,
   type PaginationMeta,
 } from "@/lib/integrate/provider/student/lectures";
+import { ChevronRight, Icon } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 type StudentTestResultPageProps = {
@@ -280,18 +281,12 @@ function QuickLink({ href, label, hint }: { href: string; label: string; hint: s
         </span>
         <span className="text-brand-caption block text-[color:var(--dash-faint)]">{hint}</span>
       </span>
-      <svg
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
+      <Icon
+        icon={ChevronRight}
+        size={16}
+        strokeWidth={1.8}
         className="shrink-0 text-[color:var(--dash-dim)] transition group-hover:translate-x-0.5 group-hover:text-[color:var(--dash-muted)]"
-        aria-hidden
-      >
-        <path d="M9 18l6-6-6-6" />
-      </svg>
+      />
     </Link>
   );
 }

@@ -26,9 +26,16 @@ type PortalCardButtonDisplayProps = {
   containerRef: React.RefObject<HTMLElement | null>;
   fillRef: React.RefObject<HTMLSpanElement | null>;
   labelRef: React.RefObject<HTMLSpanElement | null>;
+  /** When set, glass/spread hover is scoped to this control (not the parent card link). */
+  onMouseEnter?: (event: React.MouseEvent<HTMLElement>) => void;
+  onMouseLeave?: (event: React.MouseEvent<HTMLElement>) => void;
 };
 
-/** Button appearance for link cards — attach hover handlers from `usePortalCardButtonHover` to the parent Link. */
+/**
+ * Button appearance for link cards.
+ * Pass hover handlers here so fill runs on the control only; omit them and keep
+ * `pointer-events-none` when the parent link drives hover instead.
+ */
 export function PortalCardButtonDisplay({
   variant = "primary",
   size = "md",
@@ -37,17 +44,26 @@ export function PortalCardButtonDisplay({
   containerRef,
   fillRef,
   labelRef,
+  onMouseEnter,
+  onMouseLeave,
 }: PortalCardButtonDisplayProps) {
   const spread = buttonHoverSpread[variant];
+  const selfHover = Boolean(onMouseEnter || onMouseLeave);
 
   return (
     <span
       ref={containerRef as React.RefObject<HTMLSpanElement>}
       className={getButtonClassName(
         variant,
-        cn("pointer-events-none w-full justify-center", className),
+        cn(
+          "w-full justify-center",
+          selfHover ? "group/cta pointer-events-auto" : "pointer-events-none",
+          className,
+        ),
         size,
       )}
+      onMouseEnter={onMouseEnter}
+      onMouseLeave={onMouseLeave}
     >
       <span
         ref={fillRef}

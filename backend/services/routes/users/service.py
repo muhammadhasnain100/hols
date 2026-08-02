@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 import time
 from decimal import Decimal
@@ -15,6 +16,7 @@ from database import get_table
 from database_entities import UserRole
 from services.common.pagination import build_pagination, decode_cursor, encode_cursor, normalize_value
 from services.routes.auth.service import get_user_by_id, public_profile, user_role_count_key
+from services.routes.affiliate_portal.service import sum_affiliate_commission
 
 logger = logging.getLogger(__name__)
 LIST_CACHE_TTL_SECONDS = 10
@@ -136,8 +138,24 @@ def _affiliate_summary(user: dict[str, Any]) -> dict[str, Any]:
         "margin_percent": normalize_value(clean.get("margin_percent")),
         "invitation_quota": invitation_quota,
         "student_count": student_count or 0,
+        "total_earned": 0.0,
+        "earnings_currency": "USD",
         "created_at": clean.get("created_at"),
     }
+
+
+async def _affiliate_summary_with_earnings(user: dict[str, Any]) -> dict[str, Any]:
+    summary = _affiliate_summary(user)
+    user_id = summary.get("user_id")
+    if not user_id:
+        return summary
+    try:
+        summed = await sum_affiliate_commission(str(user_id))
+        summary["total_earned"] = summed["total_earned"]
+        summary["earnings_currency"] = summed["currency"]
+    except Exception:
+        logger.exception("Failed to sum commission for affiliate_id=%s", user_id)
+    return summary
 
 
 async def _student_summary(user: dict[str, Any]) -> dict[str, Any]:
@@ -173,9 +191,10 @@ async def list_affiliates(page: int = 1, limit: int = 20, cursor: Optional[str] 
         cursor=cursor,
     )
     total = total_from_query if total_from_query is not None else await _count_by_role(UserRole.AFFILIATE.value)
+    summaries = await asyncio.gather(*[_affiliate_summary_with_earnings(item) for item in items])
     logger.info("Listed affiliates page=%s limit=%s count=%s", page, limit, len(items))
     return _set_cached(key, {
-        "items": [_affiliate_summary(item) for item in items],
+        "items": list(summaries),
         "pagination": build_pagination(
             page=page,
             limit=limit,

@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState, type ReactNode } from "react";
+import { Calendar, Check, Clock, Icon, Menu, Star } from "@/components/icons";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { PortalShell } from "@/components/platform/provider/PortalShell";
 import { MembershipPageSkeleton } from "@/components/platform/provider/student/DashboardSkeletons";
@@ -42,12 +43,7 @@ const PLAN_META: Record<
       "AI adviser sessions",
       "30 days membership",
     ],
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden>
-        <rect x="3" y="4" width="18" height="18" rx="2" />
-        <path d="M16 2v4M8 2v4M3 10h18" />
-      </svg>
-    ),
+    icon: <Icon icon={Calendar} size={24} strokeWidth={1.7} />,
   },
   biannual: {
     period: "every 6 months",
@@ -59,11 +55,7 @@ const PLAN_META: Record<
       "Cross-device progress sync",
       "182 days membership",
     ],
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden>
-        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.77 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" />
-      </svg>
-    ),
+    icon: <Icon icon={Star} size={24} strokeWidth={1.7} />,
   },
   annual: {
     period: "per year",
@@ -74,12 +66,7 @@ const PLAN_META: Record<
       "Certification pathway support",
       "365 days membership",
     ],
-    icon: (
-      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden>
-        <circle cx="12" cy="12" r="9" />
-        <path d="M12 7v5l3 2" />
-      </svg>
-    ),
+    icon: <Icon icon={Clock} size={24} strokeWidth={1.7} />,
   },
 };
 
@@ -190,9 +177,7 @@ export function AdminPlansPage() {
               onClick={openSidebar}
               className="dashboard-icon-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full lg:hidden"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-                <path d="M4 7h16M4 12h10M4 17h16" />
-              </svg>
+              <Icon icon={Menu} size={18} />
             </button>
             <h1 className="font-sans truncate text-base font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl md:text-2xl">
               Plans
@@ -337,9 +322,7 @@ export function AdminPlansPage() {
                           {meta.features.map((feature) => (
                             <li key={feature} className="flex items-start gap-2.5">
                               <span className="membership-plan-check mt-0.5" aria-hidden>
-                                <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6">
-                                  <path d="M20 6 9 17l-5-5" />
-                                </svg>
+                                <Icon icon={Check} size={11} strokeWidth={2.6} />
                               </span>
                               <span className="text-sm leading-snug text-[color:var(--dash-muted)]">
                                 {feature}

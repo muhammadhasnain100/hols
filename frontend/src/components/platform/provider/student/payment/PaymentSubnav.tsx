@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { ClipboardList, CreditCard, Icon, Star } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 type PaymentSubnavLink = {
@@ -18,34 +19,19 @@ const LINKS: readonly PaymentSubnavLink[] = [
     label: "Membership",
     shortLabel: "Plans",
     exact: true,
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.77 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" />
-      </svg>
-    ),
+    icon: <Icon icon={Star} size={16} />,
   },
   {
     href: "/student/payment/orders",
     label: "Orders",
     shortLabel: "Orders",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
-        <rect x="9" y="3" width="6" height="4" rx="1" />
-        <path d="M9 12h6M9 16h4" />
-      </svg>
-    ),
+    icon: <Icon icon={ClipboardList} size={16} />,
   },
   {
     href: "/student/payment/card",
     label: "Payment card",
     shortLabel: "Card",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <rect x="2" y="5" width="20" height="14" rx="2" />
-        <path d="M2 10h20" />
-      </svg>
-    ),
+    icon: <Icon icon={CreditCard} size={16} />,
   },
 ];
 

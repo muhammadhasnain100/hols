@@ -2,6 +2,17 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import {
+  BookOpen,
+  Calculator,
+  ChevronRight,
+  ClipboardList,
+  CreditCard,
+  Icon,
+  MessageSquare,
+  Star,
+  User,
+} from "@/components/icons";
 import { DashboardPageLayout } from "@/components/platform/provider/student/dashboard/DashboardPageLayout";
 import {
   getCurrentMembership,
@@ -31,42 +42,22 @@ const QUICK_TOOLS: readonly QuickTool[] = [
   {
     label: "Lectures",
     href: "/student/lectures",
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-      </svg>
-    ),
+    icon: <Icon icon={BookOpen} size={18} />,
   },
   {
     label: "Calculator",
     href: "/student/calculator",
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <rect x="4" y="2" width="16" height="20" rx="2" />
-        <path d="M8 6h8M8 10h8M8 14h2M12 14h2M16 14h2M8 18h2M12 18h2M16 18h2" />
-      </svg>
-    ),
+    icon: <Icon icon={Calculator} size={18} />,
   },
   {
     label: "Advisor",
     href: "/student/adviser",
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" />
-        <path d="M8 9h8M8 13h5" />
-      </svg>
-    ),
+    icon: <Icon icon={MessageSquare} size={18} />,
   },
   {
     label: "Profile",
     href: "/student/profile",
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <circle cx="12" cy="8" r="4" />
-        <path d="M4 20c1.7-3.3 4.3-5 8-5s6.3 1.7 8 5" />
-      </svg>
-    ),
+    icon: <Icon icon={User} size={18} />,
   },
 ];
 
@@ -74,42 +65,22 @@ const QUICK_LINKS: readonly QuickLink[] = [
   {
     label: "Membership plans",
     href: "/student/payment",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.77 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" />
-      </svg>
-    ),
+    icon: <Icon icon={Star} size={16} />,
   },
   {
     label: "Order history",
     href: "/student/payment/orders",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <path d="M9 5H7a2 2 0 0 0-2 2v12a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2h-2" />
-        <rect x="9" y="3" width="6" height="4" rx="1" />
-        <path d="M9 12h6M9 16h4" />
-      </svg>
-    ),
+    icon: <Icon icon={ClipboardList} size={16} />,
   },
   {
     label: "Payment card",
     href: "/student/payment/card",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <rect x="2" y="5" width="20" height="14" rx="2" />
-        <path d="M2 10h20" />
-      </svg>
-    ),
+    icon: <Icon icon={CreditCard} size={16} />,
   },
   {
     label: "Account profile",
     href: "/student/profile",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <circle cx="12" cy="8" r="4" />
-        <path d="M4 20c1.7-3.3 4.3-5 8-5s6.3 1.7 8 5" />
-      </svg>
-    ),
+    icon: <Icon icon={User} size={16} />,
   },
 ];
 
@@ -375,9 +346,7 @@ function ActivityCard({ orders }: { orders: Order[] }) {
             >
               <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
                 <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#DDE466]/15 text-[color:var(--dash-accent)]">
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden>
-                    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.77 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" />
-                  </svg>
+                  <Icon icon={Star} size={16} strokeWidth={1.9} />
                 </span>
                 <div className="min-w-0">
                   <p className="font-sans truncate text-sm font-medium text-[color:var(--dash-text)]">
@@ -418,18 +387,11 @@ function QuickLinksCard({ orderCount }: { orderCount: string }) {
                 {orderCount}
               </span>
             ) : null}
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
+            <Icon
+              icon={ChevronRight}
+              size={16}
               className="shrink-0 text-[color:var(--dash-dim)] transition group-hover:translate-x-0.5 group-hover:text-[color:var(--dash-muted)]"
-              aria-hidden
-            >
-              <path d="M9 18l6-6-6-6" />
-            </svg>
+            />
           </Link>
         ))}
       </div>

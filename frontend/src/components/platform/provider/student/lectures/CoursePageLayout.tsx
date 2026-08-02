@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useMemo } from "react";
+import { ChevronLeft, Icon } from "@/components/icons";
 import { PortalShell } from "@/components/platform/provider/PortalShell";
 import { StudentPageHeader } from "@/components/platform/provider/student/StudentPageHeader";
 import {
@@ -80,9 +81,7 @@ export function CoursePageLayout({
                   href={backHref}
                   className="dashboard-pill-soft font-sans inline-flex min-h-9 w-fit shrink-0 items-center gap-1.5 rounded-full px-3.5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-muted)] transition hover:text-[color:var(--dash-text)] sm:min-h-10 sm:px-4"
                 >
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                    <path d="m15 18-6-6 6-6" />
-                  </svg>
+                  <Icon icon={ChevronLeft} size={14} />
                   {backLabel}
                 </Link>
               ) : null}
@@ -116,7 +115,7 @@ export function CoursePageLayout({
             </section>
           ) : null}
 
-          <div className={cn(!hideHero && "mt-4", "grid w-full min-w-0 gap-4")}>{children}</div>
+          <div className={cn(!hideHero && "mt-4", "grid w-full min-w-0 max-w-full gap-4")}>{children}</div>
         </div>
       </PortalShell>
     </OpenCalculatorContext.Provider>

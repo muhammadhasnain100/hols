@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 520" fill="none">
+  <defs>
+    <linearGradient id="g" x1="0.2" y1="0" x2="0.8" y2="1">
+      <stop offset="0%" stop-color="#121f36"/>
+      <stop offset="100%" stop-color="#0d1626"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="520" fill="url(#g)"/>
+  <g fill="#8dc3e1" fill-opacity="0.12">
+    <circle cx="60" cy="70" r="40"/><circle cx="140" cy="50" r="24"/><circle cx="220" cy="80" r="36"/>
+    <circle cx="300" cy="45" r="20"/><circle cx="360" cy="90" r="28"/>
+  </g>
+  <path d="M50 200c60-80 120-40 180-90s100-30 140-70" stroke="#dde466" stroke-opacity="0.45" stroke-width="2"/>
+  <path d="M50 240c70-70 130-30 190-80s90-20 130-50" stroke="#8dc3e1" stroke-opacity="0.35" stroke-width="1.5"/>
+  <rect x="50" y="320" width="16" height="120" rx="8" fill="#dde466"/>
+  <rect x="80" y="360" width="200" height="8" rx="4" fill="#ffffff" fill-opacity="0.16"/>
+  <rect x="80" y="380" width="160" height="6" rx="3" fill="#ffffff" fill-opacity="0.1"/>
+  <text x="50" y="500" fill="#ffffff" fill-opacity="0.35" font-family="system-ui,sans-serif" font-size="11" letter-spacing="3">HOLS</text>
+</svg>

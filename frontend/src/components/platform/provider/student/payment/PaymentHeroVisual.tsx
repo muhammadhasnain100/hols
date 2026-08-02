@@ -2,6 +2,15 @@
 
 import type { ReactNode } from "react";
 import Image from "next/image";
+import {
+  CreditCard,
+  FileText,
+  Icon,
+  Lock,
+  Shield,
+  ShoppingBag,
+  Star,
+} from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 type PaymentVisualVariant = "membership" | "orders" | "card";
@@ -18,48 +27,20 @@ const VARIANT_CONFIG: Record<
   membership: {
     primary: "Plans",
     secondary: "Access",
-    primaryIcon: (
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.77 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" />
-      </svg>
-    ),
-    secondaryIcon: (
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-        <rect x="3" y="11" width="18" height="11" rx="2" />
-        <path d="M7 11V7a5 5 0 0 1 10 0v4" />
-      </svg>
-    ),
+    primaryIcon: <Icon icon={Star} size={10} strokeWidth={2} />,
+    secondaryIcon: <Icon icon={Lock} size={10} strokeWidth={2} />,
   },
   orders: {
     primary: "Orders",
     secondary: "Receipts",
-    primaryIcon: (
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-        <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
-        <path d="M3 6h18M16 10a4 4 0 0 1-8 0" />
-      </svg>
-    ),
-    secondaryIcon: (
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-        <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
-        <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
-      </svg>
-    ),
+    primaryIcon: <Icon icon={ShoppingBag} size={10} strokeWidth={2} />,
+    secondaryIcon: <Icon icon={FileText} size={10} strokeWidth={2} />,
   },
   card: {
     primary: "Secure",
     secondary: "Billing",
-    primaryIcon: (
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-        <rect x="2" y="5" width="20" height="14" rx="2" />
-        <path d="M2 10h20" />
-      </svg>
-    ),
-    secondaryIcon: (
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-      </svg>
-    ),
+    primaryIcon: <Icon icon={CreditCard} size={10} strokeWidth={2} />,
+    secondaryIcon: <Icon icon={Shield} size={10} strokeWidth={2} />,
   },
 };
 

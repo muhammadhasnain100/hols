@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { Calendar, ChevronLeft, ChevronRight, CreditCard, Icon } from "@/components/icons";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { PaymentCardPageSkeleton } from "@/components/platform/provider/student/DashboardSkeletons";
 import { PaymentPageLayout } from "@/components/platform/provider/student/payment/PaymentPageLayout";
@@ -176,10 +177,7 @@ function ExpiryCalendarPicker({
         className="dashboard-expiry-trigger"
       >
         <span className="dashboard-expiry-trigger-icon" aria-hidden>
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-            <rect x="3" y="4" width="18" height="18" rx="2" />
-            <path d="M16 2v4M8 2v4M3 10h18" />
-          </svg>
+          <Icon icon={Calendar} size={16} />
         </span>
         <span className="dashboard-expiry-trigger-value" data-empty={!hasValue}>
           {summary}
@@ -200,9 +198,7 @@ function ExpiryCalendarPicker({
               onClick={() => setViewYear((y) => Math.max(currentYear, y - 1))}
               className="dashboard-expiry-nav"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
-                <path d="m15 18-6-6 6-6" />
-              </svg>
+              <Icon icon={ChevronLeft} size={14} strokeWidth={2.2} />
             </button>
 
             <span className="dashboard-expiry-year-label">{viewYear}</span>
@@ -214,9 +210,7 @@ function ExpiryCalendarPicker({
               onClick={() => setViewYear((y) => Math.min(maxYear, y + 1))}
               className="dashboard-expiry-nav"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
-                <path d="m9 18 6-6-6-6" />
-              </svg>
+              <Icon icon={ChevronRight} size={14} strokeWidth={2.2} />
             </button>
           </div>
 
@@ -399,10 +393,7 @@ export function StudentCardPage() {
                     <span className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[#152744]/70">
                       Saved card
                     </span>
-                    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" aria-hidden>
-                      <rect x="2" y="5" width="20" height="14" rx="2" />
-                      <path d="M2 10h20" />
-                    </svg>
+                    <Icon icon={CreditCard} size={28} strokeWidth={1.6} />
                   </div>
                   <p className="font-sans mt-6 text-lg font-bold tracking-[0.08em] sm:mt-8 sm:text-xl md:text-2xl">
                     {card.card_number_masked}
@@ -429,10 +420,7 @@ export function StudentCardPage() {
               ) : (
                 <section className="dashboard-surface flex flex-col items-center justify-center rounded-2xl px-4 py-10 text-center sm:px-5 sm:py-12">
                   <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#DDE466]/20 text-[color:var(--dash-accent)]">
-                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.7" aria-hidden>
-                      <rect x="2" y="5" width="20" height="14" rx="2" />
-                      <path d="M2 10h20" />
-                    </svg>
+                    <Icon icon={CreditCard} size={22} strokeWidth={1.7} />
                   </span>
                   <p className="font-sans mt-3 text-sm font-semibold text-[color:var(--dash-text)]">
                     No card on file

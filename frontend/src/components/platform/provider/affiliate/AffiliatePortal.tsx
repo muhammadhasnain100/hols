@@ -1,14 +1,20 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { Check, Copy, DollarSign, Icon, User, Users } from "@/components/icons";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
+import { AffiliateEarningsMeter } from "@/components/platform/provider/affiliate/AffiliateEarningsMeter";
 import { DashboardPageLayout } from "@/components/platform/provider/affiliate/dashboard/DashboardPageLayout";
 import {
   affiliateDisplayName,
   formatAffiliatePercent,
   useAffiliateProfile,
 } from "@/components/platform/provider/affiliate/affiliateProfile";
+import {
+  getAffiliateEarnings,
+  type AffiliateEarnings,
+} from "@/lib/integrate/provider/affiliate/earnings";
 import { cn } from "@/lib/utils";
 
 type QuickTool = {
@@ -21,38 +27,25 @@ const QUICK_TOOLS: readonly QuickTool[] = [
   {
     label: "Referrals",
     href: "/affiliate/referrals",
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    ),
+    icon: <Icon icon={Users} size={18} />,
   },
   {
     label: "Earnings",
     href: "/affiliate/earnings",
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-      </svg>
-    ),
+    icon: <Icon icon={DollarSign} size={18} />,
   },
   {
     label: "Profile",
     href: "/affiliate/profile",
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <circle cx="12" cy="8" r="4" />
-        <path d="M4 20c1.7-3.3 4.3-5 8-5s6.3 1.7 8 5" />
-      </svg>
-    ),
+    icon: <Icon icon={User} size={18} />,
   },
 ];
 
 export function AffiliatePortal() {
   const { profile, inviteInfo, refreshing, error, setError, inviteLink } = useAffiliateProfile();
   const [copied, setCopied] = useState<"code" | "url" | "hero" | null>(null);
+  const [earnings, setEarnings] = useState<AffiliateEarnings | null>(null);
+  const [earningsLoading, setEarningsLoading] = useState(true);
   const studentCount = inviteInfo?.student_count ?? profile?.student_count ?? 0;
   const invitationQuota = inviteInfo?.invitation_quota ?? profile?.invitation_quota;
   const inviteCode = inviteInfo?.invite_code ?? profile?.invite_code;
@@ -62,6 +55,22 @@ export function AffiliatePortal() {
   const status =
     invitationQuota != null && studentCount >= invitationQuota ? "Full" : "Active";
   const displayName = affiliateDisplayName(profile);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setEarningsLoading(true);
+    void getAffiliateEarnings(controller.signal)
+      .then((data) => {
+        if (!controller.signal.aborted) setEarnings(data);
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) setEarnings(null);
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setEarningsLoading(false);
+      });
+    return () => controller.abort();
+  }, []);
 
   async function copyText(value: string | undefined | null, field: "code" | "url" | "hero") {
     if (!value) return;
@@ -151,6 +160,15 @@ export function AffiliatePortal() {
                 ))}
               </div>
             </section>
+
+            <AffiliateEarningsMeter
+              totalEarned={earnings?.total_earned ?? 0}
+              nextMilestone={earnings?.next_milestone ?? 100}
+              currency={earnings?.currency ?? "USD"}
+              pendingPayout={earnings?.pending_payout ?? 0}
+              orderCount={earnings?.order_count ?? 0}
+              loading={earningsLoading && !earnings}
+            />
 
             <section className="dashboard-glass-card rounded-2xl p-3.5 sm:p-5">
               <h2 className="font-sans text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg">
@@ -284,18 +302,9 @@ function HealthRow({ label, value }: { label: string; value: string }) {
   );
 }
 
-const copyIcon = (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-    <rect x="9" y="9" width="13" height="13" rx="2" />
-    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" />
-  </svg>
-);
+const copyIcon = <Icon icon={Copy} size={14} />;
 
-const checkIcon = (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-    <path d="M20 6 9 17l-5-5" />
-  </svg>
-);
+const checkIcon = <Icon icon={Check} size={14} strokeWidth={2} />;
 
 function CopyField({
   label,

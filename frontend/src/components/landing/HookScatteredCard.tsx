@@ -119,8 +119,8 @@ export function HookScatteredCard({
       data-hook-card
       data-card-id={id}
       className={cn(
-        "absolute z-20 inline-flex -translate-y-1/2 touch-none select-none items-center gap-2 rounded-full border border-black/[0.06] bg-white px-3 py-2 opacity-0 shadow-[0_10px_30px_-12px_rgba(21,39,68,0.35)] transition-shadow",
-        dragging && "z-30 scale-105 shadow-[0_16px_36px_-10px_rgba(21,39,68,0.45)]",
+        "absolute z-20 inline-flex -translate-y-1/2 touch-none select-none items-center gap-2 rounded-full border border-black/[0.06] bg-white px-3 py-2 opacity-0",
+        dragging && "z-30 scale-105",
         className,
       )}
       style={{ top: pos.top, left: pos.left, cursor: "default" }}
@@ -221,8 +221,8 @@ export function HookScatteredCardInline({
       data-hook-card
       data-card-id={id}
       className={cn(
-        "relative z-10 inline-flex touch-none select-none items-center gap-2 rounded-full border border-black/[0.06] bg-white px-3 py-2 opacity-0 shadow-[0_10px_30px_-12px_rgba(21,39,68,0.35)]",
-        dragging && "z-30 scale-105 shadow-[0_16px_36px_-10px_rgba(21,39,68,0.45)]",
+        "relative z-10 inline-flex touch-none select-none items-center gap-2 rounded-full border border-black/[0.06] bg-white px-3 py-2 opacity-0",
+        dragging && "z-30 scale-105",
       )}
       style={{
         cursor: "default",

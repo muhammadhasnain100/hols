@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
+import { Check, Icon } from "@/components/icons";
 import { LessonsWorkspaceSkeleton } from "@/components/platform/provider/student/DashboardSkeletons";
 import { CoursePageLayout } from "@/components/platform/provider/student/lectures/CoursePageLayout";
 import { LessonContentPanel } from "@/components/platform/provider/student/lectures/LessonContentPanel";
@@ -321,9 +322,7 @@ export function StudentLessonsWorkspace({
                         )}
                       >
                         {selected ? (
-                          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" aria-hidden>
-                            <path d="M20 6 9 17l-5-5" />
-                          </svg>
+                          <Icon icon={Check} size={13} strokeWidth={2.5} />
                         ) : (
                           index + 1
                         )}

@@ -62,3 +62,6 @@ coverage/
 # Large lecture seed dumps (import via script, do not commit)
 backend/lectures/courses_complete.json
 backend/lectures/*.complete.json
+
+# Local brand assets (too large for GitHub)
+HOLS brand Guidelines.pdf

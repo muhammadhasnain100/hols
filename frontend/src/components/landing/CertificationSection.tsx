@@ -19,7 +19,7 @@ export function CertificationSection() {
       className="relative w-full overflow-hidden bg-[#F4F5F7] py-12 md:py-14 lg:py-16"
     >
       <div className={cn("relative w-full", heroLayout.gutterX)}>
-        <div className="relative overflow-hidden rounded-[1.75rem] bg-black shadow-[0_16px_48px_rgba(21,39,68,0.12)]">
+        <div className="relative overflow-hidden rounded-[1.75rem] bg-black">
           <div
             className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_78%_42%,rgba(141,195,225,0.14),transparent_52%),radial-gradient(ellipse_at_18%_75%,rgba(221,228,102,0.07),transparent_42%)]"
             aria-hidden

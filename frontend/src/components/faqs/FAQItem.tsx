@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Icon, Plus } from "@/components/icons";
 import { cn } from "@/lib/utils";
 
 type FAQItemProps = {
@@ -42,15 +43,11 @@ export function FAQItem({
     <div
       className={cn(
         isCard &&
-          "group overflow-hidden rounded-2xl border border-primary/8 bg-white shadow-[0_4px_18px_rgba(21,39,68,0.05)] transition-[border-color,box-shadow] duration-500 ease-out motion-reduce:transition-none",
-        isCard &&
-          "hover:border-primary/14 hover:shadow-[0_10px_28px_rgba(21,39,68,0.08)]",
-        isCard &&
-          open &&
-          "border-primary/12 shadow-[0_14px_36px_rgba(21,39,68,0.1)]",
+          "group overflow-hidden rounded-2xl border border-primary/8 bg-white transition-[border-color] duration-500 ease-out motion-reduce:transition-none",
+        isCard && "hover:border-primary/14",
+        isCard && open && "border-primary/12",
         !isCard && "border-b border-border/40",
-        glass &&
-          "rounded-2xl border-white/50 bg-white shadow-[0_4px_20px_rgba(21,39,68,0.05)]",
+        glass && "rounded-2xl border-white/50 bg-white",
       )}
     >
       <button
@@ -83,8 +80,7 @@ export function FAQItem({
           )}
           aria-hidden
         >
-          <span className="absolute h-[1.5px] w-3 rounded-full bg-current sm:w-3.5" />
-          <span className="absolute h-3 w-[1.5px] rounded-full bg-current sm:h-3.5" />
+          <Icon icon={Plus} size={14} className="sm:h-3.5 sm:w-3.5" strokeWidth={2} />
         </span>
       </button>
 

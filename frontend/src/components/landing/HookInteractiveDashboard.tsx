@@ -7,6 +7,15 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import {
+  BookOpen,
+  Calculator,
+  CreditCard,
+  Icon,
+  LayoutDashboard,
+  Sparkles,
+  User,
+} from "@/components/icons";
 import { landingContent } from "@/content/landing";
 import { cn } from "@/lib/utils";
 
@@ -158,42 +167,12 @@ export function HookPortalShell({
 }
 
 const NAV_ICONS: Record<string, ReactNode> = {
-  dashboard: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden className="h-3 w-3">
-      <rect x="3" y="3" width="7" height="9" rx="1.5" />
-      <rect x="14" y="3" width="7" height="5" rx="1.5" />
-      <rect x="14" y="12" width="7" height="9" rx="1.5" />
-      <rect x="3" y="16" width="7" height="5" rx="1.5" />
-    </svg>
-  ),
-  lectures: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden className="h-3 w-3">
-      <path d="M4 6h16v11H4zM4 20h16" strokeLinecap="round" strokeLinejoin="round" />
-    </svg>
-  ),
-  calculator: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden className="h-3 w-3">
-      <rect x="5" y="3" width="14" height="18" rx="2" />
-      <path d="M8 8h8M8 12h2M12 12h2M16 12h1M8 16h2M12 16h2M16 16h1" strokeLinecap="round" />
-    </svg>
-  ),
-  advisor: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden className="h-3 w-3">
-      <path d="M12 3l1.8 4.2L18 9l-4.2 1.8L12 15l-1.8-4.2L6 9l4.2-1.8Z" strokeLinejoin="round" />
-    </svg>
-  ),
-  payment: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden className="h-3 w-3">
-      <rect x="3" y="6" width="18" height="12" rx="2" />
-      <path d="M3 10h18" strokeLinecap="round" />
-    </svg>
-  ),
-  profile: (
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" aria-hidden className="h-3 w-3">
-      <circle cx="12" cy="9" r="3.2" />
-      <path d="M5.5 19a6.5 6.5 0 0 1 13 0" strokeLinecap="round" />
-    </svg>
-  ),
+  dashboard: <Icon icon={LayoutDashboard} size={12} strokeWidth={1.75} className="h-3 w-3" />,
+  lectures: <Icon icon={BookOpen} size={12} strokeWidth={1.75} className="h-3 w-3" />,
+  calculator: <Icon icon={Calculator} size={12} strokeWidth={1.75} className="h-3 w-3" />,
+  advisor: <Icon icon={Sparkles} size={12} strokeWidth={1.75} className="h-3 w-3" />,
+  payment: <Icon icon={CreditCard} size={12} strokeWidth={1.75} className="h-3 w-3" />,
+  profile: <Icon icon={User} size={12} strokeWidth={1.75} className="h-3 w-3" />,
 };
 
 const COURSES = [
@@ -272,7 +251,7 @@ export function HookInteractiveDashboard({
       data-hook-dashboard
       data-theme={darkMode ? "dark" : "light"}
       className={cn(
-        "pointer-events-auto relative z-20 box-border shrink-0 overflow-hidden rounded-2xl border shadow-[0_24px_60px_-20px_rgba(20,38,68,0.35)]",
+        "pointer-events-auto relative z-20 box-border shrink-0 overflow-hidden rounded-2xl border",
         className,
       )}
       style={{

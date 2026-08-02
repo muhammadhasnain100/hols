@@ -10,6 +10,8 @@ from core.route_handlers import handle_route_errors
 from database_entities import UserRole
 from dependencies import CurrentUser, require_roles
 from models.affiliate_portal import (
+    AffiliateEarningsData,
+    AffiliateEarningsResponse,
     AffiliateInviteEmailData,
     AffiliateInviteEmailResponse,
     AffiliateInviteRequest,
@@ -115,3 +117,13 @@ async def list_referred_students(
         cursor=cursor,
     )
     return success_response(AffiliateReferralStudentListData(**result))
+
+
+@router.get("/earnings", response_model=AffiliateEarningsResponse)
+@handle_route_errors("get affiliate earnings", log_prefix="Affiliate")
+async def get_earnings(
+    current_user: Annotated[CurrentUser, Depends(require_roles(UserRole.AFFILIATE))],
+) -> AffiliateEarningsResponse:
+    """Affiliate - total commission earned from referred student purchases."""
+    result = await affiliate_portal_service.get_earnings(affiliate_id=current_user.user_id)
+    return success_response(AffiliateEarningsData(**result))

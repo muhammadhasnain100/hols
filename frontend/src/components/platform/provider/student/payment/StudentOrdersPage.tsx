@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { Icon, Star } from "@/components/icons";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import {
   OrderListRowsSkeleton,
@@ -160,9 +161,7 @@ export function StudentOrdersPage() {
                 >
                   <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
                     <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#DDE466]/15 text-[color:var(--dash-accent)]">
-                      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.9" aria-hidden>
-                        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.77 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" />
-                      </svg>
+                      <Icon icon={Star} size={16} strokeWidth={1.9} />
                     </span>
                     <div className="min-w-0">
                       <p className="font-sans truncate text-sm font-medium text-[color:var(--dash-text)]">

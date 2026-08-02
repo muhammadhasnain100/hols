@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 520" fill="none">
+  <defs>
+    <linearGradient id="g" x1="1" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#101b30"/>
+      <stop offset="100%" stop-color="#0a1422"/>
+    </linearGradient>
+  </defs>
+  <rect width="400" height="520" fill="url(#g)"/>
+  <g stroke="#dde466" stroke-opacity="0.22" stroke-width="1">
+    <path d="M0 80h400M0 160h400M0 240h400M0 320h400M0 400h400M0 480h400"/>
+    <path d="M80 0v520M160 0v520M240 0v520M320 0v520"/>
+  </g>
+  <rect x="60" y="100" width="280" height="280" rx="24" stroke="#8dc3e1" stroke-opacity="0.45" stroke-width="1.5"/>
+  <circle cx="200" cy="240" r="64" fill="#dde466" fill-opacity="0.18" stroke="#dde466" stroke-opacity="0.55" stroke-width="2"/>
+  <path d="M176 240h48M200 216v48" stroke="#dde466" stroke-width="3" stroke-linecap="round"/>
+  <rect x="60" y="420" width="120" height="4" rx="2" fill="#dde466" fill-opacity="0.7"/>
+  <text x="60" y="500" fill="#ffffff" fill-opacity="0.35" font-family="system-ui,sans-serif" font-size="11" letter-spacing="3">HOLS</text>
+</svg>

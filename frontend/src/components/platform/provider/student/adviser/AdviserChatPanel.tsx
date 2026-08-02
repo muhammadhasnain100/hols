@@ -1,6 +1,15 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  ArrowUp,
+  Check,
+  Copy,
+  Icon,
+  Loader2,
+  ThumbsDown,
+  ThumbsUp,
+} from "@/components/icons";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { MarkdownContent } from "@/components/platform/provider/student/adviser/MarkdownContent";
 import { ChatMessagesSkeleton } from "@/components/platform/provider/student/DashboardSkeletons";
@@ -46,6 +55,7 @@ export function AdviserChatPanel({ patient, onPatientChange }: AdviserChatPanelP
   const [isLoadingOlder, setIsLoadingOlder] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const composerRef = useRef<HTMLTextAreaElement>(null);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const shouldStickToBottomRef = useRef(true);
   const initializedPatientRef = useRef<string | null>(null);
 
@@ -90,7 +100,9 @@ export function AdviserChatPanel({ patient, onPatientChange }: AdviserChatPanelP
 
   useEffect(() => {
     if (!shouldStickToBottomRef.current) return;
-    window.scrollTo({ top: document.documentElement.scrollHeight });
+    const container = scrollContainerRef.current;
+    if (!container) return;
+    container.scrollTop = container.scrollHeight;
   }, [messages, isSending]);
 
   const loadOlderMessages = useCallback(async () => {
@@ -98,7 +110,8 @@ export function AdviserChatPanel({ patient, onPatientChange }: AdviserChatPanelP
 
     setIsLoadingOlder(true);
     shouldStickToBottomRef.current = false;
-    const previousHeight = document.documentElement.scrollHeight;
+    const container = scrollContainerRef.current;
+    const previousHeight = container?.scrollHeight ?? 0;
 
     try {
       const page = await getPatientMessages(patient.patient_id, {
@@ -112,7 +125,9 @@ export function AdviserChatPanel({ patient, onPatientChange }: AdviserChatPanelP
       );
 
       requestAnimationFrame(() => {
-        window.scrollTo({ top: document.documentElement.scrollHeight - previousHeight });
+        const nextContainer = scrollContainerRef.current;
+        if (!nextContainer) return;
+        nextContainer.scrollTop = nextContainer.scrollHeight - previousHeight;
       });
     } catch (err) {
       setError(
@@ -124,18 +139,23 @@ export function AdviserChatPanel({ patient, onPatientChange }: AdviserChatPanelP
   }, [isLoadingOlder, pagination, patient.patient_id]);
 
   useEffect(() => {
-    function handleWindowScroll() {
-      const doc = document.documentElement;
-      const distanceFromBottom = doc.scrollHeight - window.scrollY - window.innerHeight;
+    const container = scrollContainerRef.current;
+    if (!container) return;
+
+    function handleContainerScroll() {
+      const el = scrollContainerRef.current;
+      if (!el) return;
+
+      const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
       shouldStickToBottomRef.current = distanceFromBottom < 96;
 
-      if (window.scrollY <= 48) {
+      if (el.scrollTop <= 48) {
         void loadOlderMessages();
       }
     }
 
-    window.addEventListener("scroll", handleWindowScroll, { passive: true });
-    return () => window.removeEventListener("scroll", handleWindowScroll);
+    container.addEventListener("scroll", handleContainerScroll, { passive: true });
+    return () => container.removeEventListener("scroll", handleContainerScroll);
   }, [loadOlderMessages]);
 
   const sendMessage = useCallback(async () => {
@@ -197,9 +217,12 @@ export function AdviserChatPanel({ patient, onPatientChange }: AdviserChatPanelP
   }, []);
 
   return (
-    <div className="flex min-h-[calc(100svh-7.5rem)] flex-col sm:min-h-[calc(100svh-8rem)]">
-      <div className="flex-1 pb-[calc(5.75rem+env(safe-area-inset-bottom))] sm:pb-36">
-        <div className="mx-auto flex w-full max-w-4xl flex-col gap-5 px-1 sm:gap-7 sm:px-2">
+    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+      <div
+        ref={scrollContainerRef}
+        className="adviser-chat-transcript min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 sm:px-4 md:px-6 lg:px-8"
+      >
+        <div className="mx-auto flex w-full max-w-4xl flex-col gap-5 py-4 sm:gap-7 sm:py-5">
           {pagination?.has_older ? (
             <div className="flex justify-center">
               <button
@@ -240,7 +263,7 @@ export function AdviserChatPanel({ patient, onPatientChange }: AdviserChatPanelP
         </div>
       </div>
 
-      <footer className="adviser-chat-composer-bar fixed inset-x-0 bottom-0 z-30 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-5 sm:px-4 sm:pb-4 sm:pt-6 md:px-6 lg:left-[var(--portal-sidebar-offset)] lg:px-8">
+      <footer className="adviser-chat-composer-bar shrink-0 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 sm:px-4 sm:pb-4 sm:pt-4 md:px-6 lg:px-8">
         <form
           className="adviser-chat-composer mx-auto flex w-full max-w-3xl items-end gap-1.5 rounded-[1.5rem] px-2.5 py-1.5 sm:gap-2 sm:rounded-[1.75rem] sm:px-4 sm:py-2"
           onSubmit={(event) => {
@@ -273,9 +296,7 @@ export function AdviserChatPanel({ patient, onPatientChange }: AdviserChatPanelP
             {isSending ? (
               <ChatSpinner className="h-4 w-4 text-[#152744]" />
             ) : (
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path d="M12 19V5M5 12l7-7 7 7" />
-              </svg>
+              <Icon icon={ArrowUp} size={16} strokeWidth={2.2} />
             )}
           </button>
         </form>
@@ -321,79 +342,16 @@ function ChatMessageRow({
           onClick={onCopy}
         >
           {copied ? (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path
-                d="M5 12.5 9.5 17 19 7"
-                stroke="currentColor"
-                strokeWidth="1.8"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            <Icon icon={Check} size={18} strokeWidth={1.8} />
           ) : (
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-              <path
-                d="M8.5 8.5V6.8c0-1 .8-1.8 1.8-1.8h7.9c1 0 1.8.8 1.8 1.8v7.9c0 1-.8 1.8-1.8 1.8h-1.7"
-                stroke="currentColor"
-                strokeWidth="1.6"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <rect
-                x="4"
-                y="8.5"
-                width="11.5"
-                height="11.5"
-                rx="2"
-                stroke="currentColor"
-                strokeWidth="1.6"
-              />
-            </svg>
+            <Icon icon={Copy} size={18} strokeWidth={1.6} />
           )}
         </MessageActionButton>
         <MessageActionButton label="Good response">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path
-              d="M7 10v10"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-            />
-            <path
-              d="M7 20H5.5A1.5 1.5 0 0 1 4 18.5v-6A1.5 1.5 0 0 1 5.5 11H7"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M7 11l.8-3.2A2.8 2.8 0 0 1 10.5 5.5H12a1.2 1.2 0 0 1 1.2 1.2V10h5.1a1.8 1.8 0 0 1 1.78 2.1l-1.05 6A1.8 1.8 0 0 1 17.05 20H7"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <Icon icon={ThumbsUp} size={18} strokeWidth={1.6} />
         </MessageActionButton>
         <MessageActionButton label="Bad response">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden>
-            <path
-              d="M17 14V4"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinecap="round"
-            />
-            <path
-              d="M17 4h1.5A1.5 1.5 0 0 1 20 5.5v6A1.5 1.5 0 0 1 18.5 13H17"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinejoin="round"
-            />
-            <path
-              d="M17 13l-.8 3.2a2.8 2.8 0 0 1-2.7 2.3H12a1.2 1.2 0 0 1-1.2-1.2V14H5.7a1.8 1.8 0 0 1-1.78-2.1l1.05-6A1.8 1.8 0 0 1 6.95 4H17"
-              stroke="currentColor"
-              strokeWidth="1.6"
-              strokeLinejoin="round"
-            />
-          </svg>
+          <Icon icon={ThumbsDown} size={18} strokeWidth={1.6} />
         </MessageActionButton>
       </div>
     </div>
@@ -423,29 +381,7 @@ function MessageActionButton({
 }
 
 function ChatSpinner({ className }: { className?: string }) {
-  return (
-    <svg
-      className={cn("animate-spin", className)}
-      viewBox="0 0 24 24"
-      fill="none"
-      aria-hidden
-    >
-      <circle
-        cx="12"
-        cy="12"
-        r="9"
-        stroke="currentColor"
-        strokeOpacity="0.2"
-        strokeWidth="2.5"
-      />
-      <path
-        d="M21 12a9 9 0 0 0-9-9"
-        stroke="currentColor"
-        strokeWidth="2.5"
-        strokeLinecap="round"
-      />
-    </svg>
-  );
+  return <Icon icon={Loader2} size={16} className={cn("animate-spin", className)} strokeWidth={2.5} />;
 }
 
 function AssistantTypingRow() {

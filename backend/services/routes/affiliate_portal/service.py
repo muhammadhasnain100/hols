@@ -242,3 +242,104 @@ async def list_referred_students(
             next_cursor=next_cursor,
         ),
     }
+
+
+def _as_money(value: Any) -> float:
+    if value is None:
+        return 0.0
+    return round(float(value), 2)
+
+
+def _next_milestone(total_earned: float) -> float:
+    """Pick the next round target above earned for the UI meter."""
+    steps = (50, 100, 250, 500, 1000, 2500, 5000, 10000, 25000, 50000, 100000)
+    for step in steps:
+        if total_earned < step:
+            return float(step)
+    # Beyond the table — keep a headroom of ~20% rounded up to the next thousand.
+    return float(((int(total_earned) // 1000) + 2) * 1000)
+
+
+async def sum_affiliate_commission(
+    affiliate_id: str,
+    *,
+    history_limit: int = 0,
+) -> dict[str, Any]:
+    """Sum paid commission for an affiliate. Optionally collect recent order rows."""
+    query_kwargs: dict[str, Any] = {
+        "IndexName": "GSI2",
+        "KeyConditionExpression": (
+            Key("GSI2PK").eq(f"AFFILIATE#{affiliate_id}") & Key("GSI2SK").begins_with("ORDER#")
+        ),
+        "ScanIndexForward": False,
+    }
+
+    total_earned = 0.0
+    order_count = 0
+    currency = "USD"
+    items: list[dict[str, Any]] = []
+
+    while True:
+        def _query(kw=query_kwargs):
+            return _table().query(**kw)
+
+        response = await run_sync(_query)
+        for item in response.get("Items", []):
+            entity = item.get("entity")
+            if entity is not None and entity != "ORDER":
+                continue
+            status_value = str(item.get("status") or "").lower()
+            if status_value and status_value != "paid":
+                continue
+
+            commission = _as_money(item.get("affiliate_commission"))
+            if commission <= 0:
+                continue
+
+            total_earned += commission
+            order_count += 1
+            currency = str(item.get("currency") or currency)
+
+            if history_limit and len(items) < history_limit:
+                items.append(
+                    {
+                        "order_id": item.get("order_id") or "",
+                        "plan_type": item.get("plan_type"),
+                        "amount": _as_money(item.get("amount")),
+                        "commission": commission,
+                        "currency": str(item.get("currency") or "USD"),
+                        "status": status_value or "paid",
+                        "created_at": item.get("created_at"),
+                    }
+                )
+
+        last_key = response.get("LastEvaluatedKey")
+        if not last_key:
+            break
+        query_kwargs["ExclusiveStartKey"] = last_key
+
+    return {
+        "total_earned": round(total_earned, 2),
+        "order_count": order_count,
+        "currency": currency,
+        "items": items,
+    }
+
+
+async def get_earnings(*, affiliate_id: str, history_limit: int = 25) -> dict[str, Any]:
+    """Sum commissionable paid orders indexed under this affiliate."""
+    affiliate = await _get_affiliate(affiliate_id)
+    margin = normalize_value(affiliate.get("margin_percent"))
+    summed = await sum_affiliate_commission(affiliate_id, history_limit=history_limit)
+    total_earned = summed["total_earned"]
+    # Payout ledger is not implemented yet — treat all earned commission as pending.
+    return {
+        "total_earned": total_earned,
+        "pending_payout": total_earned,
+        "paid_out": 0.0,
+        "currency": summed["currency"],
+        "order_count": summed["order_count"],
+        "margin_percent": float(margin) if margin is not None else None,
+        "next_milestone": _next_milestone(total_earned),
+        "items": summed["items"],
+    }

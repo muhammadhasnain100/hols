@@ -19,6 +19,8 @@ export type AffiliateSummary = {
   margin_percent?: number;
   invitation_quota?: number;
   student_count: number;
+  total_earned?: number;
+  earnings_currency?: string;
   created_at?: string;
 };
 
