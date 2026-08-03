@@ -145,7 +145,7 @@ export function CourseCoverArt({
               <p className="lecture-cover-art-eyebrow lecture-cover-art-category">
                 HOLS Library
               </p>
-              <p className="lecture-cover-art-title font-sans mt-1.5 line-clamp-3 break-words [overflow-wrap:break-word] sm:mt-2">
+              <p className="lecture-cover-art-title font-sans mt-1.5 line-clamp-3 sm:mt-2">
                 {shortTitle}
               </p>
             </div>
