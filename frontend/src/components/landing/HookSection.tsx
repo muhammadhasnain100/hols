@@ -39,6 +39,8 @@ import { prefersReducedMotion } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 const HOOK_PATH_SYNC = "hook-path-sync";
+/** Toggle dashboard mock; ball → CTA when false (see landingContent.hook.showDashboard). */
+const HOOK_SHOW_DASHBOARD = landingContent.hook.showDashboard ?? true;
 /** Diagram strokes + struct capsule + title "becomes" */
 const HOOK_LINE = brand.colors.primary.duskBlue;
 const BLUE = brand.colors.primary.duskBlue;
@@ -223,7 +225,6 @@ function buildDiagramGeometry(
   });
 
   // Stem only — arrowhead travels with the stroke tip via syncArrowToLine.
-  // Desktop: tips clear the portal/CTA borders (ARROW_CLEAR_PX) — do not use mobile gaps here.
   if (dashRect && dashRect.width) {
     const flowY = ballCY;
     const start = toSvg(ballCX, flowY);
@@ -249,6 +250,18 @@ function buildDiagramGeometry(
         tipY: branchTip.y,
       });
     }
+  } else if (ctaRect && ctaRect.width) {
+    const flowY = ballCY;
+    const start = toSvg(ballCX, flowY);
+    const trunkTip = toSvg(ctaRect.left - ARROW_CLEAR_PX, flowY);
+    paths.push({ id: "trunk", group: "trunk", d: buildStraightLine(start, trunkTip) });
+    arrows.push({
+      id: "trunk-arrow",
+      group: "trunk",
+      points: buildArrowPolygon(trunkTip, start),
+      tipX: trunkTip.x,
+      tipY: trunkTip.y,
+    });
   }
 
   return { paths, arrows };
@@ -338,6 +351,22 @@ function buildVerticalDiagramGeometry(
           tipY: branchTip.y,
         });
       }
+    }
+  } else if (ctaRect && ctaRect.width) {
+    const flowX = ballCX;
+    const trunkStartY = ballRect.bottom + MOBILE_TRUNK_AFTER_LABEL_PX;
+    const trunkTipY = ctaRect.top - MOBILE_ARROW_CLEAR_PX;
+    if (trunkStartY < trunkTipY - 4) {
+      const start = toSvg(flowX, trunkStartY);
+      const trunkTip = toSvg(ctaRect.left + ctaRect.width / 2, trunkTipY);
+      paths.push({ id: "trunk", group: "trunk", d: buildStraightLine(start, trunkTip) });
+      arrows.push({
+        id: "trunk-arrow",
+        group: "trunk",
+        points: buildArrowPolygon(trunkTip, start),
+        tipX: trunkTip.x,
+        tipY: trunkTip.y,
+      });
     }
   }
 
@@ -513,7 +542,7 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
       .filter((c): c is HTMLElement => Boolean(c))
       .map((c) => c.getBoundingClientRect());
     const ballRect = ball.getBoundingClientRect();
-    const dashRect = getPortalLayoutRect(dashRef.current);
+    const dashRect = HOOK_SHOW_DASHBOARD ? getPortalLayoutRect(dashRef.current) : null;
     const ctaRect = getCtaLayoutRect(ctaRef.current);
 
     const next = buildDiagramGeometry(cardRects, ballRect, dashRect, ctaRect, svgRect);
@@ -571,7 +600,7 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
     const observer = new ResizeObserver(syncPaths);
     observer.observe(diagram);
     if (ballRef.current) observer.observe(ballRef.current);
-    if (dashRef.current) observer.observe(dashRef.current);
+    if (HOOK_SHOW_DASHBOARD && dashRef.current) observer.observe(dashRef.current);
     if (ctaRef.current) observer.observe(ctaRef.current);
     cardRefs.current.forEach((c) => c && observer.observe(c));
 
@@ -643,71 +672,121 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
       </svg>
 
       {/* Column labels — capsules centered over the cards column / dashboard mockup */}
-      <div className="relative z-10 mb-4 grid w-full grid-cols-[minmax(16rem,20rem)_minmax(8rem,1fr)_auto_minmax(6rem,1fr)_auto_minmax(4rem,0.7fr)_auto] items-end gap-x-2 xl:mb-5 xl:grid-cols-[minmax(18rem,22rem)_minmax(10rem,1.2fr)_auto_minmax(8rem,1fr)_auto_minmax(5rem,0.8fr)_auto] xl:gap-x-3">
-        <div className="flex w-full justify-center">
+      <div
+        className={cn(
+          "relative z-10 mb-4 grid w-full items-end gap-x-2 xl:mb-5 xl:gap-x-3",
+          HOOK_SHOW_DASHBOARD
+            ? "grid-cols-[minmax(16rem,20rem)_minmax(8rem,1fr)_auto_minmax(6rem,1fr)_auto_minmax(4rem,0.7fr)_auto] xl:grid-cols-[minmax(18rem,22rem)_minmax(10rem,1.2fr)_auto_minmax(8rem,1fr)_auto_minmax(5rem,0.8fr)_auto]"
+            : "grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]",
+        )}
+      >
+        <div className="flex w-full max-w-[22rem] justify-center justify-self-start xl:max-w-[24rem]">
           <span data-hook-scatter-label className={cn(HOOK_CAPSULE_CLASS, "opacity-0")}>
             {hook.scatteredLabel}
           </span>
         </div>
-        <div aria-hidden />
-        <div aria-hidden className="w-[150px] sm:w-[180px] md:w-[210px]" />
-        <div aria-hidden />
-        <div
-          className="flex justify-center justify-self-center"
-          style={{ width: HOOK_PORTAL_SIZE.width }}
-        >
-          <span data-hook-struct-label className={cn(HOOK_CAPSULE_CLASS, "opacity-0")}>
-            {hook.structuredLabel}
-          </span>
-        </div>
-        <div aria-hidden />
-        <div aria-hidden className="w-[9.5rem]" />
+        {HOOK_SHOW_DASHBOARD ? (
+          <>
+            <div aria-hidden />
+            <div aria-hidden className="w-[150px] sm:w-[180px] md:w-[210px]" />
+            <div aria-hidden />
+            <div
+              className="flex justify-center justify-self-center"
+              style={{ width: HOOK_PORTAL_SIZE.width }}
+            >
+              <span data-hook-struct-label className={cn(HOOK_CAPSULE_CLASS, "opacity-0")}>
+                {hook.structuredLabel}
+              </span>
+            </div>
+            <div aria-hidden />
+            <div aria-hidden className="w-[9.5rem]" />
+          </>
+        ) : (
+          <>
+            <div aria-hidden />
+            <div aria-hidden />
+          </>
+        )}
       </div>
 
-      {/* Full-width flow: cards · gap · ball · gap · dashboard · gap · CTA.
-          items-center keeps ball center, dashboard mid, and CTA mid on one Y axis. */}
-      <div className="relative z-10 grid min-h-0 w-full flex-1 grid-cols-[minmax(16rem,20rem)_minmax(8rem,1fr)_auto_minmax(6rem,1fr)_auto_minmax(4rem,0.7fr)_auto] items-center gap-x-2 xl:grid-cols-[minmax(18rem,22rem)_minmax(10rem,1.2fr)_auto_minmax(8rem,1fr)_auto_minmax(5rem,0.8fr)_auto] xl:gap-x-3">
+      {/* Full-width flow: cards · ball (center) · CTA — or legacy dashboard grid */}
+      <div
+        className={cn(
+          "relative z-10 grid min-h-0 w-full flex-1 items-center gap-x-2 xl:gap-x-3",
+          HOOK_SHOW_DASHBOARD
+            ? "grid-cols-[minmax(16rem,20rem)_minmax(8rem,1fr)_auto_minmax(6rem,1fr)_auto_minmax(4rem,0.7fr)_auto] xl:grid-cols-[minmax(18rem,22rem)_minmax(10rem,1.2fr)_auto_minmax(8rem,1fr)_auto_minmax(5rem,0.8fr)_auto]"
+            : "grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]",
+        )}
+      >
         {/* 1 · Scattered cards (left edge) */}
-        <div className="relative h-full min-h-[280px] w-full">
+        <div className="relative h-full min-h-[280px] w-full max-w-[22rem] justify-self-start xl:max-w-[24rem]">
           {hook.sourceCards.map((card, i) => (
             <ScatteredCard key={card.id} id={card.id} title={card.title} cardRef={setCardRef(i)} />
           ))}
         </div>
 
-        {/* 2 · Flexible gap for card → ball lines */}
-        <div aria-hidden className="h-full w-full" />
+        {HOOK_SHOW_DASHBOARD ? (
+          <>
+            {/* 2 · Flexible gap for card → ball lines */}
+            <div aria-hidden className="h-full w-full" />
 
-        {/* 3 · HOLS ball — geometric center is the trunk origin */}
-        <div className="relative z-10 shrink-0 self-center">
-          <HolsBall innerRef={(n) => (ballRef.current = n)} className="opacity-0" />
-        </div>
+            {/* 3 · HOLS ball */}
+            <div className="relative z-10 shrink-0 self-center">
+              <HolsBall innerRef={(n) => (ballRef.current = n)} className="opacity-0" />
+            </div>
 
-        {/* 4 · Flexible gap for ball → dashboard line */}
-        <div aria-hidden className="h-full w-full" />
+            {/* 4 · Flexible gap for ball → dashboard line */}
+            <div aria-hidden className="h-full w-full" />
 
-        {/* 5 · Dashboard — desktop keeps its locked frame (no responsive scale) */}
-        <HookPortalShell className="relative z-10 justify-self-center self-center">
-          <DashboardMockup innerRef={(n) => (dashRef.current = n)} className="opacity-0" />
-        </HookPortalShell>
+            {/* 5 · Dashboard */}
+            <HookPortalShell className="relative z-10 justify-self-center self-center">
+              <DashboardMockup innerRef={(n) => (dashRef.current = n)} className="opacity-0" />
+            </HookPortalShell>
 
-        {/* 6 · Flexible gap for dashboard → CTA line */}
-        <div aria-hidden className="h-full w-full" />
+            {/* 6 · Flexible gap for dashboard → CTA line */}
+            <div aria-hidden className="h-full w-full" />
+          </>
+        ) : (
+          <>
+            {/* 2 · HOLS ball — true horizontal center (1fr | auto | 1fr grid) */}
+            <div className="relative z-10 shrink-0 justify-self-center self-center">
+              <HolsBall innerRef={(n) => (ballRef.current = n)} className="opacity-0" />
+            </div>
 
-        {/* 7 · Explore Courses — mid-Y locked to the same flow axis as the ball.
-            Kill soft shadow / backdrop blur so no translucent ghost sits past the pill. */}
-        <div
-          ref={ctaRef}
-          data-hook-cta
-          className="pointer-events-auto relative z-10 shrink-0 justify-self-end self-center opacity-0"
-        >
-          <HeroButton
-            href={hook.cta.href}
-            variant="primary"
-            className="whitespace-nowrap px-6 !shadow-none ![backdrop-filter:none] ![-webkit-backdrop-filter:none] md:px-8"
+            {/* 3 · Right rail — CTA anchored end; left 1fr balances cards column */}
+            <div className="flex min-h-[280px] items-center justify-end justify-self-stretch">
+              <div
+                ref={ctaRef}
+                data-hook-cta
+                className="pointer-events-auto relative z-10 shrink-0 opacity-0"
+              >
+                <HeroButton
+                  href={hook.cta.href}
+                  variant="primary"
+                  className="whitespace-nowrap px-6 !shadow-none ![backdrop-filter:none] ![-webkit-backdrop-filter:none] md:px-8"
+                >
+                  {hook.cta.label}
+                </HeroButton>
+              </div>
+            </div>
+          </>
+        )}
+
+        {HOOK_SHOW_DASHBOARD ? (
+          <div
+            ref={ctaRef}
+            data-hook-cta
+            className="pointer-events-auto relative z-10 shrink-0 justify-self-end self-center opacity-0"
           >
-            {hook.cta.label}
-          </HeroButton>
-        </div>
+            <HeroButton
+              href={hook.cta.href}
+              variant="primary"
+              className="whitespace-nowrap px-6 !shadow-none ![backdrop-filter:none] ![-webkit-backdrop-filter:none] md:px-8"
+            >
+              {hook.cta.label}
+            </HeroButton>
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -740,7 +819,7 @@ function MobileFlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
       .filter((c): c is HTMLElement => Boolean(c))
       .map((c) => c.getBoundingClientRect());
     const ballRect = ball.getBoundingClientRect();
-    const dashRect = getPortalLayoutRect(dashRef.current);
+    const dashRect = HOOK_SHOW_DASHBOARD ? getPortalLayoutRect(dashRef.current) : null;
     const ctaRect = getCtaLayoutRect(ctaRef.current);
     const structLabelRect = structLabelRef.current?.getBoundingClientRect() ?? null;
 
@@ -805,9 +884,9 @@ function MobileFlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
     const observer = new ResizeObserver(syncPaths);
     observer.observe(diagram);
     if (ballRef.current) observer.observe(ballRef.current);
-    if (dashRef.current) observer.observe(dashRef.current);
+    if (HOOK_SHOW_DASHBOARD && dashRef.current) observer.observe(dashRef.current);
     if (ctaRef.current) observer.observe(ctaRef.current);
-    if (structLabelRef.current) observer.observe(structLabelRef.current);
+    if (HOOK_SHOW_DASHBOARD && structLabelRef.current) observer.observe(structLabelRef.current);
     cardRefs.current.forEach((c) => c && observer.observe(c));
 
     const onCardMove = () => syncPaths();
@@ -908,24 +987,30 @@ function MobileFlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
         {/* Clearance under HOLS wordmark — no trunk through this gap */}
         <div aria-hidden className="h-14 w-full sm:h-16" />
 
-        {/* Capsule sits alone; short trunk starts below it into the dashboard */}
-        <span
-          ref={structLabelRef}
-          data-hook-struct-label
-          className={cn(HOOK_CAPSULE_CLASS, "opacity-0")}
-        >
-          {hook.structuredLabel}
-        </span>
+        {HOOK_SHOW_DASHBOARD ? (
+          <>
+            {/* Capsule sits alone; short trunk starts below it into the dashboard */}
+            <span
+              ref={structLabelRef}
+              data-hook-struct-label
+              className={cn(HOOK_CAPSULE_CLASS, "opacity-0")}
+            >
+              {hook.structuredLabel}
+            </span>
 
-        {/* Room for short stem + arrowhead into dashboard chrome */}
-        <div aria-hidden className="h-14 w-full sm:h-16" />
+            {/* Room for short stem + arrowhead into dashboard chrome */}
+            <div aria-hidden className="h-14 w-full sm:h-16" />
 
-        <HookPortalShell responsive className="relative z-10">
-          <DashboardMockup innerRef={(n) => (dashRef.current = n)} className="opacity-0" />
-        </HookPortalShell>
+            <HookPortalShell responsive className="relative z-10">
+              <DashboardMockup innerRef={(n) => (dashRef.current = n)} className="opacity-0" />
+            </HookPortalShell>
 
-        {/* Room for short branch stem + arrowhead into Explore Courses */}
-        <div aria-hidden className="h-14 w-full sm:h-16" />
+            {/* Room for short branch stem + arrowhead into Explore Courses */}
+            <div aria-hidden className="h-14 w-full sm:h-16" />
+          </>
+        ) : (
+          <div aria-hidden className="h-10 w-full sm:h-12" />
+        )}
 
         {/* z-10 keeps layout; SVG at z-20 draws the tip on top of this border */}
         <div ref={ctaRef} data-hook-cta className="relative z-10 opacity-0">
@@ -973,12 +1058,16 @@ function HookStatic() {
               ))}
             </div>
             <HolsBall />
-            <span className={HOOK_CAPSULE_CLASS}>
-              {hook.structuredLabel}
-            </span>
-            <HookPortalShell responsive>
-              <DashboardMockup />
-            </HookPortalShell>
+            {HOOK_SHOW_DASHBOARD ? (
+              <>
+                <span className={HOOK_CAPSULE_CLASS}>
+                  {hook.structuredLabel}
+                </span>
+                <HookPortalShell responsive>
+                  <DashboardMockup />
+                </HookPortalShell>
+              </>
+            ) : null}
             <HeroButton
               href={hook.cta.href}
               variant="primary"
@@ -1095,14 +1184,18 @@ export function HookSection() {
         allArrows.forEach((arrow) => arrow.setAttribute("opacity", "0"));
         gsap.set(cards, { autoAlpha: 0, y: 10, yPercent: -50 });
         gsap.set(scatterLabel, { autoAlpha: 0, y: 6 });
-        gsap.set(structLabel, { autoAlpha: 0, y: 6 });
+        if (HOOK_SHOW_DASHBOARD) {
+          gsap.set(structLabel, { autoAlpha: 0, y: 6 });
+          gsap.set(dashboard, { autoAlpha: 0, y: 12, scale: 0.98 });
+        }
         gsap.set(hub, { autoAlpha: 0, scale: 0.94 });
-        gsap.set(dashboard, { autoAlpha: 0, y: 12, scale: 0.98 });
         gsap.set(cta, { autoAlpha: 0, y: 8 });
 
         const syncAllArrows = () => {
           syncArrowToLine(trunkLines[0], trunkArrows[0]);
-          syncArrowToLine(branchLines[0], branchArrows[0]);
+          if (HOOK_SHOW_DASHBOARD) {
+            syncArrowToLine(branchLines[0], branchArrows[0]);
+          }
         };
 
         const tl = gsap.timeline({
@@ -1135,14 +1228,18 @@ export function HookSection() {
         });
         tl.to(hub, { autoAlpha: 1, scale: 1, duration: 0.85, ease: "power1.out" }, 1.55);
         tl.to(trunkLines, { strokeDashoffset: 0, opacity: 1, duration: 1.15, ease: "none" }, 2.05);
-        tl.to(structLabel, { autoAlpha: 1, y: 0, duration: 0.7, ease: "power1.out" }, 2.55);
-        tl.to(
-          dashboard,
-          { autoAlpha: 1, y: 0, scale: 1, duration: 0.95, ease: "power1.out" },
-          2.65,
-        );
-        tl.to(branchLines, { strokeDashoffset: 0, opacity: 1, duration: 1.15, ease: "none" }, 3.25);
-        tl.to(cta, { autoAlpha: 1, y: 0, duration: 0.8, ease: "power1.out" }, 3.85);
+        if (HOOK_SHOW_DASHBOARD) {
+          tl.to(structLabel, { autoAlpha: 1, y: 0, duration: 0.7, ease: "power1.out" }, 2.55);
+          tl.to(
+            dashboard,
+            { autoAlpha: 1, y: 0, scale: 1, duration: 0.95, ease: "power1.out" },
+            2.65,
+          );
+          tl.to(branchLines, { strokeDashoffset: 0, opacity: 1, duration: 1.15, ease: "none" }, 3.25);
+          tl.to(cta, { autoAlpha: 1, y: 0, duration: 0.8, ease: "power1.out" }, 3.85);
+        } else {
+          tl.to(cta, { autoAlpha: 1, y: 0, duration: 0.8, ease: "power1.out" }, 2.85);
+        }
         // Hold the finished frame so the last beat doesn't cut off mid-scroll.
         tl.to({}, { duration: 0.9 });
 
@@ -1207,14 +1304,18 @@ export function HookSection() {
         allArrows.forEach((arrow) => arrow.setAttribute("opacity", "0"));
         gsap.set(cards, { autoAlpha: 0, y: 10 });
         gsap.set(scatterLabel, { autoAlpha: 0, y: 6 });
-        gsap.set(structLabel, { autoAlpha: 0, y: 6 });
+        if (HOOK_SHOW_DASHBOARD) {
+          gsap.set(structLabel, { autoAlpha: 0, y: 6 });
+          gsap.set(dashboard, { autoAlpha: 0, y: 12, scale: 0.98 });
+        }
         gsap.set(hub, { autoAlpha: 0, scale: 0.94 });
-        gsap.set(dashboard, { autoAlpha: 0, y: 12, scale: 0.98 });
         gsap.set(cta, { autoAlpha: 0, y: 8 });
 
         const syncAllArrows = () => {
           syncArrowToLine(trunkLines[0], trunkArrows[0]);
-          syncArrowToLine(branchLines[0], branchArrows[0]);
+          if (HOOK_SHOW_DASHBOARD) {
+            syncArrowToLine(branchLines[0], branchArrows[0]);
+          }
         };
 
         const tl = gsap.timeline({
@@ -1246,14 +1347,18 @@ export function HookSection() {
         });
         tl.to(hub, { autoAlpha: 1, scale: 1, duration: 0.85, ease: "power1.out" }, 1.55);
         tl.to(trunkLines, { strokeDashoffset: 0, opacity: 1, duration: 1.15, ease: "none" }, 2.05);
-        tl.to(structLabel, { autoAlpha: 1, y: 0, duration: 0.7, ease: "power1.out" }, 2.55);
-        tl.to(
-          dashboard,
-          { autoAlpha: 1, y: 0, scale: 1, duration: 0.95, ease: "power1.out" },
-          2.65,
-        );
-        tl.to(branchLines, { strokeDashoffset: 0, opacity: 1, duration: 1.15, ease: "none" }, 3.25);
-        tl.to(cta, { autoAlpha: 1, y: 0, duration: 0.8, ease: "power1.out" }, 3.85);
+        if (HOOK_SHOW_DASHBOARD) {
+          tl.to(structLabel, { autoAlpha: 1, y: 0, duration: 0.7, ease: "power1.out" }, 2.55);
+          tl.to(
+            dashboard,
+            { autoAlpha: 1, y: 0, scale: 1, duration: 0.95, ease: "power1.out" },
+            2.65,
+          );
+          tl.to(branchLines, { strokeDashoffset: 0, opacity: 1, duration: 1.15, ease: "none" }, 3.25);
+          tl.to(cta, { autoAlpha: 1, y: 0, duration: 0.8, ease: "power1.out" }, 3.85);
+        } else {
+          tl.to(cta, { autoAlpha: 1, y: 0, duration: 0.8, ease: "power1.out" }, 2.85);
+        }
         tl.to({}, { duration: 0.9 });
 
         const onSync = () => {
