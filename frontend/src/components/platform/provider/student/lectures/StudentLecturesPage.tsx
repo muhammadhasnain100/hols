@@ -1,13 +1,18 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { ChevronRight, Icon } from "@/components/icons";
 import {
   PortalCardButtonDisplay,
   usePortalCardButtonHover,
 } from "@/components/platform/provider/PortalCardButton";
+import { useServerPortalTheme } from "@/components/platform/provider/PortalThemeProvider";
+import {
+  getPortalThemeSnapshot,
+  subscribePortalTheme,
+} from "@/components/platform/provider/portal-theme-store";
 import { CourseCoverArt } from "@/components/platform/provider/student/lectures/CourseCoverArt";
 import { LecturesPageLayout } from "@/components/platform/provider/student/lectures/LecturesPageLayout";
 import { ApiRequestError } from "@/lib/integrate/client";
@@ -16,6 +21,7 @@ import {
   type CourseSummary,
   type PaginationMeta,
 } from "@/lib/integrate/provider/student/lectures";
+import type { ButtonVariant } from "@/lib/button-styles";
 import { cn } from "@/lib/utils";
 
 export function StudentLecturesPage() {
@@ -151,8 +157,15 @@ function CourseCardSkeleton({ index }: { index: number }) {
 
 function CourseCard({ course, index }: { course: CourseSummary; index: number }) {
   const featured = index === 0;
+  const serverTheme = useServerPortalTheme();
+  const portalTheme = useSyncExternalStore(
+    subscribePortalTheme,
+    getPortalThemeSnapshot,
+    () => serverTheme,
+  );
+  const buttonVariant: ButtonVariant = portalTheme === "dark" ? "accent" : "glass";
   const { containerRef, fillRef, labelRef, onMouseEnter, onMouseLeave } =
-    usePortalCardButtonHover("glass");
+    usePortalCardButtonHover(buttonVariant);
 
   return (
     <Link
@@ -181,7 +194,7 @@ function CourseCard({ course, index }: { course: CourseSummary; index: number })
         </div>
 
         <PortalCardButtonDisplay
-          variant="glass"
+          variant={buttonVariant}
           size="md"
           className="mt-2.5"
           containerRef={containerRef}

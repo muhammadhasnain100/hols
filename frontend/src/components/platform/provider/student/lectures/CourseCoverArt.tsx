@@ -1,11 +1,14 @@
 "use client";
 
 import { type CSSProperties } from "react";
+import { CourseCoverLabeledVial } from "@/components/platform/provider/student/lectures/CourseCoverLabeledVial";
 import { CourseCoverVial } from "@/components/platform/provider/student/lectures/CourseCoverVial";
 import {
   courseCoverCssVars,
   getCourseCoverSpec,
   getCoverVialLayout,
+  resolveCourseCover,
+  shiftCoverObjectPositionForPanel,
   tidyCoverTitle,
 } from "@/components/platform/provider/student/lectures/courseCover";
 import { cn } from "@/lib/utils";
@@ -23,25 +26,8 @@ const LOGO_WORDMARK_DARK = "/assets/logo/hols-logo.png";
 const LOGO_MARK_LIGHT = "/assets/logo/hols-logo-mark-light.png";
 const LOGO_MARK_DARK = "/assets/logo/hols-logo-mark.png";
 
-/** Deterministic particle positions from course id hash. */
-function coverParticles(seed: number): Array<{ x: number; y: number; size: number; opacity: number }> {
-  const particles: Array<{ x: number; y: number; size: number; opacity: number }> = [];
-  let s = seed;
-  for (let i = 0; i < 8; i += 1) {
-    s = (s * 1103515245 + 12345) & 0x7fffffff;
-    particles.push({
-      x: 8 + (s % 840) / 10,
-      y: 6 + ((s >> 8) % 880) / 10,
-      size: 1.5 + (s % 3),
-      opacity: 0.12 + (s % 18) / 100,
-    });
-  }
-  return particles;
-}
-
 /**
- * HOLS-branded lecture cover — premium close product-shot vial hero.
- * Uniqueness comes from palette, glow placement, and oversized vial stage per course_id.
+ * HOLS-branded lecture cover — book/manual art or labeled vial template with dynamic peptide name.
  */
 export function CourseCoverArt({
   courseId,
@@ -52,105 +38,65 @@ export function CourseCoverArt({
   const spec = getCourseCoverSpec(courseId);
   const vars = courseCoverCssVars(spec) as CSSProperties;
   const shortTitle = tidyCoverTitle(title);
-  const glowX = 18 + (spec.pattern % 5) * 14;
-  const glowY = 12 + (spec.pattern % 4) * 10;
   const vialLayout = getCoverVialLayout(courseId, variant);
-  const particles = coverParticles(spec.pattern * 7919 + courseId.length * 31);
+  const {
+    photos: coverPhotos,
+    isCustom: customCover,
+    coverId,
+    objectPosition: coverObjectPosition = "center center",
+    layout: coverLayout,
+  } = resolveCourseCover(courseId, title);
 
-  const vialGlowOpacity = vialLayout.glowIntensity * (variant === "panel" ? 0.85 : 1);
-  const glowUsesSky = spec.pattern % 3 === 0;
+  const isBookCover = customCover && coverLayout === "book";
+  const isCustomVialCover = customCover && coverLayout !== "book";
+  const useLabeledVial = !isBookCover && !isCustomVialCover;
+  const useFullBleedPhoto = !useLabeledVial;
+  const photoObjectPosition =
+    variant === "panel" && isCustomVialCover
+      ? shiftCoverObjectPositionForPanel(coverObjectPosition)
+      : coverObjectPosition;
 
   return (
     <div
       className={cn(
         "lecture-cover-art pointer-events-none absolute inset-0 overflow-hidden",
+        useFullBleedPhoto && "lecture-cover-art--full-bleed",
+        (isBookCover || isCustomVialCover) && "lecture-cover-art--custom-photo",
+        useLabeledVial && "lecture-cover-art--labeled-vial",
         variant === "panel" && "lecture-cover-art-panel",
         className,
       )}
+      data-custom-cover={customCover ? "true" : undefined}
+      data-custom-cover-id={customCover ? coverId : undefined}
+      data-cover-layout={customCover ? coverLayout : undefined}
       style={
         {
           ...vars,
-          "--cover-glow-x": `${glowX}%`,
-          "--cover-glow-y": `${glowY}%`,
+          "--cover-photo-position": coverObjectPosition,
           "--cover-text-scrim-strength": String(vialLayout.textScrimStrength),
         } as CSSProperties
       }
       data-cover-pattern={spec.pattern}
       data-cover-vial="true"
-      data-cover-recipe={vialLayout.recipeId}
       role="img"
       aria-label={`${shortTitle} cover`}
     >
-      {/* Zoomable scene — media + accent only (keeps text/noise crisp on hover) */}
       <div className="lecture-cover-art-scene absolute inset-0" aria-hidden>
         <div className="lecture-cover-art-media absolute inset-0">
-          {/* Studio sheen on background only — never overlays the vial */}
-          <div className="lecture-cover-diagonal-shine absolute inset-0" aria-hidden />
-        </div>
-
-        {/* Close-up stage — oversized contain + scale; soft studio-edge bleed OK */}
-        <div
-          className="lecture-cover-accent lecture-cover-accent-vial pointer-events-none absolute z-[1]"
-          style={{
-            top: vialLayout.top,
-            right: vialLayout.right,
-            bottom: vialLayout.bottom,
-            left: vialLayout.left,
-            width: vialLayout.width,
-            height: vialLayout.height,
-            opacity: vialLayout.opacity,
-            transform: vialLayout.transform,
-            transformOrigin: vialLayout.transformOrigin,
-            display: variant === "panel" ? "none" : undefined,
-          }}
-        >
-          {/* Motion layer — hover lift without overriding recipe rotate/scale */}
-          <div className="lecture-cover-accent-motion absolute inset-0">
-            <div
-              className="lecture-cover-vial-glow pointer-events-none absolute inset-0"
-              style={
-                {
-                  opacity: vialGlowOpacity,
-                  "--cover-vial-glow-color": glowUsesSky
-                    ? "rgba(141, 195, 225, 0.42)"
-                    : "rgba(221, 228, 102, 0.38)",
-                } as CSSProperties
-              }
-              aria-hidden
-            />
+          {isBookCover || isCustomVialCover ? (
             <CourseCoverVial
-              objectPosition={vialLayout.objectPosition}
-              objectFit={vialLayout.objectFit}
-              opacity={1}
+              photos={coverPhotos}
+              objectFit="cover"
+              objectPosition={photoObjectPosition}
+              className="lecture-cover-custom-photo"
             />
-          </div>
+          ) : (
+            <CourseCoverLabeledVial title={title} className="lecture-cover-custom-photo" />
+          )}
         </div>
       </div>
 
-      {/* Noise texture */}
-      <div className="lecture-cover-noise absolute inset-0 z-[1]" aria-hidden />
-
-      {/* Floating bokeh particles */}
-      <div className="lecture-cover-particles absolute inset-0 z-[1]" aria-hidden>
-        {particles.map((p, i) => (
-          <span
-            key={i}
-            className="lecture-cover-particle absolute rounded-full bg-white"
-            style={{
-              left: `${p.x}%`,
-              top: `${p.y}%`,
-              width: p.size,
-              height: p.size,
-              opacity: p.opacity,
-            }}
-          />
-        ))}
-      </div>
-
-      {variant === "panel" ? (
-        /* Panel = background chrome only — no text, no vial (Front Cover uses its own layout). */
-        null
-      ) : (
+      {variant === "panel" ? null : (
         <>
           <div className="lecture-cover-art-card-fade absolute inset-0 z-[2]" aria-hidden />
           <div className="lecture-cover-art-vignette absolute inset-0 z-[2]" aria-hidden />
@@ -188,7 +134,14 @@ export function CourseCoverArt({
               />
             </div>
 
-            <div className="lecture-cover-art-card-text mt-auto min-w-0 max-w-[14.5rem] sm:max-w-[15.25rem]">
+            <div
+              className={cn(
+                "lecture-cover-art-card-text mt-auto min-w-0",
+                isCustomVialCover
+                  ? "lecture-cover-art-card-text--custom-vial"
+                  : "max-w-[14.5rem] sm:max-w-[15.25rem]",
+              )}
+            >
               <p className="lecture-cover-art-eyebrow lecture-cover-art-category">
                 HOLS Library
               </p>

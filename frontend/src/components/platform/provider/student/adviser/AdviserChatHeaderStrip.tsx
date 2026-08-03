@@ -21,36 +21,33 @@ export function AdviserChatHeaderStrip({ patientName }: AdviserChatHeaderStripPr
         <span className="adviser-chat-header-refraction adviser-chat-header-refraction--two" />
         <span className="adviser-chat-header-refraction adviser-chat-header-refraction--three" />
       </div>
-      <div className="adviser-chat-header-chrome">
-        <div className="flex min-w-0 items-center justify-between gap-2 sm:gap-3">
-          <div className="flex min-w-0 items-center gap-1.5 sm:gap-2.5">
-            <button
-              type="button"
-              aria-label="Open sidebar"
-              onClick={openSidebar}
-              className="dashboard-icon-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full lg:hidden"
+      <div className="adviser-chat-header-chrome justify-between gap-2 sm:gap-3">
+        <div className="flex min-w-0 items-center gap-1.5 sm:gap-2.5">
+          <button
+            type="button"
+            aria-label="Open sidebar"
+            onClick={openSidebar}
+            className="dashboard-icon-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full lg:hidden"
+          >
+            <Icon icon={Menu} size={18} />
+          </button>
+          <Link
+            href="/student/adviser"
+            aria-label="Back to Peptide Advisor"
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-0 bg-[#DDE466] text-[#152744] transition hover:brightness-105"
+          >
+            <Icon icon={ChevronLeft} size={16} strokeWidth={2.2} />
+          </Link>
+          <div className="min-w-0">
+            <h1
+              className="font-sans truncate text-base font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl md:text-2xl"
+              title={patientName || undefined}
             >
-              <Icon icon={Menu} size={18} />
-            </button>
-            <Link
-              href="/student/adviser"
-              aria-label="Back to Peptide Advisor"
-              className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border-0 bg-[#DDE466] text-[#152744] transition hover:brightness-105"
-            >
-              <Icon icon={ChevronLeft} size={16} strokeWidth={2.2} />
-            </Link>
-            <div className="min-w-0">
-              <h1
-                className="font-sans truncate text-base font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl md:text-2xl"
-                title={patientName || undefined}
-              >
-                {patientName || "Patient"}
-              </h1>
-            </div>
+              {patientName || "Patient"}
+            </h1>
           </div>
-
-          <WelcomeChip />
         </div>
+        <WelcomeChip className="ml-auto shrink-0" />
       </div>
     </div>
   );

@@ -5,9 +5,11 @@ import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore
 import { useGSAP } from "@gsap/react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { ChevronDown, Icon, X } from "@/components/icons";
+import { CourseCoverArt } from "@/components/platform/provider/student/lectures/CourseCoverArt";
 import {
   getCoverDisplayTitle,
   hashCourseId,
+  resolveCourseCover,
 } from "@/components/platform/provider/student/lectures/courseCover";
 import {
   CoursePageLayout,
@@ -177,6 +179,8 @@ function HolsVolume({
     () => serverTheme,
   );
   const displayTitle = getCoverDisplayTitle(course.title);
+  const cover = resolveCourseCover(courseId, course.title);
+  const isCustomVialCover = cover.isCustom && cover.layout !== "book";
   const volumeIndex = String((hashCourseId(courseId) % 12) + 1).padStart(2, "0");
   const volumeLabel = course.section?.trim()
     ? course.section.toUpperCase()
@@ -285,13 +289,7 @@ function HolsVolume({
               <div className="book-cover-base" aria-hidden />
               <div className="book-cover-spotlight" aria-hidden />
               <div className="book-cover-art-bg" data-book-cover-art aria-hidden>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src="/assets/lectures/volume-cover-art.png"
-                  alt=""
-                  className="book-cover-art-bg-image"
-                  draggable={false}
-                />
+                <CourseCoverArt courseId={courseId} title={course.title} variant="panel" />
               </div>
               <div className="book-cover-vignette" aria-hidden />
               <div className="book-cover-ambient" aria-hidden />
@@ -317,7 +315,12 @@ function HolsVolume({
                 aria-hidden
               />
 
-              <div className="book-cover-content">
+              <div
+                className={cn(
+                  "book-cover-content",
+                  isCustomVialCover && "book-cover-content--photo-vial",
+                )}
+              >
                 <header className="book-cover-header">
                   <div className="book-cover-brand">
                     <div className="book-cover-logo-wrap" aria-label="HOLS">

@@ -46,6 +46,7 @@
 @source inline("book-cover-footer-brand");
 @source inline("book-cover-footer-meta");
 @source inline("book-cover-content");
+@source inline("book-cover-content--photo-vial");
 @source inline("book-cover-header");
 @source inline("book-cover-logo");
 @source inline("book-cover-logo--theme-dark");
@@ -2213,6 +2214,140 @@ select:-webkit-autofill:focus {
   }
 }
 
+/* Per-course Magnific / vial art on volume front cover */
+.hols-volume .book-cover-art-bg .lecture-cover-art {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.hols-volume .book-cover-face:has(.lecture-cover-art--full-bleed) .book-cover-base,
+.hols-volume .book-cover-face:has(.lecture-cover-art--full-bleed) .book-cover-spotlight,
+.hols-volume .book-cover-face:has(.lecture-cover-art--full-bleed) .book-cover-ambient {
+  opacity: 0;
+}
+
+.hols-volume .book-cover-face:has(.lecture-cover-art--full-bleed) .book-cover-mark-watermark {
+  display: none;
+}
+
+.hols-volume .book-cover-face:has(.lecture-cover-art--full-bleed) .book-cover-art-bg::before {
+  background:
+    linear-gradient(
+      105deg,
+      rgba(252, 251, 244, 0.78) 0%,
+      rgba(252, 251, 244, 0.34) 26%,
+      rgba(252, 251, 244, 0.08) 42%,
+      transparent 54%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.28) 0%,
+      transparent 20%,
+      transparent 68%,
+      rgba(20, 38, 68, 0.14) 100%
+    );
+  mix-blend-mode: normal;
+  opacity: 1;
+}
+
+.hols-volume .book-cover-face:has(.lecture-cover-art--full-bleed) .book-cover-art-bg::after {
+  opacity: 0.14;
+}
+
+.hols-volume .book-cover-face:has(.lecture-cover-art--full-bleed) .book-cover-vignette {
+  background:
+    linear-gradient(
+      105deg,
+      rgba(252, 251, 244, 0.62) 0%,
+      rgba(252, 251, 244, 0.22) 30%,
+      transparent 52%
+    ),
+    radial-gradient(96% 92% at 50% 44%, transparent 42%, rgba(20, 38, 68, 0.1) 100%),
+    linear-gradient(
+      180deg,
+      transparent 62%,
+      rgba(20, 38, 68, 0.08) 100%
+    );
+}
+
+.portal-shell[data-theme="dark"] .hols-volume .book-cover-face:has(.lecture-cover-art--full-bleed) .book-cover-art-bg::before {
+  background:
+    linear-gradient(
+      105deg,
+      rgba(5, 9, 28, 0.88) 0%,
+      rgba(5, 9, 28, 0.52) 28%,
+      rgba(5, 9, 28, 0.12) 44%,
+      transparent 56%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(5, 9, 28, 0.55) 0%,
+      transparent 22%,
+      transparent 68%,
+      rgba(5, 9, 28, 0.62) 100%
+    );
+  mix-blend-mode: normal;
+}
+
+.portal-shell[data-theme="dark"] .hols-volume .book-cover-face:has(.lecture-cover-art--full-bleed) .book-cover-vignette {
+  background:
+    linear-gradient(
+      105deg,
+      rgba(5, 9, 28, 0.72) 0%,
+      rgba(5, 9, 28, 0.28) 32%,
+      transparent 54%
+    ),
+    radial-gradient(96% 92% at 50% 44%, transparent 36%, rgba(5, 9, 28, 0.22) 100%),
+    linear-gradient(
+      180deg,
+      transparent 58%,
+      rgba(5, 9, 28, 0.35) 100%
+    );
+}
+
+.hols-volume .book-cover-face:has(.lecture-cover-art--custom-photo[data-cover-layout="book"]) .book-cover-art-bg::before {
+  background:
+    linear-gradient(
+      105deg,
+      rgba(252, 251, 244, 0.82) 0%,
+      rgba(252, 251, 244, 0.38) 24%,
+      transparent 46%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.22) 0%,
+      transparent 22%,
+      transparent 72%,
+      rgba(20, 38, 68, 0.1) 100%
+    );
+}
+
+.portal-shell[data-theme="dark"]
+  .hols-volume
+  .book-cover-face:has(.lecture-cover-art--custom-photo[data-cover-layout="book"])
+  .book-cover-art-bg::before {
+  background:
+    linear-gradient(
+      105deg,
+      rgba(5, 9, 28, 0.9) 0%,
+      rgba(5, 9, 28, 0.48) 26%,
+      transparent 48%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(5, 9, 28, 0.5) 0%,
+      transparent 24%,
+      transparent 70%,
+      rgba(5, 9, 28, 0.58) 100%
+    );
+}
+
+.hols-volume:not(.is-open) .book-cover:hover .lecture-cover-art--full-bleed .lecture-cover-art-scene {
+  transform: scale(1.015);
+  transition: transform 680ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
 /* Premium foil shine — sweeps across closed cover */
 .book-cover-shine {
   position: absolute;
@@ -2344,6 +2479,209 @@ select:-webkit-autofill:focus {
   color: rgba(111, 122, 28, 0.72);
   font-size: 0.5rem;
   line-height: 1;
+}
+
+/* Custom Magnific vial on volume front cover — left text column, vial stays right */
+.hols-volume .book-cover-face:has(.lecture-cover-art--custom-photo:not([data-cover-layout="book"])) .book-cover-art-bg::before {
+  background:
+    linear-gradient(
+      105deg,
+      rgba(252, 251, 244, 0.94) 0%,
+      rgba(252, 251, 244, 0.72) 18%,
+      rgba(252, 251, 244, 0.34) 34%,
+      rgba(252, 251, 244, 0.08) 46%,
+      transparent 58%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.34) 0%,
+      transparent 20%,
+      transparent 68%,
+      rgba(20, 38, 68, 0.16) 100%
+    );
+  mix-blend-mode: normal;
+  opacity: 1;
+}
+
+.hols-volume .book-cover-face:has(.lecture-cover-art--custom-photo:not([data-cover-layout="book"])) .book-cover-vignette {
+  background:
+    linear-gradient(
+      105deg,
+      rgba(252, 251, 244, 0.78) 0%,
+      rgba(252, 251, 244, 0.36) 28%,
+      transparent 50%
+    ),
+    radial-gradient(96% 92% at 50% 44%, transparent 42%, rgba(20, 38, 68, 0.1) 100%),
+    linear-gradient(
+      180deg,
+      transparent 62%,
+      rgba(20, 38, 68, 0.1) 100%
+    );
+}
+
+.book-cover-content--photo-vial {
+  padding-bottom: 1.45rem;
+}
+
+.book-cover-content--photo-vial .book-cover-header {
+  gap: 0.45rem;
+  margin-bottom: 0.55rem;
+  max-width: min(11.75rem, 48%);
+}
+
+.book-cover-content--photo-vial .book-cover-brand {
+  gap: 0.28rem;
+}
+
+.book-cover-content--photo-vial .book-cover-logo-wrap {
+  gap: 0.45rem;
+}
+
+.book-cover-content--photo-vial .book-cover-mark {
+  width: 1.45rem;
+  height: 1.45rem;
+  max-width: 1.45rem;
+  max-height: 1.45rem;
+}
+
+.book-cover-content--photo-vial .book-cover-logo {
+  max-width: 8.75rem;
+  height: 1.55rem;
+  max-height: 1.55rem;
+}
+
+.book-cover-content--photo-vial .book-cover-publisher {
+  font-size: 0.5rem;
+  letter-spacing: 0.24em;
+}
+
+.book-cover-content--photo-vial .book-cover-volume-label {
+  align-self: flex-start;
+}
+
+.book-cover-content--photo-vial .book-cover-title {
+  max-width: min(10.25rem, 46%);
+  font-size: clamp(1.35rem, 4vw, 2rem);
+  font-weight: 700;
+  line-height: 1.06;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.82),
+    0 0 16px rgba(252, 252, 253, 0.72),
+    0 2px 14px rgba(245, 246, 248, 0.78);
+}
+
+.book-cover-content--photo-vial .book-cover-rule {
+  width: 2rem;
+  margin-top: 0.6rem;
+}
+
+.book-cover-content--photo-vial .book-cover-footer {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.18rem;
+  max-width: min(11.5rem, 48%);
+  margin-top: auto;
+  padding-top: 0.45rem;
+  padding-right: 0;
+  padding-bottom: 0.15rem;
+  font-size: 0.5625rem;
+  line-height: 1.35;
+}
+
+.book-cover-content--photo-vial .book-cover-footer-dot {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .book-cover-content--photo-vial {
+    padding-bottom: 1.55rem;
+  }
+
+  .book-cover-content--photo-vial .book-cover-header {
+    gap: 0.55rem;
+    margin-bottom: 0.65rem;
+    max-width: min(12.25rem, 46%);
+  }
+
+  .book-cover-content--photo-vial .book-cover-mark {
+    width: 1.65rem;
+    height: 1.65rem;
+    max-width: 1.65rem;
+    max-height: 1.65rem;
+  }
+
+  .book-cover-content--photo-vial .book-cover-logo {
+    max-width: 9.75rem;
+    height: 1.75rem;
+    max-height: 1.75rem;
+  }
+
+  .book-cover-content--photo-vial .book-cover-title {
+    max-width: min(11rem, 44%);
+    font-size: clamp(1.65rem, 3.1vw, 2.45rem);
+    line-height: 1.04;
+    letter-spacing: -0.04em;
+  }
+
+  .book-cover-content--photo-vial .book-cover-rule {
+    width: 2.25rem;
+    margin-top: 0.7rem;
+  }
+
+  .book-cover-content--photo-vial .book-cover-footer {
+    max-width: min(12rem, 46%);
+    padding-top: 0.55rem;
+    font-size: 0.5875rem;
+  }
+}
+
+.portal-shell[data-theme="dark"]
+  .hols-volume
+  .book-cover-face:has(.lecture-cover-art--custom-photo:not([data-cover-layout="book"]))
+  .book-cover-art-bg::before {
+  background:
+    linear-gradient(
+      105deg,
+      rgba(5, 9, 28, 0.94) 0%,
+      rgba(5, 9, 28, 0.78) 18%,
+      rgba(5, 9, 28, 0.42) 34%,
+      rgba(5, 9, 28, 0.1) 46%,
+      transparent 58%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(5, 9, 28, 0.58) 0%,
+      transparent 22%,
+      transparent 68%,
+      rgba(5, 9, 28, 0.68) 100%
+    );
+}
+
+.portal-shell[data-theme="dark"]
+  .hols-volume
+  .book-cover-face:has(.lecture-cover-art--custom-photo:not([data-cover-layout="book"]))
+  .book-cover-vignette {
+  background:
+    linear-gradient(
+      105deg,
+      rgba(5, 9, 28, 0.82) 0%,
+      rgba(5, 9, 28, 0.38) 30%,
+      transparent 52%
+    ),
+    radial-gradient(96% 92% at 50% 44%, transparent 36%, rgba(5, 9, 28, 0.22) 100%),
+    linear-gradient(
+      180deg,
+      transparent 58%,
+      rgba(5, 9, 28, 0.38) 100%
+    );
+}
+
+.portal-shell[data-theme="dark"] .book-cover-content--photo-vial .book-cover-title {
+  text-shadow:
+    0 1px 16px rgba(5, 9, 28, 0.85),
+    0 0 22px rgba(5, 9, 28, 0.55);
 }
 
 .hols-volume .book-cover-spine {
@@ -5191,7 +5529,359 @@ html.lenis main {
 
 .lecture-cover-vial-photo-contain {
   object-fit: contain;
-  object-position: center center;
+}
+
+/* Full-scene Magnific covers fill the media area */
+.lecture-cover-art--custom-photo .lecture-cover-art-media {
+  z-index: 0;
+  background: none;
+}
+
+.lecture-cover-custom-photo {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  min-width: 100%;
+  min-height: 100%;
+}
+
+.lecture-cover-custom-photo .lecture-cover-vial-photo {
+  object-fit: cover;
+  object-position: var(--cover-photo-position, center center);
+  z-index: 1;
+}
+
+/* Labeled vial template — dynamic peptide name, no dose line */
+.lecture-cover-labeled-vial-photo {
+  display: block;
+}
+
+.lecture-cover-labeled-vial-photo--dark {
+  display: none;
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-labeled-vial-photo--light {
+  display: none;
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-labeled-vial-photo--dark {
+  display: block;
+}
+
+.lecture-cover-labeled-vial-name {
+  left: 27%;
+  top: 43%;
+  width: 36%;
+  min-height: 11%;
+  display: flex;
+  align-items: center;
+  font-size: clamp(0.58rem, 2.35vw, 0.84rem);
+}
+
+.lecture-cover-labeled-vial-name--compact {
+  font-size: clamp(0.48rem, 1.95vw, 0.68rem);
+  letter-spacing: -0.03em;
+}
+
+.lecture-cover-labeled-vial-name--tiny {
+  font-size: clamp(0.4rem, 1.55vw, 0.56rem);
+  line-height: 1.05;
+}
+
+.lecture-cover-labeled-vial-name-mask {
+  position: absolute;
+  inset: -14% -8% -28% -8%;
+  background: #0b1628;
+  border-radius: 1px;
+}
+
+.lecture-cover-labeled-vial-name-text {
+  position: relative;
+  z-index: 1;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.18);
+}
+
+.lecture-cover-art--labeled-vial .lecture-cover-art-card-text-scrim {
+  background:
+    linear-gradient(
+      96deg,
+      rgba(252, 252, 253, 0.88) 0%,
+      rgba(252, 252, 253, 0.42) 28%,
+      transparent 52%
+    ),
+    linear-gradient(
+      180deg,
+      transparent 50%,
+      rgba(245, 246, 248, 0.55) 100%
+    );
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-art--labeled-vial .lecture-cover-art-card-text-scrim {
+  background:
+    linear-gradient(
+      96deg,
+      rgba(5, 9, 28, 0.88) 0%,
+      rgba(5, 9, 28, 0.42) 30%,
+      transparent 54%
+    ),
+    linear-gradient(
+      180deg,
+      transparent 48%,
+      rgba(5, 9, 28, 0.62) 100%
+    );
+}
+
+.lecture-cover-art--labeled-vial .lecture-cover-noise,
+.lecture-cover-art--labeled-vial .lecture-cover-particles {
+  display: none;
+}
+
+.hols-volume .book-cover-face:has(.lecture-cover-art--labeled-vial) .book-cover-art-bg::before {
+  background:
+    linear-gradient(
+      105deg,
+      rgba(252, 251, 244, 0.72) 0%,
+      rgba(252, 251, 244, 0.22) 28%,
+      transparent 50%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.18) 0%,
+      transparent 22%,
+      transparent 68%,
+      rgba(20, 38, 68, 0.1) 100%
+    );
+}
+
+.portal-shell[data-theme="dark"]
+  .hols-volume
+  .book-cover-face:has(.lecture-cover-art--labeled-vial)
+  .book-cover-art-bg::before {
+  background:
+    linear-gradient(
+      105deg,
+      rgba(5, 9, 28, 0.82) 0%,
+      rgba(5, 9, 28, 0.38) 30%,
+      transparent 52%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(5, 9, 28, 0.48) 0%,
+      transparent 24%,
+      transparent 70%,
+      rgba(5, 9, 28, 0.55) 100%
+    );
+}
+
+/* Book/manual covers — product sits right; keep left for title, don't wash the book away */
+.lecture-cover-art--custom-photo[data-cover-layout="book"] .lecture-cover-art-vignette {
+  background:
+    radial-gradient(62% 58% at 82% 40%, rgba(255, 255, 255, 0.1) 0%, transparent 58%),
+    radial-gradient(88% 92% at 50% 50%, transparent 58%, rgba(20, 38, 68, 0.04) 100%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.03) 28%, transparent 42%, transparent 100%);
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-art--custom-photo[data-cover-layout="book"] .lecture-cover-art-vignette {
+  background:
+    radial-gradient(62% 58% at 82% 40%, rgba(141, 195, 225, 0.08) 0%, transparent 56%),
+    radial-gradient(88% 92% at 50% 50%, transparent 56%, rgba(5, 9, 28, 0.12) 100%),
+    linear-gradient(90deg, rgba(5, 9, 28, 0.22) 0%, rgba(5, 9, 28, 0.08) 30%, transparent 44%, transparent 100%);
+}
+
+.lecture-cover-art--custom-photo[data-cover-layout="book"] .lecture-cover-art-card-text-scrim {
+  --scrim-left: 0.34;
+  --scrim-pool: 0.48;
+  --scrim-mid: 0.16;
+  --scrim-floor: 0.36;
+  background:
+    radial-gradient(
+      ellipse 88% 72% at 2% 98%,
+      rgba(245, 246, 248, var(--scrim-pool)) 0%,
+      rgba(245, 246, 248, calc(var(--scrim-pool) * 0.42)) 38%,
+      transparent 72%
+    ),
+    linear-gradient(
+      96deg,
+      rgba(252, 252, 253, var(--scrim-left)) 0%,
+      rgba(252, 252, 253, var(--scrim-mid)) 24%,
+      transparent 46%
+    ),
+    linear-gradient(
+      180deg,
+      transparent 44%,
+      rgba(245, 246, 248, calc(var(--scrim-floor) * 0.22)) 68%,
+      rgba(245, 246, 248, var(--scrim-floor)) 100%
+    );
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-art--custom-photo[data-cover-layout="book"] .lecture-cover-art-card-text-scrim {
+  background:
+    radial-gradient(
+      ellipse 88% 72% at 2% 98%,
+      rgba(11, 16, 40, var(--scrim-pool)) 0%,
+      rgba(11, 16, 40, calc(var(--scrim-pool) * 0.42)) 38%,
+      transparent 72%
+    ),
+    linear-gradient(
+      96deg,
+      rgba(11, 16, 40, var(--scrim-left)) 0%,
+      rgba(11, 16, 40, var(--scrim-mid)) 24%,
+      transparent 46%
+    ),
+    linear-gradient(
+      180deg,
+      transparent 44%,
+      rgba(11, 16, 40, calc(var(--scrim-floor) * 0.22)) 68%,
+      rgba(11, 16, 40, var(--scrim-floor)) 100%
+    );
+}
+
+.lecture-cover-art--custom-photo[data-cover-layout="book"] .lecture-cover-art-card-fade {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    transparent 58%,
+    rgba(252, 252, 253, 0.08) 78%,
+    rgba(245, 246, 248, 0.28) 100%
+  );
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-art--custom-photo[data-cover-layout="book"] .lecture-cover-art-card-fade {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    transparent 58%,
+    rgba(11, 16, 40, 0.08) 78%,
+    rgba(11, 16, 40, 0.24) 100%
+  );
+}
+
+/* Custom vial / product photos — art already has studio bg; avoid milky white scrims */
+.lecture-cover-art--custom-photo:not([data-cover-layout="book"]) .lecture-cover-art-vignette {
+  background:
+    radial-gradient(88% 92% at 50% 50%, transparent 58%, rgba(20, 38, 68, 0.035) 100%),
+    linear-gradient(90deg, rgba(232, 236, 242, 0.14) 0%, rgba(232, 236, 242, 0.04) 22%, transparent 40%, transparent 100%);
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-art--custom-photo:not([data-cover-layout="book"]) .lecture-cover-art-vignette {
+  background:
+    radial-gradient(88% 92% at 50% 50%, transparent 56%, rgba(5, 9, 28, 0.14) 100%),
+    linear-gradient(90deg, rgba(5, 9, 28, 0.2) 0%, rgba(5, 9, 28, 0.06) 28%, transparent 44%, transparent 100%);
+}
+
+.lecture-cover-art--custom-photo:not([data-cover-layout="book"]) .lecture-cover-art-card-text-scrim {
+  --scrim-left: 0.38;
+  --scrim-pool: 0.44;
+  --scrim-mid: 0.14;
+  --scrim-floor: 0.26;
+  background:
+    radial-gradient(
+      ellipse 72% 68% at 0% 96%,
+      rgba(236, 238, 242, var(--scrim-pool)) 0%,
+      rgba(236, 238, 242, calc(var(--scrim-pool) * 0.34)) 32%,
+      transparent 66%
+    ),
+    linear-gradient(
+      96deg,
+      rgba(236, 238, 242, var(--scrim-left)) 0%,
+      rgba(236, 238, 242, var(--scrim-mid)) 14%,
+      transparent 36%
+    ),
+    linear-gradient(
+      180deg,
+      transparent 48%,
+      rgba(236, 238, 242, calc(var(--scrim-floor) * 0.16)) 72%,
+      rgba(236, 238, 242, var(--scrim-floor)) 100%
+    );
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-art--custom-photo:not([data-cover-layout="book"]) .lecture-cover-art-card-text-scrim {
+  --scrim-left: 0.36;
+  --scrim-pool: 0.48;
+  --scrim-mid: 0.16;
+  --scrim-floor: 0.32;
+  background:
+    radial-gradient(
+      ellipse 72% 68% at 0% 96%,
+      rgba(11, 16, 40, var(--scrim-pool)) 0%,
+      rgba(11, 16, 40, calc(var(--scrim-pool) * 0.38)) 32%,
+      transparent 66%
+    ),
+    linear-gradient(
+      96deg,
+      rgba(11, 16, 40, var(--scrim-left)) 0%,
+      rgba(11, 16, 40, var(--scrim-mid)) 16%,
+      transparent 38%
+    ),
+    linear-gradient(
+      180deg,
+      transparent 44%,
+      rgba(11, 16, 40, calc(var(--scrim-floor) * 0.2)) 68%,
+      rgba(11, 16, 40, var(--scrim-floor)) 100%
+    );
+}
+
+.lecture-cover-art-card-text--custom-vial {
+  max-width: min(11.5rem, 42%);
+}
+
+.lecture-cover-art--custom-photo:not([data-cover-layout="book"]) .lecture-cover-art-card-text--custom-vial .lecture-cover-art-title {
+  max-width: 100%;
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.85),
+    0 0 14px rgba(252, 252, 253, 0.75),
+    0 2px 16px rgba(245, 246, 248, 0.85);
+}
+
+.portal-shell[data-theme="dark"]
+  .lecture-cover-art--custom-photo:not([data-cover-layout="book"])
+  .lecture-cover-art-card-text--custom-vial
+  .lecture-cover-art-title {
+  text-shadow:
+    0 1px 16px rgba(5, 9, 28, 0.85),
+    0 0 20px rgba(5, 9, 28, 0.55);
+}
+
+.lecture-cover-art--custom-photo:not([data-cover-layout="book"]) .lecture-cover-art-card-fade {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    transparent 62%,
+    rgba(236, 238, 242, 0.05) 82%,
+    rgba(236, 238, 242, 0.2) 100%
+  );
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-art--custom-photo:not([data-cover-layout="book"]) .lecture-cover-art-card-fade {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    transparent 60%,
+    rgba(11, 16, 40, 0.06) 80%,
+    rgba(11, 16, 40, 0.2) 100%
+  );
+}
+
+.lecture-cover-art--custom-photo .lecture-cover-noise,
+.lecture-cover-art--custom-photo .lecture-cover-particles,
+.lecture-cover-art--full-bleed .lecture-cover-noise,
+.lecture-cover-art--full-bleed .lecture-cover-particles {
+  display: none;
+}
+
+.lecture-cover-art--custom-photo .lecture-cover-art-scene,
+.lecture-cover-art--full-bleed .lecture-cover-art-scene {
+  transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.lecture-course-card:hover .lecture-cover-art--custom-photo .lecture-cover-art-scene {
+  transform: scale(1.02);
 }
 
 /* Branded cover art is always dark — force foil/light ink in both portal themes */
