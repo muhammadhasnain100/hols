@@ -3,6 +3,7 @@
 import { useEffect, useId, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
+import { Icon, Loader2, X } from "@/components/icons";
 import { Button } from "@/components/ui/Button";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
@@ -49,9 +50,7 @@ function DialogCloseButton({ onClick, label }: { onClick: () => void; label: str
       className="dashboard-icon-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
       aria-label={label}
     >
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-        <path d="M18 6L6 18M6 6l12 12" />
-      </svg>
+      <Icon icon={X} size={16} strokeWidth={2} />
     </button>
   );
 }
@@ -498,10 +497,7 @@ export function LessonQuizOverlay({
               >
                 {submitting ? (
                   <span className="inline-flex items-center gap-2">
-                    <svg className="h-4 w-4 animate-spin" viewBox="0 0 24 24" fill="none" aria-hidden>
-                      <circle cx="12" cy="12" r="9" stroke="currentColor" strokeOpacity="0.25" strokeWidth="2.5" />
-                      <path d="M21 12a9 9 0 0 0-9-9" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
-                    </svg>
+                    <Icon icon={Loader2} size={16} className="animate-spin" />
                     Submitting…
                   </span>
                 ) : (

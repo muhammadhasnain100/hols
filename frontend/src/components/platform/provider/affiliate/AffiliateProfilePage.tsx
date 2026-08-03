@@ -3,6 +3,7 @@
 import Link from "next/link";
 import type { FormEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { ChevronRight, DollarSign, Icon, LayoutDashboard, Menu, Users } from "@/components/icons";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { PortalShell } from "@/components/platform/provider/PortalShell";
 import { ProfilePageSkeleton } from "@/components/platform/provider/student/DashboardSkeletons";
@@ -88,34 +89,19 @@ const shortcutLinks = [
     label: "Referrals",
     href: "/affiliate/referrals",
     category: "Growth",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    ),
+    icon: <Icon icon={Users} size={16} />,
   },
   {
     label: "Earnings",
     href: "/affiliate/earnings",
     category: "Billing",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <path d="M12 1v22M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-      </svg>
-    ),
+    icon: <Icon icon={DollarSign} size={16} />,
   },
   {
     label: "Dashboard",
     href: "/affiliate",
     category: "Home",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />
-        <polyline points="9 22 9 12 15 12 15 22" />
-      </svg>
-    ),
+    icon: <Icon icon={LayoutDashboard} size={16} />,
   },
 ] as const;
 
@@ -245,9 +231,7 @@ export function AffiliateProfilePage() {
               onClick={openSidebar}
               className="dashboard-icon-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full lg:hidden"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-                <path d="M4 7h16M4 12h10M4 17h16" />
-              </svg>
+              <Icon icon={Menu} size={18} />
             </button>
             <h1 className="font-sans truncate text-base font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl md:text-2xl">
               {mode === "edit" ? (
@@ -275,7 +259,7 @@ export function AffiliateProfilePage() {
                 <section className="dashboard-hero relative overflow-hidden rounded-2xl p-3.5 sm:p-5 md:p-6">
                   <div className="flex flex-col gap-3.5 sm:gap-5 lg:flex-row lg:items-end lg:justify-between">
                     <div className="flex min-w-0 flex-col items-center gap-3 sm:flex-row sm:items-center sm:gap-5">
-                      <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-4 border-white/70 bg-white/40 font-sans text-sm font-bold tracking-[0.01em] text-[color:var(--dash-text)] shadow-[0_8px_20px_rgba(21,39,68,0.12)] sm:h-20 sm:w-20 sm:text-lg">
+                      <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-4 border-white/70 bg-white/40 font-sans text-sm font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:h-20 sm:w-20 sm:text-lg">
                         {avatarSrc ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
@@ -393,18 +377,11 @@ export function AffiliateProfilePage() {
                             {link.label}
                           </span>
                         </span>
-                        <svg
-                          width="16"
-                          height="16"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.8"
+                        <Icon
+                          icon={ChevronRight}
+                          size={16}
                           className="shrink-0 text-[color:var(--dash-dim)] transition group-hover:translate-x-0.5"
-                          aria-hidden
-                        >
-                          <path d="M9 18l6-6-6-6" />
-                        </svg>
+                        />
                       </Link>
                     ))}
                   </div>

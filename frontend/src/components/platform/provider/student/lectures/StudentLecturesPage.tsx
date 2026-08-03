@@ -1,8 +1,19 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
+import { ChevronRight, Icon } from "@/components/icons";
+import {
+  PortalCardButtonDisplay,
+  usePortalCardButtonHover,
+} from "@/components/platform/provider/PortalCardButton";
+import { useServerPortalTheme } from "@/components/platform/provider/PortalThemeProvider";
+import {
+  getPortalThemeSnapshot,
+  subscribePortalTheme,
+} from "@/components/platform/provider/portal-theme-store";
+import { CourseCoverArt } from "@/components/platform/provider/student/lectures/CourseCoverArt";
 import { LecturesPageLayout } from "@/components/platform/provider/student/lectures/LecturesPageLayout";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
@@ -10,6 +21,7 @@ import {
   type CourseSummary,
   type PaginationMeta,
 } from "@/lib/integrate/provider/student/lectures";
+import type { ButtonVariant } from "@/lib/button-styles";
 import { cn } from "@/lib/utils";
 
 export function StudentLecturesPage() {
@@ -44,7 +56,7 @@ export function StudentLecturesPage() {
 
       {loading ? (
         <div
-          className="lecture-course-grid grid w-full grid-cols-1 gap-3 min-[420px]:grid-cols-2 sm:gap-4 md:grid-cols-3 xl:grid-cols-4"
+          className="lecture-course-grid grid w-full min-w-0 max-w-full grid-cols-1 gap-4 min-[420px]:grid-cols-2 sm:gap-5 lg:grid-cols-3"
           aria-busy="true"
           aria-label="Loading courses"
         >
@@ -57,7 +69,7 @@ export function StudentLecturesPage() {
           <p className="text-brand-body text-[color:var(--dash-faint)]">No courses available yet.</p>
         </div>
       ) : (
-        <div className="lecture-course-grid grid w-full grid-cols-1 gap-3 min-[420px]:grid-cols-2 sm:gap-4 md:grid-cols-3 xl:grid-cols-4">
+        <div className="lecture-course-grid grid w-full min-w-0 max-w-full grid-cols-1 gap-4 min-[420px]:grid-cols-2 sm:gap-5 lg:grid-cols-3">
           {courses.map((course, index) => (
             <CourseCard key={course.course_id} course={course} index={index} />
           ))}
@@ -110,12 +122,16 @@ function PagerButton({
   );
 }
 
-function StatCapsule({ label, value }: { label: string; value: number }) {
+function StatColumn({ label, value }: { label: string; value: number }) {
   return (
-    <span className="lecture-stat-capsule inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-[11px] font-medium text-[color:var(--dash-muted)]">
-      <span className="font-sans font-semibold text-[color:var(--dash-text)]">{value}</span>
-      {label}
-    </span>
+    <div className="lecture-stat-column flex flex-col items-center justify-center gap-px py-1">
+      <span className="lecture-stat-value font-sans leading-none tracking-tight">
+        {value}
+      </span>
+      <span className="lecture-stat-label font-medium uppercase">
+        {label}
+      </span>
+    </div>
   );
 }
 
@@ -123,72 +139,78 @@ function CourseCardSkeleton({ index }: { index: number }) {
   return (
     <div
       style={{ animationDelay: `${Math.min(index, 7) * 45}ms` }}
-      className="lecture-course-card lecture-course-skeleton dashboard-surface flex min-h-[16rem] w-full flex-col overflow-hidden rounded-2xl sm:aspect-square sm:min-h-0"
+      className="lecture-course-card lecture-course-skeleton flex aspect-[3/4] w-full min-h-0 flex-col overflow-hidden rounded-[28px]"
       aria-hidden
     >
-      <div className="flex flex-1 flex-col items-center justify-center gap-3 px-3 pt-4">
-        <span className="lecture-skeleton-block h-11 w-11 rounded-2xl" />
-        <span className="lecture-skeleton-block h-3.5 w-[70%] rounded-full" />
-        <span className="lecture-skeleton-block h-3 w-[45%] rounded-full" />
-        <div className="flex flex-wrap items-center justify-center gap-1.5">
-          <span className="lecture-skeleton-block h-6 w-14 rounded-full" />
-          <span className="lecture-skeleton-block h-6 w-16 rounded-full" />
-          <span className="lecture-skeleton-block h-6 w-14 rounded-full" />
+      <span className="lecture-skeleton-block mx-0 min-h-0 flex-[1.65] rounded-none" />
+      <div className="lecture-course-card-glass flex shrink-0 flex-col px-4 pt-3 pb-4">
+        <div className="lecture-course-stats grid grid-cols-3 overflow-hidden">
+          <span className="lecture-skeleton-block h-7 w-full rounded-none" />
+          <span className="lecture-skeleton-block h-7 w-full rounded-none" />
+          <span className="lecture-skeleton-block h-7 w-full rounded-none" />
         </div>
-      </div>
-      <div className="px-3 pb-3">
-        <span className="lecture-skeleton-block block h-9 w-full rounded-full" />
+        <span className="lecture-skeleton-block mt-2.5 block h-11 w-full rounded-full" />
       </div>
     </div>
   );
 }
 
 function CourseCard({ course, index }: { course: CourseSummary; index: number }) {
+  const featured = index === 0;
+  const serverTheme = useServerPortalTheme();
+  const portalTheme = useSyncExternalStore(
+    subscribePortalTheme,
+    getPortalThemeSnapshot,
+    () => serverTheme,
+  );
+  const buttonVariant: ButtonVariant = portalTheme === "dark" ? "accent" : "glass";
+  const { containerRef, fillRef, labelRef, onMouseEnter, onMouseLeave } =
+    usePortalCardButtonHover(buttonVariant);
+
   return (
     <Link
       href={`/student/lectures/${course.course_id}`}
       style={{ animationDelay: `${Math.min(index, 11) * 45}ms` }}
+      data-featured={featured ? "true" : undefined}
       className={cn(
-        "lecture-course-card dashboard-surface group relative flex min-h-[16rem] w-full flex-col overflow-hidden rounded-2xl sm:aspect-square sm:min-h-0",
+        "lecture-course-card group relative flex aspect-[3/4] w-full min-h-0 min-w-0 max-w-full flex-col overflow-hidden rounded-[28px]",
       )}
     >
-      <span className="lecture-course-card-shine pointer-events-none absolute inset-0" aria-hidden />
+      <span className="lecture-course-card-shine pointer-events-none absolute inset-0 z-[3]" aria-hidden />
+      <span className="lecture-course-card-sweep pointer-events-none absolute inset-0 z-[3]" aria-hidden />
+      <span className="lecture-course-card-spotlight pointer-events-none absolute inset-0 z-[3]" aria-hidden />
 
-      <div className="relative z-[1] flex flex-1 flex-col items-center justify-center gap-2.5 px-3 pt-4 text-center sm:gap-3">
-        <span className="lecture-course-card-icon flex h-10 w-10 items-center justify-center rounded-full sm:h-11 sm:w-11">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-            <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-            <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-          </svg>
-        </span>
-
-        <h2 className="font-sans line-clamp-2 px-1 text-sm font-semibold leading-snug tracking-[0.005em] text-[color:var(--dash-text)] transition-colors duration-200 group-hover:text-[color:var(--dash-accent)]">
-          {course.title}
-        </h2>
-
-        <div className="flex flex-wrap items-center justify-center gap-1.5">
-          <StatCapsule label="topics" value={course.topic_count} />
-          <StatCapsule label="sections" value={course.section_count} />
-          <StatCapsule label="lessons" value={course.lesson_count} />
-        </div>
+      <div className="lecture-course-card-media relative z-[1] min-h-0 flex-[1.65] overflow-hidden">
+        <CourseCoverArt courseId={course.course_id} title={course.title} variant="card" />
       </div>
 
-      <div className="relative z-[1] px-3 pb-3">
-        <span className="lecture-course-card-cta font-sans inline-flex min-h-9 w-full items-center justify-center gap-1.5 rounded-full bg-[#DDE466] px-3 text-[13px] font-semibold tracking-[0.01em] text-[#152744]">
+      <div className="lecture-course-card-glass relative z-[2] flex shrink-0 flex-col px-4 pt-3 pb-4">
+        <h2 className="sr-only">{course.title}</h2>
+
+        <div className="lecture-course-stats">
+          <StatColumn label="Topics" value={course.topic_count} />
+          <StatColumn label="Sections" value={course.section_count} />
+          <StatColumn label="Lessons" value={course.lesson_count} />
+        </div>
+
+        <PortalCardButtonDisplay
+          variant={buttonVariant}
+          size="md"
+          className="mt-2.5"
+          containerRef={containerRef}
+          fillRef={fillRef}
+          labelRef={labelRef}
+          onMouseEnter={onMouseEnter}
+          onMouseLeave={onMouseLeave}
+        >
           Learn more
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            className="lecture-course-card-arrow"
-            aria-hidden
-          >
-            <path d="M9 18l6-6-6-6" />
-          </svg>
-        </span>
+          <Icon
+            icon={ChevronRight}
+            size={14}
+            strokeWidth={2.2}
+            className="transition-transform duration-300 ease-out group-hover/cta:translate-x-0.5"
+          />
+        </PortalCardButtonDisplay>
       </div>
     </Link>
   );

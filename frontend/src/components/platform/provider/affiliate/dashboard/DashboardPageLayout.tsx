@@ -1,5 +1,6 @@
 "use client";
 
+import { Bell, Icon, Menu } from "@/components/icons";
 import { PortalShell } from "@/components/platform/provider/PortalShell";
 import { WelcomeChip } from "@/components/platform/provider/student/WelcomeChip";
 import { affiliateNav } from "@/components/platform/provider/affiliate/affiliateNav";
@@ -31,9 +32,7 @@ export function DashboardPageLayout({ children }: DashboardPageLayoutProps) {
               onClick={openSidebar}
               className="dashboard-icon-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full lg:hidden"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-                <path d="M4 7h16M4 12h10M4 17h16" />
-              </svg>
+              <Icon icon={Menu} size={18} />
             </button>
             <h1 className="font-sans truncate text-base font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl md:text-2xl">
               Dashboard
@@ -46,10 +45,7 @@ export function DashboardPageLayout({ children }: DashboardPageLayoutProps) {
               aria-label="Notifications"
               className="dashboard-icon-btn hidden h-9 w-9 items-center justify-center rounded-full sm:flex"
             >
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-                <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-                <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-              </svg>
+              <Icon icon={Bell} size={16} />
             </button>
             <WelcomeChip fallbackName="Affiliate" />
           </div>

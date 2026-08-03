@@ -60,7 +60,32 @@ class AffiliateReferralStudentListData(BaseModel):
     pagination: PaginationMeta
 
 
+class AffiliateCommissionItem(BaseModel):
+    order_id: str
+    plan_type: Optional[str] = None
+    amount: float = 0
+    commission: float = 0
+    currency: str = "USD"
+    status: str
+    created_at: Optional[str] = None
+
+
+class AffiliateEarningsData(BaseModel):
+    """Aggregated commission earnings for the authenticated affiliate."""
+
+    total_earned: float = 0
+    pending_payout: float = 0
+    paid_out: float = 0
+    currency: str = "USD"
+    order_count: int = 0
+    margin_percent: Optional[float] = None
+    # Soft visual target for the earnings meter (next milestone).
+    next_milestone: float = 100
+    items: list[AffiliateCommissionItem] = Field(default_factory=list)
+
+
 AffiliateInviteUrlResponse = ApiSuccessResponse[AffiliateInviteUrlData]
 AffiliateInviteResolveResponse = ApiSuccessResponse[AffiliateInviteResolveData]
 AffiliateInviteEmailResponse = ApiSuccessResponse[AffiliateInviteEmailData]
 AffiliateReferralStudentListResponse = ApiSuccessResponse[AffiliateReferralStudentListData]
+AffiliateEarningsResponse = ApiSuccessResponse[AffiliateEarningsData]

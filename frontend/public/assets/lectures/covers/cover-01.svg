@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 520" fill="none">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#0d1626"/>
+      <stop offset="55%" stop-color="#152744"/>
+      <stop offset="100%" stop-color="#1a2f55"/>
+    </linearGradient>
+    <radialGradient id="r" cx="80%" cy="15%" r="55%">
+      <stop offset="0%" stop-color="#dde466" stop-opacity="0.45"/>
+      <stop offset="100%" stop-color="#dde466" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="400" height="520" fill="url(#g)"/>
+  <rect width="400" height="520" fill="url(#r)"/>
+  <circle cx="320" cy="90" r="70" stroke="#dde466" stroke-opacity="0.35" stroke-width="1.5"/>
+  <circle cx="320" cy="90" r="42" stroke="#8dc3e1" stroke-opacity="0.4" stroke-width="1.2"/>
+  <path d="M48 180h180" stroke="#dde466" stroke-opacity="0.55" stroke-width="2"/>
+  <rect x="48" y="210" width="140" height="8" rx="4" fill="#8dc3e1" fill-opacity="0.35"/>
+  <rect x="48" y="230" width="200" height="6" rx="3" fill="#ffffff" fill-opacity="0.12"/>
+  <rect x="48" y="248" width="160" height="6" rx="3" fill="#ffffff" fill-opacity="0.08"/>
+  <path d="M48 360c40-30 80-10 120-40s80-20 120-50" stroke="#8dc3e1" stroke-opacity="0.35" stroke-width="1.5"/>
+  <circle cx="80" cy="440" r="18" fill="#dde466" fill-opacity="0.85"/>
+  <text x="48" y="500" fill="#ffffff" fill-opacity="0.35" font-family="system-ui,sans-serif" font-size="11" letter-spacing="3">HOLS</text>
+</svg>

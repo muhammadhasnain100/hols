@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { ArrowLeft, Icon } from "@/components/icons";
 import { Container } from "@/components/ui/Container";
 import type { BlogPost } from "@/content/blog";
 
@@ -16,7 +17,7 @@ export function ArticleTemplate({ post }: ArticleTemplateProps) {
               href="/blog"
               className="inline-flex items-center gap-2 text-sm font-medium text-primary-light transition hover:text-primary"
             >
-              <span aria-hidden>←</span>
+              <Icon icon={ArrowLeft} size={16} />
               Back to blog
             </Link>
 
@@ -39,7 +40,7 @@ export function ArticleTemplate({ post }: ArticleTemplateProps) {
             </p>
 
             <div
-              className="mt-10 overflow-hidden rounded-3xl border border-border/40 shadow-[0_12px_40px_rgba(21,39,68,0.08)]"
+              className="mt-10 overflow-hidden rounded-3xl border border-border/40"
               aria-hidden
             >
               <div className="h-56 bg-gradient-science-haze md:h-72" />

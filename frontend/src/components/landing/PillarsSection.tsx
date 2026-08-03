@@ -15,6 +15,7 @@ import { landingContent } from "@/content/landing";
 import { brand } from "@/config/brand";
 import { heroLayout } from "@/lib/hero-styles";
 import { gsap, registerGsap } from "@/lib/gsap";
+import { ChevronLeft, ChevronRight, Icon } from "@/components/icons";
 import { prefersReducedMotion } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
@@ -213,11 +214,8 @@ function PillarCardFace({
       aria-label={item.title}
       className={cn(
         "h-full w-full rounded-2xl bg-white p-3 sm:p-3.5 md:p-4 lg:p-5 text-left select-none",
-        "transition-shadow ease-in-out",
         "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary/40",
-        isActive
-          ? "cursor-default shadow-[0_12px_32px_rgba(21,39,68,0.1)]"
-          : "cursor-pointer shadow-[0_4px_16px_rgba(21,39,68,0.05)] hover:shadow-[0_8px_24px_rgba(21,39,68,0.08)]",
+        isActive ? "cursor-default" : "cursor-pointer",
       )}
       style={{ transitionDuration: `${SLIDE_DURATION_MS}ms` }}
     >
@@ -655,21 +653,7 @@ function PillarsCarousel({
               className={cn(arrowButtonClass, "rounded-l-full")}
               onClick={onPrevClick}
             >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                aria-hidden
-              >
-                <path
-                  d="M15 18l-6-6 6-6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <Icon icon={ChevronLeft} size={16} strokeWidth={2.2} />
             </button>
             <button
               type="button"
@@ -680,21 +664,7 @@ function PillarsCarousel({
               )}
               onClick={onNextClick}
             >
-              <svg
-                width="16"
-                height="16"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2.2"
-                aria-hidden
-              >
-                <path
-                  d="M9 18l6-6-6-6"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <Icon icon={ChevronRight} size={16} strokeWidth={2.2} />
             </button>
           </div>
         </div>

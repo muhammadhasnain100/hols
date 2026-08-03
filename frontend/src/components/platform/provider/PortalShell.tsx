@@ -11,6 +11,28 @@ import {
   type CSSProperties,
 } from "react";
 import { HeroLogo } from "@/components/hero/HeroLogo";
+import {
+  BookOpen,
+  Calculator,
+  ChevronLeft,
+  ChevronRight,
+  CreditCard,
+  Icon,
+  LayoutDashboard,
+  Link2,
+  LogOut,
+  Menu,
+  MessageSquare,
+  Moon,
+  NavIcon,
+  Search,
+  Star,
+  Sun,
+  User,
+  Users,
+  Wallet,
+  X,
+} from "@/components/icons";
 import { stopPortalAuthRuntime } from "@/lib/integrate/auth/runtime";
 import { clearAuthSession } from "@/lib/integrate/auth/storage";
 import type { UserRole } from "@/lib/integrate/auth/types";
@@ -66,14 +88,6 @@ function roleEyebrow(role: UserRole): string {
   if (role === "admin") return "Admin portal";
   if (role === "affiliate") return "Affiliate portal";
   return "Student portal";
-}
-
-function NavIcon({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="portal-nav-icon flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-current transition-colors duration-200">
-      {children}
-    </span>
-  );
 }
 
 function isItemActive(pathname: string, href: string, exact?: boolean): boolean {
@@ -260,21 +274,15 @@ export function PortalShell({
         {showIcon ? item.icon : null}
         {(!compact || opts?.inFlyout) && <span className="truncate">{label}</span>}
         {!opts?.inFlyout && !compact && item.children?.length ? (
-          <svg
-            width="14"
-            height="14"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
+          <Icon
+            icon={ChevronRight}
+            size={14}
+            strokeWidth={2}
             className={cn(
               "ml-auto shrink-0 text-[color:var(--sidebar-text)] opacity-60 transition-transform",
               expandedGroups.has(item.href) && "rotate-90",
             )}
-            aria-hidden
-          >
-            <path d="M9 18l6-6-6-6" />
-          </svg>
+          />
         ) : null}
       </Link>
     );
@@ -335,38 +343,11 @@ export function PortalShell({
                 title="Search"
                 onClick={() => setCollapsed(false)}
               >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.9"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden
-                >
-                  <circle cx="11" cy="11" r="7" />
-                  <path d="M20 20l-3.5-3.5" />
-                </svg>
+                <Icon icon={Search} size={16} strokeWidth={1.9} />
               </button>
             ) : (
               <label className="portal-sidebar-search">
-                <svg
-                  width="15"
-                  height="15"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.9"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  className="shrink-0"
-                  aria-hidden
-                >
-                  <circle cx="11" cy="11" r="7" />
-                  <path d="M20 20l-3.5-3.5" />
-                </svg>
+                <Icon icon={Search} size={15} strokeWidth={1.9} className="shrink-0" />
                 <input
                   type="search"
                   value={navQuery}
@@ -385,18 +366,12 @@ export function PortalShell({
             onClick={() => setCollapsed((value) => !value)}
             className="portal-sidebar-toggle absolute -right-3 top-1/2 z-50 hidden h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full lg:flex"
           >
-            <svg
-              width="14"
-              height="14"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2.5"
+            <Icon
+              icon={ChevronLeft}
+              size={14}
+              strokeWidth={2.5}
               className={cn("transition-transform", collapsed && "rotate-180")}
-              aria-hidden
-            >
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
+            />
           </button>
 
           <nav className="flex-1 space-y-1.5 overflow-y-auto overflow-x-hidden overscroll-contain px-3 pb-3" aria-label="Portal navigation">
@@ -434,18 +409,15 @@ export function PortalShell({
                     >
                       {item.icon}
                       <span className="truncate">{item.label}</span>
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        className={cn("ml-auto shrink-0 text-[color:var(--sidebar-text)] opacity-60 transition-transform", groupOpen && "rotate-90")}
-                        aria-hidden
-                      >
-                        <path d="M9 18l6-6-6-6" />
-                      </svg>
+                      <Icon
+                        icon={ChevronRight}
+                        size={14}
+                        strokeWidth={2}
+                        className={cn(
+                          "ml-auto shrink-0 text-[color:var(--sidebar-text)] opacity-60 transition-transform",
+                          groupOpen && "rotate-90",
+                        )}
+                      />
                     </button>
                   ) : (
                     renderNavLink(item)
@@ -494,21 +466,7 @@ export function PortalShell({
               )}
             >
               <span className="portal-sidebar-logout-icon">
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.9"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  aria-hidden
-                >
-                  <path d="M10 17H6a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2h4" />
-                  <path d="M15 16l4-4-4-4" />
-                  <path d="M19 12H10" />
-                </svg>
+                <Icon icon={LogOut} size={16} strokeWidth={1.9} />
               </span>
               {!compact ? <span>Log out</span> : null}
             </button>
@@ -525,34 +483,9 @@ export function PortalShell({
             >
               <span className="portal-sidebar-theme-icon flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
                 {theme === "dark" ? (
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden
-                  >
-                    <path d="M12 3a6.5 6.5 0 0 0 8.5 8.5A8 8 0 1 1 12 3z" />
-                  </svg>
+                  <Icon icon={Moon} size={16} strokeWidth={1.8} />
                 ) : (
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="1.8"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    aria-hidden
-                  >
-                    <circle cx="12" cy="12" r="4" />
-                    <path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41" />
-                  </svg>
+                  <Icon icon={Sun} size={16} strokeWidth={1.8} />
                 )}
               </span>
               {!compact ? (
@@ -578,9 +511,7 @@ export function PortalShell({
             onClick={() => setMobileOpen(false)}
             className="absolute right-2 top-[max(0.5rem,env(safe-area-inset-top))] rounded-lg p-2 text-[color:var(--sidebar-muted)] transition hover:bg-[color:var(--sidebar-hover)] hover:text-[color:var(--sidebar-text)] lg:hidden"
           >
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-              <path d="M18 6L6 18M6 6l12 12" />
-            </svg>
+            <Icon icon={X} size={18} strokeWidth={2} />
           </button>
         </aside>
 
@@ -612,9 +543,7 @@ export function PortalShell({
                   onClick={() => setMobileOpen(true)}
                   className="portal-header-icon pointer-events-auto mr-auto min-h-10 min-w-10 rounded-full p-2 lg:hidden"
                 >
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-                    <path d="M4 7h16M4 12h10M4 17h16" />
-                  </svg>
+                  <Icon icon={Menu} size={18} strokeWidth={1.8} />
                 </button>
               </header>
             </div>
@@ -650,89 +579,15 @@ export function PortalShell({
 }
 
 export const portalIcons = {
-  dashboard: (
-    <NavIcon>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M4 13h6V4H4v9zm10 7h6V11h-6v9zM4 20h6v-5H4v5zm10-9h6V4h-6v7z" />
-      </svg>
-    </NavIcon>
-  ),
-  courses: (
-    <NavIcon>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-        <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-      </svg>
-    </NavIcon>
-  ),
-  membership: (
-    <NavIcon>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.77 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" />
-      </svg>
-    </NavIcon>
-  ),
-  payment: (
-    <NavIcon>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <rect x="2" y="5" width="20" height="14" rx="2" />
-        <path d="M2 10h20" />
-      </svg>
-    </NavIcon>
-  ),
-  profile: (
-    <NavIcon>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <circle cx="12" cy="8" r="4" />
-        <path d="M4 20c1.7-3.3 4.3-5 8-5s6.3 1.7 8 5" />
-      </svg>
-    </NavIcon>
-  ),
-  users: (
-    <NavIcon>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    </NavIcon>
-  ),
-  plans: (
-    <NavIcon>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6" />
-      </svg>
-    </NavIcon>
-  ),
-  referrals: (
-    <NavIcon>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M10 13a5 5 0 0 1 7 0l1 1a5 5 0 0 1 0 7l-1 1" />
-        <path d="M14 11a5 5 0 0 0-7 0l-1 1a5 5 0 0 0 0 7l1 1" />
-      </svg>
-    </NavIcon>
-  ),
-  earnings: (
-    <NavIcon>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7H14a3.5 3.5 0 0 1 0 7H6" />
-      </svg>
-    </NavIcon>
-  ),
-  calculator: (
-    <NavIcon>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <rect x="4" y="2" width="16" height="20" rx="2" />
-        <path d="M8 6h8M8 10h8M8 14h2M12 14h2M16 14h2M8 18h2M12 18h2M16 18h2" />
-      </svg>
-    </NavIcon>
-  ),
-  adviser: (
-    <NavIcon>
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8">
-        <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z" />
-        <path d="M8 9h8M8 13h5" />
-      </svg>
-    </NavIcon>
-  ),
+  dashboard: <NavIcon icon={LayoutDashboard} />,
+  courses: <NavIcon icon={BookOpen} />,
+  membership: <NavIcon icon={Star} />,
+  payment: <NavIcon icon={CreditCard} />,
+  profile: <NavIcon icon={User} />,
+  users: <NavIcon icon={Users} />,
+  plans: <NavIcon icon={Wallet} />,
+  referrals: <NavIcon icon={Link2} />,
+  earnings: <NavIcon icon={Wallet} />,
+  calculator: <NavIcon icon={Calculator} />,
+  adviser: <NavIcon icon={MessageSquare} />,
 };

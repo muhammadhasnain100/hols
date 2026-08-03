@@ -10,6 +10,17 @@ import {
 } from "react";
 import { useGSAP } from "@gsap/react";
 import { HeroButton } from "@/components/hero/HeroButton";
+import {
+  CirclePlay,
+  FileText,
+  Globe,
+  Icon,
+  Library,
+  MessageSquare,
+  Mic,
+  Newspaper,
+  NotebookPen,
+} from "@/components/icons";
 import { HookHolsBall } from "@/components/landing/HookHolsBall";
 import {
   HookInteractiveDashboard,
@@ -28,11 +39,17 @@ import { prefersReducedMotion } from "@/lib/motion";
 import { cn } from "@/lib/utils";
 
 const HOOK_PATH_SYNC = "hook-path-sync";
+/** Toggle dashboard mock; ball → CTA when false (see landingContent.hook.showDashboard). */
+const HOOK_SHOW_DASHBOARD = landingContent.hook.showDashboard ?? true;
 /** Diagram strokes + struct capsule + title "becomes" */
 const HOOK_LINE = brand.colors.primary.duskBlue;
 const BLUE = brand.colors.primary.duskBlue;
 /** Match PillarsSection surface */
 const HOOK_BG = "#E5E5E5";
+/** Card wires terminate inside the visible sphere so the ball layer masks the tips. */
+const BALL_ENTRY_RATIO = 0.52;
+/** Trunk wires leave from the visible right edge of the sphere. */
+const BALL_EXIT_RATIO = 0.685;
 
 const HOOK_CAPSULE_BASE =
   "inline-flex max-w-full items-center justify-center rounded-full px-3.5 py-1.5 text-center font-sans text-[10px] font-bold uppercase tracking-[0.12em] sm:px-4 sm:py-2 sm:text-xs";
@@ -53,6 +70,14 @@ type DiagramArrow = {
   tipY: number;
 };
 type Point = { x: number; y: number };
+
+function ballEntryRadius(ballRect: DOMRect) {
+  return (ballRect.width / 2) * BALL_ENTRY_RATIO;
+}
+
+function ballExitRadius(ballRect: DOMRect) {
+  return (ballRect.width / 2) * BALL_EXIT_RATIO;
+}
 
 /* ── Geometry helpers ──────────────────────────────────────────────────── */
 function seededUnit(seed: number) {
@@ -142,9 +167,46 @@ function syncArrowToLine(line: SVGPathElement | undefined, arrow: SVGPolygonElem
   arrow.setAttribute("opacity", "1");
 }
 
+/** Pin the arrowhead to the path terminal — target stays put while the stem updates. */
+function syncArrowToLineEnd(line: SVGPathElement | undefined, arrow: SVGPolygonElement | undefined, size = 11) {
+  if (!line || !arrow) return;
+  const length = line.getTotalLength();
+  if (length <= 0) {
+    arrow.setAttribute("opacity", "0");
+    return;
+  }
+  const raw = gsap.getProperty(line, "strokeDashoffset");
+  const dashoffset = typeof raw === "number" ? raw : parseFloat(String(raw)) || 0;
+  const drawn = Math.min(length, Math.max(0, length - dashoffset));
+  if (drawn / length < 0.03) {
+    arrow.setAttribute("opacity", "0");
+    return;
+  }
+
+  const tip = line.getPointAtLength(length);
+  const back = line.getPointAtLength(Math.max(0, length - 2));
+  const from =
+    Math.hypot(tip.x - back.x, tip.y - back.y) > 0.1 ? back : { x: tip.x - 1, y: tip.y };
+  arrow.setAttribute("points", buildArrowPolygon(tip, from, size));
+  arrow.setAttribute("opacity", "1");
+}
+
+function isLineFullyDrawn(line: SVGPathElement) {
+  const length = line.getTotalLength();
+  if (length <= 0) return false;
+  const raw = gsap.getProperty(line, "strokeDashoffset");
+  const dashoffset = typeof raw === "number" ? raw : parseFloat(String(raw)) || 0;
+  return dashoffset / length < 0.01;
+}
+
+function syncTrunkArrow(line: SVGPathElement | undefined, arrow: SVGPolygonElement | undefined) {
+  if (!line || !arrow) return;
+  if (isLineFullyDrawn(line)) syncArrowToLineEnd(line, arrow);
+  else syncArrowToLine(line, arrow);
+}
+
 /** Gap before target border so tip + arrow sit in open space (not under chrome). Desktop only. */
 const ARROW_CLEAR_PX = 14;
-/** Clearance on mobile vertical stems into dashboard / CTA — same gap on both targets. */
 const MOBILE_ARROW_CLEAR_PX = 18;
 /** Space between struct capsule bottom and the short trunk stem (mobile). */
 const MOBILE_TRUNK_AFTER_LABEL_PX = 10;
@@ -170,6 +232,17 @@ function getCtaLayoutRect(ctaEl: HTMLElement | null): DOMRect | null {
   return (btn ?? ctaEl).getBoundingClientRect();
 }
 
+/** Surface point on the ball facing toward a target in viewport space. */
+function ballExitPoint(ballCX: number, ballCY: number, exitR: number, targetX: number, targetY: number): Point {
+  const dx = targetX - ballCX;
+  const dy = targetY - ballCY;
+  const dist = Math.hypot(dx, dy) || 1;
+  return {
+    x: ballCX + (dx / dist) * exitR,
+    y: ballCY + (dy / dist) * exitR,
+  };
+}
+
 function buildDiagramGeometry(
   cardRects: DOMRect[],
   ballRect: DOMRect,
@@ -189,10 +262,8 @@ function buildDiagramGeometry(
   const ballCX = ballRect.left + ballRect.width / 2;
   const ballCY = ballRect.top + ballRect.height / 2;
   const center = toSvg(ballCX, ballCY);
-  // The PNG includes transparent padding, so anchor wires to the visible sphere
-  // rather than the outer image canvas.
-  const rx = (ballRect.width / 2) * 0.72;
-  const ry = (ballRect.height / 2) * 0.72;
+  const entryR = ballEntryRadius(ballRect);
+  const exitR = ballExitRadius(ballRect);
 
   const paths: DiagramPath[] = [];
   const arrows: DiagramArrow[] = [];
@@ -205,18 +276,19 @@ function buildDiagramGeometry(
     const angleDeg = 128 + t * 104 + jitter * 10;
     const angle = (angleDeg * Math.PI) / 180;
     const entry: Point = {
-      x: center.x + Math.cos(angle) * rx,
-      y: center.y + Math.sin(angle) * ry,
+      x: center.x + Math.cos(angle) * entryR,
+      y: center.y + Math.sin(angle) * entryR,
     };
     paths.push({ id: `card-${i}`, group: "card", d: buildConvergePath(start, entry, center, i + 1) });
   });
 
   // Stem only — arrowhead travels with the stroke tip via syncArrowToLine.
-  // Desktop: tips clear the portal/CTA borders (ARROW_CLEAR_PX) — do not use mobile gaps here.
   if (dashRect && dashRect.width) {
-    const flowY = ballCY;
-    const start = toSvg(ballCX, flowY);
-    const trunkTip = toSvg(dashRect.left - ARROW_CLEAR_PX, flowY);
+    const dashCY = dashRect.top + dashRect.height / 2;
+    const trunkTipX = dashRect.left - ARROW_CLEAR_PX;
+    const exit = ballExitPoint(ballCX, ballCY, exitR, trunkTipX, dashCY);
+    const start = toSvg(exit.x, exit.y);
+    const trunkTip = toSvg(trunkTipX, dashCY);
     paths.push({ id: "trunk", group: "trunk", d: buildStraightLine(start, trunkTip) });
     arrows.push({
       id: "trunk-arrow",
@@ -227,8 +299,10 @@ function buildDiagramGeometry(
     });
 
     if (ctaRect && ctaRect.width) {
-      const bStart = toSvg(dashRect.right, flowY);
-      const branchTip = toSvg(ctaRect.left - ARROW_CLEAR_PX, flowY);
+      const ctaCY = ctaRect.top + ctaRect.height / 2;
+      const branchTipX = ctaRect.left - ARROW_CLEAR_PX;
+      const bStart = toSvg(dashRect.right, dashCY);
+      const branchTip = toSvg(branchTipX, ctaCY);
       paths.push({ id: "branch", group: "branch", d: buildStraightLine(bStart, branchTip) });
       arrows.push({
         id: "branch-arrow",
@@ -238,6 +312,20 @@ function buildDiagramGeometry(
         tipY: branchTip.y,
       });
     }
+  } else if (ctaRect && ctaRect.width) {
+    const ctaCY = ctaRect.top + ctaRect.height / 2;
+    const trunkTipX = ctaRect.left - ARROW_CLEAR_PX;
+    const exit = ballExitPoint(ballCX, ballCY, exitR, trunkTipX, ctaCY);
+    const start = toSvg(exit.x, exit.y);
+    const trunkTip = toSvg(trunkTipX, ctaCY);
+    paths.push({ id: "trunk", group: "trunk", d: buildStraightLine(start, trunkTip) });
+    arrows.push({
+      id: "trunk-arrow",
+      group: "trunk",
+      points: buildArrowPolygon(trunkTip, start),
+      tipX: trunkTip.x,
+      tipY: trunkTip.y,
+    });
   }
 
   return { paths, arrows };
@@ -268,9 +356,7 @@ function buildVerticalDiagramGeometry(
   const ballCX = ballRect.left + ballRect.width / 2;
   const ballCY = ballRect.top + ballRect.height / 2;
   const center = toSvg(ballCX, ballCY);
-  // The PNG includes transparent padding, so anchor wires to the visible sphere.
-  const rx = (ballRect.width / 2) * 0.72;
-  const ry = (ballRect.height / 2) * 0.72;
+  const entryR = ballEntryRadius(ballRect);
 
   const paths: DiagramPath[] = [];
   const arrows: DiagramArrow[] = [];
@@ -283,8 +369,8 @@ function buildVerticalDiagramGeometry(
     const angleDeg = 200 + t * 140 + jitter * 8;
     const angle = (angleDeg * Math.PI) / 180;
     const entry: Point = {
-      x: center.x + Math.cos(angle) * rx,
-      y: center.y + Math.sin(angle) * ry,
+      x: center.x + Math.cos(angle) * entryR,
+      y: center.y + Math.sin(angle) * entryR,
     };
     paths.push({ id: `card-${i}`, group: "card", d: buildConvergePath(start, entry, center, i + 1) });
   });
@@ -328,6 +414,22 @@ function buildVerticalDiagramGeometry(
         });
       }
     }
+  } else if (ctaRect && ctaRect.width) {
+    const flowX = ballCX;
+    const trunkStartY = ballRect.bottom + MOBILE_TRUNK_AFTER_LABEL_PX;
+    const trunkTipY = ctaRect.top - MOBILE_ARROW_CLEAR_PX;
+    if (trunkStartY < trunkTipY - 4) {
+      const start = toSvg(flowX, trunkStartY);
+      const trunkTip = toSvg(ctaRect.left + ctaRect.width / 2, trunkTipY);
+      paths.push({ id: "trunk", group: "trunk", d: buildStraightLine(start, trunkTip) });
+      arrows.push({
+        id: "trunk-arrow",
+        group: "trunk",
+        points: buildArrowPolygon(trunkTip, start),
+        tipX: trunkTip.x,
+        tipY: trunkTip.y,
+      });
+    }
   }
 
   return { paths, arrows };
@@ -359,54 +461,16 @@ function resyncPathStroke(path: SVGPathElement) {
   });
 }
 
-/* ── Scattered source-card icons ───────────────────────────────────────── */
+/* ── Scattered source-card icons (Lucide vector) ───────────────────────── */
 const CARD_ICONS: Record<string, ReactNode> = {
-  pdfs: (
-    <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75">
-      <path d="M8 3h6l4 4v14H6V5" strokeLinejoin="round" />
-      <path d="M14 3v4h4M9 13h6M9 17h4" strokeLinecap="round" />
-    </svg>
-  ),
-  youtube: (
-    <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4" fill="currentColor">
-      <path d="M21.6 7.2a2.7 2.7 0 0 0-1.9-1.9C18 4.8 12 4.8 12 4.8s-6 0-7.7.5A2.7 2.7 0 0 0 2.4 7.2 28 28 0 0 0 2 12a28 28 0 0 0 .4 4.8 2.7 2.7 0 0 0 1.9 1.9c1.7.5 7.7.5 7.7.5s6 0 7.7-.5a2.7 2.7 0 0 0 1.9-1.9A28 28 0 0 0 22 12a28 28 0 0 0-.4-4.8ZM10 15V9l5.2 3Z" />
-    </svg>
-  ),
-  notes: (
-    <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75">
-      <rect x="5" y="4" width="14" height="16" rx="2" strokeLinejoin="round" />
-      <path d="M9 9h6M9 13h6M9 17h4" strokeLinecap="round" />
-    </svg>
-  ),
-  articles: (
-    <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75">
-      <rect x="4" y="5" width="16" height="14" rx="2" strokeLinejoin="round" />
-      <path d="M8 9h5M8 13h8M8 16h6" strokeLinecap="round" />
-    </svg>
-  ),
-  aichats: (
-    <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75">
-      <path d="M4 6h11a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H9l-4 3v-3H4a1 1 0 0 1-1-1V7a1 1 0 0 1 1-1Z" strokeLinejoin="round" />
-      <path d="M7 10h.01M10 10h.01M13 10h.01" strokeLinecap="round" />
-    </svg>
-  ),
-  books: (
-    <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75">
-      <path d="M5 5.5A1.5 1.5 0 0 1 6.5 4H11v16H6.5A1.5 1.5 0 0 1 5 18.5ZM19 5.5A1.5 1.5 0 0 0 17.5 4H13v16h4.5A1.5 1.5 0 0 0 19 18.5Z" strokeLinejoin="round" />
-    </svg>
-  ),
-  podcasts: (
-    <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75">
-      <rect x="9" y="3" width="6" height="11" rx="3" />
-      <path d="M6 11a6 6 0 0 0 12 0M12 17v4M9 21h6" strokeLinecap="round" />
-    </svg>
-  ),
-  blogs: (
-    <svg viewBox="0 0 24 24" aria-hidden className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.75">
-      <circle cx="12" cy="12" r="8" />
-      <path d="M4 12h16M12 4a12 12 0 0 1 0 16M12 4a12 12 0 0 0 0 16" strokeLinecap="round" />
-    </svg>
-  ),
+  pdfs: <Icon icon={FileText} size={16} strokeWidth={1.75} className="h-4 w-4" />,
+  youtube: <Icon icon={CirclePlay} size={16} strokeWidth={1.75} className="h-4 w-4" />,
+  notes: <Icon icon={NotebookPen} size={16} strokeWidth={1.75} className="h-4 w-4" />,
+  articles: <Icon icon={Newspaper} size={16} strokeWidth={1.75} className="h-4 w-4" />,
+  aichats: <Icon icon={MessageSquare} size={16} strokeWidth={1.75} className="h-4 w-4" />,
+  books: <Icon icon={Library} size={16} strokeWidth={1.75} className="h-4 w-4" />,
+  podcasts: <Icon icon={Mic} size={16} strokeWidth={1.75} className="h-4 w-4" />,
+  blogs: <Icon icon={Globe} size={16} strokeWidth={1.75} className="h-4 w-4" />,
 };
 
 const CARD_COLORS: Record<string, string> = {
@@ -540,7 +604,7 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
       .filter((c): c is HTMLElement => Boolean(c))
       .map((c) => c.getBoundingClientRect());
     const ballRect = ball.getBoundingClientRect();
-    const dashRect = getPortalLayoutRect(dashRef.current);
+    const dashRect = HOOK_SHOW_DASHBOARD ? getPortalLayoutRect(dashRef.current) : null;
     const ctaRect = getCtaLayoutRect(ctaRef.current);
 
     const next = buildDiagramGeometry(cardRects, ballRect, dashRect, ctaRect, svgRect);
@@ -598,7 +662,7 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
     const observer = new ResizeObserver(syncPaths);
     observer.observe(diagram);
     if (ballRef.current) observer.observe(ballRef.current);
-    if (dashRef.current) observer.observe(dashRef.current);
+    if (HOOK_SHOW_DASHBOARD && dashRef.current) observer.observe(dashRef.current);
     if (ctaRef.current) observer.observe(ctaRef.current);
     cardRefs.current.forEach((c) => c && observer.observe(c));
 
@@ -629,21 +693,18 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
           </linearGradient>
         </defs>
 
-        {paths.map((path) => {
-          if (path.group === "card") {
-            return (
-              <path
-                key={path.id}
-                data-hook-line
-                data-group="card"
-                d={path.d}
-                stroke="url(#hook-card-gradient)"
-                strokeWidth={1.6}
-                strokeLinecap="round"
-              />
-            );
-          }
-          return (
+        {paths.map((path) =>
+          path.group === "card" ? (
+            <path
+              key={path.id}
+              data-hook-line
+              data-group="card"
+              d={path.d}
+              stroke="url(#hook-card-gradient)"
+              strokeWidth={1.6}
+              strokeLinecap="round"
+            />
+          ) : (
             <path
               key={path.id}
               data-hook-line
@@ -653,10 +714,9 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
               strokeWidth={2}
               strokeLinecap="round"
             />
-          );
-        })}
+          ),
+        )}
 
-        {/* Arrowheads ride the stroke tip — opacity/points driven by syncArrowToLine. */}
         {arrows.map((arrow) => (
           <polygon
             key={arrow.id}
@@ -670,71 +730,126 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
       </svg>
 
       {/* Column labels — capsules centered over the cards column / dashboard mockup */}
-      <div className="relative z-10 mb-4 grid w-full grid-cols-[minmax(16rem,20rem)_minmax(8rem,1fr)_auto_minmax(6rem,1fr)_auto_minmax(4rem,0.7fr)_auto] items-end gap-x-2 xl:mb-5 xl:grid-cols-[minmax(18rem,22rem)_minmax(10rem,1.2fr)_auto_minmax(8rem,1fr)_auto_minmax(5rem,0.8fr)_auto] xl:gap-x-3">
-        <div className="flex w-full justify-center">
+      <div
+        className={cn(
+          "relative z-10 mb-4 grid w-full items-end gap-x-2 xl:mb-5 xl:gap-x-3",
+          HOOK_SHOW_DASHBOARD
+            ? "grid-cols-[minmax(16rem,20rem)_minmax(8rem,1fr)_auto_minmax(6rem,1fr)_auto_minmax(4rem,0.7fr)_auto] xl:grid-cols-[minmax(18rem,22rem)_minmax(10rem,1.2fr)_auto_minmax(8rem,1fr)_auto_minmax(5rem,0.8fr)_auto]"
+            : "grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]",
+        )}
+      >
+        <div className="flex w-full max-w-[22rem] justify-center justify-self-start xl:max-w-[24rem]">
           <span data-hook-scatter-label className={cn(HOOK_CAPSULE_CLASS, "opacity-0")}>
             {hook.scatteredLabel}
           </span>
         </div>
-        <div aria-hidden />
-        <div aria-hidden className="w-[150px] sm:w-[180px] md:w-[210px]" />
-        <div aria-hidden />
-        <div
-          className="flex justify-center justify-self-center"
-          style={{ width: HOOK_PORTAL_SIZE.width }}
-        >
-          <span data-hook-struct-label className={cn(HOOK_CAPSULE_CLASS, "opacity-0")}>
-            {hook.structuredLabel}
-          </span>
-        </div>
-        <div aria-hidden />
-        <div aria-hidden className="w-[9.5rem]" />
+        {HOOK_SHOW_DASHBOARD ? (
+          <>
+            <div aria-hidden />
+            <div aria-hidden className="w-[150px] sm:w-[180px] md:w-[210px]" />
+            <div aria-hidden />
+            <div
+              className="flex justify-center justify-self-center"
+              style={{ width: HOOK_PORTAL_SIZE.width }}
+            >
+              <span data-hook-struct-label className={cn(HOOK_CAPSULE_CLASS, "opacity-0")}>
+                {hook.structuredLabel}
+              </span>
+            </div>
+            <div aria-hidden />
+            <div aria-hidden className="w-[9.5rem]" />
+          </>
+        ) : (
+          <>
+            <div aria-hidden />
+            <div aria-hidden />
+          </>
+        )}
       </div>
 
-      {/* Full-width flow: cards · gap · ball · gap · dashboard · gap · CTA.
-          items-center keeps ball center, dashboard mid, and CTA mid on one Y axis. */}
-      <div className="relative z-10 grid min-h-0 w-full flex-1 grid-cols-[minmax(16rem,20rem)_minmax(8rem,1fr)_auto_minmax(6rem,1fr)_auto_minmax(4rem,0.7fr)_auto] items-center gap-x-2 xl:grid-cols-[minmax(18rem,22rem)_minmax(10rem,1.2fr)_auto_minmax(8rem,1fr)_auto_minmax(5rem,0.8fr)_auto] xl:gap-x-3">
+      {/* Full-width flow: cards · ball (center) · CTA — or legacy dashboard grid */}
+      <div
+        className={cn(
+          "relative z-10 min-h-0 w-full flex-1 items-center",
+          HOOK_SHOW_DASHBOARD
+            ? "grid gap-x-2 xl:gap-x-3 grid-cols-[minmax(16rem,20rem)_minmax(8rem,1fr)_auto_minmax(6rem,1fr)_auto_minmax(4rem,0.7fr)_auto] xl:grid-cols-[minmax(18rem,22rem)_minmax(10rem,1.2fr)_auto_minmax(8rem,1fr)_auto_minmax(5rem,0.8fr)_auto]"
+            : "min-h-[280px]",
+        )}
+      >
         {/* 1 · Scattered cards (left edge) */}
-        <div className="relative h-full min-h-[280px] w-full">
+        <div
+          className={cn(
+            "relative h-full min-h-[280px] w-full max-w-[22rem] xl:max-w-[24rem]",
+            HOOK_SHOW_DASHBOARD ? "justify-self-start" : "absolute inset-y-0 left-0 z-10",
+          )}
+        >
           {hook.sourceCards.map((card, i) => (
             <ScatteredCard key={card.id} id={card.id} title={card.title} cardRef={setCardRef(i)} />
           ))}
         </div>
 
-        {/* 2 · Flexible gap for card → ball lines */}
-        <div aria-hidden className="h-full w-full" />
+        {HOOK_SHOW_DASHBOARD ? (
+          <>
+            {/* 2 · Flexible gap for card → ball lines */}
+            <div aria-hidden className="h-full w-full" />
 
-        {/* 3 · HOLS ball — geometric center is the trunk origin */}
-        <div className="relative z-10 shrink-0 self-center">
-          <HolsBall innerRef={(n) => (ballRef.current = n)} className="opacity-0" />
-        </div>
+            {/* 3 · HOLS ball */}
+            <div className="relative z-10 shrink-0 self-center">
+              <HolsBall innerRef={(n) => (ballRef.current = n)} className="opacity-0" />
+            </div>
 
-        {/* 4 · Flexible gap for ball → dashboard line */}
-        <div aria-hidden className="h-full w-full" />
+            {/* 4 · Flexible gap for ball → dashboard line */}
+            <div aria-hidden className="h-full w-full" />
 
-        {/* 5 · Dashboard — desktop keeps its locked frame (no responsive scale) */}
-        <HookPortalShell className="relative z-10 justify-self-center self-center">
-          <DashboardMockup innerRef={(n) => (dashRef.current = n)} className="opacity-0" />
-        </HookPortalShell>
+            {/* 5 · Dashboard */}
+            <HookPortalShell className="relative z-10 justify-self-center self-center">
+              <DashboardMockup innerRef={(n) => (dashRef.current = n)} className="opacity-0" />
+            </HookPortalShell>
 
-        {/* 6 · Flexible gap for dashboard → CTA line */}
-        <div aria-hidden className="h-full w-full" />
+            {/* 6 · Flexible gap for dashboard → CTA line */}
+            <div aria-hidden className="h-full w-full" />
 
-        {/* 7 · Explore Courses — mid-Y locked to the same flow axis as the ball.
-            Kill soft shadow / backdrop blur so no translucent ghost sits past the pill. */}
-        <div
-          ref={ctaRef}
-          data-hook-cta
-          className="pointer-events-auto relative z-10 shrink-0 justify-self-end self-center opacity-0"
-        >
-          <HeroButton
-            href={hook.cta.href}
-            variant="primary"
-            className="whitespace-nowrap px-6 !shadow-none ![backdrop-filter:none] ![-webkit-backdrop-filter:none] md:px-8"
-          >
-            {hook.cta.label}
-          </HeroButton>
-        </div>
+            <div
+              ref={ctaRef}
+              data-hook-cta
+              className="pointer-events-auto relative z-10 shrink-0 justify-self-end self-center opacity-0"
+            >
+              <HeroButton
+                href={hook.cta.href}
+                variant="primary"
+                className="whitespace-nowrap px-6 !shadow-none ![backdrop-filter:none] ![-webkit-backdrop-filter:none] md:px-8"
+              >
+                {hook.cta.label}
+              </HeroButton>
+            </div>
+          </>
+        ) : (
+          <>
+            {/* Ball — true horizontal center of the diagram (independent of card/CTA weight) */}
+            <div className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center">
+              <div className="pointer-events-auto shrink-0">
+                <HolsBall innerRef={(n) => (ballRef.current = n)} className="opacity-0" />
+              </div>
+            </div>
+
+            {/* CTA — right rail */}
+            <div className="absolute inset-y-0 right-0 z-10 flex items-center">
+              <div
+                ref={ctaRef}
+                data-hook-cta
+                className="pointer-events-auto relative shrink-0 opacity-0"
+              >
+                <HeroButton
+                  href={hook.cta.href}
+                  variant="primary"
+                  className="whitespace-nowrap px-6 !shadow-none ![backdrop-filter:none] ![-webkit-backdrop-filter:none] md:px-8"
+                >
+                  {hook.cta.label}
+                </HeroButton>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </div>
   );
@@ -767,7 +882,7 @@ function MobileFlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
       .filter((c): c is HTMLElement => Boolean(c))
       .map((c) => c.getBoundingClientRect());
     const ballRect = ball.getBoundingClientRect();
-    const dashRect = getPortalLayoutRect(dashRef.current);
+    const dashRect = HOOK_SHOW_DASHBOARD ? getPortalLayoutRect(dashRef.current) : null;
     const ctaRect = getCtaLayoutRect(ctaRef.current);
     const structLabelRect = structLabelRef.current?.getBoundingClientRect() ?? null;
 
@@ -832,9 +947,9 @@ function MobileFlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
     const observer = new ResizeObserver(syncPaths);
     observer.observe(diagram);
     if (ballRef.current) observer.observe(ballRef.current);
-    if (dashRef.current) observer.observe(dashRef.current);
+    if (HOOK_SHOW_DASHBOARD && dashRef.current) observer.observe(dashRef.current);
     if (ctaRef.current) observer.observe(ctaRef.current);
-    if (structLabelRef.current) observer.observe(structLabelRef.current);
+    if (HOOK_SHOW_DASHBOARD && structLabelRef.current) observer.observe(structLabelRef.current);
     cardRefs.current.forEach((c) => c && observer.observe(c));
 
     const onCardMove = () => syncPaths();
@@ -854,9 +969,7 @@ function MobileFlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
         aria-hidden
         viewBox={viewBox}
         preserveAspectRatio="none"
-        // Above portal/CTA so branch tip paints ON the Explore Courses border
-        // (z-5 was under the button and hid the arrowhead). Desktop SVG stays z-5.
-        className="pointer-events-none absolute inset-0 z-20 h-full w-full overflow-visible"
+        className="pointer-events-none absolute inset-0 z-[5] h-full w-full overflow-visible"
         fill="none"
       >
         <defs>
@@ -935,24 +1048,30 @@ function MobileFlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
         {/* Clearance under HOLS wordmark — no trunk through this gap */}
         <div aria-hidden className="h-14 w-full sm:h-16" />
 
-        {/* Capsule sits alone; short trunk starts below it into the dashboard */}
-        <span
-          ref={structLabelRef}
-          data-hook-struct-label
-          className={cn(HOOK_CAPSULE_CLASS, "opacity-0")}
-        >
-          {hook.structuredLabel}
-        </span>
+        {HOOK_SHOW_DASHBOARD ? (
+          <>
+            {/* Capsule sits alone; short trunk starts below it into the dashboard */}
+            <span
+              ref={structLabelRef}
+              data-hook-struct-label
+              className={cn(HOOK_CAPSULE_CLASS, "opacity-0")}
+            >
+              {hook.structuredLabel}
+            </span>
 
-        {/* Room for short stem + arrowhead into dashboard chrome */}
-        <div aria-hidden className="h-14 w-full sm:h-16" />
+            {/* Room for short stem + arrowhead into dashboard chrome */}
+            <div aria-hidden className="h-14 w-full sm:h-16" />
 
-        <HookPortalShell responsive className="relative z-10">
-          <DashboardMockup innerRef={(n) => (dashRef.current = n)} className="opacity-0" />
-        </HookPortalShell>
+            <HookPortalShell responsive className="relative z-10">
+              <DashboardMockup innerRef={(n) => (dashRef.current = n)} className="opacity-0" />
+            </HookPortalShell>
 
-        {/* Room for short branch stem + arrowhead into Explore Courses */}
-        <div aria-hidden className="h-14 w-full sm:h-16" />
+            {/* Room for short branch stem + arrowhead into Explore Courses */}
+            <div aria-hidden className="h-14 w-full sm:h-16" />
+          </>
+        ) : (
+          <div aria-hidden className="h-10 w-full sm:h-12" />
+        )}
 
         {/* z-10 keeps layout; SVG at z-20 draws the tip on top of this border */}
         <div ref={ctaRef} data-hook-cta className="relative z-10 opacity-0">
@@ -1000,12 +1119,16 @@ function HookStatic() {
               ))}
             </div>
             <HolsBall />
-            <span className={HOOK_CAPSULE_CLASS}>
-              {hook.structuredLabel}
-            </span>
-            <HookPortalShell responsive>
-              <DashboardMockup />
-            </HookPortalShell>
+            {HOOK_SHOW_DASHBOARD ? (
+              <>
+                <span className={HOOK_CAPSULE_CLASS}>
+                  {hook.structuredLabel}
+                </span>
+                <HookPortalShell responsive>
+                  <DashboardMockup />
+                </HookPortalShell>
+              </>
+            ) : null}
             <HeroButton
               href={hook.cta.href}
               variant="primary"
@@ -1122,14 +1245,18 @@ export function HookSection() {
         allArrows.forEach((arrow) => arrow.setAttribute("opacity", "0"));
         gsap.set(cards, { autoAlpha: 0, y: 10, yPercent: -50 });
         gsap.set(scatterLabel, { autoAlpha: 0, y: 6 });
-        gsap.set(structLabel, { autoAlpha: 0, y: 6 });
+        if (HOOK_SHOW_DASHBOARD) {
+          gsap.set(structLabel, { autoAlpha: 0, y: 6 });
+          gsap.set(dashboard, { autoAlpha: 0, y: 12, scale: 0.98 });
+        }
         gsap.set(hub, { autoAlpha: 0, scale: 0.94 });
-        gsap.set(dashboard, { autoAlpha: 0, y: 12, scale: 0.98 });
         gsap.set(cta, { autoAlpha: 0, y: 8 });
 
         const syncAllArrows = () => {
-          syncArrowToLine(trunkLines[0], trunkArrows[0]);
-          syncArrowToLine(branchLines[0], branchArrows[0]);
+          syncTrunkArrow(trunkLines[0], trunkArrows[0]);
+          if (HOOK_SHOW_DASHBOARD) {
+            syncArrowToLine(branchLines[0], branchArrows[0]);
+          }
         };
 
         const tl = gsap.timeline({
@@ -1162,14 +1289,18 @@ export function HookSection() {
         });
         tl.to(hub, { autoAlpha: 1, scale: 1, duration: 0.85, ease: "power1.out" }, 1.55);
         tl.to(trunkLines, { strokeDashoffset: 0, opacity: 1, duration: 1.15, ease: "none" }, 2.05);
-        tl.to(structLabel, { autoAlpha: 1, y: 0, duration: 0.7, ease: "power1.out" }, 2.55);
-        tl.to(
-          dashboard,
-          { autoAlpha: 1, y: 0, scale: 1, duration: 0.95, ease: "power1.out" },
-          2.65,
-        );
-        tl.to(branchLines, { strokeDashoffset: 0, opacity: 1, duration: 1.15, ease: "none" }, 3.25);
-        tl.to(cta, { autoAlpha: 1, y: 0, duration: 0.8, ease: "power1.out" }, 3.85);
+        if (HOOK_SHOW_DASHBOARD) {
+          tl.to(structLabel, { autoAlpha: 1, y: 0, duration: 0.7, ease: "power1.out" }, 2.55);
+          tl.to(
+            dashboard,
+            { autoAlpha: 1, y: 0, scale: 1, duration: 0.95, ease: "power1.out" },
+            2.65,
+          );
+          tl.to(branchLines, { strokeDashoffset: 0, opacity: 1, duration: 1.15, ease: "none" }, 3.25);
+          tl.to(cta, { autoAlpha: 1, y: 0, duration: 0.8, ease: "power1.out" }, 3.85);
+        } else {
+          tl.to(cta, { autoAlpha: 1, y: 0, duration: 0.8, ease: "power1.out" }, 2.85);
+        }
         // Hold the finished frame so the last beat doesn't cut off mid-scroll.
         tl.to({}, { duration: 0.9 });
 
@@ -1234,14 +1365,18 @@ export function HookSection() {
         allArrows.forEach((arrow) => arrow.setAttribute("opacity", "0"));
         gsap.set(cards, { autoAlpha: 0, y: 10 });
         gsap.set(scatterLabel, { autoAlpha: 0, y: 6 });
-        gsap.set(structLabel, { autoAlpha: 0, y: 6 });
+        if (HOOK_SHOW_DASHBOARD) {
+          gsap.set(structLabel, { autoAlpha: 0, y: 6 });
+          gsap.set(dashboard, { autoAlpha: 0, y: 12, scale: 0.98 });
+        }
         gsap.set(hub, { autoAlpha: 0, scale: 0.94 });
-        gsap.set(dashboard, { autoAlpha: 0, y: 12, scale: 0.98 });
         gsap.set(cta, { autoAlpha: 0, y: 8 });
 
         const syncAllArrows = () => {
-          syncArrowToLine(trunkLines[0], trunkArrows[0]);
-          syncArrowToLine(branchLines[0], branchArrows[0]);
+          syncTrunkArrow(trunkLines[0], trunkArrows[0]);
+          if (HOOK_SHOW_DASHBOARD) {
+            syncArrowToLine(branchLines[0], branchArrows[0]);
+          }
         };
 
         const tl = gsap.timeline({
@@ -1273,14 +1408,18 @@ export function HookSection() {
         });
         tl.to(hub, { autoAlpha: 1, scale: 1, duration: 0.85, ease: "power1.out" }, 1.55);
         tl.to(trunkLines, { strokeDashoffset: 0, opacity: 1, duration: 1.15, ease: "none" }, 2.05);
-        tl.to(structLabel, { autoAlpha: 1, y: 0, duration: 0.7, ease: "power1.out" }, 2.55);
-        tl.to(
-          dashboard,
-          { autoAlpha: 1, y: 0, scale: 1, duration: 0.95, ease: "power1.out" },
-          2.65,
-        );
-        tl.to(branchLines, { strokeDashoffset: 0, opacity: 1, duration: 1.15, ease: "none" }, 3.25);
-        tl.to(cta, { autoAlpha: 1, y: 0, duration: 0.8, ease: "power1.out" }, 3.85);
+        if (HOOK_SHOW_DASHBOARD) {
+          tl.to(structLabel, { autoAlpha: 1, y: 0, duration: 0.7, ease: "power1.out" }, 2.55);
+          tl.to(
+            dashboard,
+            { autoAlpha: 1, y: 0, scale: 1, duration: 0.95, ease: "power1.out" },
+            2.65,
+          );
+          tl.to(branchLines, { strokeDashoffset: 0, opacity: 1, duration: 1.15, ease: "none" }, 3.25);
+          tl.to(cta, { autoAlpha: 1, y: 0, duration: 0.8, ease: "power1.out" }, 3.85);
+        } else {
+          tl.to(cta, { autoAlpha: 1, y: 0, duration: 0.8, ease: "power1.out" }, 2.85);
+        }
         tl.to({}, { duration: 0.9 });
 
         const onSync = () => {

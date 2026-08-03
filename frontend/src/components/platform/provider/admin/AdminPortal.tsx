@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { ChevronRight, Icon, Star, User, Users } from "@/components/icons";
 import { DashboardPageLayout } from "@/components/platform/provider/admin/dashboard/DashboardPageLayout";
 import {
   getCachedAdminAffiliates,
@@ -31,43 +32,24 @@ const QUICK_TOOLS: readonly QuickTool[] = [
   {
     label: "Students",
     href: "/admin/students",
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    ),
+    icon: <Icon icon={Users} size={18} />,
   },
   {
     label: "Affiliates",
     href: "/admin/affiliates",
     icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
+      <Icon icon={Users} size={18} />
     ),
   },
   {
     label: "Plans",
     href: "/admin/plans",
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.77 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" />
-      </svg>
-    ),
+    icon: <Icon icon={Star} size={18} />,
   },
   {
     label: "Profile",
     href: "/admin/profile",
-    icon: (
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <circle cx="12" cy="8" r="4" />
-        <path d="M4 20c1.7-3.3 4.3-5 8-5s6.3 1.7 8 5" />
-      </svg>
-    ),
+    icon: <Icon icon={User} size={18} />,
   },
 ];
 
@@ -75,43 +57,22 @@ const QUICK_LINKS: readonly QuickLink[] = [
   {
     label: "Manage students",
     href: "/admin/students",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    ),
+    icon: <Icon icon={Users} size={16} />,
   },
   {
     label: "Manage affiliates",
     href: "/admin/affiliates",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    ),
+    icon: <Icon icon={Users} size={16} />,
   },
   {
     label: "Plan pricing",
     href: "/admin/plans",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.77 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" />
-      </svg>
-    ),
+    icon: <Icon icon={Star} size={16} />,
   },
   {
     label: "Account profile",
     href: "/admin/profile",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <circle cx="12" cy="8" r="4" />
-        <path d="M4 20c1.7-3.3 4.3-5 8-5s6.3 1.7 8 5" />
-      </svg>
-    ),
+    icon: <Icon icon={User} size={16} />,
   },
 ];
 
@@ -431,18 +392,11 @@ function QuickLinksCard({
                 {affiliateTotal}
               </span>
             ) : null}
-            <svg
-              width="16"
-              height="16"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1.8"
+            <Icon
+              icon={ChevronRight}
+              size={16}
               className="shrink-0 text-[color:var(--dash-dim)] transition group-hover:translate-x-0.5 group-hover:text-[color:var(--dash-muted)]"
-              aria-hidden
-            >
-              <path d="M9 18l6-6-6-6" />
-            </svg>
+            />
           </Link>
         ))}
       </div>

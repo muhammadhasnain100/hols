@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
+import { Icon, Menu } from "@/components/icons";
 import { PortalShell } from "@/components/platform/provider/PortalShell";
 import { adminNav } from "@/components/platform/provider/admin/adminNav";
 import { WelcomeChip } from "@/components/platform/provider/student/WelcomeChip";
@@ -189,9 +190,7 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
               onClick={openSidebar}
               className="dashboard-icon-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full lg:hidden"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-                <path d="M4 7h16M4 12h10M4 17h16" />
-              </svg>
+              <Icon icon={Menu} size={18} />
             </button>
             <h1 className="font-sans truncate text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl md:text-2xl">
               User profile
@@ -213,7 +212,7 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
               <section className="dashboard-hero relative overflow-hidden rounded-2xl p-3.5 sm:p-5 md:p-6">
                 <div className="flex flex-col gap-3.5 sm:gap-5 lg:flex-row lg:items-end lg:justify-between">
                   <div className="flex min-w-0 flex-col items-center gap-3 sm:flex-row sm:items-center sm:gap-5">
-                    <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-4 border-white/70 bg-white/40 font-sans text-sm font-bold text-[color:var(--dash-text)] shadow-[0_8px_20px_rgba(21,39,68,0.12)] sm:h-20 sm:w-20 sm:text-lg">
+                    <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-4 border-white/70 bg-white/40 font-sans text-sm font-bold text-[color:var(--dash-text)] sm:h-20 sm:w-20 sm:text-lg">
                       {profile?.profile_pic ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={profile.profile_pic} alt="" className="h-full w-full object-cover" />

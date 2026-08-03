@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { Check, Icon } from "@/components/icons";
 import { Button } from "@/components/ui/Button";
 import { contactContent } from "@/content/contact";
 import { cn } from "@/lib/utils";
@@ -25,16 +26,7 @@ export function ContactForm({ className }: ContactFormProps) {
         )}
       >
         <span className="flex h-14 w-14 items-center justify-center rounded-full bg-accent/35 text-primary">
-          <svg
-            className="h-7 w-7"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
-            strokeWidth="1.75"
-            aria-hidden
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-          </svg>
+          <Icon icon={Check} size={28} strokeWidth={1.75} className="h-7 w-7" />
         </span>
         <p className="mt-6 font-sans text-xl font-semibold text-primary">Message sent</p>
         <p className="mt-2 max-w-sm text-sm leading-relaxed text-muted">

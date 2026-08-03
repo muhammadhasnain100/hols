@@ -6,6 +6,14 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import { LessonContentSkeleton } from "@/components/platform/provider/student/DashboardSkeletons";
 import {
+  ChevronLeft,
+  ChevronRight,
+  ChevronUp,
+  CircleHelp,
+  Clock,
+  Icon,
+} from "@/components/icons";
+import {
   LessonQuizOverlay,
   LessonQuizResultCard,
 } from "@/components/platform/provider/student/lectures/LessonQuizOverlay";
@@ -187,19 +195,12 @@ export function LessonContentPanel({
               ) : null}
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="lesson-read-chip">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                    <circle cx="12" cy="12" r="9" />
-                    <path d="M12 7v5l3 2" />
-                  </svg>
+                  <Icon icon={Clock} size={13} strokeWidth={2} />
                   {readingMinutes} min read
                 </span>
                 {hasQuiz ? (
                   <span className="lesson-read-chip">
-                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                      <circle cx="12" cy="12" r="9" />
-                      <path d="M9.2 9.3a2.8 2.8 0 0 1 5.4 1c0 1.9-2.7 2.4-2.7 2.4" />
-                      <path d="M12 17h.01" />
-                    </svg>
+                    <Icon icon={CircleHelp} size={13} strokeWidth={2} />
                     {lesson.variants.length} quiz question{lesson.variants.length === 1 ? "" : "s"}
                   </span>
                 ) : null}
@@ -291,9 +292,7 @@ export function LessonContentPanel({
                   href={lessonHref(courseId, prevLessonId, topicId, l1Name)}
                   className="lesson-prev-cta dashboard-pill-soft font-sans inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-full px-4 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition sm:flex-initial sm:px-5"
                 >
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                    <path d="m15 18-6-6 6-6" />
-                  </svg>
+                  <Icon icon={ChevronLeft} size={15} strokeWidth={2} />
                   <span className="sm:hidden">Prev</span>
                   <span className="hidden sm:inline">Previous page</span>
                 </Link>
@@ -305,9 +304,7 @@ export function LessonContentPanel({
                 >
                   <span className="sm:hidden">Next</span>
                   <span className="hidden sm:inline">Next page</span>
-                  <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-                    <path d="m9 18 6-6-6-6" />
-                  </svg>
+                  <Icon icon={ChevronRight} size={15} strokeWidth={2} />
                 </Link>
               ) : null}
             </div>
@@ -322,9 +319,7 @@ export function LessonContentPanel({
         data-visible={showTop ? "true" : "false"}
         aria-label="Back to top"
       >
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
-          <path d="m18 15-6-6-6 6" />
-        </svg>
+        <Icon icon={ChevronUp} size={18} strokeWidth={2.2} />
       </button>
 
       <LessonQuizOverlay

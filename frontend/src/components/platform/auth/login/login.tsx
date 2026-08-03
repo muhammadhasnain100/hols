@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
+import { Icon, Eye, EyeOff } from "@/components/icons";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { AuthButton } from "@/components/platform/auth/AuthButton";
 import { AuthField } from "@/components/platform/auth/AuthField";
@@ -115,14 +116,9 @@ export function LoginForm({ className, initialMessage, onOtpStepChange }: LoginF
       aria-label={showPassword ? "Hide password" : "Show password"}
     >
       {showPassword ? (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-          <path d="M3 3l18 18M10.6 10.6a2 2 0 0 0 2.8 2.8M9.9 5.1A9.8 9.8 0 0 1 12 5c5 0 9.3 3.1 11 7-.5 1.2-1.2 2.3-2.1 3.2M6.1 6.1C4.2 7.4 2.7 9.1 1.8 11c1.7 3.9 6 7 11.2 7 1.3 0 2.5-.2 3.6-.5" />
-        </svg>
+        <Icon icon={EyeOff} size={16} />
       ) : (
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-          <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
-          <circle cx="12" cy="12" r="3" />
-        </svg>
+        <Icon icon={Eye} size={16} />
       )}
     </button>
   );

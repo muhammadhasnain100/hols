@@ -17,7 +17,7 @@ export function PortalStatCard({ label, value, hint, trend, className }: PortalS
   return (
     <div
       className={cn(
-        "rounded-2xl border border-black/[0.06] bg-white p-5 shadow-[0_1px_2px_rgba(21,39,68,0.04)] md:p-6",
+        "rounded-2xl border border-black/[0.06] bg-white p-5 md:p-6",
         className,
       )}
     >

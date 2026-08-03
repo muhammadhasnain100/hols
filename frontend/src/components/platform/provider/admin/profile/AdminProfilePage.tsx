@@ -2,6 +2,18 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  Bell,
+  Check,
+  ChevronRight,
+  CircleAlert,
+  Icon,
+  Mail,
+  Menu,
+  ShieldCheck,
+  Star,
+  Users,
+} from "@/components/icons";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { PortalShell } from "@/components/platform/provider/PortalShell";
 import { ProfilePageSkeleton } from "@/components/platform/provider/student/DashboardSkeletons";
@@ -103,67 +115,32 @@ function DashField({
   );
 }
 
-const mailIcon = (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-    <rect x="2" y="4" width="20" height="16" rx="2" />
-    <path d="m22 7-10 6L2 7" />
-  </svg>
-);
+const mailIcon = <Icon icon={Mail} size={16} />;
 
-const shieldIcon = (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-    <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />
-    <path d="m9 12 2 2 4-4" />
-  </svg>
-);
+const shieldIcon = <Icon icon={ShieldCheck} size={16} />;
 
-const roleIcon = (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.77 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" />
-  </svg>
-);
+const roleIcon = <Icon icon={Star} size={16} />;
 
-const bellIcon = (
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9" />
-    <path d="M13.73 21a2 2 0 0 1-3.46 0" />
-  </svg>
-);
+const bellIcon = <Icon icon={Bell} size={16} />;
 
 const adminLinks = [
   {
     label: "Students",
     href: "/admin/students",
     category: "Users",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    ),
+    icon: <Icon icon={Users} size={16} />,
   },
   {
     label: "Affiliates",
     href: "/admin/affiliates",
     category: "Users",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-        <circle cx="9" cy="7" r="4" />
-        <path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
-      </svg>
-    ),
+    icon: <Icon icon={Users} size={16} />,
   },
   {
     label: "Plans",
     href: "/admin/plans",
     category: "Billing",
-    icon: (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <path d="M12 2l3.09 6.26L22 9.27l-5 4.87L18.18 22 12 18.77 5.82 22 7 14.14l-5-4.87 6.91-1.01L12 2z" />
-      </svg>
-    ),
+    icon: <Icon icon={Star} size={16} />,
   },
 ] as const;
 
@@ -214,18 +191,11 @@ function AccountLinkRow({
         <span className="text-brand-caption block text-[color:var(--dash-faint)]">{category}</span>
         <span className="font-sans block truncate text-sm font-medium text-[color:var(--dash-text)]">{label}</span>
       </span>
-      <svg
-        width="16"
-        height="16"
-        viewBox="0 0 24 24"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth="1.8"
+      <Icon
+        icon={ChevronRight}
+        size={16}
         className="shrink-0 text-[color:var(--dash-dim)] transition group-hover:translate-x-0.5 group-hover:text-[color:var(--dash-muted)]"
-        aria-hidden
-      >
-        <path d="M9 18l6-6-6-6" />
-      </svg>
+      />
     </Link>
   );
 }
@@ -234,9 +204,7 @@ function VerifiedBadge({ verified }: { verified?: boolean }) {
   if (verified) {
     return (
       <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-emerald-600">
-        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" aria-hidden>
-          <path d="M20 6 9 17l-5-5" />
-        </svg>
+        <Icon icon={Check} size={12} strokeWidth={2.2} />
         Verified
       </span>
     );
@@ -244,10 +212,7 @@ function VerifiedBadge({ verified }: { verified?: boolean }) {
 
   return (
     <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-medium text-amber-600">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-        <circle cx="12" cy="12" r="9" />
-        <path d="M12 8v4M12 16h.01" />
-      </svg>
+      <Icon icon={CircleAlert} size={12} strokeWidth={2} />
       Not verified
     </span>
   );
@@ -418,9 +383,7 @@ export function AdminProfilePage() {
               onClick={openSidebar}
               className="dashboard-icon-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full lg:hidden"
             >
-              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-                <path d="M4 7h16M4 12h10M4 17h16" />
-              </svg>
+              <Icon icon={Menu} size={18} />
             </button>
             <h1 className="font-sans truncate text-base font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl md:text-2xl">
               {mode === "edit" ? (
@@ -449,7 +412,7 @@ export function AdminProfilePage() {
                 <section className="dashboard-hero relative overflow-hidden rounded-2xl p-3.5 sm:p-5 md:p-6">
                   <div className="flex flex-col gap-3.5 sm:gap-5 lg:flex-row lg:items-end lg:justify-between">
                     <div className="flex min-w-0 flex-col items-center gap-3 sm:flex-row sm:items-center sm:gap-5">
-                      <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-4 border-white/70 bg-white/40 font-sans text-sm font-bold tracking-[0.01em] text-[color:var(--dash-text)] shadow-[0_8px_20px_rgba(21,39,68,0.12)] sm:h-20 sm:w-20 sm:text-lg">
+                      <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-4 border-white/70 bg-white/40 font-sans text-sm font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:h-20 sm:w-20 sm:text-lg">
                         {avatarSrc ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={avatarSrc} alt="" className="h-full w-full object-cover" />

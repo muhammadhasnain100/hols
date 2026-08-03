@@ -1,6 +1,71 @@
 @import "tailwindcss";
 @import "lenis/dist/lenis.css";
 
+/* HOLS volume book — safelist so Tailwind v4 keeps custom selectors */
+@source inline("hols-volume");
+@source inline("is-open");
+@source inline("book-assembly");
+@source inline("book-stack");
+@source inline("book-page-layer");
+@source inline("book-page-layer--1");
+@source inline("book-page-layer--2");
+@source inline("book-page-layer--3");
+@source inline("book-interior");
+@source inline("book-interior-grain");
+@source inline("book-interior-watermark");
+@source inline("book-interior-content");
+@source inline("book-interior-header");
+@source inline("book-interior-eyebrow");
+@source inline("book-interior-close");
+@source inline("book-interior-title");
+@source inline("book-interior-description");
+@source inline("book-interior-section");
+@source inline("book-interior-section-label");
+@source inline("book-interior-topics");
+@source inline("book-interior-topic-index");
+@source inline("book-interior-topic-name");
+@source inline("book-interior-metrics");
+@source inline("book-cover");
+@source inline("book-cover-face");
+@source inline("book-cover-base");
+@source inline("book-cover-spotlight");
+@source inline("book-cover-vignette");
+@source inline("book-cover-ambient");
+@source inline("book-cover-grain");
+@source inline("book-cover-foil-edge");
+@source inline("book-cover-logo-wrap");
+@source inline("book-cover-brand");
+@source inline("book-cover-publisher");
+@source inline("book-cover-mark");
+@source inline("book-cover-mark--theme-dark");
+@source inline("book-cover-mark--theme-light");
+@source inline("book-cover-mark-watermark");
+@source inline("book-cover-mark-watermark--theme-dark");
+@source inline("book-cover-mark-watermark--theme-light");
+@source inline("book-cover-volume-label-text");
+@source inline("book-cover-footer-brand");
+@source inline("book-cover-footer-meta");
+@source inline("book-cover-content");
+@source inline("book-cover-content--photo-vial");
+@source inline("book-cover-header");
+@source inline("book-cover-logo");
+@source inline("book-cover-logo--theme-dark");
+@source inline("book-cover-logo--theme-light");
+@source inline("book-cover-volume-label");
+@source inline("book-cover-title");
+@source inline("book-cover-rule");
+@source inline("book-cover-art-bg");
+@source inline("book-cover-art-bg-image");
+@source inline("book-cover-shine");
+@source inline("book-cover-footer");
+@source inline("book-cover-footer-dot");
+@source inline("book-cover-spine");
+@source inline("book-cover-edge");
+@source inline("book-open-hint");
+@source inline("hols-volume-panel");
+@source inline("lecture-cover-brand");
+@source inline("lecture-cover-mark");
+
 /*
  * Brand tokens are defined in src/config/brand.ts
  * and injected at runtime via <BrandStyles /> in layout.tsx.
@@ -47,6 +112,178 @@ body {
   font-weight: 300;
   line-height: var(--brand-leading-body);
   letter-spacing: var(--brand-tracking-body);
+}
+
+/* ── HOLS native browser chrome ───────────────────────────────
+ * Prussian #142644 · Dusk #3853A4 · Lemon Lime #DDE466 · Baby Blue #8DC3E1
+ * Covers marketing + portal scrollports; portal dark theme overrides tokens.
+ */
+:root {
+  --hols-scroll-thumb: rgba(56, 83, 164, 0.48);
+  --hols-scroll-thumb-hover: rgba(20, 38, 68, 0.72);
+  --hols-scroll-track: rgba(141, 195, 225, 0.16);
+  --hols-chrome-accent: #3853a4;
+  --hols-chrome-focus-ring: rgba(221, 228, 102, 0.42);
+  --hols-chrome-autofill-bg: rgba(141, 195, 225, 0.22);
+  --hols-chrome-autofill-text: #142644;
+}
+
+html {
+  scrollbar-width: thin;
+  scrollbar-color: var(--hols-scroll-thumb) var(--hols-scroll-track);
+  accent-color: var(--hols-chrome-accent);
+}
+
+html::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+html::-webkit-scrollbar-track {
+  background: var(--hols-scroll-track);
+}
+
+html::-webkit-scrollbar-thumb {
+  background-color: var(--hols-scroll-thumb);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+html::-webkit-scrollbar-thumb:hover {
+  background-color: var(--hols-scroll-thumb-hover);
+}
+
+html::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Portal + marketing: Firefox inherits; WebKit via :where so intentional
+   `::-webkit-scrollbar:hidden` utilities still win on specificity. */
+.portal-shell,
+.auth-brand-backdrop,
+.brand-backdrop-light {
+  scrollbar-width: thin;
+  scrollbar-color: var(--hols-scroll-thumb) var(--hols-scroll-track);
+}
+
+:where(
+  .portal-shell,
+  .portal-shell *,
+  .auth-brand-backdrop,
+  .auth-brand-backdrop *,
+  .brand-backdrop-light,
+  .brand-backdrop-light *,
+  .adviser-chat-transcript,
+  .adviser-dialog-panel,
+  .dashboard-screen
+)::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+:where(
+  .portal-shell,
+  .portal-shell *,
+  .auth-brand-backdrop,
+  .auth-brand-backdrop *,
+  .brand-backdrop-light,
+  .brand-backdrop-light *,
+  .adviser-chat-transcript,
+  .adviser-dialog-panel,
+  .dashboard-screen
+)::-webkit-scrollbar-track {
+  background: var(--hols-scroll-track);
+  border-radius: 999px;
+}
+
+:where(
+  .portal-shell,
+  .portal-shell *,
+  .auth-brand-backdrop,
+  .auth-brand-backdrop *,
+  .brand-backdrop-light,
+  .brand-backdrop-light *,
+  .adviser-chat-transcript,
+  .adviser-dialog-panel,
+  .dashboard-screen
+)::-webkit-scrollbar-thumb {
+  background-color: var(--hols-scroll-thumb);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+:where(
+  .portal-shell,
+  .portal-shell *,
+  .auth-brand-backdrop,
+  .auth-brand-backdrop *,
+  .brand-backdrop-light,
+  .brand-backdrop-light *,
+  .adviser-chat-transcript,
+  .adviser-dialog-panel,
+  .dashboard-screen
+)::-webkit-scrollbar-thumb:hover {
+  background-color: var(--hols-scroll-thumb-hover);
+}
+
+.portal-shell[data-theme="dark"] {
+  --hols-scroll-thumb: rgba(141, 195, 225, 0.38);
+  --hols-scroll-thumb-hover: rgba(221, 228, 102, 0.55);
+  --hols-scroll-track: rgba(20, 38, 68, 0.55);
+  --hols-chrome-accent: #dde466;
+  --hols-chrome-focus-ring: rgba(221, 228, 102, 0.35);
+  --hols-chrome-autofill-bg: rgba(56, 83, 164, 0.45);
+  --hols-chrome-autofill-text: #f4f7fb;
+}
+
+/* Number spinners — hide OS-default grey steppers */
+input[type="number"] {
+  -moz-appearance: textfield;
+}
+
+input[type="number"]::-webkit-inner-spin-button,
+input[type="number"]::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+
+/* Unstyled checkboxes / radios / ranges → HOLS accent */
+input[type="checkbox"],
+input[type="radio"],
+input[type="range"] {
+  accent-color: var(--hols-chrome-accent);
+}
+
+/* Autofill — avoid blinding yellow/white OS paints */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+textarea:-webkit-autofill,
+textarea:-webkit-autofill:hover,
+textarea:-webkit-autofill:focus,
+select:-webkit-autofill,
+select:-webkit-autofill:hover,
+select:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--hols-chrome-autofill-text);
+  caret-color: var(--hols-chrome-autofill-text);
+  box-shadow: 0 0 0 1000px var(--hols-chrome-autofill-bg) inset;
+  transition: background-color 99999s ease-out;
+}
+
+/* Focus ring for plain form controls that lack a custom focus style */
+:where(
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not(.dashboard-field),
+  textarea:not(.dashboard-field),
+  select:not(.dashboard-field-select)
+):focus-visible {
+  outline: 2px solid var(--hols-chrome-focus-ring);
+  outline-offset: 2px;
+}
+
+.adviser-chat-composer textarea:focus-visible {
+  outline: none;
 }
 
 /* ── Brand typography utilities ─────────────────────────────── */
@@ -122,9 +359,7 @@ body {
   backdrop-filter: blur(18px) saturate(160%);
   -webkit-backdrop-filter: blur(18px) saturate(160%);
   border: 1px solid rgba(255, 255, 255, 0.45);
-  box-shadow:
-    0 4px 24px rgba(21, 39, 68, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.55);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
 }
 
 .glass-navbar {
@@ -212,7 +447,7 @@ body {
   --portal-page-bg: #f7f8fa;
   --portal-header-bg: #ffffff;
   --portal-surface: #ffffff;
-  --portal-border: rgba(21, 39, 68, 0.08);
+  --portal-border: rgba(21, 39, 68, 0.15);
   --portal-text: #152744;
   --portal-muted: rgba(21, 39, 68, 0.45);
   --portal-soft: #eef1f5;
@@ -233,7 +468,7 @@ body {
   --portal-page-bg: #0c1018;
   --portal-header-bg: #141a24;
   --portal-surface: #171d29;
-  --portal-border: rgba(255, 255, 255, 0.1);
+  --portal-border: rgba(255, 255, 255, 0.16);
   --portal-text: #e8eef6;
   --portal-muted: rgba(232, 238, 246, 0.5);
   --portal-soft: #121821;
@@ -655,23 +890,23 @@ body {
 
 .portal-guide-card {
   background: var(--portal-guide-bg);
-  border: 1px solid rgba(141, 195, 225, 0.45);
-  box-shadow: 0 12px 40px rgba(21, 39, 68, 0.06);
+  border: 1px solid rgba(141, 195, 225, 0.52);
+  box-shadow: none;
 }
 
 .portal-shell[data-theme="dark"] .portal-guide-card {
-  border-color: rgba(141, 195, 225, 0.16);
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.24);
+  border-color: rgba(141, 195, 225, 0.24);
+  box-shadow: none;
 }
 
 .profile-guide-body {
   background: #ffffff;
-  box-shadow: 0 2px 12px rgba(21, 39, 68, 0.05);
+  box-shadow: none;
 }
 
 .portal-shell[data-theme="dark"] .profile-guide-body {
   background: rgba(23, 29, 41, 0.92);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.22);
+  box-shadow: none;
 }
 
 /* ── Student dashboard "screen" (payment-style, theme-aware) ── */
@@ -682,19 +917,28 @@ body {
   --dash-dim: rgba(21, 39, 68, 0.34);
   --dash-accent: #6f7a1c;
   --dash-surface: rgba(21, 39, 68, 0.035);
-  --dash-surface-border: rgba(21, 39, 68, 0.08);
+  --dash-surface-border: rgba(21, 39, 68, 0.15);
   --dash-soft: rgba(21, 39, 68, 0.05);
-  --calc-stroke: #2f4a52;
-  --calc-stroke-soft: #3d5c64;
-  --calc-needle: #3a4a4e;
-  --calc-needle-hub: #6a767a;
-  --calc-metal-a: #6a7478;
-  --calc-metal-b: #d5dcdf;
-  --calc-metal-c: #4e585c;
-  --calc-rod-a: #e8ecee;
-  --calc-rod-b: #b4bec1;
-  --calc-rod-c: #8a9599;
-  --calc-barrel-edge: #2f4a52;
+  /* Calculator assets — tuned for light/white surfaces */
+  --calc-stroke: #1e3540;
+  --calc-stroke-soft: #2a4550;
+  --calc-needle: #243438;
+  --calc-needle-hub: #4a565a;
+  --calc-metal-a: #5a6468;
+  --calc-metal-b: #c8d0d4;
+  --calc-metal-c: #3e484c;
+  --calc-rod-a: #dce2e6;
+  --calc-rod-b: #9aa4a8;
+  --calc-rod-c: #6e787c;
+  --calc-barrel-edge: #1e3540;
+  --calc-barrel-fill-a: #f2f6f8;
+  --calc-barrel-fill-b: #c5d4d8;
+  --calc-barrel-fill-c: #7a949c;
+  --calc-glass-fill: rgba(120, 160, 180, 0.22);
+  --calc-glass-edge: rgba(30, 53, 64, 0.55);
+  --calc-glass-outline: rgba(21, 39, 68, 0.42);
+  --calc-glass-highlight: rgba(255, 255, 255, 0.85);
+  --calc-asset-shadow: rgba(21, 39, 68, 0.2);
   background: transparent;
   border: 0;
   box-shadow: none;
@@ -707,7 +951,7 @@ body {
   --dash-dim: rgba(244, 247, 251, 0.35);
   --dash-accent: #dde466;
   --dash-surface: rgba(255, 255, 255, 0.05);
-  --dash-surface-border: rgba(255, 255, 255, 0.09);
+  --dash-surface-border: rgba(255, 255, 255, 0.16);
   --dash-soft: rgba(255, 255, 255, 0.06);
   --calc-stroke: #c5d8dc;
   --calc-stroke-soft: #a8bdc2;
@@ -720,6 +964,14 @@ body {
   --calc-rod-b: #cfd7d9;
   --calc-rod-c: #aab5b8;
   --calc-barrel-edge: #b7ccd0;
+  --calc-barrel-fill-a: #ffffff;
+  --calc-barrel-fill-b: #d4e2e5;
+  --calc-barrel-fill-c: #9eb4b9;
+  --calc-glass-fill: rgba(141, 195, 225, 0.1);
+  --calc-glass-edge: rgba(255, 255, 255, 0.55);
+  --calc-glass-outline: rgba(200, 220, 230, 0.35);
+  --calc-glass-highlight: rgba(255, 255, 255, 0.75);
+  --calc-asset-shadow: rgba(0, 0, 0, 0.35);
 }
 
 /* Shared light brand screen gradient — portal + auth
@@ -776,38 +1028,30 @@ body {
   background: rgba(255, 255, 255, 0.28) !important;
   backdrop-filter: blur(22px) saturate(180%);
   -webkit-backdrop-filter: blur(22px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  box-shadow:
-    0 12px 40px rgba(20, 38, 68, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
 }
 
 .portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .dashboard-glass-card,
 .portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .dashboard-surface,
 .portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .dashboard-hero {
   background: rgba(20, 38, 68, 0.35) !important;
-  border-color: rgba(141, 195, 225, 0.2);
-  box-shadow:
-    0 12px 40px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  border-color: rgba(141, 195, 225, 0.28);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 /* Nested glass cards (calculator results / visual) need stronger surfaces so
    labels and numbers stay readable on the frosted brand backdrop. */
 .portal-content-area[data-backdrop="brand"] .dashboard-surface .dashboard-glass-card {
   background: rgba(255, 255, 255, 0.62) !important;
-  border-color: rgba(21, 39, 68, 0.1);
-  box-shadow:
-    0 8px 24px rgba(20, 38, 68, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  border-color: rgba(21, 39, 68, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
 }
 
 .portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .dashboard-surface .dashboard-glass-card {
   background: rgba(20, 38, 68, 0.55) !important;
-  border-color: rgba(141, 195, 225, 0.22);
-  box-shadow:
-    0 8px 24px rgba(0, 0, 0, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border-color: rgba(141, 195, 225, 0.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
 }
 
 .portal-content-area[data-backdrop="brand"] .dashboard-pill-soft {
@@ -867,7 +1111,7 @@ body {
   --cover-muted: rgba(21, 39, 68, 0.72);
   --cover-faint: rgba(21, 39, 68, 0.52);
   --cover-dim: rgba(21, 39, 68, 0.42);
-  --cover-border: rgba(21, 39, 68, 0.14);
+  --cover-border: rgba(21, 39, 68, 0.18);
   --cover-surface: rgba(21, 39, 68, 0.05);
   --cover-surface-hover: rgba(21, 39, 68, 0.09);
   --cover-accent: #6f7a1c;
@@ -876,9 +1120,7 @@ body {
     radial-gradient(120% 80% at 100% 0%, rgba(221, 228, 102, 0.3) 0%, transparent 55%),
     radial-gradient(90% 70% at 0% 100%, rgba(141, 195, 225, 0.22) 0%, transparent 52%),
     linear-gradient(155deg, #fcfbf4 0%, #f3f6fb 45%, #edf2fa 78%, #e8eef8 100%);
-  box-shadow:
-    0 18px 40px rgba(21, 39, 68, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
 .course-book-cover-glow {
@@ -923,7 +1165,7 @@ body {
     linear-gradient(180deg, rgba(255, 255, 255, 0.55) 0%, rgba(255, 255, 255, 0.28) 100%),
     var(--dash-surface);
   border: 1px solid var(--dash-surface-border);
-  box-shadow: 0 12px 28px rgba(21, 39, 68, 0.06);
+  box-shadow: none;
 }
 
 .course-book-toc-gutter {
@@ -941,7 +1183,7 @@ body {
   --cover-muted: rgba(255, 255, 255, 0.66);
   --cover-faint: rgba(255, 255, 255, 0.5);
   --cover-dim: rgba(255, 255, 255, 0.42);
-  --cover-border: rgba(255, 255, 255, 0.22);
+  --cover-border: rgba(255, 255, 255, 0.28);
   --cover-surface: rgba(255, 255, 255, 0.1);
   --cover-surface-hover: rgba(255, 255, 255, 0.16);
   --cover-accent: #dde466;
@@ -950,9 +1192,7 @@ body {
     radial-gradient(120% 80% at 100% 0%, rgba(221, 228, 102, 0.16) 0%, transparent 55%),
     radial-gradient(90% 70% at 0% 100%, rgba(141, 195, 225, 0.12) 0%, transparent 50%),
     linear-gradient(155deg, #101b30 0%, #0d1626 42%, #152744 78%, #1a2f55 100%);
-  box-shadow:
-    0 18px 40px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .portal-shell[data-theme="dark"] .course-book-cover-grain {
@@ -975,7 +1215,7 @@ body {
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.04) 0%, rgba(255, 255, 255, 0.02) 100%),
     var(--dash-surface);
-  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
+  box-shadow: none;
 }
 
 /* Open book — lessons workspace */
@@ -984,7 +1224,7 @@ body {
     linear-gradient(165deg, rgba(21, 39, 68, 0.06) 0%, rgba(21, 39, 68, 0.02) 100%),
     var(--dash-surface);
   border: 1px solid var(--dash-surface-border);
-  box-shadow: 0 14px 32px rgba(21, 39, 68, 0.07);
+  box-shadow: none;
 }
 
 .course-book-index-spine {
@@ -1006,9 +1246,7 @@ body {
     linear-gradient(180deg, rgba(255, 252, 245, 0.92) 0%, rgba(248, 250, 252, 0.95) 100%),
     var(--dash-surface);
   border: 1px solid var(--dash-surface-border);
-  box-shadow:
-    0 16px 36px rgba(21, 39, 68, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.65);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.65);
 }
 
 .course-book-page-grain {
@@ -1145,18 +1383,16 @@ body {
   background:
     linear-gradient(165deg, rgba(41, 60, 102, 0.5) 0%, rgba(23, 37, 66, 0.55) 100%),
     #13203a;
-  border-color: rgba(255, 255, 255, 0.1);
-  box-shadow: 0 16px 34px rgba(0, 0, 0, 0.32);
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: none;
 }
 
 .portal-shell[data-theme="dark"] .course-book-page {
   background:
     linear-gradient(180deg, rgba(30, 47, 85, 0.55) 0%, rgba(16, 27, 48, 0.65) 100%),
     #0f1a30;
-  border-color: rgba(255, 255, 255, 0.12);
-  box-shadow:
-    0 20px 44px rgba(0, 0, 0, 0.42),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.18);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .portal-shell[data-theme="dark"] .course-book-page-grain {
@@ -1175,11 +1411,1809 @@ body {
   );
 }
 
+/* ---- HOLS scientific volume — interactive overview cover ---- */
+
+.hols-volume-panel {
+  position: relative;
+  z-index: 1;
+  padding-block: 0.25rem;
+}
+
+.hols-volume {
+  --hols-prussian: #142644;
+  --hols-dusk: #3853a4;
+  --hols-lime: #dde466;
+  --hols-sky: #8dc3e1;
+  --hols-cover-deep: #05091c;
+  --hols-cover-mid: #0b1028;
+  --hols-cover-navy: #142644;
+  /* Pale paper (light) — dark theme overrides these on .hols-volume */
+  --hols-page-bg: #f8faf4;
+  --hols-page-muted: #edf1e8;
+  --hols-page-highlight: #fafcf6;
+  --hols-page-edge: #e8ece4;
+  --hols-page-ink: #142644;
+  --hols-page-ink-soft: rgba(20, 38, 68, 0.72);
+  --hols-page-ink-muted: rgba(20, 38, 68, 0.48);
+  --hols-page-ink-faint: rgba(20, 38, 68, 0.52);
+  --hols-page-rule: rgba(20, 38, 68, 0.1);
+  --hols-page-shadow: rgba(20, 38, 68, 0.12);
+  --hols-page-inset-shine: rgba(255, 255, 255, 0.75);
+  --hols-page-close-bg: rgba(255, 255, 255, 0.55);
+  --hols-page-close-border: rgba(20, 38, 68, 0.12);
+  --hols-page-scroll-thumb: rgba(20, 38, 68, 0.3);
+  --hols-page-scroll-track: rgba(237, 241, 232, 0.45);
+  --hols-page-topic-filter: brightness(0.55) saturate(1.2);
+  --hols-volume-height: clamp(28rem, 72vw, 36rem);
+  --hols-volume-open-duration: 1250ms;
+  --hols-volume-open-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  --hols-volume-hover-duration: 420ms;
+  --hols-volume-hover-ease: cubic-bezier(0.22, 1, 0.36, 1);
+  position: relative;
+  isolation: isolate;
+  width: 100%;
+  height: var(--hols-volume-height);
+  min-height: 28rem;
+  max-height: 36rem;
+  perspective: 1700px;
+  transform-style: preserve-3d;
+  transition: transform var(--hols-volume-open-duration) var(--hols-volume-open-ease);
+}
+
+/* Whole-book unit: cover + page stack share hover tilt; cover flip stays independent */
+.book-assembly {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transform: translateZ(0);
+  transition: transform var(--hols-volume-hover-duration) var(--hols-volume-hover-ease);
+}
+
+.hols-volume:not(.is-open) .book-assembly:has(.book-cover:hover) {
+  transform: translateZ(6px) rotateY(3.5deg) rotateX(-1.25deg);
+}
+
+@media (min-width: 640px) {
+  .hols-volume {
+    --hols-volume-height: clamp(30rem, 42vw, 36rem);
+    min-height: 30rem;
+  }
+}
+
+.hols-volume.is-open {
+  transform: translateX(-0.65rem);
+}
+
+@media (min-width: 640px) {
+  .hols-volume.is-open {
+    transform: translateX(-0.85rem);
+  }
+}
+
+/* Page stack behind cover */
+.book-stack {
+  position: absolute;
+  inset: 0.4rem 0 0.4rem 0.5rem;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.book-page-layer {
+  position: absolute;
+  inset: 0;
+  border-radius: 18px 12px 12px 18px;
+  background: linear-gradient(180deg, var(--hols-page-highlight) 0%, var(--hols-page-muted) 100%);
+  box-shadow:
+    0 3px 10px color-mix(in srgb, var(--hols-page-ink) 10%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--hols-page-ink) 7%, transparent);
+}
+
+.book-page-layer--1 {
+  transform: translate(4px, 2px) rotate(0.35deg);
+  z-index: 1;
+}
+
+.book-page-layer--2 {
+  transform: translate(8px, 5px) rotate(0.6deg);
+  opacity: 0.9;
+  z-index: 0;
+}
+
+.book-page-layer--3 {
+  transform: translate(12px, 8px) rotate(0.85deg);
+  opacity: 0.78;
+  z-index: -1;
+  box-shadow:
+    0 6px 16px rgba(5, 9, 28, 0.14),
+    inset 0 0 0 1px rgba(20, 38, 68, 0.05);
+}
+
+/* Interior page — visible when cover opens.
+   Solid background-color is the failsafe; gradient layers on top via vars.
+   Dark theme paints via [data-paper-theme="dark"] with literal navy (not vars). */
+.hols-volume .book-interior {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  border-radius: 20px 14px 14px 20px;
+  background-color: var(--hols-page-bg);
+  background-image: linear-gradient(
+    165deg,
+    var(--hols-page-highlight) 0%,
+    var(--hols-page-bg) 48%,
+    var(--hols-page-edge) 100%
+  );
+  box-shadow:
+    0 14px 36px var(--hols-page-shadow),
+    inset 0 1px 0 var(--hols-page-inset-shine);
+  color: var(--hols-page-ink);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translateZ(0);
+  transition:
+    opacity var(--hols-volume-open-duration) var(--hols-volume-open-ease),
+    visibility var(--hols-volume-open-duration) var(--hols-volume-open-ease);
+}
+
+.hols-volume.is-open .book-interior {
+  z-index: 4;
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+}
+
+.hols-volume .book-interior-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.025;
+  background-image: radial-gradient(
+    color-mix(in srgb, var(--hols-page-ink) 35%, transparent) 0.6px,
+    transparent 0.6px
+  );
+  background-size: 3px 3px;
+  pointer-events: none;
+}
+
+.hols-volume .book-interior-watermark {
+  position: absolute;
+  right: 0.85rem;
+  bottom: 0.75rem;
+  z-index: 0;
+  width: 5.5rem;
+  max-width: 32%;
+  height: auto;
+  max-height: 5.5rem;
+  object-fit: contain;
+  opacity: 0.04;
+  pointer-events: none;
+  user-select: none;
+}
+
+@media (min-width: 640px) {
+  .hols-volume .book-interior-watermark {
+    width: 6.5rem;
+    max-width: 28%;
+    max-height: 6.5rem;
+    opacity: 0.045;
+  }
+}
+
+.hols-volume .book-interior-content {
+  /* Paper-surface scrollbar tokens (aligned with global HOLS chrome) */
+  --hols-scroll-thumb: var(--hols-page-scroll-thumb);
+  --hols-scroll-thumb-hover: color-mix(
+    in srgb,
+    var(--hols-page-scroll-thumb) 100%,
+    var(--hols-page-ink) 20%
+  );
+  --hols-scroll-track: var(--hols-page-scroll-track);
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+  height: 100%;
+  padding: 1.15rem 1.25rem 1.35rem;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--hols-scroll-thumb) var(--hols-scroll-track);
+}
+
+.hols-volume .book-interior-content::-webkit-scrollbar {
+  width: 8px;
+}
+
+.hols-volume .book-interior-content::-webkit-scrollbar-track {
+  background: var(--hols-scroll-track);
+  border-radius: 999px;
+}
+
+.hols-volume .book-interior-content::-webkit-scrollbar-thumb {
+  background-color: var(--hols-scroll-thumb);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+.hols-volume .book-interior-content::-webkit-scrollbar-thumb:hover {
+  background-color: var(--hols-scroll-thumb-hover);
+}
+
+@media (min-width: 640px) {
+  .hols-volume .book-interior-content {
+    gap: 1rem;
+    padding: 1.45rem 1.65rem 1.65rem;
+  }
+}
+
+.hols-volume .book-interior-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.hols-volume .book-interior-eyebrow {
+  margin: 0;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--hols-page-ink-faint);
+}
+
+.hols-volume .book-interior-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 1.85rem;
+  height: 1.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--hols-page-close-border);
+  background: var(--hols-page-close-bg);
+  color: var(--hols-page-ink-soft);
+  cursor: pointer;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+.hols-volume .book-interior-close:hover {
+  background: rgba(221, 228, 102, 0.22);
+  border-color: rgba(221, 228, 102, 0.45);
+  color: var(--hols-page-ink);
+}
+
+.hols-volume .book-interior-title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  color: var(--hols-page-ink);
+}
+
+@media (min-width: 640px) {
+  .hols-volume .book-interior-title {
+    font-size: 1.35rem;
+  }
+}
+
+.hols-volume .book-interior-description {
+  margin: 0;
+  font-size: 0.8125rem;
+  line-height: 1.65;
+  color: var(--hols-page-ink-soft);
+}
+
+@media (min-width: 640px) {
+  .hols-volume .book-interior-description {
+    font-size: 0.875rem;
+    line-height: 1.7;
+  }
+}
+
+.hols-volume .book-interior-section-label {
+  margin: 0 0 0.45rem;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--hols-page-ink-muted);
+}
+
+.hols-volume .book-interior-topics {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: grid;
+  gap: 0.35rem;
+}
+
+.hols-volume .book-interior-topics li {
+  display: flex;
+  align-items: baseline;
+  gap: 0.55rem;
+  font-size: 0.8125rem;
+  line-height: 1.4;
+  color: var(--hols-page-ink-soft);
+}
+
+.hols-volume .book-interior-topic-index {
+  flex-shrink: 0;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--hols-lime);
+  filter: var(--hols-page-topic-filter);
+}
+
+.hols-volume .book-interior-metrics {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem 1.5rem;
+  margin: 0.15rem 0 0;
+  padding: 0.65rem 0 0;
+  border-top: 1px solid var(--hols-page-rule);
+}
+
+.hols-volume .book-interior-metrics div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.hols-volume .book-interior-metrics dt {
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--hols-page-ink-muted);
+}
+
+.hols-volume .book-interior-metrics dd {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--hols-page-ink);
+}
+
+/* Cover — 3D flip around left spine */
+.hols-volume .book-cover {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  transform-style: preserve-3d;
+  transform: translateZ(2px);
+  transform-origin: left center;
+  transition: transform var(--hols-volume-open-duration) var(--hols-volume-open-ease);
+  -webkit-tap-highlight-color: transparent;
+}
+
+.hols-volume:not(.is-open) .book-cover:hover .book-cover-foil-edge {
+  opacity: 1;
+}
+
+.hols-volume.is-open .book-cover {
+  /* Tuck behind the open page so a browser-painted cover back cannot mask it */
+  z-index: 1;
+  transform: translateZ(2px) rotateY(-152deg);
+  pointer-events: none;
+}
+
+.hols-volume .book-cover-face {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 20px 14px 14px 20px;
+  backface-visibility: hidden;
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.82),
+    inset 0 -1px 0 rgba(20, 38, 68, 0.08),
+    inset 4px 0 10px rgba(20, 38, 68, 0.06);
+  transition: box-shadow var(--hols-volume-open-duration) var(--hols-volume-open-ease);
+}
+
+.book-cover-base {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 95% 70% at 50% -8%, rgba(141, 195, 225, 0.24) 0%, transparent 58%),
+    radial-gradient(ellipse 72% 52% at 18% 12%, rgba(221, 228, 102, 0.16) 0%, transparent 55%),
+    radial-gradient(ellipse 68% 58% at 82% 92%, rgba(56, 83, 164, 0.1) 0%, transparent 62%),
+    radial-gradient(ellipse 55% 42% at 75% 22%, rgba(141, 195, 225, 0.12) 0%, transparent 52%),
+    linear-gradient(
+      168deg,
+      #fcfbf4 0%,
+      #f3f6fb 24%,
+      #e8eef8 52%,
+      #dceaf5 100%
+    );
+}
+
+.book-cover-spotlight {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background:
+    radial-gradient(ellipse 88% 62% at 42% 8%, rgba(255, 255, 255, 0.55) 0%, transparent 58%),
+    radial-gradient(ellipse 52% 38% at 68% 14%, rgba(141, 195, 225, 0.18) 0%, transparent 62%);
+  pointer-events: none;
+  mix-blend-mode: soft-light;
+}
+
+.book-cover-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    radial-gradient(96% 92% at 50% 44%, transparent 34%, rgba(20, 38, 68, 0.12) 100%),
+    linear-gradient(
+      108deg,
+      rgba(20, 38, 68, 0.14) 0%,
+      rgba(20, 38, 68, 0.06) 26%,
+      transparent 58%
+    ),
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      transparent 94%,
+      rgba(20, 38, 68, 0.06) 100%
+    ),
+    linear-gradient(180deg, rgba(20, 38, 68, 0.08) 0%, transparent 20%, transparent 76%, rgba(20, 38, 68, 0.06) 100%);
+  pointer-events: none;
+}
+
+.book-cover-ambient {
+  position: absolute;
+  inset: -8%;
+  z-index: 1;
+  background:
+    radial-gradient(ellipse 70% 55% at 28% 78%, rgba(221, 228, 102, 0.1) 0%, transparent 62%),
+    radial-gradient(ellipse 62% 48% at 78% 32%, rgba(141, 195, 225, 0.12) 0%, transparent 58%);
+  pointer-events: none;
+  animation: hols-volume-ambient-pulse 7s ease-in-out infinite;
+  mix-blend-mode: multiply;
+  opacity: 0.65;
+}
+
+@keyframes hols-volume-ambient-pulse {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.85;
+    transform: scale(1.015);
+  }
+}
+
+.book-cover-grain {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  opacity: 0.045;
+  background-image:
+    repeating-linear-gradient(
+      88deg,
+      rgba(20, 38, 68, 0.025) 0px,
+      transparent 1px,
+      transparent 2px,
+      rgba(20, 38, 68, 0.018) 3px
+    ),
+    repeating-linear-gradient(
+      -4deg,
+      rgba(255, 255, 255, 0.35) 0px,
+      transparent 1px,
+      transparent 4px,
+      rgba(20, 38, 68, 0.012) 5px
+    ),
+    radial-gradient(rgba(20, 38, 68, 0.08) 0.55px, transparent 0.55px),
+    radial-gradient(rgba(255, 255, 255, 0.45) 0.45px, transparent 0.45px);
+  background-size: 9px 9px, 14px 14px, 3px 3px, 4px 4px;
+  background-position: 0 0, 2px 1px, 0 0, 1px 1px;
+  pointer-events: none;
+  mix-blend-mode: multiply;
+}
+
+.hols-volume .book-cover-content {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  height: 100%;
+  padding: 1.25rem 1.35rem 1.1rem;
+}
+
+@media (min-width: 640px) {
+  .book-cover-content {
+    padding: 1.55rem 1.75rem 1.25rem;
+  }
+}
+
+.book-cover-header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  margin-bottom: 0.95rem;
+}
+
+@media (min-width: 640px) {
+  .book-cover-header {
+    gap: 0.85rem;
+    margin-bottom: 1.15rem;
+  }
+}
+
+.book-cover-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.4rem;
+}
+
+.book-cover-logo-wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  filter:
+    drop-shadow(0 1px 0 rgba(255, 255, 255, 0.65))
+    drop-shadow(0 2px 6px rgba(20, 38, 68, 0.1));
+}
+
+.hols-volume .book-cover-mark {
+  flex-shrink: 0;
+  width: 1.85rem;
+  height: 1.85rem;
+  max-width: 1.85rem;
+  max-height: 1.85rem;
+  object-fit: contain;
+  opacity: 0.96;
+}
+
+.hols-volume .book-cover-logo {
+  flex-shrink: 0;
+  width: auto;
+  max-width: 10.5rem;
+  height: 2rem;
+  max-height: 2rem;
+  object-fit: contain;
+  object-position: left center;
+  opacity: 0.96;
+}
+
+@media (min-width: 640px) {
+  .hols-volume .book-cover-mark {
+    width: 2.15rem;
+    height: 2.15rem;
+    max-width: 2.15rem;
+    max-height: 2.15rem;
+  }
+
+  .hols-volume .book-cover-logo {
+    max-width: 12rem;
+    height: 2.25rem;
+    max-height: 2.25rem;
+  }
+}
+
+.hols-volume .book-cover-logo--theme-dark,
+.hols-volume .book-cover-mark--theme-dark {
+  display: block;
+}
+
+.hols-volume .book-cover-logo--theme-light,
+.hols-volume .book-cover-mark--theme-light {
+  display: none;
+}
+
+.book-cover-publisher {
+  margin: 0;
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: rgba(20, 38, 68, 0.72);
+}
+
+.book-cover-mark-watermark {
+  position: absolute;
+  right: 6%;
+  bottom: 14%;
+  z-index: 1;
+  width: 5.5rem;
+  height: 5.5rem;
+  max-width: 38%;
+  max-height: 28%;
+  object-fit: contain;
+  opacity: 0.055;
+  pointer-events: none;
+  user-select: none;
+}
+
+@media (min-width: 640px) {
+  .book-cover-mark-watermark {
+    width: 6.75rem;
+    height: 6.75rem;
+    opacity: 0.06;
+  }
+}
+
+.book-cover-mark-watermark--theme-dark {
+  display: block;
+}
+
+.book-cover-mark-watermark--theme-light {
+  display: none;
+}
+
+.book-cover-volume-label {
+  margin: 0;
+  font-size: 0.625rem;
+  font-weight: 600;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+}
+
+.book-cover-volume-label-text {
+  display: inline-block;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid rgba(20, 38, 68, 0.14);
+  background: rgba(252, 251, 244, 0.92);
+  color: #142644;
+  text-shadow: none;
+  filter: none;
+}
+
+.book-cover-title {
+  margin: 0;
+  max-width: 92%;
+  font-size: clamp(1.65rem, 5.2vw, 2.65rem);
+  font-weight: 700;
+  line-height: 1.04;
+  letter-spacing: -0.015em;
+  text-wrap: balance;
+  color: #142644;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
+}
+
+@media (min-width: 640px) {
+  .book-cover-title {
+    font-size: clamp(2rem, 3.8vw, 3.625rem);
+    max-width: 88%;
+    letter-spacing: -0.02em;
+    line-height: 1.02;
+  }
+}
+
+.book-cover-rule {
+  width: 2.5rem;
+  height: 1.5px;
+  margin-top: 0.85rem;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(111, 122, 28, 0.85) 0%,
+    rgba(141, 195, 225, 0.55) 72%,
+    transparent 100%
+  );
+  box-shadow: 0 0 8px rgba(141, 195, 225, 0.16);
+}
+
+@media (min-width: 640px) {
+  .book-cover-rule {
+    width: 3rem;
+    margin-top: 1rem;
+  }
+}
+
+/* Full-bleed DNA/science cover artwork — matte hardcover treatment */
+.book-cover-art-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+/* Prussian navy wash — pulls blue/gold art toward HOLS brand */
+.book-cover-art-bg::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  background:
+    linear-gradient(
+      118deg,
+      rgba(252, 251, 244, 0.82) 0%,
+      rgba(232, 238, 248, 0.62) 18%,
+      rgba(220, 234, 245, 0.42) 38%,
+      rgba(232, 238, 248, 0.28) 62%,
+      rgba(248, 250, 252, 0.52) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.42) 0%,
+      transparent 24%,
+      transparent 72%,
+      rgba(20, 38, 68, 0.06) 100%
+    );
+  mix-blend-mode: soft-light;
+  pointer-events: none;
+}
+
+/* Soft cloth grain + matte sheen over artwork */
+.book-cover-art-bg::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  opacity: 0.32;
+  background-image:
+    repeating-conic-gradient(
+      from 0deg at 50% 50%,
+      rgba(20, 38, 68, 0.012) 0deg 2deg,
+      transparent 2deg 5deg
+    ),
+    repeating-linear-gradient(
+      92deg,
+      rgba(255, 255, 255, 0.35) 0px,
+      transparent 1px,
+      transparent 3px,
+      rgba(20, 38, 68, 0.012) 4px
+    );
+  background-size: 100% 100%, 7px 7px;
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+.hols-volume .book-cover-art-bg-image {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 42%;
+  opacity: 0.72;
+  filter: saturate(0.82) brightness(1.08) contrast(0.98);
+  transform: scale(1.02);
+  transform-origin: center center;
+  animation: hols-volume-cover-art-breathe 16s ease-in-out infinite;
+}
+
+@keyframes hols-volume-cover-art-breathe {
+  0%,
+  100% {
+    transform: scale(1.02);
+  }
+  50% {
+    transform: scale(1.035);
+  }
+}
+
+@media (min-width: 640px) {
+  .hols-volume .book-cover-art-bg-image {
+    object-position: center 40%;
+  }
+}
+
+/* Per-course Magnific / vial art on volume front cover */
+.hols-volume .book-cover-art-bg .lecture-cover-art {
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+}
+
+.hols-volume .book-cover-face:has(.lecture-cover-art--full-bleed) .book-cover-base,
+.hols-volume .book-cover-face:has(.lecture-cover-art--full-bleed) .book-cover-spotlight,
+.hols-volume .book-cover-face:has(.lecture-cover-art--full-bleed) .book-cover-ambient {
+  opacity: 0;
+}
+
+.hols-volume .book-cover-face:has(.lecture-cover-art--full-bleed) .book-cover-mark-watermark {
+  display: none;
+}
+
+.hols-volume .book-cover-face:has(.lecture-cover-art--full-bleed) .book-cover-art-bg::before {
+  background:
+    linear-gradient(
+      105deg,
+      rgba(252, 251, 244, 0.78) 0%,
+      rgba(252, 251, 244, 0.34) 26%,
+      rgba(252, 251, 244, 0.08) 42%,
+      transparent 54%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.28) 0%,
+      transparent 20%,
+      transparent 68%,
+      rgba(20, 38, 68, 0.14) 100%
+    );
+  mix-blend-mode: normal;
+  opacity: 1;
+}
+
+.hols-volume .book-cover-face:has(.lecture-cover-art--full-bleed) .book-cover-art-bg::after {
+  opacity: 0.14;
+}
+
+.hols-volume .book-cover-face:has(.lecture-cover-art--full-bleed) .book-cover-vignette {
+  background:
+    linear-gradient(
+      105deg,
+      rgba(252, 251, 244, 0.62) 0%,
+      rgba(252, 251, 244, 0.22) 30%,
+      transparent 52%
+    ),
+    radial-gradient(96% 92% at 50% 44%, transparent 42%, rgba(20, 38, 68, 0.1) 100%),
+    linear-gradient(
+      180deg,
+      transparent 62%,
+      rgba(20, 38, 68, 0.08) 100%
+    );
+}
+
+.portal-shell[data-theme="dark"] .hols-volume .book-cover-face:has(.lecture-cover-art--full-bleed) .book-cover-art-bg::before {
+  background:
+    linear-gradient(
+      105deg,
+      rgba(5, 9, 28, 0.88) 0%,
+      rgba(5, 9, 28, 0.52) 28%,
+      rgba(5, 9, 28, 0.12) 44%,
+      transparent 56%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(5, 9, 28, 0.55) 0%,
+      transparent 22%,
+      transparent 68%,
+      rgba(5, 9, 28, 0.62) 100%
+    );
+  mix-blend-mode: normal;
+}
+
+.portal-shell[data-theme="dark"] .hols-volume .book-cover-face:has(.lecture-cover-art--full-bleed) .book-cover-vignette {
+  background:
+    linear-gradient(
+      105deg,
+      rgba(5, 9, 28, 0.72) 0%,
+      rgba(5, 9, 28, 0.28) 32%,
+      transparent 54%
+    ),
+    radial-gradient(96% 92% at 50% 44%, transparent 36%, rgba(5, 9, 28, 0.22) 100%),
+    linear-gradient(
+      180deg,
+      transparent 58%,
+      rgba(5, 9, 28, 0.35) 100%
+    );
+}
+
+.hols-volume .book-cover-face:has(.lecture-cover-art--custom-photo[data-cover-layout="book"]) .book-cover-art-bg::before {
+  background:
+    linear-gradient(
+      105deg,
+      rgba(252, 251, 244, 0.82) 0%,
+      rgba(252, 251, 244, 0.38) 24%,
+      transparent 46%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.22) 0%,
+      transparent 22%,
+      transparent 72%,
+      rgba(20, 38, 68, 0.1) 100%
+    );
+}
+
+.portal-shell[data-theme="dark"]
+  .hols-volume
+  .book-cover-face:has(.lecture-cover-art--custom-photo[data-cover-layout="book"])
+  .book-cover-art-bg::before {
+  background:
+    linear-gradient(
+      105deg,
+      rgba(5, 9, 28, 0.9) 0%,
+      rgba(5, 9, 28, 0.48) 26%,
+      transparent 48%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(5, 9, 28, 0.5) 0%,
+      transparent 24%,
+      transparent 70%,
+      rgba(5, 9, 28, 0.58) 100%
+    );
+}
+
+.hols-volume:not(.is-open) .book-cover:hover .lecture-cover-art--full-bleed .lecture-cover-art-scene {
+  transform: scale(1.015);
+  transition: transform 680ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Premium foil shine — sweeps across closed cover */
+.book-cover-shine {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.book-cover-shine::before {
+  content: "";
+  position: absolute;
+  inset: -30% -55%;
+  background: linear-gradient(
+    118deg,
+    transparent 32%,
+    rgba(255, 255, 255, 0.025) 38%,
+    rgba(255, 255, 255, 0.07) 44%,
+    rgba(221, 228, 102, 0.11) 49.5%,
+    rgba(141, 195, 225, 0.08) 51.5%,
+    rgba(255, 255, 255, 0.06) 56%,
+    rgba(255, 255, 255, 0.02) 62%,
+    transparent 68%
+  );
+  transform: translateX(-130%) skewX(-12deg);
+  animation: hols-volume-shine-sweep 6s ease-in-out 1.2s infinite;
+  mix-blend-mode: soft-light;
+}
+
+.book-cover-shine::after {
+  content: "";
+  position: absolute;
+  inset: -20% -40%;
+  background: linear-gradient(
+    108deg,
+    transparent 40%,
+    rgba(141, 195, 225, 0.04) 48%,
+    rgba(255, 255, 255, 0.05) 50%,
+    rgba(141, 195, 225, 0.04) 52%,
+    transparent 58%
+  );
+  transform: translateX(-120%) skewX(-8deg);
+  animation: hols-volume-shine-sweep-secondary 6.5s ease-in-out 4.8s infinite;
+  mix-blend-mode: soft-light;
+}
+
+@keyframes hols-volume-shine-sweep {
+  0% {
+    transform: translateX(-130%) skewX(-12deg);
+    opacity: 0.85;
+  }
+  18% {
+    transform: translateX(130%) skewX(-12deg);
+    opacity: 1;
+  }
+  19%,
+  100% {
+    transform: translateX(130%) skewX(-12deg);
+    opacity: 0.85;
+  }
+}
+
+@keyframes hols-volume-shine-sweep-secondary {
+  0% {
+    transform: translateX(-120%) skewX(-8deg);
+    opacity: 0;
+  }
+  16% {
+    transform: translateX(120%) skewX(-8deg);
+    opacity: 0.7;
+  }
+  17%,
+  100% {
+    transform: translateX(120%) skewX(-8deg);
+    opacity: 0;
+  }
+}
+
+.book-cover-foil-edge {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0.55;
+  transition: opacity 450ms ease;
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.hols-volume:not(.is-open) .book-cover:hover .book-cover-shine::before {
+  animation-duration: 4.5s;
+}
+
+.book-cover-footer {
+  position: relative;
+  z-index: 3;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.4rem;
+  margin-top: auto;
+  padding-top: 0.65rem;
+  /* Clearance for absolute Open volume hint at bottom-right */
+  padding-right: 6.5rem;
+  max-width: 100%;
+  font-size: 0.625rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.book-cover-footer-brand {
+  color: rgba(20, 38, 68, 0.78);
+  font-weight: 700;
+  letter-spacing: 0.1em;
+}
+
+.book-cover-footer-meta {
+  color: rgba(20, 38, 68, 0.62);
+  letter-spacing: 0.05em;
+  text-transform: none;
+  font-variant-numeric: tabular-nums;
+}
+
+.book-cover-footer-dot {
+  color: rgba(111, 122, 28, 0.72);
+  font-size: 0.5rem;
+  line-height: 1;
+}
+
+/* Custom Magnific vial on volume front cover — left text column, vial stays right */
+.hols-volume .book-cover-face:has(.lecture-cover-art--custom-photo:not([data-cover-layout="book"])) .book-cover-art-bg::before {
+  background:
+    linear-gradient(
+      105deg,
+      rgba(252, 251, 244, 0.94) 0%,
+      rgba(252, 251, 244, 0.72) 18%,
+      rgba(252, 251, 244, 0.34) 34%,
+      rgba(252, 251, 244, 0.08) 46%,
+      transparent 58%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.34) 0%,
+      transparent 20%,
+      transparent 68%,
+      rgba(20, 38, 68, 0.16) 100%
+    );
+  mix-blend-mode: normal;
+  opacity: 1;
+}
+
+.hols-volume .book-cover-face:has(.lecture-cover-art--custom-photo:not([data-cover-layout="book"])) .book-cover-vignette {
+  background:
+    linear-gradient(
+      105deg,
+      rgba(252, 251, 244, 0.78) 0%,
+      rgba(252, 251, 244, 0.36) 28%,
+      transparent 50%
+    ),
+    radial-gradient(96% 92% at 50% 44%, transparent 42%, rgba(20, 38, 68, 0.1) 100%),
+    linear-gradient(
+      180deg,
+      transparent 62%,
+      rgba(20, 38, 68, 0.1) 100%
+    );
+}
+
+.book-cover-content--photo-vial {
+  padding-bottom: 1.45rem;
+}
+
+.book-cover-content--photo-vial .book-cover-header {
+  gap: 0.45rem;
+  margin-bottom: 0.55rem;
+  max-width: min(11.75rem, 48%);
+}
+
+.book-cover-content--photo-vial .book-cover-brand {
+  gap: 0.28rem;
+}
+
+.book-cover-content--photo-vial .book-cover-logo-wrap {
+  gap: 0.45rem;
+}
+
+.book-cover-content--photo-vial .book-cover-mark {
+  width: 1.45rem;
+  height: 1.45rem;
+  max-width: 1.45rem;
+  max-height: 1.45rem;
+}
+
+.book-cover-content--photo-vial .book-cover-logo {
+  max-width: 8.75rem;
+  height: 1.55rem;
+  max-height: 1.55rem;
+}
+
+.book-cover-content--photo-vial .book-cover-publisher {
+  font-size: 0.5rem;
+  letter-spacing: 0.24em;
+}
+
+.book-cover-content--photo-vial .book-cover-volume-label {
+  align-self: flex-start;
+}
+
+.book-cover-content--photo-vial .book-cover-title {
+  max-width: min(10.25rem, 46%);
+  font-size: clamp(1.35rem, 4vw, 2rem);
+  font-weight: 700;
+  line-height: 1.06;
+  letter-spacing: -0.035em;
+  text-wrap: balance;
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.82),
+    0 0 16px rgba(252, 252, 253, 0.72),
+    0 2px 14px rgba(245, 246, 248, 0.78);
+}
+
+.book-cover-content--photo-vial .book-cover-rule {
+  width: 2rem;
+  margin-top: 0.6rem;
+}
+
+.book-cover-content--photo-vial .book-cover-footer {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.18rem;
+  max-width: min(11.5rem, 48%);
+  margin-top: auto;
+  padding-top: 0.45rem;
+  padding-right: 0;
+  padding-bottom: 0.15rem;
+  font-size: 0.5625rem;
+  line-height: 1.35;
+}
+
+.book-cover-content--photo-vial .book-cover-footer-dot {
+  display: none;
+}
+
+@media (min-width: 640px) {
+  .book-cover-content--photo-vial {
+    padding-bottom: 1.55rem;
+  }
+
+  .book-cover-content--photo-vial .book-cover-header {
+    gap: 0.55rem;
+    margin-bottom: 0.65rem;
+    max-width: min(12.25rem, 46%);
+  }
+
+  .book-cover-content--photo-vial .book-cover-mark {
+    width: 1.65rem;
+    height: 1.65rem;
+    max-width: 1.65rem;
+    max-height: 1.65rem;
+  }
+
+  .book-cover-content--photo-vial .book-cover-logo {
+    max-width: 9.75rem;
+    height: 1.75rem;
+    max-height: 1.75rem;
+  }
+
+  .book-cover-content--photo-vial .book-cover-title {
+    max-width: min(11rem, 44%);
+    font-size: clamp(1.65rem, 3.1vw, 2.45rem);
+    line-height: 1.04;
+    letter-spacing: -0.04em;
+  }
+
+  .book-cover-content--photo-vial .book-cover-rule {
+    width: 2.25rem;
+    margin-top: 0.7rem;
+  }
+
+  .book-cover-content--photo-vial .book-cover-footer {
+    max-width: min(12rem, 46%);
+    padding-top: 0.55rem;
+    font-size: 0.5875rem;
+  }
+}
+
+.portal-shell[data-theme="dark"]
+  .hols-volume
+  .book-cover-face:has(.lecture-cover-art--custom-photo:not([data-cover-layout="book"]))
+  .book-cover-art-bg::before {
+  background:
+    linear-gradient(
+      105deg,
+      rgba(5, 9, 28, 0.94) 0%,
+      rgba(5, 9, 28, 0.78) 18%,
+      rgba(5, 9, 28, 0.42) 34%,
+      rgba(5, 9, 28, 0.1) 46%,
+      transparent 58%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(5, 9, 28, 0.58) 0%,
+      transparent 22%,
+      transparent 68%,
+      rgba(5, 9, 28, 0.68) 100%
+    );
+}
+
+.portal-shell[data-theme="dark"]
+  .hols-volume
+  .book-cover-face:has(.lecture-cover-art--custom-photo:not([data-cover-layout="book"]))
+  .book-cover-vignette {
+  background:
+    linear-gradient(
+      105deg,
+      rgba(5, 9, 28, 0.82) 0%,
+      rgba(5, 9, 28, 0.38) 30%,
+      transparent 52%
+    ),
+    radial-gradient(96% 92% at 50% 44%, transparent 36%, rgba(5, 9, 28, 0.22) 100%),
+    linear-gradient(
+      180deg,
+      transparent 58%,
+      rgba(5, 9, 28, 0.38) 100%
+    );
+}
+
+.portal-shell[data-theme="dark"] .book-cover-content--photo-vial .book-cover-title {
+  text-shadow:
+    0 1px 16px rgba(5, 9, 28, 0.85),
+    0 0 22px rgba(5, 9, 28, 0.55);
+}
+
+.hols-volume .book-cover-spine {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: 0.95rem;
+  border-radius: 20px 0 0 20px;
+  background:
+    linear-gradient(
+      90deg,
+      rgba(20, 38, 68, 0.12) 0%,
+      rgba(141, 195, 225, 0.28) 18%,
+      rgba(221, 228, 102, 0.22) 52%,
+      rgba(141, 195, 225, 0.18) 78%,
+      rgba(20, 38, 68, 0.08) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(221, 228, 102, 0.35) 0%,
+      rgba(141, 195, 225, 0.22) 48%,
+      rgba(56, 83, 164, 0.14) 100%
+    );
+  background-blend-mode: overlay, normal;
+  box-shadow:
+    inset -1px 0 3px rgba(20, 38, 68, 0.08),
+    inset 1px 0 0 rgba(255, 255, 255, 0.55);
+  transform: translateZ(-3px);
+  pointer-events: none;
+}
+
+@media (min-width: 640px) {
+  .book-cover-spine {
+    width: 1.05rem;
+  }
+}
+
+.book-cover-edge {
+  position: absolute;
+  inset-block: 0.75rem;
+  right: 0;
+  width: 0.38rem;
+  border-radius: 1px 0 0 1px;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(20, 38, 68, 0.16) 0px,
+    rgba(20, 38, 68, 0.05) 1.5px,
+    rgba(20, 38, 68, 0.12) 3px,
+    rgba(20, 38, 68, 0.04) 4.5px
+  );
+  opacity: 0.62;
+  box-shadow: -1px 0 3px rgba(20, 38, 68, 0.08);
+  pointer-events: none;
+}
+
+.book-open-hint {
+  position: absolute;
+  right: 0.95rem;
+  bottom: 0.85rem;
+  z-index: 4;
+  padding: 0.28rem 0.62rem;
+  border-radius: 999px;
+  border: 1.5px solid #DDE466;
+  background: #FCFBF4;
+  box-shadow: 0 1px 3px rgba(20, 38, 68, 0.12);
+  font-size: 0.5625rem;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #142644;
+  pointer-events: none;
+  transition: opacity 0.25s ease, border-color 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+}
+
+.hols-volume:not(.is-open) .book-cover:hover .book-open-hint {
+  border-color: #DDE466;
+  background: #DDE466;
+  color: #142644;
+  box-shadow: 0 2px 6px rgba(20, 38, 68, 0.16);
+}
+
+.hols-volume.is-open .book-open-hint {
+  opacity: 0;
+}
+
+/* HolsVolume closed cover — dark portal theme (premium matte hardback) */
+.portal-shell[data-theme="dark"] .hols-volume .book-cover-face {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.05),
+    inset 0 -1px 0 rgba(5, 9, 28, 0.26),
+    inset 4px 0 10px rgba(5, 9, 28, 0.18);
+}
+
+.portal-shell[data-theme="dark"] .book-cover-base {
+  background:
+    radial-gradient(ellipse 95% 70% at 50% -8%, rgba(141, 195, 225, 0.14) 0%, transparent 58%),
+    radial-gradient(ellipse 72% 52% at 18% 12%, rgba(141, 195, 225, 0.11) 0%, transparent 55%),
+    radial-gradient(ellipse 68% 58% at 82% 92%, rgba(56, 83, 164, 0.28) 0%, transparent 62%),
+    radial-gradient(ellipse 55% 42% at 75% 22%, rgba(56, 83, 164, 0.16) 0%, transparent 52%),
+    linear-gradient(
+      168deg,
+      #1a3158 0%,
+      var(--hols-cover-navy) 18%,
+      var(--hols-cover-mid) 48%,
+      var(--hols-cover-deep) 100%
+    );
+}
+
+.portal-shell[data-theme="dark"] .book-cover-spotlight {
+  background:
+    radial-gradient(ellipse 88% 62% at 42% 8%, rgba(255, 255, 255, 0.09) 0%, transparent 58%),
+    radial-gradient(ellipse 52% 38% at 68% 14%, rgba(141, 195, 225, 0.07) 0%, transparent 62%);
+}
+
+.portal-shell[data-theme="dark"] .book-cover-vignette {
+  background:
+    radial-gradient(96% 92% at 50% 44%, transparent 24%, rgba(5, 9, 28, 0.58) 100%),
+    linear-gradient(
+      108deg,
+      rgba(5, 9, 28, 0.78) 0%,
+      rgba(5, 9, 28, 0.42) 26%,
+      transparent 58%
+    ),
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      transparent 94%,
+      rgba(5, 9, 28, 0.18) 100%
+    ),
+    linear-gradient(180deg, rgba(5, 9, 28, 0.52) 0%, transparent 20%, transparent 76%, rgba(5, 9, 28, 0.38) 100%);
+}
+
+.portal-shell[data-theme="dark"] .book-cover-ambient {
+  background:
+    radial-gradient(ellipse 70% 55% at 28% 78%, rgba(221, 228, 102, 0.07) 0%, transparent 62%),
+    radial-gradient(ellipse 62% 48% at 78% 32%, rgba(141, 195, 225, 0.08) 0%, transparent 58%);
+  mix-blend-mode: screen;
+  opacity: 1;
+}
+
+.portal-shell[data-theme="dark"] .book-cover-grain {
+  opacity: 0.058;
+  background-image:
+    repeating-linear-gradient(
+      88deg,
+      rgba(255, 255, 255, 0.035) 0px,
+      transparent 1px,
+      transparent 2px,
+      rgba(5, 9, 28, 0.022) 3px
+    ),
+    repeating-linear-gradient(
+      -4deg,
+      rgba(255, 255, 255, 0.018) 0px,
+      transparent 1px,
+      transparent 4px,
+      rgba(5, 9, 28, 0.015) 5px
+    ),
+    radial-gradient(rgba(255, 255, 255, 0.55) 0.55px, transparent 0.55px),
+    radial-gradient(rgba(5, 9, 28, 0.35) 0.45px, transparent 0.45px);
+  mix-blend-mode: overlay;
+}
+
+.portal-shell[data-theme="dark"] .book-cover-logo-wrap {
+  filter:
+    drop-shadow(0 1px 0 rgba(255, 255, 255, 0.12))
+    drop-shadow(0 2px 8px rgba(5, 9, 28, 0.35));
+}
+
+.portal-shell[data-theme="dark"] .hols-volume .book-cover-logo--theme-dark,
+.portal-shell[data-theme="dark"] .hols-volume .book-cover-mark--theme-dark {
+  display: none;
+}
+
+.portal-shell[data-theme="dark"] .hols-volume .book-cover-logo--theme-light,
+.portal-shell[data-theme="dark"] .hols-volume .book-cover-mark--theme-light {
+  display: block;
+}
+
+.portal-shell[data-theme="dark"] .book-cover-publisher {
+  color: rgba(221, 228, 102, 0.78);
+  text-shadow: 0 1px 8px rgba(5, 9, 28, 0.45);
+}
+
+.portal-shell[data-theme="dark"] .book-cover-mark-watermark--theme-dark {
+  display: none;
+}
+
+.portal-shell[data-theme="dark"] .book-cover-mark-watermark--theme-light {
+  display: block;
+  opacity: 0.08;
+}
+
+.portal-shell[data-theme="dark"] .book-cover-volume-label-text {
+  border-color: rgba(221, 228, 102, 0.28);
+  background: rgba(5, 9, 28, 0.42);
+  color: rgba(221, 228, 102, 0.95);
+  filter: drop-shadow(0 1px 2px rgba(5, 9, 28, 0.45));
+}
+
+.portal-shell[data-theme="dark"] .book-cover-title {
+  color: rgba(255, 255, 255, 0.98);
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.08),
+    0 2px 12px rgba(5, 9, 28, 0.42),
+    0 0 1px rgba(141, 195, 225, 0.15);
+}
+
+.portal-shell[data-theme="dark"] .book-cover-rule {
+  background: linear-gradient(
+    90deg,
+    rgba(221, 228, 102, 0.92) 0%,
+    rgba(221, 228, 102, 0.55) 72%,
+    transparent 100%
+  );
+  box-shadow: 0 0 12px rgba(221, 228, 102, 0.22);
+}
+
+.portal-shell[data-theme="dark"] .book-cover-art-bg::before {
+  background:
+    linear-gradient(
+      118deg,
+      rgba(5, 9, 28, 0.9) 0%,
+      rgba(5, 9, 28, 0.74) 18%,
+      rgba(20, 38, 68, 0.62) 38%,
+      rgba(11, 16, 40, 0.5) 62%,
+      rgba(5, 9, 28, 0.68) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(5, 9, 28, 0.58) 0%,
+      transparent 24%,
+      transparent 72%,
+      rgba(5, 9, 28, 0.48) 100%
+    );
+  mix-blend-mode: multiply;
+}
+
+.portal-shell[data-theme="dark"] .book-cover-art-bg::after {
+  opacity: 0.48;
+  background-image:
+    repeating-conic-gradient(
+      from 0deg at 50% 50%,
+      rgba(255, 255, 255, 0.014) 0deg 2deg,
+      transparent 2deg 5deg
+    ),
+    repeating-linear-gradient(
+      92deg,
+      rgba(255, 255, 255, 0.018) 0px,
+      transparent 1px,
+      transparent 3px,
+      rgba(5, 9, 28, 0.022) 4px
+    );
+  mix-blend-mode: soft-light;
+}
+
+.portal-shell[data-theme="dark"] .hols-volume .book-cover-art-bg-image {
+  opacity: 0.94;
+  filter: saturate(0.68) brightness(0.76) contrast(1.1);
+}
+
+.portal-shell[data-theme="dark"] .book-cover-footer-brand {
+  color: rgba(255, 255, 255, 0.52);
+}
+
+.portal-shell[data-theme="dark"] .book-cover-footer-meta {
+  color: rgba(255, 255, 255, 0.42);
+}
+
+.portal-shell[data-theme="dark"] .book-cover-footer-dot {
+  color: rgba(221, 228, 102, 0.5);
+}
+
+.portal-shell[data-theme="dark"] .hols-volume .book-cover-spine {
+  background:
+    linear-gradient(
+      90deg,
+      rgba(5, 9, 28, 0.55) 0%,
+      rgba(20, 38, 68, 0.85) 18%,
+      rgba(56, 83, 164, 0.42) 52%,
+      rgba(141, 195, 225, 0.18) 78%,
+      rgba(221, 228, 102, 0.22) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(221, 228, 102, 0.28) 0%,
+      rgba(141, 195, 225, 0.16) 48%,
+      rgba(56, 83, 164, 0.32) 100%
+    );
+  box-shadow:
+    inset -1px 0 3px rgba(5, 9, 28, 0.22),
+    inset 1px 0 0 rgba(255, 255, 255, 0.08);
+}
+
+.portal-shell[data-theme="dark"] .book-cover-edge {
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.16) 0px,
+    rgba(255, 255, 255, 0.04) 1.5px,
+    rgba(255, 255, 255, 0.12) 3px,
+    rgba(255, 255, 255, 0.03) 4.5px
+  );
+  opacity: 0.58;
+  box-shadow: -1px 0 3px rgba(5, 9, 28, 0.25);
+}
+
+.portal-shell[data-theme="dark"] .book-open-hint {
+  border-color: rgba(221, 228, 102, 0.55);
+  background: rgba(5, 9, 28, 0.82);
+  color: rgba(221, 228, 102, 0.95);
+  box-shadow: 0 1px 4px rgba(5, 9, 28, 0.35);
+}
+
+.portal-shell[data-theme="dark"] .hols-volume:not(.is-open) .book-cover:hover .book-open-hint {
+  border-color: #DDE466;
+  background: #DDE466;
+  color: #142644;
+  box-shadow: 0 2px 6px rgba(5, 9, 28, 0.28);
+}
+
+.portal-shell[data-theme="dark"] .hols-volume:not(.is-open) .book-cover:hover .book-cover-face {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.07),
+    inset 0 -1px 0 rgba(5, 9, 28, 0.3),
+    inset 4px 0 12px rgba(5, 9, 28, 0.22);
+}
+
+.hols-volume:not(.is-open) .book-cover:hover .book-cover-face {
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.92),
+    inset 0 -1px 0 rgba(20, 38, 68, 0.1),
+    inset 4px 0 12px rgba(20, 38, 68, 0.08);
+}
+
+/* HolsVolume pages — dark paper (navy, not pale cream).
+   Primary: [data-paper-theme] on .hols-volume itself (set in JSX from portal theme).
+   Fallbacks: portal-shell / html bootstrap attrs if the element attr is missing.
+   Painted surfaces use LITERAL navy colors so inherited light --hols-page-* cannot win. */
+.hols-volume[data-paper-theme="dark"],
+.portal-shell[data-theme="dark"] .hols-volume,
+html[data-portal-theme="dark"] .hols-volume {
+  --hols-page-bg: #162338;
+  --hols-page-muted: #101a2e;
+  --hols-page-highlight: #1c2d4a;
+  --hols-page-edge: #0f1a2e;
+  --hols-page-ink: rgba(248, 250, 244, 0.94);
+  --hols-page-ink-soft: rgba(232, 238, 244, 0.78);
+  --hols-page-ink-muted: rgba(191, 208, 228, 0.55);
+  --hols-page-ink-faint: rgba(191, 208, 228, 0.62);
+  --hols-page-rule: rgba(141, 195, 225, 0.14);
+  --hols-page-shadow: rgba(5, 9, 28, 0.45);
+  --hols-page-inset-shine: rgba(255, 255, 255, 0.06);
+  --hols-page-close-bg: rgba(5, 9, 28, 0.42);
+  --hols-page-close-border: rgba(141, 195, 225, 0.18);
+  --hols-page-scroll-thumb: rgba(141, 195, 225, 0.35);
+  --hols-page-scroll-track: rgba(16, 26, 46, 0.55);
+  --hols-page-topic-filter: brightness(0.95) saturate(1.05);
+}
+
+.hols-volume[data-paper-theme="dark"] .book-page-layer,
+.portal-shell[data-theme="dark"] .hols-volume .book-page-layer,
+html[data-portal-theme="dark"] .hols-volume .book-page-layer {
+  background-color: #162338;
+  background-image: linear-gradient(180deg, #1c2d4a 0%, #162338 48%, #101a2e 100%);
+  box-shadow:
+    0 3px 12px rgba(5, 9, 28, 0.35),
+    inset 0 0 0 1px rgba(141, 195, 225, 0.08);
+}
+
+.hols-volume[data-paper-theme="dark"] .book-page-layer--3,
+.portal-shell[data-theme="dark"] .hols-volume .book-page-layer--3,
+html[data-portal-theme="dark"] .hols-volume .book-page-layer--3 {
+  box-shadow:
+    0 6px 18px rgba(5, 9, 28, 0.42),
+    inset 0 0 0 1px rgba(141, 195, 225, 0.05);
+}
+
+.hols-volume[data-paper-theme="dark"] .book-interior,
+.portal-shell[data-theme="dark"] .hols-volume .book-interior,
+html[data-portal-theme="dark"] .hols-volume .book-interior {
+  background-color: #162338 !important;
+  background-image: linear-gradient(165deg, #1c2d4a 0%, #162338 48%, #101a2e 100%) !important;
+  color: rgba(248, 250, 244, 0.94);
+  box-shadow:
+    0 14px 36px rgba(5, 9, 28, 0.45),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+.hols-volume[data-paper-theme="dark"] .book-interior-grain,
+.portal-shell[data-theme="dark"] .hols-volume .book-interior-grain,
+html[data-portal-theme="dark"] .hols-volume .book-interior-grain {
+  opacity: 0.045;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.22) 0.55px, transparent 0.55px);
+}
+
+.hols-volume[data-paper-theme="dark"] .book-interior-watermark,
+.portal-shell[data-theme="dark"] .hols-volume .book-interior-watermark,
+html[data-portal-theme="dark"] .hols-volume .book-interior-watermark {
+  opacity: 0.07;
+  filter: brightness(1.35) saturate(0.85);
+}
+
+.hols-volume[data-paper-theme="dark"] .book-interior-eyebrow,
+.hols-volume[data-paper-theme="dark"] .book-interior-section-label,
+.hols-volume[data-paper-theme="dark"] .book-interior-metrics dt,
+.portal-shell[data-theme="dark"] .hols-volume .book-interior-eyebrow,
+.portal-shell[data-theme="dark"] .hols-volume .book-interior-section-label,
+.portal-shell[data-theme="dark"] .hols-volume .book-interior-metrics dt {
+  color: rgba(191, 208, 228, 0.58);
+}
+
+.hols-volume[data-paper-theme="dark"] .book-interior-title,
+.hols-volume[data-paper-theme="dark"] .book-interior-metrics dd,
+.portal-shell[data-theme="dark"] .hols-volume .book-interior-title,
+.portal-shell[data-theme="dark"] .hols-volume .book-interior-metrics dd {
+  color: rgba(248, 250, 244, 0.94);
+}
+
+.hols-volume[data-paper-theme="dark"] .book-interior-description,
+.hols-volume[data-paper-theme="dark"] .book-interior-topics li,
+.portal-shell[data-theme="dark"] .hols-volume .book-interior-description,
+.portal-shell[data-theme="dark"] .hols-volume .book-interior-topics li {
+  color: rgba(232, 238, 244, 0.78);
+}
+
+.hols-volume[data-paper-theme="dark"] .book-interior-topic-index,
+.portal-shell[data-theme="dark"] .hols-volume .book-interior-topic-index {
+  color: #dde466;
+  filter: brightness(0.95) saturate(1.05);
+}
+
+.hols-volume[data-paper-theme="dark"] .book-interior-metrics,
+.portal-shell[data-theme="dark"] .hols-volume .book-interior-metrics {
+  border-top-color: rgba(141, 195, 225, 0.14);
+}
+
+.hols-volume[data-paper-theme="dark"] .book-interior-close,
+.portal-shell[data-theme="dark"] .hols-volume .book-interior-close {
+  background: rgba(5, 9, 28, 0.42);
+  border-color: rgba(141, 195, 225, 0.18);
+  color: rgba(232, 238, 244, 0.78);
+}
+
+.hols-volume[data-paper-theme="dark"] .book-interior-close:hover,
+.portal-shell[data-theme="dark"] .hols-volume .book-interior-close:hover,
+html[data-portal-theme="dark"] .hols-volume .book-interior-close:hover {
+  background: rgba(221, 228, 102, 0.16);
+  border-color: rgba(221, 228, 102, 0.4);
+  color: #dde466;
+}
+
+.hols-volume[data-paper-theme="dark"] .book-interior-content,
+.portal-shell[data-theme="dark"] .hols-volume .book-interior-content {
+  scrollbar-color: rgba(141, 195, 225, 0.35) rgba(16, 26, 46, 0.55);
+}
+
+.hols-volume[data-paper-theme="dark"] .book-interior-content::-webkit-scrollbar-track,
+.portal-shell[data-theme="dark"] .hols-volume .book-interior-content::-webkit-scrollbar-track {
+  background: rgba(16, 26, 46, 0.55);
+}
+
+.hols-volume[data-paper-theme="dark"] .book-interior-content::-webkit-scrollbar-thumb,
+.portal-shell[data-theme="dark"] .hols-volume .book-interior-content::-webkit-scrollbar-thumb {
+  background-color: rgba(141, 195, 225, 0.35);
+}
+
+.hols-volume[data-paper-theme="dark"] .book-interior-content::-webkit-scrollbar-thumb:hover,
+.portal-shell[data-theme="dark"] .hols-volume .book-interior-content::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(141, 195, 225, 0.5);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hols-volume,
+  .book-assembly,
+  .book-cover,
+  .book-interior {
+    transition: opacity 200ms ease !important;
+    transform: none !important;
+    filter: none !important;
+  }
+
+  .hols-volume.is-open {
+    transform: none !important;
+  }
+
+  .hols-volume:not(.is-open) .book-assembly:has(.book-cover:hover) {
+    transform: none !important;
+  }
+
+  .hols-volume:not(.is-open) .book-cover:hover .book-cover-face {
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, 0.08),
+      inset 0 -1px 0 rgba(5, 9, 28, 0.18);
+  }
+
+  .hols-volume.is-open .book-cover {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .hols-volume:not(.is-open) .book-cover {
+    opacity: 1;
+  }
+
+  .hols-volume.is-open .book-interior {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .book-cover-shine::before,
+  .book-cover-shine::after,
+  .book-cover-ambient,
+  .hols-volume .book-cover-art-bg-image {
+    animation: none !important;
+  }
+
+  .book-cover-shine::before,
+  .book-cover-shine::after {
+    opacity: 0;
+  }
+
+  .book-cover-ambient {
+    opacity: 0.55;
+  }
+}
+
 /* ---- Enhanced interactions: overview cover + lesson reading ---- */
 
 /* Interactive cover: 3D tilt shell + cursor-tracking sheen + slow shine sweep */
 .course-book-cover-3d {
   transform-style: preserve-3d;
+  transform-origin: center center;
   will-change: transform;
   transition: box-shadow 0.4s ease;
 }
@@ -1191,9 +3225,7 @@ body {
   }
 
   .course-book-cover-3d:hover {
-    box-shadow:
-      0 18px 40px rgba(21, 39, 68, 0.12),
-      inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
   }
 
   .course-book-cover-3d:hover .course-book-cover-sheen {
@@ -1202,9 +3234,11 @@ body {
 }
 
 .course-book-cover-3d:hover {
-  box-shadow:
-    0 26px 60px rgba(21, 39, 68, 0.32),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
+}
+
+.course-book-cover-visual.course-book-cover-3d:hover {
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.06);
 }
 
 .course-book-cover-sheen {
@@ -1436,9 +3470,26 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .course-book-cover-shine {
-    animation: none;
+  .course-book-cover-shine,
+  .course-book-cover-atmosphere-sweep,
+  .course-book-cover-atmosphere-glow,
+  .course-book-cover-particle,
+  .course-book-cover-vial-glow {
+    animation: none !important;
+  }
+
+  .course-book-cover-atmosphere-sweep {
     opacity: 0;
+  }
+
+  .course-book-cover-atmosphere-glow {
+    opacity: 0.85;
+    transform: none;
+  }
+
+  .course-book-cover-vial-glow {
+    opacity: 0.9;
+    transform: scale(1.14);
   }
 }
 
@@ -1489,7 +3540,7 @@ body {
   background:
     radial-gradient(90% 120% at 92% 0%, rgba(221, 228, 102, 0.5), transparent 55%),
     linear-gradient(150deg, #ffffff 0%, #f6f8ef 70%);
-  border: 1px solid rgba(21, 39, 68, 0.08);
+  border: 1px solid rgba(21, 39, 68, 0.15);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
@@ -1497,7 +3548,7 @@ body {
   background:
     radial-gradient(90% 120% at 92% 0%, rgba(221, 228, 102, 0.28), transparent 55%),
     linear-gradient(150deg, #1b2230 0%, #12161f 70%);
-  border-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
 }
 
@@ -1540,18 +3591,16 @@ body {
   background:
     radial-gradient(120% 120% at 85% 15%, rgba(255, 255, 255, 0.35), transparent 55%),
     linear-gradient(140deg, #e8ef7a 0%, #dde466 45%, #c7d04c 100%);
-  box-shadow: 0 12px 30px rgba(221, 228, 102, 0.18);
+  box-shadow: none;
 }
 
 /* Membership plan cards */
 .membership-plan-card {
-  border: 1px solid rgba(255, 255, 255, 0.55);
+  border: 1px solid rgba(255, 255, 255, 0.62);
   background: rgba(255, 255, 255, 0.34);
   backdrop-filter: blur(22px) saturate(180%);
   -webkit-backdrop-filter: blur(22px) saturate(180%);
-  box-shadow:
-    0 12px 32px rgba(20, 38, 68, 0.08),
-    inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
   transition:
     border-color 0.2s ease,
     box-shadow 0.2s ease,
@@ -1559,11 +3608,9 @@ body {
 }
 
 .portal-shell[data-theme="dark"] .membership-plan-card {
-  border-color: rgba(141, 195, 225, 0.18);
+  border-color: rgba(141, 195, 225, 0.26);
   background: rgba(20, 38, 68, 0.38);
-  box-shadow:
-    0 12px 32px rgba(0, 0, 0, 0.28),
-    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .membership-plan-card--favourite {
@@ -1572,7 +3619,6 @@ body {
     radial-gradient(120% 90% at 100% 0%, rgba(221, 228, 102, 0.42), transparent 52%),
     rgba(255, 255, 255, 0.42);
   box-shadow:
-    0 18px 40px rgba(21, 39, 68, 0.12),
     0 0 0 1px rgba(221, 228, 102, 0.25),
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
@@ -1589,7 +3635,6 @@ body {
     radial-gradient(120% 90% at 100% 0%, rgba(221, 228, 102, 0.22), transparent 52%),
     rgba(20, 38, 68, 0.5);
   box-shadow:
-    0 18px 40px rgba(0, 0, 0, 0.35),
     0 0 0 1px rgba(221, 228, 102, 0.18),
     inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
@@ -1724,11 +3769,11 @@ body {
   --dash-dim: rgba(21, 39, 68, 0.34);
   --dash-accent: #6f7a1c;
   --dash-surface: rgba(21, 39, 68, 0.035);
-  --dash-surface-border: rgba(21, 39, 68, 0.08);
+  --dash-surface-border: rgba(21, 39, 68, 0.15);
   --dash-soft: rgba(21, 39, 68, 0.05);
   border: 1px solid var(--dash-surface-border);
   background: #ffffff;
-  box-shadow: 0 24px 64px rgba(21, 39, 68, 0.28);
+  box-shadow: none;
   color: var(--dash-text);
 }
 
@@ -1747,11 +3792,11 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel {
   --dash-dim: rgba(244, 247, 251, 0.35);
   --dash-accent: #dde466;
   --dash-surface: rgba(255, 255, 255, 0.05);
-  --dash-surface-border: rgba(255, 255, 255, 0.09);
+  --dash-surface-border: rgba(255, 255, 255, 0.16);
   --dash-soft: rgba(255, 255, 255, 0.06);
-  border-color: rgba(141, 195, 225, 0.22);
+  border-color: rgba(141, 195, 225, 0.28);
   background: #142644;
-  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.55);
+  box-shadow: none;
   color: var(--dash-text);
 }
 
@@ -1838,10 +3883,27 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
 }
 
 /* Peptide Adviser chat — plain sidebar-matched colors (no brand gradient) */
+.portal-shell:has(.adviser-chat-screen) {
+  height: 100svh;
+  max-height: 100svh;
+  overflow: hidden;
+}
+
+.portal-shell:has(.adviser-chat-screen) > .flex {
+  height: 100%;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .portal-shell:has(.adviser-chat-screen),
 .portal-shell:has(.adviser-chat-screen) .portal-content-area {
   /* Solid form of light --sidebar-bg (rgba(236, 244, 250, …)) */
   background: #ecf4fa !important;
+}
+
+.portal-shell:has(.adviser-chat-screen) .portal-content-area {
+  min-height: 0;
+  overflow: hidden;
 }
 
 .portal-shell[data-theme="dark"]:has(.adviser-chat-screen),
@@ -1851,89 +3913,345 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
 }
 
 .portal-shell:has(.adviser-chat-screen) .portal-content-area > main {
-  padding-top: 0 !important;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  /* Full-bleed chat: header / transcript / composer own their insets */
+  padding: 0 !important;
   background: transparent !important;
 }
 
-.adviser-chat-header {
-  padding:
-    max(0.75rem, env(safe-area-inset-top))
-    0.75rem
-    0.75rem;
+/*
+ * Adviser chat milky frosted-glass strip
+ * ─────────────────────────────────────
+ * Header is a sibling ABOVE the transcript scrollport so the scrollbar never
+ * runs through the bar. Frost samples the page backdrop (milky glass); messages
+ * scroll only in .adviser-chat-transcript below.
+ *
+ * Structure:
+ *   .adviser-chat-screen
+ *     .adviser-chat-header-strip          → full-bleed top bar (no side radius)
+ *       .adviser-chat-header-frost
+ *       .adviser-chat-header-chrome
+ *     .adviser-chat-body
+ *       .adviser-chat-transcript (overflow-y)  → scrollbar starts below header
+ *       .adviser-chat-composer-bar
+ */
+.adviser-chat-screen {
+  --adviser-chat-header-offset: 4.5rem; /* ~72px chrome row; safe-area added via padding */
+  --adviser-chat-frost-blur: 22px;
+  --adviser-chat-frost-saturate: 140%;
+  --adviser-chat-frost-contrast: 92%;
+  /* Slightly denser milk — frost is outside the message scrollport */
+  --adviser-chat-frost-milk:
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.72) 0%,
+      rgba(248, 252, 255, 0.58) 55%,
+      rgba(236, 244, 250, 0.5) 100%
+    );
+  --adviser-chat-frost-border: rgba(255, 255, 255, 0.55);
+  --adviser-chat-frost-inset-top: rgba(255, 255, 255, 0.76);
+  --adviser-chat-frost-inset-bottom: rgba(255, 255, 255, 0.15);
+  --adviser-chat-frost-shadow:
+    inset 0 1px 0 var(--adviser-chat-frost-inset-top),
+    inset 0 -1px 0 var(--adviser-chat-frost-inset-bottom);
+  --adviser-chat-frost-reflect-a: rgba(255, 255, 255, 0.7);
+  --adviser-chat-frost-reflect-b: rgba(255, 255, 255, 0.24);
+  --adviser-chat-frost-texture-light: rgba(255, 255, 255, 0.35);
+  --adviser-chat-frost-texture-dark: rgba(20, 30, 55, 0.12);
+  --adviser-chat-frost-texture-opacity: 0.1;
+  --adviser-chat-frost-refraction: rgba(255, 255, 255, 0.1);
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
   background: transparent;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  border-bottom: 0;
 }
 
-.portal-shell[data-theme="dark"] .adviser-chat-header {
-  background: transparent;
-  border-bottom: 0;
+.adviser-chat-header-strip {
+  --dash-muted: rgba(21, 39, 68, 0.72);
+  --dash-faint: rgba(21, 39, 68, 0.52);
+  --dash-text: #152744;
+  position: relative;
+  z-index: 20;
+  flex-shrink: 0;
+  isolation: isolate;
+  overflow: hidden;
+  width: 100%;
+  min-height: var(--adviser-chat-header-offset);
+  margin: 0;
+  /* Square to panel edges — soft bottom edge via shadow/border only */
+  border-radius: 0;
+  color: var(--dash-text);
+}
+
+/* Frost layer — milky glass over page backdrop (header sits above scrollport).
+   Do not put mask-image here — Chromium drops/clips backdrop sampling. */
+.adviser-chat-header-frost {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  border: none;
+  border-bottom: 1px solid var(--adviser-chat-frost-border);
+  border-radius: 0;
+  background: var(--adviser-chat-frost-milk);
+  box-shadow: var(--adviser-chat-frost-shadow);
+  -webkit-backdrop-filter:
+    blur(var(--adviser-chat-frost-blur))
+    saturate(var(--adviser-chat-frost-saturate))
+    contrast(var(--adviser-chat-frost-contrast));
+  backdrop-filter:
+    blur(var(--adviser-chat-frost-blur))
+    saturate(var(--adviser-chat-frost-saturate))
+    contrast(var(--adviser-chat-frost-contrast));
+}
+
+/* Soft glass reflection */
+.adviser-chat-header-frost::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      circle at 12% 0%,
+      var(--adviser-chat-frost-reflect-a),
+      transparent 30%
+    ),
+    linear-gradient(
+      115deg,
+      transparent 15%,
+      var(--adviser-chat-frost-reflect-b) 43%,
+      transparent 65%
+    );
+  opacity: 0.72;
+  mix-blend-mode: soft-light;
+}
+
+/* Fine frosted texture */
+.adviser-chat-header-frost::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background-image:
+    radial-gradient(
+      circle,
+      var(--adviser-chat-frost-texture-light) 0 0.7px,
+      transparent 0.9px
+    ),
+    radial-gradient(
+      circle,
+      var(--adviser-chat-frost-texture-dark) 0 0.5px,
+      transparent 0.8px
+    );
+  background-position: 0 0, 4px 5px;
+  background-size: 7px 7px, 9px 9px;
+  opacity: var(--adviser-chat-frost-texture-opacity);
+}
+
+/* Skewed refraction bands — uneven blur so glyphs look stretched, not flat. */
+.adviser-chat-header-refraction {
+  position: absolute;
+  top: -15%;
+  bottom: -15%;
+  z-index: 3;
+  width: 22%;
+  pointer-events: none;
+  background: linear-gradient(
+    90deg,
+    transparent,
+    var(--adviser-chat-frost-refraction),
+    transparent
+  );
+  -webkit-backdrop-filter: blur(7px);
+  backdrop-filter: blur(7px);
+  opacity: 0.6;
+}
+
+.adviser-chat-header-refraction--one {
+  left: 8%;
+  transform: skewX(-9deg) scaleX(1.18);
+}
+
+.adviser-chat-header-refraction--two {
+  left: 42%;
+  width: 17%;
+  transform: skewX(7deg) scaleX(0.9);
+  -webkit-backdrop-filter: blur(11px);
+  backdrop-filter: blur(11px);
+}
+
+.adviser-chat-header-refraction--three {
+  right: 5%;
+  width: 28%;
+  transform: skewX(-5deg) scaleX(1.12);
+  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(5px);
+}
+
+/* Sharp chrome above frost — no backdrop-filter here */
+.adviser-chat-header-chrome {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  min-height: var(--adviser-chat-header-offset);
+  padding:
+    max(0.65rem, env(safe-area-inset-top))
+    0.75rem
+    0.75rem;
+}
+
+.adviser-chat-header-chrome h1 {
+  color: #152744;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.55);
+}
+
+.adviser-chat-header-chrome .dashboard-welcome-chip {
+  background: rgba(255, 255, 255, 0.42);
+  border: 1px solid rgba(21, 39, 68, 0.1);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  text-shadow: none;
+}
+
+.adviser-chat-header-chrome .dashboard-icon-btn {
+  color: rgba(21, 39, 68, 0.78);
+  background: rgba(255, 255, 255, 0.42);
+  border-color: rgba(21, 39, 68, 0.12);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+}
+
+.adviser-chat-header-chrome .dashboard-icon-btn:hover {
+  color: #152744;
+  background: rgba(255, 255, 255, 0.62);
+}
+
+.portal-shell[data-theme="dark"] .adviser-chat-screen {
+  --adviser-chat-frost-milk:
+    linear-gradient(
+      180deg,
+      rgba(20, 38, 68, 0.88) 0%,
+      rgba(16, 28, 52, 0.78) 55%,
+      rgba(12, 20, 38, 0.7) 100%
+    );
+  --adviser-chat-frost-border: rgba(255, 255, 255, 0.14);
+  --adviser-chat-frost-inset-top: rgba(255, 255, 255, 0.18);
+  --adviser-chat-frost-inset-bottom: rgba(255, 255, 255, 0.04);
+  --adviser-chat-frost-shadow:
+    inset 0 1px 0 var(--adviser-chat-frost-inset-top),
+    inset 0 -1px 0 var(--adviser-chat-frost-inset-bottom);
+  --adviser-chat-frost-reflect-a: rgba(141, 195, 225, 0.22);
+  --adviser-chat-frost-reflect-b: rgba(255, 255, 255, 0.1);
+  --adviser-chat-frost-texture-light: rgba(255, 255, 255, 0.22);
+  --adviser-chat-frost-texture-dark: rgba(0, 0, 0, 0.28);
+  --adviser-chat-frost-texture-opacity: 0.09;
+  --adviser-chat-frost-refraction: rgba(141, 195, 225, 0.08);
+}
+
+.portal-shell[data-theme="dark"] .adviser-chat-header-strip {
+  --dash-muted: rgba(244, 247, 251, 0.82);
+  --dash-faint: rgba(244, 247, 251, 0.68);
+  --dash-text: #f4f7fb;
+}
+
+.portal-shell[data-theme="dark"] .adviser-chat-header-chrome h1 {
+  color: #f4f7fb;
+  text-shadow:
+    0 1px 2px rgba(0, 0, 0, 0.55),
+    0 0 12px rgba(0, 0, 0, 0.28);
+}
+
+.portal-shell[data-theme="dark"] .adviser-chat-header-chrome .dashboard-welcome-chip {
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
+}
+
+.portal-shell[data-theme="dark"] .adviser-chat-header-chrome .dashboard-icon-btn {
+  color: rgba(244, 247, 251, 0.9);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.portal-shell[data-theme="dark"] .adviser-chat-header-chrome .dashboard-icon-btn:hover {
+  color: #f4f7fb;
+  background: rgba(255, 255, 255, 0.16);
 }
 
 @media (min-width: 640px) {
-  .adviser-chat-header {
+  .adviser-chat-header-chrome {
     padding-left: 1rem;
     padding-right: 1rem;
   }
 }
 
 @media (min-width: 768px) {
-  .adviser-chat-header {
+  .adviser-chat-header-chrome {
     padding-left: 1.5rem;
     padding-right: 1.5rem;
   }
 }
 
 @media (min-width: 1024px) {
-  .adviser-chat-header {
+  .adviser-chat-header-chrome {
     padding-left: 2rem;
     padding-right: 2rem;
   }
 }
 
-/* Extra top space on small screens: title + patient subtitle under fixed header */
 .adviser-chat-body {
-  padding-top: calc(4.75rem + max(0.75rem, env(safe-area-inset-top)));
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+  background: transparent;
+}
+
+/* Loading / error (no transcript panel) — restore readable side inset */
+.adviser-chat-body:not(:has(.adviser-chat-transcript)) {
+  padding: 1rem max(0.75rem, env(safe-area-inset-left)) 1.25rem
+    max(0.75rem, env(safe-area-inset-right));
 }
 
 @media (min-width: 640px) {
-  .adviser-chat-body {
-    padding-top: calc(4.5rem + max(0.75rem, env(safe-area-inset-top)));
+  .adviser-chat-body:not(:has(.adviser-chat-transcript)) {
+    padding-left: 1rem;
+    padding-right: 1rem;
   }
 }
 
-@media (max-width: 639px) {
-  .portal-shell:has(.adviser-chat-screen) .portal-content-area > main {
-    padding-left: 0.75rem !important;
-    padding-right: 0.75rem !important;
+@media (min-width: 768px) {
+  .adviser-chat-body:not(:has(.adviser-chat-transcript)) {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
   }
 }
 
-/* Chat composer — compact solid field, soft fade over messages */
+.adviser-chat-transcript {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+  scrollbar-gutter: stable;
+}
+
+/* Chat composer — anchored below transcript, not fixed over messages */
 .adviser-chat-composer-bar {
-  background: linear-gradient(
-    to top,
-    #ecf4fa 30%,
-    rgba(236, 244, 250, 0.75) 65%,
-    transparent 100%
-  );
+  background: #ecf4fa;
+  border-top: 1px solid rgba(21, 39, 68, 0.06);
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
-  pointer-events: none;
-}
-
-.adviser-chat-composer-bar > * {
-  pointer-events: auto;
 }
 
 .portal-shell[data-theme="dark"] .adviser-chat-composer-bar {
-  background: linear-gradient(
-    to top,
-    #142644 30%,
-    rgba(20, 38, 68, 0.75) 65%,
-    transparent 100%
-  );
+  background: #142644;
+  border-top-color: rgba(255, 255, 255, 0.08);
 }
 
 .adviser-chat-composer {
@@ -1941,14 +4259,14 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
   background: #ffffff !important;
   backdrop-filter: none !important;
   -webkit-backdrop-filter: none !important;
-  box-shadow: 0 8px 24px rgba(21, 39, 68, 0.1);
+  box-shadow: none;
   max-height: calc(7.5rem + 1.25rem);
 }
 
 .portal-shell[data-theme="dark"] .adviser-chat-composer {
   border-color: rgba(255, 255, 255, 0.14);
   background: #1a2436 !important;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  box-shadow: none;
 }
 
 .adviser-chat-composer-send-idle {
@@ -2128,13 +4446,13 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
   border-radius: 0.75rem;
   border: 1px solid rgba(141, 195, 225, 0.35);
   background: #ffffff;
-  box-shadow: 0 12px 32px rgba(21, 39, 68, 0.14);
+  box-shadow: none;
 }
 
 .portal-shell[data-theme="dark"] .dashboard-expiry-popover {
   border-color: rgba(141, 195, 225, 0.22);
   background: #1a2f55;
-  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.45);
+  box-shadow: none;
 }
 
 .dashboard-expiry-popover::before {
@@ -2273,7 +4591,7 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
 
 .lesson-learning-theme-light .lesson-learning-header {
   background: rgba(255, 255, 255, 0.95);
-  border-color: rgba(21, 39, 68, 0.08);
+  border-color: rgba(21, 39, 68, 0.15);
 }
 
 .lesson-learning-theme-light .lesson-learning-title,
@@ -2326,7 +4644,7 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
 
 .lesson-learning-theme-sepia .lesson-learning-header {
   background: rgba(244, 236, 216, 0.96);
-  border-color: rgba(61, 52, 40, 0.12);
+  border-color: rgba(61, 52, 40, 0.18);
 }
 
 .lesson-learning-theme-sepia .lesson-learning-title,
@@ -2381,7 +4699,7 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
 
 .lesson-learning-theme-dark .lesson-learning-header {
   background: rgba(15, 20, 25, 0.96);
-  border-color: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.16);
 }
 
 .lesson-learning-theme-dark .lesson-learning-title,
@@ -2527,20 +4845,20 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
 
 .lesson-learning-theme-light .lesson-learning-page {
   background: #ffffff;
-  border: 1px solid rgba(21, 39, 68, 0.08);
-  box-shadow: 0 8px 28px rgba(21, 39, 68, 0.08);
+  border: 1px solid rgba(21, 39, 68, 0.15);
+  box-shadow: none;
 }
 
 .lesson-learning-theme-sepia .lesson-learning-page {
   background: #fbf5e6;
-  border: 1px solid rgba(61, 52, 40, 0.12);
-  box-shadow: 0 8px 28px rgba(61, 52, 40, 0.1);
+  border: 1px solid rgba(61, 52, 40, 0.18);
+  box-shadow: none;
 }
 
 .lesson-learning-theme-dark .lesson-learning-page {
   background: #161d27;
-  border: 1px solid rgba(255, 255, 255, 0.08);
-  box-shadow: 0 8px 28px rgba(0, 0, 0, 0.35);
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: none;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -2550,15 +4868,15 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
 }
 
 .lesson-learning-footer {
-  border-color: rgba(21, 39, 68, 0.1);
+  border-color: rgba(21, 39, 68, 0.15);
 }
 
 .lesson-learning-theme-dark .lesson-learning-footer {
-  border-color: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.16);
 }
 
 .lesson-learning-theme-sepia .lesson-learning-footer {
-  border-color: rgba(61, 52, 40, 0.12);
+  border-color: rgba(61, 52, 40, 0.18);
 }
 
 .lesson-learning-exit {
@@ -2767,8 +5085,8 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
   background: rgba(255, 255, 255, 0.55);
   backdrop-filter: blur(24px) saturate(170%);
   -webkit-backdrop-filter: blur(24px) saturate(170%);
-  border: 1px solid rgba(255, 255, 255, 0.5);
-  box-shadow: 0 12px 40px rgba(21, 39, 68, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.58);
+  box-shadow: none;
 }
 
 .glass-button {
@@ -2843,42 +5161,1329 @@ html.lenis main {
   animation-delay: -4s;
 }
 
+/* Deterministic lecture cover art (grid card + Front Cover expand) */
+.lecture-cover-art {
+  isolation: isolate;
+}
+
+.lecture-cover-art-media {
+  background:
+    radial-gradient(ellipse 58% 52% at 78% 38%, rgba(141, 195, 225, 0.16), transparent 62%),
+    radial-gradient(ellipse 46% 42% at 72% 44%, rgba(221, 228, 102, 0.1), transparent 58%),
+    radial-gradient(circle at 16% 82%, rgba(221, 228, 102, 0.05), transparent 46%),
+    radial-gradient(88% 68% at var(--cover-glow-x) var(--cover-glow-y), rgba(141, 195, 225, 0.07), transparent 56%),
+    linear-gradient(180deg, #f4f5f7 0%, #eceef2 48%, #e6e8ed 100%);
+  isolation: isolate;
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-art-media {
+  background:
+    radial-gradient(ellipse 58% 52% at 76% 36%, rgba(141, 195, 225, 0.16), transparent 60%),
+    radial-gradient(ellipse 44% 40% at 70% 42%, rgba(56, 83, 164, 0.18), transparent 56%),
+    radial-gradient(circle at 20% 80%, rgba(56, 83, 164, 0.1), transparent 48%),
+    radial-gradient(90% 70% at var(--cover-glow-x) var(--cover-glow-y), var(--cover-art-glow), transparent 56%),
+    linear-gradient(180deg, #142644 0%, #0b1028 58%, #05071a 100%);
+}
+
+.lecture-cover-art-scene {
+  transform-origin: 50% 42%;
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.lecture-cover-accent-motion {
+  transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
+  transform-origin: 50% 45%;
+}
+
+.lecture-cover-noise {
+  opacity: 0.02;
+  background-image:
+    radial-gradient(rgba(255, 255, 255, 0.35) 0.45px, transparent 0.45px),
+    radial-gradient(rgba(255, 255, 255, 0.2) 0.45px, transparent 0.45px);
+  background-size: 3px 3px, 4px 4px;
+  background-position: 0 0, 1.5px 1.5px;
+  mix-blend-mode: overlay;
+}
+
+/* Soft studio sheen on media bg only — wide feather, never a hard wedge */
+.lecture-cover-diagonal-shine {
+  opacity: 0.28;
+  background: linear-gradient(
+    125deg,
+    transparent 28%,
+    rgba(255, 255, 255, 0.035) 46%,
+    rgba(141, 195, 225, 0.02) 54%,
+    transparent 72%
+  );
+  mix-blend-mode: soft-light;
+  pointer-events: none;
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-diagonal-shine {
+  opacity: 0.22;
+  background: linear-gradient(
+    125deg,
+    transparent 28%,
+    rgba(255, 255, 255, 0.02) 46%,
+    rgba(141, 195, 225, 0.015) 54%,
+    transparent 72%
+  );
+}
+
+.lecture-cover-particle {
+  animation: lecture-cover-float 12s ease-in-out infinite;
+  background: rgba(20, 38, 68, 0.14);
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-particle {
+  background: rgba(255, 255, 255, 1);
+}
+
+.lecture-cover-particle:nth-child(odd) {
+  animation-delay: -4s;
+  animation-duration: 14s;
+}
+
+.lecture-cover-particle:nth-child(3n) {
+  animation-delay: -7s;
+  animation-duration: 16s;
+}
+
+@keyframes lecture-cover-float {
+  0%,
+  100% {
+    transform: translate(0, 0);
+    opacity: 0.08;
+  }
+  50% {
+    transform: translate(-3px, -6px);
+    opacity: 0.18;
+  }
+}
+
+/* Soft bottom atmosphere — long feather, no hard band across the vial */
+.lecture-cover-art-card-fade {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    transparent 48%,
+    rgba(252, 252, 253, 0.12) 68%,
+    rgba(245, 246, 248, 0.38) 86%,
+    rgba(245, 246, 248, 0.62) 100%
+  );
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-art-card-fade {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    transparent 50%,
+    rgba(11, 16, 40, 0.1) 70%,
+    rgba(11, 16, 40, 0.32) 88%,
+    rgba(11, 16, 40, 0.52) 100%
+  );
+}
+
+.lecture-cover-art-vignette {
+  background:
+    radial-gradient(70% 70% at 78% 42%, rgba(255, 255, 255, 0.18) 0%, transparent 58%),
+    radial-gradient(85% 90% at 50% 50%, transparent 52%, rgba(20, 38, 68, 0.05) 100%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0.05) 24%, transparent 46%, transparent 100%);
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-art-vignette {
+  background:
+    radial-gradient(70% 70% at 78% 42%, rgba(141, 195, 225, 0.07) 0%, transparent 56%),
+    radial-gradient(85% 90% at 50% 50%, transparent 48%, rgba(5, 9, 28, 0.2) 100%),
+    linear-gradient(90deg, rgba(5, 9, 28, 0.34) 0%, rgba(5, 9, 28, 0.14) 28%, transparent 52%, transparent 100%);
+}
+
+/*
+ * Full-bleed left + bottom readability atmosphere.
+ * Soft radial + dual-axis fades — dissolves into the vial, never a floating panel.
+ */
+.lecture-cover-art-card-text-scrim {
+  --scrim-s: var(--cover-text-scrim-strength, 0.5);
+  --scrim-pool: calc(0.58 + var(--scrim-s) * 0.28);
+  --scrim-left: calc(0.48 + var(--scrim-s) * 0.3);
+  --scrim-mid: calc(0.22 + var(--scrim-s) * 0.22);
+  --scrim-floor: calc(0.42 + var(--scrim-s) * 0.22);
+  background:
+    radial-gradient(
+      ellipse 110% 95% at 4% 96%,
+      rgba(245, 246, 248, var(--scrim-pool)) 0%,
+      rgba(245, 246, 248, calc(var(--scrim-pool) * 0.55)) 34%,
+      rgba(245, 246, 248, calc(var(--scrim-pool) * 0.18)) 58%,
+      transparent 78%
+    ),
+    linear-gradient(
+      96deg,
+      rgba(252, 252, 253, var(--scrim-left)) 0%,
+      rgba(252, 252, 253, var(--scrim-mid)) 32%,
+      rgba(252, 252, 253, calc(var(--scrim-mid) * 0.35)) 52%,
+      transparent 72%
+    ),
+    linear-gradient(
+      180deg,
+      transparent 34%,
+      rgba(245, 246, 248, calc(var(--scrim-floor) * 0.28)) 62%,
+      rgba(245, 246, 248, var(--scrim-floor)) 100%
+    );
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-art-card-text-scrim {
+  background:
+    radial-gradient(
+      ellipse 110% 95% at 4% 96%,
+      rgba(5, 9, 28, calc(var(--scrim-pool) * 0.95)) 0%,
+      rgba(5, 9, 28, calc(var(--scrim-pool) * 0.52)) 34%,
+      rgba(5, 9, 28, calc(var(--scrim-pool) * 0.16)) 58%,
+      transparent 78%
+    ),
+    linear-gradient(
+      96deg,
+      rgba(5, 9, 28, calc(var(--scrim-left) * 0.95)) 0%,
+      rgba(5, 9, 28, calc(var(--scrim-mid) * 0.88)) 32%,
+      rgba(5, 9, 28, calc(var(--scrim-mid) * 0.32)) 52%,
+      transparent 72%
+    ),
+    linear-gradient(
+      180deg,
+      transparent 34%,
+      rgba(5, 9, 28, calc(var(--scrim-floor) * 0.28)) 62%,
+      rgba(5, 9, 28, calc(var(--scrim-floor) * 0.85)) 100%
+    );
+}
+
+/* Title block — typography only; readability comes from full-bleed scrim + text-shadow */
+.lecture-cover-art-card-text {
+  position: relative;
+  margin-left: -0.05rem;
+  padding: 0;
+  background: none;
+  border-radius: 0;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+  -webkit-mask-image: none;
+  mask-image: none;
+}
+
+.lecture-cover-logo--theme-dark {
+  display: none;
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-logo--theme-light {
+  display: none;
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-logo--theme-dark {
+  display: block;
+}
+
+.lecture-cover-brand {
+  filter: drop-shadow(0 1px 8px rgba(252, 252, 253, 0.55));
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-brand {
+  filter: drop-shadow(0 1px 10px rgba(5, 9, 28, 0.55));
+}
+
+.lecture-cover-art-category,
+.lecture-cover-art-eyebrow {
+  font-size: 10px;
+  font-weight: 650;
+  line-height: 1;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(20, 38, 68, 0.78);
+  opacity: 1;
+  text-shadow: 0 1px 10px rgba(252, 252, 253, 0.55);
+}
+
+.lecture-cover-art-title {
+  max-width: 13.75rem;
+  font-size: clamp(1.35rem, 4.2vw, 1.625rem);
+  font-weight: 650;
+  line-height: 1.04;
+  letter-spacing: -0.04em;
+  color: #1e2345;
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.72),
+    0 0 16px rgba(252, 252, 253, 0.55),
+    0 2px 12px rgba(245, 246, 248, 0.7);
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-art-category,
+.portal-shell[data-theme="dark"] .lecture-cover-art-eyebrow {
+  color: rgba(221, 228, 102, 0.82);
+  text-shadow: 0 1px 12px rgba(5, 9, 28, 0.55);
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-art-title {
+  color: var(--cover-art-ink);
+  text-shadow:
+    0 1px 14px rgba(5, 9, 28, 0.75),
+    0 0 22px rgba(5, 9, 28, 0.45);
+}
+
+.lecture-cover-art-readability {
+  background:
+    linear-gradient(
+      105deg,
+      rgba(8, 14, 26, 0.88) 0%,
+      rgba(8, 14, 26, 0.62) 40%,
+      rgba(8, 14, 26, 0.28) 70%,
+      rgba(8, 14, 26, 0.12) 100%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(8, 14, 26, 0.18) 0%,
+      transparent 38%,
+      rgba(8, 14, 26, 0.5) 100%
+    );
+}
+
+.lecture-course-card-media {
+  overflow: hidden;
+  border-bottom: 1px solid rgba(18, 28, 45, 0.1);
+  background: #eceef2;
+}
+
+.portal-shell[data-theme="dark"] .lecture-course-card-media {
+  border-bottom-color: rgba(255, 255, 255, 0.12);
+  background: #05071a;
+}
+
+.lecture-cover-accent-vial {
+  filter: none;
+  /* Recipes set an oversized close-up stage; contain + scale, soft edge bleed OK */
+  min-height: 0;
+  overflow: visible;
+}
+
+/* Soft radial aura behind vial — gradient only, never blur on the photo */
+.lecture-cover-vial-glow {
+  z-index: 0;
+  transform: scale(1.18);
+  background: radial-gradient(
+    ellipse 78% 72% at 52% 48%,
+    var(--cover-vial-glow-color, rgba(221, 228, 102, 0.34)) 0%,
+    rgba(141, 195, 225, 0.1) 38%,
+    transparent 74%
+  );
+  filter: none;
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-art .lecture-cover-vial-glow {
+  transform: scale(1.22);
+  background: radial-gradient(
+    ellipse 78% 72% at 52% 48%,
+    var(--cover-vial-glow-color, rgba(141, 195, 225, 0.26)) 0%,
+    rgba(56, 83, 164, 0.1) 40%,
+    transparent 74%
+  );
+}
+
+.lecture-cover-vial {
+  position: relative;
+  z-index: 1;
+  overflow: visible;
+  background: transparent;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Transparent stage — media gradient + PNG studio bg carry the atmosphere */
+.lecture-cover-art .lecture-cover-vial {
+  background: transparent;
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-art .lecture-cover-vial {
+  background: transparent;
+}
+
+.lecture-cover-vial-photo {
+  display: block;
+  filter: none;
+  /* Never clip-path / wedge the product; rounded card clips the outer media only */
+  clip-path: none;
+}
+
+/* Theme-specific vial photos — SSR-safe CSS toggle, no blend modes */
+.lecture-cover-vial-photo--dark {
+  display: none;
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-vial-photo--light {
+  display: none;
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-vial-photo--dark {
+  display: block;
+}
+
+.lecture-cover-vial-photo-cover {
+  object-fit: cover;
+}
+
+.lecture-cover-vial-photo-contain {
+  object-fit: contain;
+}
+
+/* Full-scene Magnific covers fill the media area */
+.lecture-cover-art--custom-photo .lecture-cover-art-media {
+  z-index: 0;
+  background: none;
+}
+
+.lecture-cover-custom-photo {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  min-width: 100%;
+  min-height: 100%;
+}
+
+.lecture-cover-custom-photo .lecture-cover-vial-photo {
+  object-fit: cover;
+  object-position: var(--cover-photo-position, center center);
+  z-index: 1;
+}
+
+/* Labeled vial template — dynamic peptide name, no dose line */
+.lecture-cover-labeled-vial-photo {
+  display: block;
+}
+
+.lecture-cover-labeled-vial-photo--dark {
+  display: none;
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-labeled-vial-photo--light {
+  display: none;
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-labeled-vial-photo--dark {
+  display: block;
+}
+
+.lecture-cover-labeled-vial-name {
+  left: 27%;
+  top: 43%;
+  width: 36%;
+  min-height: 11%;
+  display: flex;
+  align-items: center;
+  font-size: clamp(0.58rem, 2.35vw, 0.84rem);
+}
+
+.lecture-cover-labeled-vial-name--compact {
+  font-size: clamp(0.48rem, 1.95vw, 0.68rem);
+  letter-spacing: -0.03em;
+}
+
+.lecture-cover-labeled-vial-name--tiny {
+  font-size: clamp(0.4rem, 1.55vw, 0.56rem);
+  line-height: 1.05;
+}
+
+.lecture-cover-labeled-vial-name-mask {
+  position: absolute;
+  inset: -14% -8% -28% -8%;
+  background: #0b1628;
+  border-radius: 1px;
+}
+
+.lecture-cover-labeled-vial-name-text {
+  position: relative;
+  z-index: 1;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.18);
+}
+
+.lecture-cover-art--labeled-vial .lecture-cover-art-card-text-scrim {
+  background:
+    linear-gradient(
+      96deg,
+      rgba(252, 252, 253, 0.88) 0%,
+      rgba(252, 252, 253, 0.42) 28%,
+      transparent 52%
+    ),
+    linear-gradient(
+      180deg,
+      transparent 50%,
+      rgba(245, 246, 248, 0.55) 100%
+    );
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-art--labeled-vial .lecture-cover-art-card-text-scrim {
+  background:
+    linear-gradient(
+      96deg,
+      rgba(5, 9, 28, 0.88) 0%,
+      rgba(5, 9, 28, 0.42) 30%,
+      transparent 54%
+    ),
+    linear-gradient(
+      180deg,
+      transparent 48%,
+      rgba(5, 9, 28, 0.62) 100%
+    );
+}
+
+.lecture-cover-art--labeled-vial .lecture-cover-noise,
+.lecture-cover-art--labeled-vial .lecture-cover-particles {
+  display: none;
+}
+
+.hols-volume .book-cover-face:has(.lecture-cover-art--labeled-vial) .book-cover-art-bg::before {
+  background:
+    linear-gradient(
+      105deg,
+      rgba(252, 251, 244, 0.72) 0%,
+      rgba(252, 251, 244, 0.22) 28%,
+      transparent 50%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.18) 0%,
+      transparent 22%,
+      transparent 68%,
+      rgba(20, 38, 68, 0.1) 100%
+    );
+}
+
+.portal-shell[data-theme="dark"]
+  .hols-volume
+  .book-cover-face:has(.lecture-cover-art--labeled-vial)
+  .book-cover-art-bg::before {
+  background:
+    linear-gradient(
+      105deg,
+      rgba(5, 9, 28, 0.82) 0%,
+      rgba(5, 9, 28, 0.38) 30%,
+      transparent 52%
+    ),
+    linear-gradient(
+      180deg,
+      rgba(5, 9, 28, 0.48) 0%,
+      transparent 24%,
+      transparent 70%,
+      rgba(5, 9, 28, 0.55) 100%
+    );
+}
+
+/* Book/manual covers — product sits right; keep left for title, don't wash the book away */
+.lecture-cover-art--custom-photo[data-cover-layout="book"] .lecture-cover-art-vignette {
+  background:
+    radial-gradient(62% 58% at 82% 40%, rgba(255, 255, 255, 0.1) 0%, transparent 58%),
+    radial-gradient(88% 92% at 50% 50%, transparent 58%, rgba(20, 38, 68, 0.04) 100%),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.03) 28%, transparent 42%, transparent 100%);
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-art--custom-photo[data-cover-layout="book"] .lecture-cover-art-vignette {
+  background:
+    radial-gradient(62% 58% at 82% 40%, rgba(141, 195, 225, 0.08) 0%, transparent 56%),
+    radial-gradient(88% 92% at 50% 50%, transparent 56%, rgba(5, 9, 28, 0.12) 100%),
+    linear-gradient(90deg, rgba(5, 9, 28, 0.22) 0%, rgba(5, 9, 28, 0.08) 30%, transparent 44%, transparent 100%);
+}
+
+.lecture-cover-art--custom-photo[data-cover-layout="book"] .lecture-cover-art-card-text-scrim {
+  --scrim-left: 0.34;
+  --scrim-pool: 0.48;
+  --scrim-mid: 0.16;
+  --scrim-floor: 0.36;
+  background:
+    radial-gradient(
+      ellipse 88% 72% at 2% 98%,
+      rgba(245, 246, 248, var(--scrim-pool)) 0%,
+      rgba(245, 246, 248, calc(var(--scrim-pool) * 0.42)) 38%,
+      transparent 72%
+    ),
+    linear-gradient(
+      96deg,
+      rgba(252, 252, 253, var(--scrim-left)) 0%,
+      rgba(252, 252, 253, var(--scrim-mid)) 24%,
+      transparent 46%
+    ),
+    linear-gradient(
+      180deg,
+      transparent 44%,
+      rgba(245, 246, 248, calc(var(--scrim-floor) * 0.22)) 68%,
+      rgba(245, 246, 248, var(--scrim-floor)) 100%
+    );
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-art--custom-photo[data-cover-layout="book"] .lecture-cover-art-card-text-scrim {
+  background:
+    radial-gradient(
+      ellipse 88% 72% at 2% 98%,
+      rgba(11, 16, 40, var(--scrim-pool)) 0%,
+      rgba(11, 16, 40, calc(var(--scrim-pool) * 0.42)) 38%,
+      transparent 72%
+    ),
+    linear-gradient(
+      96deg,
+      rgba(11, 16, 40, var(--scrim-left)) 0%,
+      rgba(11, 16, 40, var(--scrim-mid)) 24%,
+      transparent 46%
+    ),
+    linear-gradient(
+      180deg,
+      transparent 44%,
+      rgba(11, 16, 40, calc(var(--scrim-floor) * 0.22)) 68%,
+      rgba(11, 16, 40, var(--scrim-floor)) 100%
+    );
+}
+
+.lecture-cover-art--custom-photo[data-cover-layout="book"] .lecture-cover-art-card-fade {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    transparent 58%,
+    rgba(252, 252, 253, 0.08) 78%,
+    rgba(245, 246, 248, 0.28) 100%
+  );
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-art--custom-photo[data-cover-layout="book"] .lecture-cover-art-card-fade {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    transparent 58%,
+    rgba(11, 16, 40, 0.08) 78%,
+    rgba(11, 16, 40, 0.24) 100%
+  );
+}
+
+/* Custom vial / product photos — art already has studio bg; avoid milky white scrims */
+.lecture-cover-art--custom-photo:not([data-cover-layout="book"]) .lecture-cover-art-vignette {
+  background:
+    radial-gradient(88% 92% at 50% 50%, transparent 58%, rgba(20, 38, 68, 0.035) 100%),
+    linear-gradient(90deg, rgba(232, 236, 242, 0.14) 0%, rgba(232, 236, 242, 0.04) 22%, transparent 40%, transparent 100%);
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-art--custom-photo:not([data-cover-layout="book"]) .lecture-cover-art-vignette {
+  background:
+    radial-gradient(88% 92% at 50% 50%, transparent 56%, rgba(5, 9, 28, 0.14) 100%),
+    linear-gradient(90deg, rgba(5, 9, 28, 0.2) 0%, rgba(5, 9, 28, 0.06) 28%, transparent 44%, transparent 100%);
+}
+
+.lecture-cover-art--custom-photo:not([data-cover-layout="book"]) .lecture-cover-art-card-text-scrim {
+  --scrim-left: 0.38;
+  --scrim-pool: 0.44;
+  --scrim-mid: 0.14;
+  --scrim-floor: 0.26;
+  background:
+    radial-gradient(
+      ellipse 72% 68% at 0% 96%,
+      rgba(236, 238, 242, var(--scrim-pool)) 0%,
+      rgba(236, 238, 242, calc(var(--scrim-pool) * 0.34)) 32%,
+      transparent 66%
+    ),
+    linear-gradient(
+      96deg,
+      rgba(236, 238, 242, var(--scrim-left)) 0%,
+      rgba(236, 238, 242, var(--scrim-mid)) 14%,
+      transparent 36%
+    ),
+    linear-gradient(
+      180deg,
+      transparent 48%,
+      rgba(236, 238, 242, calc(var(--scrim-floor) * 0.16)) 72%,
+      rgba(236, 238, 242, var(--scrim-floor)) 100%
+    );
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-art--custom-photo:not([data-cover-layout="book"]) .lecture-cover-art-card-text-scrim {
+  --scrim-left: 0.36;
+  --scrim-pool: 0.48;
+  --scrim-mid: 0.16;
+  --scrim-floor: 0.32;
+  background:
+    radial-gradient(
+      ellipse 72% 68% at 0% 96%,
+      rgba(11, 16, 40, var(--scrim-pool)) 0%,
+      rgba(11, 16, 40, calc(var(--scrim-pool) * 0.38)) 32%,
+      transparent 66%
+    ),
+    linear-gradient(
+      96deg,
+      rgba(11, 16, 40, var(--scrim-left)) 0%,
+      rgba(11, 16, 40, var(--scrim-mid)) 16%,
+      transparent 38%
+    ),
+    linear-gradient(
+      180deg,
+      transparent 44%,
+      rgba(11, 16, 40, calc(var(--scrim-floor) * 0.2)) 68%,
+      rgba(11, 16, 40, var(--scrim-floor)) 100%
+    );
+}
+
+.lecture-cover-art-card-text--custom-vial {
+  max-width: min(11.5rem, 42%);
+}
+
+.lecture-cover-art--custom-photo:not([data-cover-layout="book"]) .lecture-cover-art-card-text--custom-vial .lecture-cover-art-title {
+  max-width: 100%;
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.85),
+    0 0 14px rgba(252, 252, 253, 0.75),
+    0 2px 16px rgba(245, 246, 248, 0.85);
+}
+
+.portal-shell[data-theme="dark"]
+  .lecture-cover-art--custom-photo:not([data-cover-layout="book"])
+  .lecture-cover-art-card-text--custom-vial
+  .lecture-cover-art-title {
+  text-shadow:
+    0 1px 16px rgba(5, 9, 28, 0.85),
+    0 0 20px rgba(5, 9, 28, 0.55);
+}
+
+.lecture-cover-art--custom-photo:not([data-cover-layout="book"]) .lecture-cover-art-card-fade {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    transparent 62%,
+    rgba(236, 238, 242, 0.05) 82%,
+    rgba(236, 238, 242, 0.2) 100%
+  );
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-art--custom-photo:not([data-cover-layout="book"]) .lecture-cover-art-card-fade {
+  background: linear-gradient(
+    180deg,
+    transparent 0%,
+    transparent 60%,
+    rgba(11, 16, 40, 0.06) 80%,
+    rgba(11, 16, 40, 0.2) 100%
+  );
+}
+
+.lecture-cover-art--custom-photo .lecture-cover-noise,
+.lecture-cover-art--custom-photo .lecture-cover-particles,
+.lecture-cover-art--full-bleed .lecture-cover-noise,
+.lecture-cover-art--full-bleed .lecture-cover-particles {
+  display: none;
+}
+
+.lecture-cover-art--custom-photo .lecture-cover-art-scene,
+.lecture-cover-art--full-bleed .lecture-cover-art-scene {
+  transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.lecture-course-card:hover .lecture-cover-art--custom-photo .lecture-cover-art-scene {
+  transform: scale(1.02);
+}
+
+/* Branded cover art is always dark — force foil/light ink in both portal themes */
+.course-book-cover:has([data-book-cover-art]),
+.course-book-cover-visual {
+  --cover-text: #ffffff;
+  --cover-muted: rgba(255, 255, 255, 0.72);
+  --cover-faint: rgba(255, 255, 255, 0.55);
+  --cover-dim: rgba(255, 255, 255, 0.45);
+  --cover-border: rgba(255, 255, 255, 0.16);
+  --cover-surface: rgba(255, 255, 255, 0.1);
+  --cover-surface-hover: rgba(255, 255, 255, 0.16);
+  --cover-accent: #dde466;
+  --cover-rule: rgba(221, 228, 102, 0.55);
+  background-color: #0d1626;
+  background-image: none;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.course-book-cover:has([data-book-cover-art]) .course-book-cover-grain,
+.course-book-cover-visual .course-book-cover-grain {
+  opacity: 0.28;
+  background-image: radial-gradient(rgba(255, 255, 255, 0.04) 0.6px, transparent 0.6px);
+}
+
+.course-book-cover:has([data-book-cover-art]) .course-book-cover-glow,
+.course-book-cover-visual .course-book-cover-glow {
+  background:
+    linear-gradient(120deg, transparent 42%, rgba(221, 228, 102, 0.06) 58%, transparent 74%),
+    radial-gradient(55% 45% at 82% 18%, rgba(141, 195, 225, 0.1), transparent 70%);
+}
+
+/* Premium scientific handbook Front Cover — atmosphere / heading / vial */
+.course-book-cover-layout {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: inherit;
+  height: 100%;
+}
+
+.course-book-cover-heading-zone {
+  position: relative;
+  flex-shrink: 0;
+  padding: 1.1rem 1.35rem 0.75rem;
+}
+
+@media (min-width: 640px) {
+  .course-book-cover-heading-zone {
+    padding: 1.35rem 1.85rem 0.85rem;
+  }
+}
+
+.course-book-cover-brand-row {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.85rem;
+}
+
+@media (min-width: 640px) {
+  .course-book-cover-brand-row {
+    margin-bottom: 1rem;
+  }
+}
+
+.course-book-cover-brand-wordmark {
+  height: 0.65rem;
+  width: auto;
+  object-fit: contain;
+  object-position: left center;
+  opacity: 0.72;
+}
+
+@media (min-width: 640px) {
+  .course-book-cover-brand-wordmark {
+    height: 0.75rem;
+  }
+}
+
+.course-book-cover-brand-mark {
+  height: 0.875rem;
+  width: 0.875rem;
+  flex-shrink: 0;
+  object-fit: contain;
+  opacity: 0.78;
+}
+
+@media (min-width: 640px) {
+  .course-book-cover-brand-mark {
+    height: 1rem;
+    width: 1rem;
+  }
+}
+
+.course-book-cover-zone-atmosphere {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.course-book-cover-heading {
+  position: relative;
+  z-index: 1;
+  margin: 0;
+  padding: 0;
+  max-width: 100%;
+  font-family: var(--font-primary-stack);
+  font-size: clamp(1.65rem, 4.8vw, 2.15rem);
+  font-weight: 700;
+  line-height: 1.1;
+  letter-spacing: var(--brand-tracking-heading, 0.01em);
+  text-align: left;
+  color: rgba(255, 255, 255, 0.97);
+  text-wrap: balance;
+  text-shadow: 0 1px 12px rgba(5, 9, 28, 0.35);
+}
+
+@media (min-width: 640px) {
+  .course-book-cover-heading {
+    font-size: clamp(2rem, 3.4vw, 2.65rem);
+    line-height: 1.08;
+    letter-spacing: 0.012em;
+  }
+}
+
+.course-book-cover-heading-rule {
+  position: relative;
+  z-index: 1;
+  width: 2.75rem;
+  height: 2px;
+  margin-top: 0.65rem;
+  border-radius: 999px;
+  background: linear-gradient(
+    90deg,
+    rgba(221, 228, 102, 0.85) 0%,
+    rgba(141, 195, 225, 0.45) 100%
+  );
+  opacity: 0.72;
+}
+
+@media (min-width: 640px) {
+  .course-book-cover-heading-rule {
+    width: 3.25rem;
+    margin-top: 0.75rem;
+  }
+}
+
+.course-book-cover-vignette {
+  background:
+    radial-gradient(88% 92% at 50% 48%, transparent 42%, rgba(5, 9, 28, 0.42) 100%),
+    linear-gradient(
+      90deg,
+      rgba(5, 9, 28, 0.52) 0%,
+      rgba(5, 9, 28, 0.28) 5%,
+      transparent 12%,
+      transparent 92%,
+      rgba(5, 9, 28, 0.14) 100%
+    );
+  z-index: 1;
+}
+
+.course-book-cover-base {
+  background:
+    radial-gradient(circle at 70% 22%, rgba(141, 195, 225, 0.14), transparent 42%),
+    radial-gradient(circle at 18% 78%, rgba(56, 83, 164, 0.12), transparent 48%),
+    radial-gradient(90% 70% at var(--cover-glow-x, 50%) var(--cover-glow-y, 30%), var(--cover-art-glow, rgba(221, 228, 102, 0.18)), transparent 58%),
+    linear-gradient(180deg, var(--cover-art-navy, #142644) 0%, #0b1028 55%, #05071a 100%);
+}
+
+.course-book-cover-atmosphere-glow {
+  position: absolute;
+  inset: -20% -10% -12%;
+  background:
+    radial-gradient(ellipse 90% 55% at 50% -8%, rgba(141, 195, 225, 0.07) 0%, transparent 68%),
+    radial-gradient(ellipse 72% 82% at 28% 62%, rgba(221, 228, 102, 0.06) 0%, transparent 64%),
+    radial-gradient(ellipse 62% 70% at 74% 36%, rgba(141, 195, 225, 0.05) 0%, transparent 58%);
+  animation: cover-atmosphere-pulse 16s ease-in-out infinite;
+}
+
+.course-book-cover-atmosphere-sweep {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    112deg,
+    transparent 38%,
+    rgba(255, 255, 255, 0.03) 46%,
+    rgba(221, 228, 102, 0.04) 50%,
+    rgba(141, 195, 225, 0.03) 52%,
+    rgba(255, 255, 255, 0.025) 56%,
+    transparent 66%
+  );
+  transform: translateX(-120%);
+  animation: cover-atmosphere-sweep 14s ease-in-out 2s infinite;
+  mix-blend-mode: overlay;
+}
+
+.course-book-cover-atmosphere-ribbon {
+  position: absolute;
+  top: 58%;
+  left: -16%;
+  width: 132%;
+  height: 28%;
+  background: linear-gradient(
+    102deg,
+    transparent 32%,
+    rgba(56, 83, 164, 0.04) 44%,
+    rgba(141, 195, 225, 0.035) 50%,
+    rgba(56, 83, 164, 0.03) 56%,
+    transparent 68%
+  );
+  transform: rotate(-3deg);
+  animation: cover-atmosphere-ribbon 18s ease-in-out infinite;
+  opacity: 0.38;
+}
+
+.course-book-cover-atmosphere-particles {
+  position: absolute;
+  inset: 0;
+}
+
+.course-book-cover-particle {
+  animation: cover-atmosphere-float 14s ease-in-out infinite;
+}
+
+.course-book-cover-particle:nth-child(odd) {
+  animation-delay: -5s;
+  animation-duration: 16s;
+}
+
+.course-book-cover-particle:nth-child(3n) {
+  animation-delay: -8s;
+  animation-duration: 18s;
+}
+
+@keyframes cover-atmosphere-pulse {
+  0%,
+  100% {
+    opacity: 0.58;
+    transform: scale(1);
+  }
+  50% {
+    opacity: 0.78;
+    transform: scale(1.015);
+  }
+}
+
+@keyframes cover-atmosphere-sweep {
+  0% {
+    transform: translateX(-120%);
+  }
+  22%,
+  100% {
+    transform: translateX(120%);
+  }
+}
+
+@keyframes cover-atmosphere-ribbon {
+  0%,
+  100% {
+    transform: rotate(-3deg) translateX(0);
+    opacity: 0.28;
+  }
+  50% {
+    transform: rotate(-2.5deg) translateX(2%);
+    opacity: 0.42;
+  }
+}
+
+@keyframes cover-atmosphere-float {
+  0%,
+  100% {
+    transform: translate(0, 0);
+    opacity: 0.04;
+  }
+  50% {
+    transform: translate(-2px, -4px);
+    opacity: 0.12;
+  }
+}
+
+.course-book-cover-vial-stage {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0.25rem 1.25rem 1.1rem;
+}
+
+@media (min-width: 640px) {
+  .course-book-cover-vial-stage {
+    padding: 0.35rem 1.65rem 1.45rem;
+  }
+}
+
+.course-book-cover-vial-wrap {
+  position: relative;
+  width: min(64%, 11rem);
+  height: min(88%, 100%);
+  max-height: 88%;
+  animation: cover-vial-breathe 6.5s ease-in-out infinite;
+}
+
+@media (min-width: 640px) {
+  .course-book-cover-vial-wrap {
+    width: min(58%, 13.5rem);
+  }
+}
+
+.course-book-cover-vial-base-shadow {
+  bottom: -2%;
+  left: 50%;
+  z-index: 0;
+  width: 62%;
+  height: 11%;
+  transform: translateX(-50%);
+  background: radial-gradient(ellipse at center, rgba(0, 0, 0, 0.32) 0%, transparent 74%);
+  filter: none;
+}
+
+.course-book-cover-vial-glow {
+  z-index: 0;
+  transform: scale(1.14);
+  background: radial-gradient(
+    ellipse 74% 70% at 50% 52%,
+    rgba(221, 228, 102, 0.18) 0%,
+    rgba(141, 195, 225, 0.06) 44%,
+    transparent 74%
+  );
+  filter: none;
+  animation: cover-vial-spotlight 9s ease-in-out infinite;
+}
+
+@keyframes cover-vial-spotlight {
+  0%,
+  100% {
+    opacity: 0.82;
+    transform: scale(1.12);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1.16);
+  }
+}
+
+.course-book-cover-vial-shimmer {
+  display: none;
+}
+
+@keyframes cover-vial-breathe {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-2px);
+  }
+}
+
+.course-book-cover-vial-wrap .lecture-cover-vial {
+  position: relative;
+  z-index: 1;
+  height: 100%;
+  width: 100%;
+}
+
+/* Refined book spine on branded dark covers — no neon strap */
+.course-book-cover-visual .course-book-spine {
+  width: 0.55rem;
+  background: linear-gradient(
+    90deg,
+    rgba(0, 0, 0, 0.42) 0%,
+    rgba(255, 255, 255, 0.035) 42%,
+    rgba(0, 0, 0, 0.18) 100%
+  );
+  box-shadow: 1px 0 8px rgba(0, 0, 0, 0.28);
+}
+
+@media (min-width: 640px) {
+  .course-book-cover-visual .course-book-spine {
+    width: 0.65rem;
+  }
+}
+
+.course-book-cover-visual .course-book-edge {
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.1) 0px,
+    rgba(255, 255, 255, 0.03) 2px,
+    rgba(255, 255, 255, 0.08) 4px
+  );
+  box-shadow: -1px 0 6px rgba(0, 0, 0, 0.18);
+  opacity: 0.55;
+}
+
+.course-book-spine,
+.course-book-edge {
+  z-index: 4;
+}
+
 .lecture-course-card {
-  border: 1px solid transparent;
+  background: linear-gradient(180deg, #fcfcfd 0%, #f5f6f8 100%);
+  border: 1px solid rgba(18, 28, 45, 0.15);
+  border-radius: 28px;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
   transition:
-    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 0.28s ease,
-    box-shadow 0.28s ease;
+    transform 0.32s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.32s ease,
+    box-shadow 0.32s ease;
   animation: lecture-card-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.lecture-course-card[data-featured="true"] {
+  border: 1px solid rgba(182, 214, 62, 0.28);
+  box-shadow:
+    0 0 0 1px rgba(182, 214, 62, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.lecture-course-card-spotlight {
+  opacity: 0;
+  background: radial-gradient(120% 90% at 100% 0%, rgba(182, 214, 62, 0.14) 0%, transparent 48%);
+  transition: opacity 0.32s ease;
+}
+
+.lecture-course-card[data-featured="true"] .lecture-course-card-spotlight,
+.lecture-course-card:hover .lecture-course-card-spotlight,
+.lecture-course-card:focus-visible .lecture-course-card-spotlight {
+  opacity: 1;
+}
+
+.lecture-course-card-glass {
+  background: linear-gradient(180deg, rgba(252, 252, 253, 0.72) 0%, rgba(245, 246, 248, 0.94) 100%);
+  backdrop-filter: blur(14px) saturate(140%);
+  -webkit-backdrop-filter: blur(14px) saturate(140%);
+  border-top: 1px solid rgba(18, 28, 45, 0.1);
+}
+
+.lecture-course-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  width: 100%;
+  overflow: hidden;
+  border-radius: 10px;
+  background: rgba(20, 24, 40, 0.03);
+  border: 1px solid rgba(20, 24, 40, 0.1);
+}
+
+.lecture-stat-column {
+  min-width: 0;
+}
+
+.lecture-stat-column:not(:first-child) {
+  border-left: 1px solid rgba(20, 24, 40, 0.1);
+}
+
+.lecture-stat-value {
+  font-size: clamp(0.8125rem, 2vw, 0.9375rem);
+  font-weight: 650;
+  color: #22284a;
+}
+
+.lecture-stat-label {
+  font-size: 8px;
+  letter-spacing: 0.1em;
+  color: #5a6278;
 }
 
 .lecture-course-card:hover,
 .lecture-course-card:focus-visible {
-  transform: translateY(-4px);
-  border-color: rgba(221, 228, 102, 0.55);
-  box-shadow: 0 14px 28px rgba(21, 39, 68, 0.1);
+  transform: translateY(-6px);
+  border-color: rgba(182, 214, 62, 0.28);
+  box-shadow:
+    0 0 0 1px rgba(182, 214, 62, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.8);
   outline: none;
+}
+
+.lecture-course-card[data-featured="true"]:hover,
+.lecture-course-card[data-featured="true"]:focus-visible {
+  border-color: rgba(182, 214, 62, 0.36);
+  box-shadow:
+    0 0 0 1px rgba(182, 214, 62, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.82);
+}
+
+.portal-shell[data-theme="dark"] .lecture-course-card {
+  background: linear-gradient(180deg, #162848 0%, #0f1a34 48%, #0b1428 100%);
+  border-color: rgba(255, 255, 255, 0.16);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.portal-shell[data-theme="dark"] .lecture-course-card[data-featured="true"] {
+  border-color: rgba(182, 214, 62, 0.22);
+  box-shadow:
+    0 0 0 1px rgba(182, 214, 62, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.portal-shell[data-theme="dark"] .lecture-course-card-glass {
+  background: linear-gradient(180deg, rgba(20, 38, 68, 0.35) 0%, rgba(11, 20, 40, 0.72) 100%);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border-top-color: rgba(255, 255, 255, 0.12);
+}
+
+.portal-shell[data-theme="dark"] .lecture-course-stats {
+  background: rgba(255, 255, 255, 0.035);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.portal-shell[data-theme="dark"] .lecture-stat-column:not(:first-child) {
+  border-left-color: rgba(255, 255, 255, 0.12);
+}
+
+.portal-shell[data-theme="dark"] .lecture-stat-value {
+  color: #f4f7fb;
+}
+
+.portal-shell[data-theme="dark"] .lecture-stat-label {
+  color: rgba(186, 192, 214, 0.92);
 }
 
 .portal-shell[data-theme="dark"] .lecture-course-card:hover,
 .portal-shell[data-theme="dark"] .lecture-course-card:focus-visible {
-  border-color: rgba(221, 228, 102, 0.4);
-  box-shadow: 0 14px 28px rgba(0, 0, 0, 0.28);
+  border-color: rgba(182, 214, 62, 0.24);
+  box-shadow:
+    0 0 0 1px rgba(182, 214, 62, 0.1),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.portal-shell[data-theme="dark"] .lecture-course-card[data-featured="true"]:hover,
+.portal-shell[data-theme="dark"] .lecture-course-card[data-featured="true"]:focus-visible {
+  border-color: rgba(182, 214, 62, 0.3);
+  box-shadow:
+    0 0 0 1px rgba(182, 214, 62, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.lecture-course-card:hover .lecture-cover-art-scene,
+.lecture-course-card:focus-visible .lecture-cover-art-scene {
+  transform: scale(1.01);
+}
+
+/* Soft lift only — recipe already zooms hard; keep hover motion subtle */
+.lecture-course-card:hover .lecture-cover-accent-motion,
+.lecture-course-card:focus-visible .lecture-cover-accent-motion {
+  transform: translateY(-2px) scale(1.015);
+}
+
+.lecture-course-card:hover .lecture-cover-noise,
+.lecture-course-card:focus-visible .lecture-cover-noise {
+  opacity: 0.012;
 }
 
 .lecture-course-card:active {
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
 .lecture-course-card-shine {
   background: linear-gradient(
     125deg,
     transparent 35%,
-    rgba(221, 228, 102, 0.12) 48%,
+    rgba(255, 255, 255, 0.08) 48%,
     transparent 62%
   );
   transform: translateX(-120%);
   transition: transform 0.55s ease;
+}
+
+.lecture-course-card-sweep {
+  background: linear-gradient(
+    105deg,
+    transparent 42%,
+    rgba(141, 195, 225, 0.06) 50%,
+    transparent 58%
+  );
+  opacity: 0;
+  animation: lecture-cover-sweep 9s ease-in-out infinite;
+}
+
+@keyframes lecture-cover-sweep {
+  0%,
+  82%,
+  100% {
+    opacity: 0;
+    transform: translateX(-80%);
+  }
+  88% {
+    opacity: 1;
+    transform: translateX(80%);
+  }
 }
 
 .lecture-course-card:hover .lecture-course-card-shine,
@@ -2926,42 +6531,6 @@ html.lenis main {
   border-color: rgba(255, 255, 255, 0.14);
 }
 
-.lecture-stat-capsule {
-  border: 1px solid var(--dash-surface-border);
-  background: var(--dash-soft);
-  transition:
-    border-color 0.2s ease,
-    background-color 0.2s ease;
-}
-
-.lecture-course-card:hover .lecture-stat-capsule,
-.lecture-course-card:focus-visible .lecture-stat-capsule {
-  border-color: rgba(221, 228, 102, 0.35);
-  background: rgba(221, 228, 102, 0.12);
-}
-
-.lecture-course-card-cta {
-  transition:
-    filter 0.2s ease,
-    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.28s ease;
-}
-
-.lecture-course-card:hover .lecture-course-card-cta,
-.lecture-course-card:focus-visible .lecture-course-card-cta {
-  filter: brightness(1.05);
-  box-shadow: 0 6px 14px rgba(221, 228, 102, 0.28);
-}
-
-.lecture-course-card-arrow {
-  transition: transform 0.28s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.lecture-course-card:hover .lecture-course-card-arrow,
-.lecture-course-card:focus-visible .lecture-course-card-arrow {
-  transform: translateX(3px);
-}
-
 /* Lectures loading skeletons — match course card layout */
 @keyframes lecture-skeleton-shimmer {
   0% {
@@ -2974,7 +6543,7 @@ html.lenis main {
 
 .lecture-course-skeleton {
   pointer-events: none;
-  border-color: transparent;
+  border-color: rgba(21, 39, 68, 0.15);
   box-shadow: none;
 }
 
@@ -2982,7 +6551,7 @@ html.lenis main {
 .lecture-course-skeleton:focus-visible,
 .lecture-course-skeleton:active {
   transform: none;
-  border-color: transparent;
+  border-color: rgba(21, 39, 68, 0.15);
   box-shadow: none;
 }
 
@@ -2991,18 +6560,28 @@ html.lenis main {
   background: linear-gradient(
     90deg,
     var(--dash-soft) 0%,
-    rgba(221, 228, 102, 0.18) 45%,
+    rgba(141, 195, 225, 0.18) 45%,
     var(--dash-soft) 90%
   );
   background-size: 200% 100%;
   animation: lecture-skeleton-shimmer 1.35s ease-in-out infinite;
 }
 
+.portal-shell[data-theme="dark"] .lecture-course-skeleton {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
+.portal-shell[data-theme="dark"] .lecture-course-skeleton:hover,
+.portal-shell[data-theme="dark"] .lecture-course-skeleton:focus-visible,
+.portal-shell[data-theme="dark"] .lecture-course-skeleton:active {
+  border-color: rgba(255, 255, 255, 0.16);
+}
+
 .portal-shell[data-theme="dark"] .lecture-skeleton-block {
   background: linear-gradient(
     90deg,
     rgba(255, 255, 255, 0.06) 0%,
-    rgba(221, 228, 102, 0.14) 45%,
+    rgba(141, 195, 225, 0.12) 45%,
     rgba(255, 255, 255, 0.06) 90%
   );
   background-size: 200% 100%;
@@ -3040,13 +6619,22 @@ html.lenis main {
 @media (prefers-reduced-motion: reduce) {
   .lecture-course-card,
   .lecture-hero-orb,
-  .lecture-hero-orb--delayed {
+  .lecture-hero-orb--delayed,
+  .lecture-cover-particle,
+  .lecture-course-card-sweep,
+  .course-book-cover-atmosphere-glow,
+  .course-book-cover-atmosphere-sweep,
+  .course-book-cover-atmosphere-ribbon,
+  .course-book-cover-particle,
+  .course-book-cover-vial-wrap,
+  .course-book-cover-vial-glow,
+  .course-book-cover-vial-shimmer {
     animation: none !important;
   }
 
   .lecture-skeleton-block {
     animation: none !important;
-    background: var(--dash-soft);
+    background: rgba(255, 255, 255, 0.08);
   }
 
   .dashboard-skeleton-block {
@@ -3056,11 +6644,22 @@ html.lenis main {
 
   .lecture-course-card,
   .lecture-course-card-icon,
+  .lecture-course-card-media,
+  .lecture-cover-art-scene,
+  .lecture-cover-art-media,
+  .lecture-cover-accent-motion,
+  .lecture-cover-noise,
   .lecture-course-card-shine,
-  .lecture-course-card-cta,
-  .lecture-course-card-arrow,
-  .lecture-stat-capsule {
+  .lecture-course-card-sweep,
+  .lecture-course-card-spotlight {
     transition: none !important;
+  }
+
+  .lecture-course-card:hover .lecture-cover-art-scene,
+  .lecture-course-card:focus-visible .lecture-cover-art-scene,
+  .lecture-course-card:hover .lecture-cover-accent-motion,
+  .lecture-course-card:focus-visible .lecture-cover-accent-motion {
+    transform: none;
   }
 
   .lecture-course-card:hover,
@@ -3069,7 +6668,8 @@ html.lenis main {
     transform: none;
   }
 
-  .lecture-course-card-shine {
+  .lecture-course-card-shine,
+  .lecture-course-card-sweep {
     transform: none;
     opacity: 0;
   }
@@ -3078,7 +6678,17 @@ html.lenis main {
 @media (max-width: 639px) {
   .lecture-course-card:hover,
   .lecture-course-card:focus-visible {
-    transform: translateY(-2px);
+    transform: translateY(-3px);
+  }
+
+  .lecture-course-card:hover .lecture-cover-art-scene,
+  .lecture-course-card:focus-visible .lecture-cover-art-scene {
+    transform: scale(1.01);
+  }
+
+  .lecture-course-card:hover .lecture-cover-accent-motion,
+  .lecture-course-card:focus-visible .lecture-cover-accent-motion {
+    transform: translateY(-2px) scale(1.01);
   }
 }
 

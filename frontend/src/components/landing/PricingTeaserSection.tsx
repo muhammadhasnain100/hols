@@ -28,7 +28,7 @@ export function PricingTeaserSection() {
             <article
               key={plan.id}
               className={cn(
-                "group relative mx-auto aspect-[4/5] w-full max-w-[22rem] overflow-hidden rounded-2xl shadow-[0_8px_24px_rgba(21,39,68,0.08)] md:max-w-none",
+                "group relative mx-auto aspect-[4/5] w-full max-w-[22rem] overflow-hidden rounded-2xl md:max-w-none",
                 plan.featured &&
                   "ring-2 ring-accent ring-offset-2 ring-offset-[#F4F5F7]",
               )}

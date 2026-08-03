@@ -18,6 +18,7 @@ from database import get_table
 from database_entities import UserProfile, UserRole
 from services.common import email as email_service
 from services.common.pagination import normalize_value
+from services.routes.affiliate_portal.service import sum_affiliate_commission
 from services.routes.auth import service as auth_service
 from services.routes.users import service as users_service
 
@@ -112,8 +113,24 @@ def affiliate_summary(user: dict[str, Any]) -> dict[str, Any]:
         "margin_percent": normalize_value(clean.get("margin_percent")),
         "invitation_quota": _decimal_to_int(clean.get("invitation_quota")),
         "student_count": _decimal_to_int(clean.get("student_count")) or 0,
+        "total_earned": 0.0,
+        "earnings_currency": "USD",
         "created_at": clean.get("created_at"),
     }
+
+
+async def affiliate_summary_with_earnings(user: dict[str, Any]) -> dict[str, Any]:
+    summary = affiliate_summary(user)
+    user_id = summary.get("user_id")
+    if not user_id:
+        return summary
+    try:
+        summed = await sum_affiliate_commission(str(user_id))
+        summary["total_earned"] = summed["total_earned"]
+        summary["earnings_currency"] = summed["currency"]
+    except Exception:
+        logger.exception("Failed to sum commission for affiliate_id=%s", user_id)
+    return summary
 
 
 async def create_affiliate(
@@ -203,7 +220,7 @@ async def get_affiliate(affiliate_id: str) -> dict[str, Any]:
     user = await auth_service.get_user_by_id(affiliate_id)
     if not user or user.get("role") != UserRole.AFFILIATE.value:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Affiliate not found")
-    return affiliate_summary(user)
+    return await affiliate_summary_with_earnings(user)
 
 
 async def update_invitation_quota(affiliate_id: str, invitation_quota: int) -> dict[str, Any]:
@@ -216,4 +233,4 @@ async def update_invitation_quota(affiliate_id: str, invitation_quota: int) -> d
         {"invitation_quota": invitation_quota},
     )
     logger.info("Affiliate invitation quota updated user_id=%s quota=%s", affiliate_id, invitation_quota)
-    return affiliate_summary(updated)
+    return await affiliate_summary_with_earnings(updated)

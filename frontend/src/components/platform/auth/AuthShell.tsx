@@ -1,3 +1,4 @@
+import { ChevronLeft, Icon } from "@/components/icons";
 import { AuthCreativeAside } from "@/components/platform/auth/AuthCreativeAside";
 import { authEyebrowClass, authSubtitleClass, authTitleClass } from "@/components/platform/auth/auth-styles";
 import { HeroLogo } from "@/components/hero/HeroLogo";
@@ -44,9 +45,7 @@ export function AuthShell({
             href="/"
             className="text-brand-caption ml-auto inline-flex items-center gap-2 rounded-full border border-white/60 bg-white/45 px-3.5 py-2 font-medium text-primary/80 shadow-[0_8px_24px_rgba(20,38,68,0.08)] backdrop-blur-md transition hover:bg-white/70 hover:text-primary sm:px-4"
           >
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden>
-              <path d="M15 18l-6-6 6-6" />
-            </svg>
+            <Icon icon={ChevronLeft} size={14} strokeWidth={2} />
             Back to site
           </a>
         </header>
@@ -54,7 +53,7 @@ export function AuthShell({
         <div className={cn("relative z-10 flex flex-1 flex-col justify-center pb-10 pt-2 sm:pb-12 sm:pt-4", heroLayout.gutterX, "lg:px-10 xl:px-16")}>
           <div
             className={cn(
-              "mx-auto w-full rounded-2xl border border-white/55 bg-white/55 p-4 shadow-[0_12px_40px_rgba(20,38,68,0.1),inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-[22px] [backdrop-filter:blur(22px)_saturate(180%)] [-webkit-backdrop-filter:blur(22px)_saturate(180%)] sm:p-6 md:p-8",
+              "mx-auto w-full rounded-2xl border border-white/55 bg-white/55 p-4 shadow-[inset_0_1px_0_rgba(255,255,255,0.75)] backdrop-blur-[22px] [backdrop-filter:blur(22px)_saturate(180%)] [-webkit-backdrop-filter:blur(22px)_saturate(180%)] sm:p-6 md:p-8",
               contentWidth === "lg" ? "max-w-xl" : "max-w-md",
             )}
           >

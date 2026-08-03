@@ -61,7 +61,7 @@ export function useSpreadHover({
   }, [fillColor]);
 
   const onMouseEnter = useCallback(
-    (event: React.MouseEvent<HTMLAnchorElement | HTMLButtonElement>) => {
+    (event: React.MouseEvent<HTMLElement>) => {
       if (!enabled) return;
 
       registerGsap();

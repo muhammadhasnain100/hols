@@ -37,7 +37,7 @@ export function WelcomeChip({ className, fallbackName = "Student" }: WelcomeChip
         )}
       </span>
       <span className="hidden max-w-[9rem] flex-col leading-tight sm:flex md:max-w-[12rem]">
-        <span className="text-[11px] text-[color:var(--dash-faint)]">Welcome back,</span>
+        <span className="text-[11px] font-medium text-[color:var(--dash-muted)]">Welcome back,</span>
         <span className="font-sans truncate text-sm font-semibold text-[color:var(--dash-text)]">
           {name}
         </span>

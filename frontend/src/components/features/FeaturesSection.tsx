@@ -28,7 +28,7 @@ function FeatureBlock({
         reversed && "lg:[&>*:first-child]:order-2",
       )}
     >
-      <div className="overflow-hidden rounded-3xl border border-border/50 bg-white shadow-[0_12px_40px_rgba(21,39,68,0.08)]">
+      <div className="overflow-hidden rounded-3xl border border-border/50 bg-white">
         <div className="border-b border-border/40 bg-primary/[0.02] p-4 md:p-5">
           <Mockup className="h-auto w-full" />
         </div>

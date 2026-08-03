@@ -3,6 +3,23 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { LessonLearningSkeleton } from "@/components/platform/provider/student/DashboardSkeletons";
 import type { LessonDetail } from "@/lib/integrate/provider/student/lectures";
+import {
+  BookOpen,
+  ChevronLeft,
+  Focus,
+  Highlighter,
+  Icon,
+  List,
+  Maximize2,
+  Moon,
+  PanelTop,
+  PenLine,
+  Sun,
+  Trash2,
+  Undo2,
+  ZoomIn,
+  ZoomOut,
+} from "@/components/icons";
 import { cn } from "@/lib/utils";
 import { LessonProse } from "./lessonProse";
 import {
@@ -90,105 +107,23 @@ function clearHighlights(container: HTMLElement | null) {
 }
 
 const Icons = {
-  exit: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-      <path d="M15 18l-6-6 6-6" />
-    </svg>
-  ),
-  focus: (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-      <circle cx="12" cy="12" r="3" />
-      <path d="M12 2v3M12 19v3M2 12h3M19 12h3" />
-      <path d="M4.9 4.9l2.1 2.1M17 17l2.1 2.1M19.1 4.9 17 7M7 17l-2.1 2.1" />
-    </svg>
-  ),
-  center: (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-      <rect x="6" y="4" width="12" height="16" rx="1.5" />
-    </svg>
-  ),
-  full: (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-      <rect x="3" y="4" width="18" height="16" rx="1.5" />
-    </svg>
-  ),
-  light: (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-      <circle cx="12" cy="12" r="4" />
-      <path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4" />
-    </svg>
-  ),
-  sepia: (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-    </svg>
-  ),
-  dark: (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-      <path d="M21 14.5A8.5 8.5 0 1 1 9.5 3 7 7 0 0 0 21 14.5z" />
-    </svg>
-  ),
-  spacingTight: (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-      <path d="M4 8h16M4 12h16M4 16h16" />
-    </svg>
-  ),
-  spacingNormal: (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-      <path d="M4 7h16M4 12h16M4 17h16" />
-    </svg>
-  ),
-  spacingWide: (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-      <path d="M4 6h16M4 12h16M4 18h16" />
-    </svg>
-  ),
-  zoomOut: (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-      <circle cx="11" cy="11" r="7" />
-      <path d="m21 21-4.3-4.3M8 11h6" />
-    </svg>
-  ),
-  zoomIn: (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-      <circle cx="11" cy="11" r="7" />
-      <path d="m21 21-4.3-4.3M11 8v6M8 11h6" />
-    </svg>
-  ),
-  highlight: (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-      <path d="m15 5 4 4-9.5 9.5H5.5v-4L15 5z" />
-      <path d="M12.5 7.5 16.5 11.5" />
-      <path d="M4 21h16" />
-    </svg>
-  ),
-  marker: (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-      <path d="M12 19 19 5l-4-2-7 14v2h2z" />
-      <path d="m15 5 4 2" />
-    </svg>
-  ),
-  undo: (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-      <path d="M3 7v6h6" />
-      <path d="M21 17a9 9 0 0 0-15-6.7L3 13" />
-    </svg>
-  ),
-  clear: (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-      <path d="M3 6h18" />
-      <path d="M8 6V4h8v2" />
-      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
-      <path d="M10 11v6M14 11v6" />
-    </svg>
-  ),
-  book: (
-    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-      <path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" />
-      <path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" />
-    </svg>
-  ),
+  exit: <Icon icon={ChevronLeft} size={16} />,
+  focus: <Icon icon={Focus} size={16} />,
+  center: <Icon icon={PanelTop} size={15} />,
+  full: <Icon icon={Maximize2} size={15} />,
+  light: <Icon icon={Sun} size={15} />,
+  sepia: <Icon icon={BookOpen} size={15} />,
+  dark: <Icon icon={Moon} size={15} />,
+  spacingTight: <Icon icon={List} size={15} />,
+  spacingNormal: <Icon icon={List} size={15} />,
+  spacingWide: <Icon icon={List} size={15} />,
+  zoomOut: <Icon icon={ZoomOut} size={15} />,
+  zoomIn: <Icon icon={ZoomIn} size={15} />,
+  highlight: <Icon icon={Highlighter} size={15} />,
+  marker: <Icon icon={PenLine} size={15} />,
+  undo: <Icon icon={Undo2} size={15} />,
+  clear: <Icon icon={Trash2} size={15} />,
+  book: <Icon icon={BookOpen} size={15} />,
 };
 
 function ToolButton({
@@ -454,7 +389,7 @@ export function LessonLearningView({
       aria-modal="true"
       aria-label="Learning mode"
     >
-      <header className="lesson-learning-header shrink-0 border-b px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))] shadow-[0_1px_8px_rgba(21,39,68,0.06)] backdrop-blur-sm md:px-4 md:py-2.5">
+      <header className="lesson-learning-header shrink-0 border-b px-3 py-2 pt-[max(0.5rem,env(safe-area-inset-top))] backdrop-blur-sm md:px-4 md:py-2.5">
         <div className="mx-auto flex max-w-6xl flex-col gap-2 md:flex-row md:flex-wrap md:items-center md:gap-2">
           <div className="flex items-center gap-2 md:contents">
             <button

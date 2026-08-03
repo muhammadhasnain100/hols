@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 520" fill="none">
+  <rect width="400" height="520" fill="#0d1626"/>
+  <rect x="40" y="40" width="320" height="440" rx="20" stroke="#ffffff" stroke-opacity="0.1" stroke-width="1"/>
+  <rect x="70" y="80" width="260" height="160" rx="14" fill="#152744"/>
+  <path d="M90 120h120M90 145h180M90 170h90" stroke="#8dc3e1" stroke-opacity="0.4" stroke-width="3" stroke-linecap="round"/>
+  <circle cx="280" cy="160" r="28" fill="#dde466" fill-opacity="0.85"/>
+  <path d="M270 160h20M280 150v20" stroke="#152744" stroke-width="2.5" stroke-linecap="round"/>
+  <rect x="70" y="280" width="100" height="70" rx="10" fill="#1a2f55"/>
+  <rect x="190" y="280" width="100" height="70" rx="10" fill="#1a2f55"/>
+  <rect x="70" y="370" width="220" height="50" rx="10" fill="#152744"/>
+  <text x="70" y="500" fill="#ffffff" fill-opacity="0.35" font-family="system-ui,sans-serif" font-size="11" letter-spacing="3">HOLS</text>
+</svg>

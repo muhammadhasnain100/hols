@@ -1,6 +1,7 @@
 "use client";
 
 import type { ReactNode } from "react";
+import { Icon, Lock, Mail, User } from "@/components/icons";
 import { authFieldClass, authLabelClass } from "@/components/platform/auth/auth-styles";
 import { cn } from "@/lib/utils";
 
@@ -20,30 +21,9 @@ type AuthFieldProps = {
 };
 
 function FieldIcon({ icon }: { icon: AuthFieldIcon }) {
-  if (icon === "email") {
-    return (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <path d="M4 6h16v12H4V6Z" />
-        <path d="m4 7 8 6 8-6" />
-      </svg>
-    );
-  }
-
-  if (icon === "password") {
-    return (
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-        <rect x="5" y="11" width="14" height="10" rx="2" />
-        <path d="M8 11V8a4 4 0 0 1 8 0v3" />
-      </svg>
-    );
-  }
-
-  return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden>
-      <circle cx="12" cy="8" r="4" />
-      <path d="M5 20c1.5-3.5 4.5-5.5 7-5.5s5.5 2 7 5.5" />
-    </svg>
-  );
+  if (icon === "email") return <Icon icon={Mail} size={16} />;
+  if (icon === "password") return <Icon icon={Lock} size={16} />;
+  return <Icon icon={User} size={16} />;
 }
 
 export function AuthField({

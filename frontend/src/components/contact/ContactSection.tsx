@@ -3,6 +3,7 @@
 import { useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import { gsap, registerGsap } from "@/lib/gsap";
+import { Calendar, Icon, Mail, Rocket } from "@/components/icons";
 import { ContactForm } from "@/components/contact/ContactForm";
 import { Button } from "@/components/ui/Button";
 import { Container } from "@/components/ui/Container";
@@ -38,10 +39,10 @@ function PathwayCard({
       id={id}
       data-contact-card
       className={cn(
-        "h-full rounded-2xl border p-6 transition-shadow md:p-7",
+        "h-full rounded-2xl border p-6 md:p-7",
         variant === "featured"
-          ? "border-primary/15 bg-primary text-white shadow-[0_12px_40px_rgba(21,39,68,0.14)]"
-          : "border-border/50 bg-white/90 shadow-[0_8px_30px_rgba(21,39,68,0.05)] hover:shadow-[0_14px_36px_rgba(21,39,68,0.08)]",
+          ? "border-primary/15 bg-primary text-white"
+          : "border-border/50 bg-white/90",
       )}
     >
       <div className="flex h-full flex-col">
@@ -183,22 +184,7 @@ export function ContactSection() {
             headline={contactContent.getStarted.headline}
             body={contactContent.getStarted.body}
             cta={contactContent.getStarted.cta}
-            icon={
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                aria-hidden
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M15.59 14.37a6 6 0 0 1-5.84 7.38v-4.8m5.84-2.58a14.98 14.98 0 0 0 6.16-12.12A14.98 14.98 0 0 0 9.631 8.41m5.96 5.96a14.926 14.926 0 0 1-5.841 2.58m-.119-8.54a6 6 0 0 0-7.381 5.84h4.8m2.581-5.84a14.927 14.927 0 0 0-2.58 5.84m2.699 2.7c-.103.021-.207.041-.311.06a15.09 15.09 0 0 1-2.448-2.448 14.9 14.9 0 0 1 .06-.312m-2.24 2.39a4.493 4.493 0 0 0-1.757 4.306 4.493 4.493 0 0 0 4.306-1.758M16.5 9a1.5 1.5 0 1 1-3 0 1.5 1.5 0 0 1 3 0Z"
-                />
-              </svg>
-            }
+            icon={<Icon icon={Rocket} size={20} strokeWidth={1.5} className="h-5 w-5" />}
           />
 
           <PathwayCard
@@ -207,44 +193,14 @@ export function ContactSection() {
             headline={contactContent.demo.headline}
             body={contactContent.demo.body}
             cta={contactContent.demo.cta}
-            icon={
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                aria-hidden
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M6.75 3v2.25M17.25 3v2.25M3 18.75V7.5a2.25 2.25 0 0 1 2.25-2.25h13.5A2.25 2.25 0 0 1 21 7.5v11.25m-18 0A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75m-18 0v-7.5A2.25 2.25 0 0 1 5.25 9h13.5A2.25 2.25 0 0 1 21 11.25v7.5"
-                />
-              </svg>
-            }
+            icon={<Icon icon={Calendar} size={20} strokeWidth={1.5} className="h-5 w-5" />}
           />
 
           <PathwayCard
             title={contactContent.direct.title}
             email={contactContent.direct.email}
             responseNote={contactContent.direct.responseNote}
-            icon={
-              <svg
-                className="h-5 w-5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth="1.5"
-                aria-hidden
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  d="M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75"
-                />
-              </svg>
-            }
+            icon={<Icon icon={Mail} size={20} strokeWidth={1.5} className="h-5 w-5" />}
           />
         </div>
       </Container>
