@@ -5413,36 +5413,192 @@ html.lenis main {
     0 2px 12px rgba(245, 246, 248, 0.7);
 }
 
-/* Card thumbnails — photo-only milky fade (~10%), never touches typography */
-.lecture-cover-art:not(.lecture-cover-art-panel) .lecture-cover-art-media::after {
+/* Card thumbnails — soft editorial wash (sharp image, no blur) */
+.lecture-cover-art:not(.lecture-cover-art-panel) .lecture-cover-art-media {
+  overflow: hidden;
+  isolation: isolate;
+  background: #eef2f4;
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-art:not(.lecture-cover-art-panel) .lecture-cover-art-media {
+  background: #090b22;
+}
+
+.lecture-cover-art:not(.lecture-cover-art-panel) .lecture-cover-art-media .lecture-cover-vial-photo,
+.lecture-cover-art:not(.lecture-cover-art-panel) .lecture-cover-art-media .lecture-cover-labeled-vial-photo {
+  filter: none;
+  transform: none;
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-art:not(.lecture-cover-art-panel) .lecture-cover-art-media .lecture-cover-vial-photo,
+.portal-shell[data-theme="dark"] .lecture-cover-art:not(.lecture-cover-art-panel) .lecture-cover-art-media .lecture-cover-labeled-vial-photo {
+  transform: scale(1.01);
+  filter: brightness(0.94) saturate(0.96) contrast(1.02);
+}
+
+/* Light — luminous bloom wash */
+.lecture-cover-art:not(.lecture-cover-art-panel) .lecture-cover-art-media::before {
   content: "";
   position: absolute;
   inset: 0;
   z-index: 2;
   pointer-events: none;
-  background: rgba(255, 255, 255, 0.1);
+  background:
+    radial-gradient(circle at 80% 12%, rgba(202, 255, 56, 0.12), transparent 28%),
+    radial-gradient(circle at 20% 10%, rgba(255, 255, 255, 0.34), transparent 34%),
+    linear-gradient(to top, rgba(255, 255, 255, 0.24), rgba(255, 255, 255, 0.06) 35%, transparent 70%);
 }
 
-.portal-shell[data-theme="dark"] .lecture-cover-art:not(.lecture-cover-art-panel) .lecture-cover-art-media::after {
-  background: rgba(252, 252, 253, 0.07);
+/* Dark — photographic spotlight sweep only */
+.portal-shell[data-theme="dark"] .lecture-cover-art:not(.lecture-cover-art-panel) .lecture-cover-art-media::before {
+  background: linear-gradient(
+    120deg,
+    transparent 18%,
+    rgba(255, 255, 255, 0.06) 42%,
+    transparent 65%
+  );
+  opacity: 0.55;
 }
 
-.lecture-cover-art:not(.lecture-cover-art-panel) .lecture-cover-vial-photo,
-.lecture-cover-art:not(.lecture-cover-art-panel) .lecture-cover-labeled-vial-photo {
-  filter: saturate(0.94);
+/* Bottom veil — light: milk-glass / dark: deep indigo depth */
+.lecture-cover-art-atmosphere {
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    rgba(248, 249, 251, 0.96) 0%,
+    rgba(248, 249, 251, 0.78) 16%,
+    rgba(248, 249, 251, 0.42) 34%,
+    rgba(248, 249, 251, 0.1) 52%,
+    rgba(248, 249, 251, 0) 68%
+  );
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-art-atmosphere {
+  background: linear-gradient(
+    to top,
+    rgba(8, 10, 30, 0.96) 0%,
+    rgba(10, 12, 36, 0.88) 18%,
+    rgba(14, 16, 48, 0.64) 36%,
+    rgba(18, 22, 56, 0.26) 54%,
+    rgba(18, 22, 56, 0) 74%
+  );
+}
+
+/* Dark — HOLS lime + violet-blue atmospheric glow */
+.lecture-cover-art-glow {
+  pointer-events: none;
+  opacity: 0;
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-art-glow {
+  opacity: 1;
+  mix-blend-mode: screen;
+  background:
+    radial-gradient(circle at 82% 18%, rgba(199, 255, 70, 0.16), transparent 26%),
+    radial-gradient(circle at 28% 12%, rgba(96, 126, 255, 0.16), transparent 34%),
+    radial-gradient(circle at 55% 68%, rgba(94, 75, 255, 0.12), transparent 28%);
+}
+
+/* Light edge vignette — light theme only */
+.lecture-cover-art-vignette-soft {
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 88% 72% at 72% 18%, rgba(255, 255, 255, 0.2) 0%, transparent 52%),
+    radial-gradient(ellipse 95% 90% at 50% 50%, transparent 58%, rgba(20, 38, 68, 0.035) 100%);
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-art-vignette-soft {
+  opacity: 0;
+}
+
+.lecture-cover-art-grain {
+  pointer-events: none;
+  background-image:
+    radial-gradient(rgba(20, 30, 50, 0.12) 0.4px, transparent 0.6px),
+    radial-gradient(rgba(255, 255, 255, 0.2) 0.4px, transparent 0.7px);
+  background-size: 6px 6px, 9px 9px;
+  background-position: 0 0, 4px 4px;
+  opacity: 0.05;
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-art-grain {
+  opacity: 0.06;
+  background-image:
+    radial-gradient(rgba(255, 255, 255, 0.18) 0.45px, transparent 0.6px),
+    radial-gradient(rgba(0, 0, 0, 0.22) 0.45px, transparent 0.75px);
+  background-size: 7px 7px, 10px 10px;
+  background-position: 0 0, 4px 5px;
+}
+
+/* Frosted readability bed — local blur behind title only */
+.lecture-cover-art:not(.lecture-cover-art-panel) .lecture-cover-art-card-text {
+  isolation: isolate;
+}
+
+.lecture-cover-art:not(.lecture-cover-art-panel) .lecture-cover-art-card-text::before {
+  content: "";
+  position: absolute;
+  inset: -10px -12px;
+  z-index: -1;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.18);
+  backdrop-filter: blur(10px) saturate(120%);
+  -webkit-backdrop-filter: blur(10px) saturate(120%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.45),
+    0 8px 24px rgba(20, 28, 48, 0.08);
+}
+
+.portal-shell[data-theme="dark"] .lecture-cover-art:not(.lecture-cover-art-panel) .lecture-cover-art-card-text::before {
+  inset: -12px -12px -10px -12px;
+  background: rgba(14, 18, 42, 0.22);
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 10px 20px rgba(0, 0, 0, 0.12);
 }
 
 .portal-shell[data-theme="dark"] .lecture-cover-art-category,
 .portal-shell[data-theme="dark"] .lecture-cover-art-eyebrow {
-  color: rgba(221, 228, 102, 0.82);
+  color: rgba(201, 255, 70, 0.82);
   text-shadow: 0 1px 12px rgba(5, 9, 28, 0.55);
 }
 
 .portal-shell[data-theme="dark"] .lecture-cover-art-title {
-  color: var(--cover-art-ink);
+  color: #f4f6ff;
   text-shadow:
     0 1px 14px rgba(5, 9, 28, 0.75),
     0 0 22px rgba(5, 9, 28, 0.45);
+}
+
+.lecture-course-card:hover .lecture-cover-art:not(.lecture-cover-art-panel) .lecture-cover-art-atmosphere,
+.lecture-course-card:focus-visible .lecture-cover-art:not(.lecture-cover-art-panel) .lecture-cover-art-atmosphere {
+  background: linear-gradient(
+    to top,
+    rgba(248, 249, 251, 0.9) 0%,
+    rgba(248, 249, 251, 0.72) 16%,
+    rgba(248, 249, 251, 0.36) 34%,
+    rgba(248, 249, 251, 0.08) 52%,
+    rgba(248, 249, 251, 0) 68%
+  );
+}
+
+.portal-shell[data-theme="dark"] .lecture-course-card:hover .lecture-cover-art:not(.lecture-cover-art-panel) .lecture-cover-art-atmosphere,
+.portal-shell[data-theme="dark"] .lecture-course-card:focus-visible .lecture-cover-art:not(.lecture-cover-art-panel) .lecture-cover-art-atmosphere {
+  background: linear-gradient(
+    to top,
+    rgba(8, 10, 30, 0.92) 0%,
+    rgba(10, 12, 36, 0.84) 18%,
+    rgba(14, 16, 48, 0.58) 36%,
+    rgba(18, 22, 56, 0.22) 54%,
+    rgba(18, 22, 56, 0) 74%
+  );
+}
+
+.lecture-course-card:hover .lecture-cover-art:not(.lecture-cover-art-panel) .lecture-cover-art-scene,
+.lecture-course-card:focus-visible .lecture-cover-art:not(.lecture-cover-art-panel) .lecture-cover-art-scene {
+  transform: none;
 }
 
 .lecture-cover-art-readability {
@@ -5551,7 +5707,7 @@ html.lenis main {
 }
 
 /* Full-scene Magnific covers fill the media area */
-.lecture-cover-art--custom-photo .lecture-cover-art-media {
+.lecture-cover-art--custom-photo.lecture-cover-art-panel .lecture-cover-art-media {
   z-index: 0;
   background: none;
 }
@@ -5906,8 +6062,9 @@ html.lenis main {
   transition: transform 600ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.lecture-course-card:hover .lecture-cover-art--custom-photo .lecture-cover-art-scene {
-  transform: scale(1.02);
+.lecture-course-card:hover .lecture-cover-art--custom-photo:not(.lecture-cover-art-panel) .lecture-cover-art-scene,
+.lecture-course-card:focus-visible .lecture-cover-art--custom-photo:not(.lecture-cover-art-panel) .lecture-cover-art-scene {
+  transform: none;
 }
 
 /* Branded cover art is always dark — force foil/light ink in both portal themes */

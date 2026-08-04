@@ -94,15 +94,19 @@ export function CourseCoverArt({
             <CourseCoverLabeledVial title={title} className="lecture-cover-custom-photo" />
           )}
         </div>
+        {variant !== "panel" ? (
+          <>
+            <div className="lecture-cover-art-atmosphere absolute inset-0 z-[2]" aria-hidden />
+            <div className="lecture-cover-art-glow absolute inset-0 z-[3]" aria-hidden />
+            <div className="lecture-cover-art-vignette-soft absolute inset-0 z-[2]" aria-hidden />
+            <div className="lecture-cover-art-grain absolute inset-0 z-[4]" aria-hidden />
+          </>
+        ) : null}
       </div>
 
       {variant === "panel" ? null : (
         <>
-          <div className="lecture-cover-art-card-fade absolute inset-0 z-[2]" aria-hidden />
-          <div className="lecture-cover-art-vignette absolute inset-0 z-[2]" aria-hidden />
-          <div className="lecture-cover-art-card-text-scrim absolute inset-0 z-[2]" aria-hidden />
-
-          <div className="absolute inset-0 z-[3] flex flex-col px-5 pb-3 pt-5 sm:px-6 sm:pb-3.5 sm:pt-6">
+          <div className="absolute inset-0 z-[5] flex flex-col px-5 pb-3 pt-5 sm:px-6 sm:pb-3.5 sm:pt-6">
             <div className="lecture-cover-brand flex items-center gap-1.5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
