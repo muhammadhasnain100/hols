@@ -99,8 +99,17 @@ function WhoItsForSlideContent({ slide }: { slide: WhoItsForSlide }) {
   );
 }
 
+/**
+ * Dual-buffer loop: one video stays visible while the other is pre-seeked to
+ * frame 0, then we hard-swap at the seam. Avoids the HTML5 single-element
+ * hitch when `loop` seeks back to the start.
+ */
 function WhoItsForBackgroundVideo() {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const primaryRef = useRef<HTMLVideoElement>(null);
+  const secondaryRef = useRef<HTMLVideoElement>(null);
+  const activeIndexRef = useRef<0 | 1>(0);
+  const preparingRef = useRef(false);
+  const swappingRef = useRef(false);
   const [reduceMotion, setReduceMotion] = useState(false);
   const [videoFailed, setVideoFailed] = useState(false);
 
@@ -109,50 +118,154 @@ function WhoItsForBackgroundVideo() {
   }, []);
 
   useEffect(() => {
-    const video = videoRef.current;
-    if (!video || reduceMotion || videoFailed) return;
+    if (reduceMotion || videoFailed) return;
 
-    video.loop = true;
-    video.muted = true;
-    video.defaultMuted = true;
-    video.setAttribute("playsinline", "");
+    const videos = [primaryRef.current, secondaryRef.current] as const;
+    if (!videos[0] || !videos[1]) return;
 
-    const playVideo = () => {
+    /** Start the standby buffer this far before the seam (seconds). */
+    const PREP_LEAD = 0.28;
+    /** Hard-swap when this little time remains (≈2 frames @ 24fps). */
+    const SWAP_LEAD = 0.08;
+
+    const configure = (video: HTMLVideoElement) => {
+      video.loop = false;
+      video.muted = true;
+      video.defaultMuted = true;
+      video.playsInline = true;
+      video.setAttribute("playsinline", "");
+      video.setAttribute("muted", "");
+    };
+
+    configure(videos[0]);
+    configure(videos[1]);
+    videos[0].style.opacity = "1";
+    videos[1].style.opacity = "0";
+    activeIndexRef.current = 0;
+    preparingRef.current = false;
+    swappingRef.current = false;
+
+    const playVideo = (video: HTMLVideoElement) => {
       const attempt = video.play();
       if (attempt !== undefined) {
         attempt.catch(() => {});
       }
     };
 
-    const handleEnded = () => {
-      video.currentTime = 0;
-      playVideo();
+    const resetStandby = (video: HTMLVideoElement) => {
+      video.pause();
+      try {
+        video.currentTime = 0;
+      } catch {
+        /* ignore seek abort during teardown */
+      }
     };
 
     const handleError = () => setVideoFailed(true);
 
     const handleVisibility = () => {
-      if (document.visibilityState === "visible" && video.paused) {
-        playVideo();
-      }
+      if (document.visibilityState !== "visible") return;
+      const active = videos[activeIndexRef.current];
+      if (active?.paused) playVideo(active);
     };
 
-    video.addEventListener("ended", handleEnded);
-    video.addEventListener("error", handleError);
-    video.addEventListener("loadeddata", playVideo);
-    video.addEventListener("canplay", playVideo);
+    const hardSwap = () => {
+      if (swappingRef.current) return;
+
+      const activeIndex = activeIndexRef.current;
+      const current = videos[activeIndex];
+      const nextIndex = (1 - activeIndex) as 0 | 1;
+      const next = videos[nextIndex];
+      if (!current || !next) return;
+
+      swappingRef.current = true;
+      playVideo(next);
+      next.style.opacity = "1";
+      current.style.opacity = "0";
+      activeIndexRef.current = nextIndex;
+      preparingRef.current = false;
+
+      window.setTimeout(() => {
+        resetStandby(current);
+        swappingRef.current = false;
+      }, 120);
+    };
+
+    const handleEnded = (index: 0 | 1) => () => {
+      if (activeIndexRef.current !== index) return;
+      hardSwap();
+    };
+
+    videos[0].addEventListener("error", handleError);
+    videos[1].addEventListener("error", handleError);
+    videos[0].addEventListener("ended", handleEnded(0));
+    videos[1].addEventListener("ended", handleEnded(1));
     document.addEventListener("visibilitychange", handleVisibility);
 
-    playVideo();
+    playVideo(videos[0]);
+
+    let rafId = 0;
+
+    const tick = () => {
+      const activeIndex = activeIndexRef.current;
+      const current = videos[activeIndex];
+      const nextIndex = (1 - activeIndex) as 0 | 1;
+      const next = videos[nextIndex];
+
+      if (
+        current &&
+        next &&
+        !swappingRef.current &&
+        Number.isFinite(current.duration) &&
+        current.duration > 0
+      ) {
+        const remaining = current.duration - current.currentTime;
+
+        if (remaining <= PREP_LEAD && !preparingRef.current) {
+          preparingRef.current = true;
+          // Park standby on frame 0 under the visible layer.
+          resetStandby(next);
+        }
+
+        // Start playback a couple frames early while still hidden, so the
+        // first painted frame is ready before we hard-cut at the seam.
+        if (
+          remaining <= SWAP_LEAD &&
+          preparingRef.current &&
+          next.paused &&
+          next.readyState >= 2
+        ) {
+          playVideo(next);
+        }
+
+        if (
+          preparingRef.current &&
+          !next.paused &&
+          remaining <= 1 / 24
+        ) {
+          hardSwap();
+        }
+      }
+
+      rafId = requestAnimationFrame(tick);
+    };
+
+    rafId = requestAnimationFrame(tick);
 
     return () => {
-      video.removeEventListener("ended", handleEnded);
-      video.removeEventListener("error", handleError);
-      video.removeEventListener("loadeddata", playVideo);
-      video.removeEventListener("canplay", playVideo);
+      cancelAnimationFrame(rafId);
+      videos[0]?.removeEventListener("error", handleError);
+      videos[1]?.removeEventListener("error", handleError);
+      videos[0]?.removeEventListener("ended", handleEnded(0));
+      videos[1]?.removeEventListener("ended", handleEnded(1));
       document.removeEventListener("visibilitychange", handleVisibility);
+      videos[0]?.pause();
+      videos[1]?.pause();
     };
   }, [reduceMotion, videoFailed]);
+
+  const videoClassName =
+    "absolute inset-0 h-full w-full object-cover object-center";
 
   return (
     <div className="absolute inset-0 overflow-hidden bg-black">
@@ -165,19 +278,31 @@ function WhoItsForBackgroundVideo() {
           className="object-cover object-center"
         />
       ) : (
-        <video
-          ref={videoRef}
-          autoPlay
-          muted
-          loop
-          playsInline
-          preload="auto"
-          disablePictureInPicture
-          poster={WHO_IT_FOR_POSTER}
-          className="absolute inset-0 h-full w-full object-cover object-center"
-        >
-          <source src={WHO_IT_FOR_VIDEO} type="video/mp4" />
-        </video>
+        <>
+          <video
+            ref={primaryRef}
+            autoPlay
+            muted
+            playsInline
+            preload="auto"
+            disablePictureInPicture
+            poster={WHO_IT_FOR_POSTER}
+            className={videoClassName}
+          >
+            <source src={WHO_IT_FOR_VIDEO} type="video/mp4" />
+          </video>
+          <video
+            ref={secondaryRef}
+            muted
+            playsInline
+            preload="auto"
+            disablePictureInPicture
+            className={videoClassName}
+            aria-hidden
+          >
+            <source src={WHO_IT_FOR_VIDEO} type="video/mp4" />
+          </video>
+        </>
       )}
     </div>
   );

@@ -1,8 +1,12 @@
 import Image from "next/image";
 import { HeroButton } from "@/components/hero/HeroButton";
+import { brand } from "@/config/brand";
 import { landingContent } from "@/content/landing";
 import { heroLayout } from "@/lib/hero-styles";
 import { cn } from "@/lib/utils";
+
+/** Brand Prussian Blue — continuous with the footer below */
+const FINAL_CTA_BG = brand.colors.primary.prussianBlue;
 
 const FINAL_CTA_HEADLINE = cn(
   "font-sans font-normal tracking-tight text-white",
@@ -36,7 +40,11 @@ export function FinalCTASection() {
     : null;
 
   return (
-    <section className="relative w-full overflow-hidden bg-black">
+    <section
+      data-nav-surface="dark"
+      className="relative w-full overflow-hidden"
+      style={{ backgroundColor: FINAL_CTA_BG }}
+    >
       <div
         className={cn(
           "pointer-events-none absolute top-1/2 right-0 z-0 aspect-square -translate-y-1/2",
@@ -64,8 +72,8 @@ export function FinalCTASection() {
       <div
         className={cn(
           "pointer-events-none absolute inset-y-0 left-0 z-[1]",
-          "w-[72%] bg-[linear-gradient(90deg,rgba(0,0,0,0.78)_0%,rgba(0,0,0,0.42)_48%,transparent_100%)]",
-          "sm:w-[58%] sm:bg-[linear-gradient(90deg,rgba(0,0,0,0.65)_0%,rgba(0,0,0,0.3)_55%,transparent_100%)]",
+          "w-[72%] bg-[linear-gradient(90deg,rgba(21,39,68,0.78)_0%,rgba(21,39,68,0.42)_48%,transparent_100%)]",
+          "sm:w-[58%] sm:bg-[linear-gradient(90deg,rgba(21,39,68,0.65)_0%,rgba(21,39,68,0.3)_55%,transparent_100%)]",
           "md:w-[50%]",
         )}
         aria-hidden
