@@ -18,6 +18,13 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_CATALOG_SECTION = "lectures"
 
+HIDDEN_COURSE_IDS = frozenset(
+    {
+        "18e729a6-7061-48cf-9d51-a04ffa77124a",
+        "0eed2662-8a08-443b-8146-357b3f51232e",
+    }
+)
+
 _courses_cache: dict[str, list[dict[str, Any]]] = {}
 _course_bundle_cache: dict[str, dict[str, Any]] = {}
 _lesson_key_cache: dict[str, dict[str, str]] = {}
@@ -193,6 +200,25 @@ def _course_summary(item: dict[str, Any]) -> dict[str, Any]:
     )
 
 
+def _is_hidden_course(course: dict[str, Any]) -> bool:
+    course_id = str(course.get("course_id") or "")
+    if course_id in HIDDEN_COURSE_IDS:
+        return True
+
+    title = str(course.get("title") or "").lower()
+    if "peptide dosing guide" in title:
+        return True
+    if "alpha biomed" in title and "sales training" in title:
+        return True
+    if "alpha biomed" in title and ("do's" in title or "dont" in title or "don't" in title):
+        return True
+    return False
+
+
+def _visible_courses(courses: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    return [course for course in courses if not _is_hidden_course(course)]
+
+
 def _topic_summary(item: dict[str, Any]) -> dict[str, Any]:
     return normalize_value(
         {
@@ -256,12 +282,17 @@ def _lesson_detail(item: dict[str, Any]) -> dict[str, Any]:
 async def get_course(course_id: str) -> dict[str, Any]:
     cached_bundle = _course_bundle_cache.get(course_id)
     if cached_bundle:
-        return cached_bundle["course"]
+        course = cached_bundle["course"]
+        if _is_hidden_course(course):
+            raise HTTPException(status.HTTP_404_NOT_FOUND, "Course not found")
+        return course
 
     cached_courses = _courses_cache.get(DEFAULT_CATALOG_SECTION)
     if cached_courses:
         for course in cached_courses:
             if course.get("course_id") == course_id:
+                if _is_hidden_course(course):
+                    raise HTTPException(status.HTTP_404_NOT_FOUND, "Course not found")
                 return course
 
     def _fetch():
@@ -272,7 +303,10 @@ async def get_course(course_id: str) -> dict[str, Any]:
     item = await run_sync(_fetch)
     if not item or item.get("entity") != Course.ENTITY:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Course not found")
-    return _course_summary(item)
+    course = _course_summary(item)
+    if _is_hidden_course(course):
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Course not found")
+    return course
 
 
 async def ensure_course_exists(course_id: str) -> dict[str, Any]:
@@ -299,7 +333,8 @@ async def list_courses(
         _courses_cache[catalog_section] = courses
         logger.info("Primed lecture course cache section=%s count=%s", catalog_section, len(courses))
 
-    result = _paginate_list(courses, page=page, limit=limit)
+    visible_courses = _visible_courses(courses)
+    result = _paginate_list(visible_courses, page=page, limit=limit)
     logger.info("Listed courses page=%s limit=%s count=%s cached=true", page, limit, len(result["items"]))
     return result
 

@@ -1,19 +1,25 @@
 "use client";
 
-import { Icon, Menu } from "@/components/icons";
+import { Icon, Menu, Search, X } from "@/components/icons";
 import { PortalShell } from "@/components/platform/provider/PortalShell";
 import { WelcomeChip } from "@/components/platform/provider/student/WelcomeChip";
 import { studentNav } from "@/components/platform/provider/student/studentNav";
 
 type LecturesPageLayoutProps = {
   children: React.ReactNode;
+  searchQuery?: string;
+  onSearchQueryChange?: (value: string) => void;
 };
 
 function openSidebar() {
   window.dispatchEvent(new Event("hols-portal-open-sidebar"));
 }
 
-export function LecturesPageLayout({ children }: LecturesPageLayoutProps) {
+export function LecturesPageLayout({
+  children,
+  searchQuery = "",
+  onSearchQueryChange,
+}: LecturesPageLayoutProps) {
   return (
     <PortalShell
       role="student"
@@ -62,6 +68,34 @@ export function LecturesPageLayout({ children }: LecturesPageLayoutProps) {
           <span className="lecture-hero-orb pointer-events-none absolute -right-8 -top-10 h-28 w-28 rounded-full bg-[#DDE466]/20 blur-2xl sm:h-36 sm:w-36" aria-hidden />
           <span className="lecture-hero-orb lecture-hero-orb--delayed pointer-events-none absolute -bottom-12 left-4 h-24 w-24 rounded-full bg-[#8DC3E1]/25 blur-2xl sm:left-8 sm:h-28 sm:w-28" aria-hidden />
         </section>
+
+        {onSearchQueryChange ? (
+          <div className="lecture-library-search-bar mt-3 sm:mt-4">
+            <label className="lecture-library-search">
+              <span className="lecture-library-search-icon" aria-hidden>
+                <Icon icon={Search} size={17} strokeWidth={1.9} />
+              </span>
+              <input
+                type="search"
+                value={searchQuery}
+                onChange={(event) => onSearchQueryChange(event.target.value)}
+                placeholder="Search courses by name or topic…"
+                className="lecture-library-search-input"
+                aria-label="Search courses"
+              />
+              {searchQuery ? (
+                <button
+                  type="button"
+                  onClick={() => onSearchQueryChange("")}
+                  className="lecture-library-search-clear"
+                  aria-label="Clear search"
+                >
+                  <Icon icon={X} size={14} strokeWidth={2} />
+                </button>
+              ) : null}
+            </label>
+          </div>
+        ) : null}
 
         <div className="mt-3 grid w-full min-w-0 gap-3 sm:mt-4 sm:gap-4">{children}</div>
       </div>

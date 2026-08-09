@@ -5161,6 +5161,129 @@ html.lenis main {
   animation-delay: -4s;
 }
 
+.lecture-library-search-bar {
+  width: 100%;
+}
+
+.lecture-library-search {
+  display: flex;
+  width: 100%;
+  min-height: 3.25rem;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 1rem;
+  border: 1px solid var(--dash-surface-border);
+  background: var(--dash-surface);
+  padding: 0.45rem 0.75rem 0.45rem 0.45rem;
+  box-shadow:
+    0 10px 24px rgba(11, 16, 40, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.72);
+  transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+}
+
+.lecture-library-search:focus-within {
+  border-color: rgba(221, 228, 102, 0.65);
+  background: #ffffff;
+  box-shadow:
+    0 0 0 3px rgba(221, 228, 102, 0.16),
+    0 12px 28px rgba(11, 16, 40, 0.06);
+}
+
+.lecture-library-search-icon {
+  display: inline-flex;
+  height: 2.5rem;
+  width: 2.5rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  background: var(--dash-soft);
+  color: var(--dash-muted);
+}
+
+.lecture-library-search-input {
+  width: 100%;
+  min-width: 0;
+  flex: 1 1 auto;
+  border: 0;
+  background: transparent;
+  outline: none;
+  font-family: var(--font-primary-stack);
+  font-size: 0.9375rem;
+  font-weight: 500;
+  line-height: 1.4;
+  color: var(--dash-text);
+}
+
+.lecture-library-search-input::-webkit-search-cancel-button {
+  display: none;
+}
+
+.lecture-library-search-input::placeholder {
+  color: var(--dash-muted);
+  opacity: 0.9;
+}
+
+.lecture-library-search-clear {
+  display: inline-flex;
+  height: 2rem;
+  width: 2rem;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  color: var(--dash-muted);
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+.lecture-library-search-clear:hover,
+.lecture-library-search-clear:focus-visible {
+  background: var(--dash-soft);
+  color: var(--dash-text);
+}
+
+.portal-content-area[data-backdrop="brand"] .lecture-library-search {
+  background: rgba(255, 255, 255, 0.72);
+  border-color: rgba(255, 255, 255, 0.72);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  box-shadow:
+    0 12px 28px rgba(11, 16, 40, 0.05),
+    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+}
+
+.portal-content-area[data-backdrop="brand"] .lecture-library-search:focus-within {
+  background: rgba(255, 255, 255, 0.92);
+  border-color: rgba(221, 228, 102, 0.65);
+}
+
+.portal-content-area[data-backdrop="brand"] .lecture-library-search-icon {
+  background: rgba(255, 255, 255, 0.72);
+  border: 1px solid rgba(255, 255, 255, 0.75);
+}
+
+.portal-shell[data-theme="dark"] .lecture-library-search {
+  border-color: rgba(255, 255, 255, 0.12);
+  background: rgba(255, 255, 255, 0.06);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.portal-shell[data-theme="dark"] .lecture-library-search:focus-within {
+  border-color: rgba(221, 228, 102, 0.45);
+  background: rgba(255, 255, 255, 0.1);
+  box-shadow: 0 0 0 3px rgba(221, 228, 102, 0.12);
+}
+
+.portal-shell[data-theme="dark"] .lecture-library-search-icon {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.portal-shell[data-theme="dark"] .lecture-library-search-clear:hover,
+.portal-shell[data-theme="dark"] .lecture-library-search-clear:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+}
+
 /* Deterministic lecture cover art (grid card + Front Cover expand) */
 .lecture-cover-art {
   isolation: isolate;

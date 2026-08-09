@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState, useSyncExternalStore } from "react";
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { ChevronRight, Icon } from "@/components/icons";
 import {
@@ -14,6 +14,7 @@ import {
   subscribePortalTheme,
 } from "@/components/platform/provider/portal-theme-store";
 import { CourseCoverArt } from "@/components/platform/provider/student/lectures/CourseCoverArt";
+import { filterVisibleLectureCourses } from "@/components/platform/provider/student/lectures/hiddenCourses";
 import { LecturesPageLayout } from "@/components/platform/provider/student/lectures/LecturesPageLayout";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
@@ -24,12 +25,31 @@ import {
 import type { ButtonVariant } from "@/lib/button-styles";
 import { cn } from "@/lib/utils";
 
+function courseMatchesSearch(course: CourseSummary, query: string) {
+  const haystack = [
+    course.title,
+    course.description,
+    course.primary_topic,
+    course.section,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return haystack.includes(query);
+}
+
 export function StudentLecturesPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [courses, setCourses] = useState<CourseSummary[]>([]);
+  const [allCourses, setAllCourses] = useState<CourseSummary[] | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
+
+  const trimmedSearch = searchQuery.trim();
+  const isSearching = trimmedSearch.length > 0;
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -50,9 +70,45 @@ export function StudentLecturesPage() {
     return () => window.clearTimeout(timer);
   }, [load]);
 
+  useEffect(() => {
+    if (!isSearching) return;
+
+    let cancelled = false;
+
+    void listCourses({ page: 1, limit: 100 })
+      .then((data) => {
+        if (!cancelled) setAllCourses(data.items);
+      })
+      .catch(() => {
+        if (!cancelled) setAllCourses(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isSearching]);
+
+  const visibleCourses = useMemo(() => {
+    const source = isSearching ? allCourses ?? courses : courses;
+    const availableCourses = filterVisibleLectureCourses(source);
+
+    if (!isSearching) return availableCourses;
+
+    const query = trimmedSearch.toLowerCase();
+    return availableCourses.filter((course) => courseMatchesSearch(course, query));
+  }, [allCourses, courses, isSearching, trimmedSearch]);
+
   return (
-    <LecturesPageLayout>
+    <LecturesPageLayout searchQuery={searchQuery} onSearchQueryChange={setSearchQuery}>
       {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
+
+      {isSearching && !loading ? (
+        <p className="text-brand-caption text-[color:var(--dash-faint)]">
+          {visibleCourses.length === 1
+            ? "1 course found"
+            : `${visibleCourses.length} courses found`}
+        </p>
+      ) : null}
 
       {loading ? (
         <div
@@ -64,19 +120,21 @@ export function StudentLecturesPage() {
             <CourseCardSkeleton key={index} index={index} />
           ))}
         </div>
-      ) : courses.length === 0 ? (
+      ) : visibleCourses.length === 0 ? (
         <div className="dashboard-surface rounded-2xl p-8 text-center sm:p-10">
-          <p className="text-brand-body text-[color:var(--dash-faint)]">No courses available yet.</p>
+          <p className="text-brand-body text-[color:var(--dash-faint)]">
+            {isSearching ? "No courses match your search." : "No courses available yet."}
+          </p>
         </div>
       ) : (
         <div className="lecture-course-grid grid w-full min-w-0 max-w-full grid-cols-1 gap-4 min-[420px]:grid-cols-2 sm:gap-5 lg:grid-cols-3">
-          {courses.map((course, index) => (
+          {visibleCourses.map((course, index) => (
             <CourseCard key={course.course_id} course={course} index={index} />
           ))}
         </div>
       )}
 
-      {pagination && pagination.total_pages > 1 ? (
+      {!isSearching && pagination && pagination.total_pages > 1 ? (
         <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
           <p className="text-brand-caption text-center text-[color:var(--dash-faint)] sm:text-left">
             Page {pagination.page} of {pagination.total_pages} · {pagination.total} courses
