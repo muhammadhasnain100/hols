@@ -148,7 +148,12 @@ export function HookPortalShell({
     <div
       ref={wrapRef}
       data-hook-portal-shell
-      className={cn("relative w-full max-w-[460px] shrink-0", className)}
+      className={cn(
+        // min-w-0 + overflow-hidden: the pre-scale 460px child must not
+        // inflate the grid track (that was clipping the CTA / breaking pins).
+        "relative w-full min-w-0 max-w-[460px] overflow-hidden",
+        className,
+      )}
       style={{ height: HOOK_PORTAL_SIZE.height * scale }}
     >
       <div

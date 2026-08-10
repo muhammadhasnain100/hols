@@ -29,7 +29,7 @@ export const landingContent = {
     scatteredLabel: "Scattered Information",
     structuredLabel: "One Trusted System",
     systemLabel: "One trusted system",
-    /** Set true to restore dashboard mock + ball → dashboard → CTA flow. */
+    /** Set true to show dashboard mock over the ball → Explore Courses arrow. */
     showDashboard: true,
     sourceCards: [
       {

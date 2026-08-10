@@ -25,7 +25,6 @@ import { HookHolsBall } from "@/components/landing/HookHolsBall";
 import {
   HookInteractiveDashboard,
   HookPortalShell,
-  HOOK_PORTAL_SIZE,
 } from "@/components/landing/HookInteractiveDashboard";
 import {
   HookScatteredCard,
@@ -50,6 +49,13 @@ const HOOK_BG = "#E5E5E5";
 const BALL_ENTRY_RATIO = 0.52;
 /** Trunk wires leave from the visible right edge of the sphere. */
 const BALL_EXIT_RATIO = 0.685;
+/**
+ * Desktop dashboard grid — shrinkable gaps + capped portal column so the
+ * 460px mock never forces horizontal overflow (which clips the CTA under
+ * the section's overflow-hidden and breaks sibling ScrollTriggers).
+ */
+const HOOK_DASHBOARD_GRID =
+  "grid-cols-[minmax(10rem,16rem)_minmax(0,1fr)_auto_minmax(0,1fr)_minmax(11rem,22rem)_minmax(0,0.55fr)_auto] xl:grid-cols-[minmax(12rem,18rem)_minmax(0,1.1fr)_auto_minmax(0,1fr)_minmax(14rem,26rem)_minmax(0,0.65fr)_auto]";
 
 const HOOK_CAPSULE_BASE =
   "inline-flex max-w-full items-center justify-center rounded-full px-3.5 py-1.5 text-center font-sans text-[10px] font-bold uppercase tracking-[0.12em] sm:px-4 sm:py-2 sm:text-xs";
@@ -208,20 +214,18 @@ function syncTrunkArrow(line: SVGPathElement | undefined, arrow: SVGPolygonEleme
 /** Gap before target border so tip + arrow sit in open space (not under chrome). Desktop only. */
 const ARROW_CLEAR_PX = 14;
 const MOBILE_ARROW_CLEAR_PX = 18;
-/** Space between struct capsule bottom and the short trunk stem (mobile). */
+/** Space between ball bottom / label and the trunk stem start (mobile). */
 const MOBILE_TRUNK_AFTER_LABEL_PX = 10;
-/** Space below dashboard before the branch stem starts (mobile). */
-const MOBILE_BRANCH_AFTER_DASH_PX = 10;
 
 /** Layout box for the portal — prefer the shell (no GSAP scale on the dashboard). */
 function getPortalLayoutRect(dashEl: HTMLElement | null): DOMRect | null {
   if (!dashEl) return null;
   const shell = dashEl.closest<HTMLElement>("[data-hook-portal-shell]");
   if (!shell) return dashEl.getBoundingClientRect();
-  // Mobile responsive: visual box is the CSS-scaled wrapper (origin top-left).
+  // Responsive (mobile + desktop dashboard): visual box after CSS scale.
   const scaled = shell.querySelector<HTMLElement>("[data-hook-portal-scale]");
   if (scaled) return scaled.getBoundingClientRect();
-  // Desktop: shell is the exact resting slot (immune to GSAP scale on the child).
+  // Fixed desktop slot (no scale wrapper).
   return shell.getBoundingClientRect();
 }
 
@@ -282,37 +286,9 @@ function buildDiagramGeometry(
     paths.push({ id: `card-${i}`, group: "card", d: buildConvergePath(start, entry, center, i + 1) });
   });
 
-  // Stem only — arrowhead travels with the stroke tip via syncArrowToLine.
-  if (dashRect && dashRect.width) {
-    const dashCY = dashRect.top + dashRect.height / 2;
-    const trunkTipX = dashRect.left - ARROW_CLEAR_PX;
-    const exit = ballExitPoint(ballCX, ballCY, exitR, trunkTipX, dashCY);
-    const start = toSvg(exit.x, exit.y);
-    const trunkTip = toSvg(trunkTipX, dashCY);
-    paths.push({ id: "trunk", group: "trunk", d: buildStraightLine(start, trunkTip) });
-    arrows.push({
-      id: "trunk-arrow",
-      group: "trunk",
-      points: buildArrowPolygon(trunkTip, start),
-      tipX: trunkTip.x,
-      tipY: trunkTip.y,
-    });
-
-    if (ctaRect && ctaRect.width) {
-      const ctaCY = ctaRect.top + ctaRect.height / 2;
-      const branchTipX = ctaRect.left - ARROW_CLEAR_PX;
-      const bStart = toSvg(dashRect.right, dashCY);
-      const branchTip = toSvg(branchTipX, ctaCY);
-      paths.push({ id: "branch", group: "branch", d: buildStraightLine(bStart, branchTip) });
-      arrows.push({
-        id: "branch-arrow",
-        group: "branch",
-        points: buildArrowPolygon(branchTip, bStart),
-        tipX: branchTip.x,
-        tipY: branchTip.y,
-      });
-    }
-  } else if (ctaRect && ctaRect.width) {
+  // Single trunk: ball → Explore Courses. Dashboard (if present) layers above the line.
+  void dashRect;
+  if (ctaRect && ctaRect.width) {
     const ctaCY = ctaRect.top + ctaRect.height / 2;
     const trunkTipX = ctaRect.left - ARROW_CLEAR_PX;
     const exit = ballExitPoint(ballCX, ballCY, exitR, trunkTipX, ctaCY);
@@ -333,8 +309,7 @@ function buildDiagramGeometry(
 
 /**
  * Mobile: wires drop from each card's bottom edge onto the ball's top arc.
- * Trunk is a short stem below the struct capsule → dashboard (never through the capsule).
- * Branch is a short stem below the dashboard → CTA.
+ * Single trunk: ball → Explore Courses. Dashboard (if present) layers above the line.
  */
 function buildVerticalDiagramGeometry(
   cardRects: DOMRect[],
@@ -375,46 +350,9 @@ function buildVerticalDiagramGeometry(
     paths.push({ id: `card-${i}`, group: "card", d: buildConvergePath(start, entry, center, i + 1) });
   });
 
-  if (dashRect && dashRect.width) {
-    const flowX = dashRect.left + dashRect.width / 2;
-    // Same clearance above portal and above Explore Courses (visible gap, no overlap).
-    const trunkTipY = dashRect.top - MOBILE_ARROW_CLEAR_PX;
-    // Start just below the capsule so the stem never pierces "ONE TRUSTED SYSTEM".
-    const trunkStartY =
-      structLabelRect && structLabelRect.height > 0
-        ? structLabelRect.bottom + MOBILE_TRUNK_AFTER_LABEL_PX
-        : trunkTipY - 44;
-
-    if (trunkStartY < trunkTipY - 4) {
-      const start = toSvg(flowX, trunkStartY);
-      const trunkTip = toSvg(flowX, trunkTipY);
-      paths.push({ id: "trunk", group: "trunk", d: buildStraightLine(start, trunkTip) });
-      arrows.push({
-        id: "trunk-arrow",
-        group: "trunk",
-        points: buildArrowPolygon(trunkTip, start),
-        tipX: trunkTip.x,
-        tipY: trunkTip.y,
-      });
-    }
-
-    if (ctaRect && ctaRect.width) {
-      const branchStartY = dashRect.bottom + MOBILE_BRANCH_AFTER_DASH_PX;
-      const branchTipY = ctaRect.top - MOBILE_ARROW_CLEAR_PX;
-      if (branchStartY < branchTipY - 4) {
-        const bStart = toSvg(flowX, branchStartY);
-        const branchTip = toSvg(ctaRect.left + ctaRect.width / 2, branchTipY);
-        paths.push({ id: "branch", group: "branch", d: buildStraightLine(bStart, branchTip) });
-        arrows.push({
-          id: "branch-arrow",
-          group: "branch",
-          points: buildArrowPolygon(branchTip, bStart),
-          tipX: branchTip.x,
-          tipY: branchTip.y,
-        });
-      }
-    }
-  } else if (ctaRect && ctaRect.width) {
+  void dashRect;
+  void structLabelRect;
+  if (ctaRect && ctaRect.width) {
     const flowX = ballCX;
     const trunkStartY = ballRect.bottom + MOBILE_TRUNK_AFTER_LABEL_PX;
     const trunkTipY = ctaRect.top - MOBILE_ARROW_CLEAR_PX;
@@ -732,32 +670,30 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
       {/* Column labels — capsules centered over the cards column / dashboard mockup */}
       <div
         className={cn(
-          "relative z-10 mb-4 grid w-full items-end gap-x-2 xl:mb-5 xl:gap-x-3",
+          "relative z-10 mb-4 grid w-full min-w-0 items-end gap-x-1.5 xl:mb-5 xl:gap-x-2",
           HOOK_SHOW_DASHBOARD
-            ? "grid-cols-[minmax(16rem,20rem)_minmax(8rem,1fr)_auto_minmax(6rem,1fr)_auto_minmax(4rem,0.7fr)_auto] xl:grid-cols-[minmax(18rem,22rem)_minmax(10rem,1.2fr)_auto_minmax(8rem,1fr)_auto_minmax(5rem,0.8fr)_auto]"
+            ? HOOK_DASHBOARD_GRID
             : "grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]",
         )}
       >
-        <div className="flex w-full max-w-[22rem] justify-center justify-self-start xl:max-w-[24rem]">
+        <div className="flex w-full min-w-0 max-w-[18rem] justify-center justify-self-start xl:max-w-[20rem]">
           <span data-hook-scatter-label className={cn(HOOK_CAPSULE_CLASS, "opacity-0")}>
             {hook.scatteredLabel}
           </span>
         </div>
         {HOOK_SHOW_DASHBOARD ? (
           <>
-            <div aria-hidden />
+            <div aria-hidden className="min-w-0" />
+            {/* Match HookHolsBall widths so the capsule sits over the portal column */}
             <div aria-hidden className="w-[150px] sm:w-[180px] md:w-[210px]" />
-            <div aria-hidden />
-            <div
-              className="flex justify-center justify-self-center"
-              style={{ width: HOOK_PORTAL_SIZE.width }}
-            >
+            <div aria-hidden className="min-w-0" />
+            <div className="flex w-full min-w-0 justify-center justify-self-stretch">
               <span data-hook-struct-label className={cn(HOOK_CAPSULE_CLASS, "opacity-0")}>
                 {hook.structuredLabel}
               </span>
             </div>
-            <div aria-hidden />
-            <div aria-hidden className="w-[9.5rem]" />
+            <div aria-hidden className="min-w-0" />
+            <div aria-hidden className="min-w-[8.5rem] xl:min-w-[9.5rem]" />
           </>
         ) : (
           <>
@@ -767,19 +703,19 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
         )}
       </div>
 
-      {/* Full-width flow: cards · ball (center) · CTA — or legacy dashboard grid */}
+      {/* Full-width flow: cards · ball (center) · CTA — or dashboard grid */}
       <div
         className={cn(
-          "relative z-10 min-h-0 w-full flex-1 items-center",
+          "relative z-10 min-h-0 w-full min-w-0 flex-1 items-center",
           HOOK_SHOW_DASHBOARD
-            ? "grid gap-x-2 xl:gap-x-3 grid-cols-[minmax(16rem,20rem)_minmax(8rem,1fr)_auto_minmax(6rem,1fr)_auto_minmax(4rem,0.7fr)_auto] xl:grid-cols-[minmax(18rem,22rem)_minmax(10rem,1.2fr)_auto_minmax(8rem,1fr)_auto_minmax(5rem,0.8fr)_auto]"
+            ? cn("grid gap-x-1.5 xl:gap-x-2", HOOK_DASHBOARD_GRID)
             : "min-h-[280px]",
         )}
       >
         {/* 1 · Scattered cards (left edge) */}
         <div
           className={cn(
-            "relative h-full min-h-[280px] w-full max-w-[22rem] xl:max-w-[24rem]",
+            "relative h-full min-h-[280px] w-full min-w-0 max-w-[18rem] xl:max-w-[20rem]",
             HOOK_SHOW_DASHBOARD ? "justify-self-start" : "absolute inset-y-0 left-0 z-10",
           )}
         >
@@ -791,7 +727,7 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
         {HOOK_SHOW_DASHBOARD ? (
           <>
             {/* 2 · Flexible gap for card → ball lines */}
-            <div aria-hidden className="h-full w-full" />
+            <div aria-hidden className="h-full min-w-0 w-full" />
 
             {/* 3 · HOLS ball */}
             <div className="relative z-10 shrink-0 self-center">
@@ -799,15 +735,18 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
             </div>
 
             {/* 4 · Flexible gap for ball → dashboard line */}
-            <div aria-hidden className="h-full w-full" />
+            <div aria-hidden className="h-full min-w-0 w-full" />
 
-            {/* 5 · Dashboard */}
-            <HookPortalShell className="relative z-10 justify-self-center self-center">
+            {/* 5 · Dashboard — scales to column width so the row never overflows */}
+            <HookPortalShell
+              responsive
+              className="relative z-20 w-full min-w-0 justify-self-stretch self-center"
+            >
               <DashboardMockup innerRef={(n) => (dashRef.current = n)} className="opacity-0" />
             </HookPortalShell>
 
             {/* 6 · Flexible gap for dashboard → CTA line */}
-            <div aria-hidden className="h-full w-full" />
+            <div aria-hidden className="h-full min-w-0 w-full" />
 
             <div
               ref={ctaRef}
@@ -817,7 +756,7 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
               <HeroButton
                 href={hook.cta.href}
                 variant="primary"
-                className="whitespace-nowrap px-6 !shadow-none ![backdrop-filter:none] ![-webkit-backdrop-filter:none] md:px-8"
+                className="whitespace-nowrap px-5 !shadow-none ![backdrop-filter:none] ![-webkit-backdrop-filter:none] xl:px-8"
               >
                 {hook.cta.label}
               </HeroButton>
@@ -1062,11 +1001,11 @@ function MobileFlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
             {/* Room for short stem + arrowhead into dashboard chrome */}
             <div aria-hidden className="h-14 w-full sm:h-16" />
 
-            <HookPortalShell responsive className="relative z-10">
+            <HookPortalShell responsive className="relative z-20">
               <DashboardMockup innerRef={(n) => (dashRef.current = n)} className="opacity-0" />
             </HookPortalShell>
 
-            {/* Room for short branch stem + arrowhead into Explore Courses */}
+            {/* Clearance so the ball→CTA trunk can pass behind the portal */}
             <div aria-hidden className="h-14 w-full sm:h-16" />
           </>
         ) : (
@@ -1228,21 +1167,18 @@ export function HookSection() {
         const cards = q<HTMLElement>("[data-hook-card]");
         const cardLines = q<SVGPathElement>('[data-hook-line][data-group="card"]');
         const trunkLines = q<SVGPathElement>('[data-hook-line][data-group="trunk"]');
-        const branchLines = q<SVGPathElement>('[data-hook-line][data-group="branch"]');
         const trunkArrows = q<SVGPolygonElement>('[data-hook-arrow][data-group="trunk"]');
-        const branchArrows = q<SVGPolygonElement>('[data-hook-arrow][data-group="branch"]');
         const hub = q<HTMLElement>("[data-hook-hub]");
         const dashboard = q<HTMLElement>("[data-hook-dashboard]");
         const scatterLabel = q<HTMLElement>("[data-hook-scatter-label]");
         const structLabel = q<HTMLElement>("[data-hook-struct-label]");
         const cta = q<HTMLElement>("[data-hook-cta]");
-        const allLines = [...cardLines, ...trunkLines, ...branchLines];
-        const allArrows = [...trunkArrows, ...branchArrows];
+        const allLines = [...cardLines, ...trunkLines];
 
         if (cards.length === 0) return;
 
         allLines.forEach((p) => prepareStroke(p, true));
-        allArrows.forEach((arrow) => arrow.setAttribute("opacity", "0"));
+        trunkArrows.forEach((arrow) => arrow.setAttribute("opacity", "0"));
         gsap.set(cards, { autoAlpha: 0, y: 10, yPercent: -50 });
         gsap.set(scatterLabel, { autoAlpha: 0, y: 6 });
         if (HOOK_SHOW_DASHBOARD) {
@@ -1254,9 +1190,6 @@ export function HookSection() {
 
         const syncAllArrows = () => {
           syncTrunkArrow(trunkLines[0], trunkArrows[0]);
-          if (HOOK_SHOW_DASHBOARD) {
-            syncArrowToLine(branchLines[0], branchArrows[0]);
-          }
         };
 
         const tl = gsap.timeline({
@@ -1288,19 +1221,17 @@ export function HookSection() {
           );
         });
         tl.to(hub, { autoAlpha: 1, scale: 1, duration: 0.85, ease: "power1.out" }, 1.55);
+        // One trunk ball → Explore Courses; dashboard (if on) fades in above that line.
         tl.to(trunkLines, { strokeDashoffset: 0, opacity: 1, duration: 1.15, ease: "none" }, 2.05);
         if (HOOK_SHOW_DASHBOARD) {
-          tl.to(structLabel, { autoAlpha: 1, y: 0, duration: 0.7, ease: "power1.out" }, 2.55);
+          tl.to(structLabel, { autoAlpha: 1, y: 0, duration: 0.7, ease: "power1.out" }, 2.35);
           tl.to(
             dashboard,
             { autoAlpha: 1, y: 0, scale: 1, duration: 0.95, ease: "power1.out" },
-            2.65,
+            2.45,
           );
-          tl.to(branchLines, { strokeDashoffset: 0, opacity: 1, duration: 1.15, ease: "none" }, 3.25);
-          tl.to(cta, { autoAlpha: 1, y: 0, duration: 0.8, ease: "power1.out" }, 3.85);
-        } else {
-          tl.to(cta, { autoAlpha: 1, y: 0, duration: 0.8, ease: "power1.out" }, 2.85);
         }
+        tl.to(cta, { autoAlpha: 1, y: 0, duration: 0.8, ease: "power1.out" }, 2.85);
         // Hold the finished frame so the last beat doesn't cut off mid-scroll.
         tl.to({}, { duration: 0.9 });
 
@@ -1348,21 +1279,18 @@ export function HookSection() {
         const cards = q<HTMLElement>("[data-hook-card]");
         const cardLines = q<SVGPathElement>('[data-hook-line][data-group="card"]');
         const trunkLines = q<SVGPathElement>('[data-hook-line][data-group="trunk"]');
-        const branchLines = q<SVGPathElement>('[data-hook-line][data-group="branch"]');
         const trunkArrows = q<SVGPolygonElement>('[data-hook-arrow][data-group="trunk"]');
-        const branchArrows = q<SVGPolygonElement>('[data-hook-arrow][data-group="branch"]');
         const hub = q<HTMLElement>("[data-hook-hub]");
         const dashboard = q<HTMLElement>("[data-hook-dashboard]");
         const scatterLabel = q<HTMLElement>("[data-hook-scatter-label]");
         const structLabel = q<HTMLElement>("[data-hook-struct-label]");
         const cta = q<HTMLElement>("[data-hook-cta]");
-        const allLines = [...cardLines, ...trunkLines, ...branchLines];
-        const allArrows = [...trunkArrows, ...branchArrows];
+        const allLines = [...cardLines, ...trunkLines];
 
         if (cards.length === 0) return;
 
         allLines.forEach((p) => prepareStroke(p, true));
-        allArrows.forEach((arrow) => arrow.setAttribute("opacity", "0"));
+        trunkArrows.forEach((arrow) => arrow.setAttribute("opacity", "0"));
         gsap.set(cards, { autoAlpha: 0, y: 10 });
         gsap.set(scatterLabel, { autoAlpha: 0, y: 6 });
         if (HOOK_SHOW_DASHBOARD) {
@@ -1374,9 +1302,6 @@ export function HookSection() {
 
         const syncAllArrows = () => {
           syncTrunkArrow(trunkLines[0], trunkArrows[0]);
-          if (HOOK_SHOW_DASHBOARD) {
-            syncArrowToLine(branchLines[0], branchArrows[0]);
-          }
         };
 
         const tl = gsap.timeline({
@@ -1409,17 +1334,14 @@ export function HookSection() {
         tl.to(hub, { autoAlpha: 1, scale: 1, duration: 0.85, ease: "power1.out" }, 1.55);
         tl.to(trunkLines, { strokeDashoffset: 0, opacity: 1, duration: 1.15, ease: "none" }, 2.05);
         if (HOOK_SHOW_DASHBOARD) {
-          tl.to(structLabel, { autoAlpha: 1, y: 0, duration: 0.7, ease: "power1.out" }, 2.55);
+          tl.to(structLabel, { autoAlpha: 1, y: 0, duration: 0.7, ease: "power1.out" }, 2.35);
           tl.to(
             dashboard,
             { autoAlpha: 1, y: 0, scale: 1, duration: 0.95, ease: "power1.out" },
-            2.65,
+            2.45,
           );
-          tl.to(branchLines, { strokeDashoffset: 0, opacity: 1, duration: 1.15, ease: "none" }, 3.25);
-          tl.to(cta, { autoAlpha: 1, y: 0, duration: 0.8, ease: "power1.out" }, 3.85);
-        } else {
-          tl.to(cta, { autoAlpha: 1, y: 0, duration: 0.8, ease: "power1.out" }, 2.85);
         }
+        tl.to(cta, { autoAlpha: 1, y: 0, duration: 0.8, ease: "power1.out" }, 2.85);
         tl.to({}, { duration: 0.9 });
 
         const onSync = () => {
