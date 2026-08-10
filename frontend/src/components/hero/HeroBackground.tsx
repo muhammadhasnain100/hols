@@ -8,8 +8,7 @@ import { HeroSceneCanvas } from "@/components/three/HeroSceneCanvas";
 import { prefersReducedMotion } from "@/lib/motion";
 
 const HERO_VIDEO_MP4 = "/assets/hero/herosection.mp4";
-const HERO_VIDEO_WMV = "/assets/hero/herosection.wmv";
-const HERO_POSTER = "/assets/images/hero-background.jpg";
+const HERO_POSTER = "/assets/hero/herosection-poster.jpg";
 
 type HeroBackgroundProps = {
   variant?: "sky" | "photo";
@@ -78,13 +77,22 @@ function PhotoBackground() {
     video.loop = true;
     video.muted = true;
     video.defaultMuted = true;
+    video.playsInline = true;
     video.setAttribute("playsinline", "");
+    video.setAttribute("muted", "");
+
+    let cancelled = false;
+    let retryTimer = 0;
 
     const playVideo = () => {
+      if (cancelled) return;
       const attempt = video.play();
       if (attempt !== undefined) {
         attempt.catch(() => {
-          /* autoplay can be blocked briefly; retry when data is ready */
+          if (cancelled) return;
+          // Retry shortly — Brave/Chrome can reject the first autoplay race.
+          window.clearTimeout(retryTimer);
+          retryTimer = window.setTimeout(playVideo, 250);
         });
       }
     };
@@ -111,6 +119,8 @@ function PhotoBackground() {
     playVideo();
 
     return () => {
+      cancelled = true;
+      window.clearTimeout(retryTimer);
       video.removeEventListener("ended", handleEnded);
       video.removeEventListener("error", handleError);
       video.removeEventListener("loadeddata", playVideo);
@@ -131,11 +141,13 @@ function PhotoBackground() {
           fill
           priority
           sizes="100vw"
-          className="object-contain object-center"
+          className="object-cover object-center"
         />
       ) : (
         <video
           ref={videoRef}
+          src={HERO_VIDEO_MP4}
+          poster={HERO_POSTER}
           autoPlay
           muted
           loop
@@ -143,10 +155,7 @@ function PhotoBackground() {
           preload="auto"
           disablePictureInPicture
           className="absolute inset-0 h-full w-full min-h-full min-w-full object-cover object-center"
-        >
-          <source src={HERO_VIDEO_MP4} type="video/mp4" />
-          <source src={HERO_VIDEO_WMV} type="video/x-ms-wmv" />
-        </video>
+        />
       )}
     </div>
   );
