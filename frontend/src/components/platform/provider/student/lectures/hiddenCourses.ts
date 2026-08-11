@@ -1,8 +1,12 @@
 import type { CourseSummary } from "@/lib/integrate/provider/student/lectures";
 
-const HIDDEN_COURSE_IDS = new Set([
-  "18e729a6-7061-48cf-9d51-a04ffa77124a",
-  "0eed2662-8a08-443b-8146-357b3f51232e",
+/**
+ * Courses that must stay out of the student catalog.
+ * Frontier BioMed courses reuse the old AlphaBiomed IDs — those IDs are no
+ * longer hidden so the replacement content can surface after Dynamo seed.
+ */
+const HIDDEN_COURSE_IDS = new Set<string>([
+  // Keep empty unless a course must be force-hidden by id.
 ]);
 
 function normalizeTitle(title: string) {
@@ -14,6 +18,7 @@ export function isHiddenLectureCourse(course: Pick<CourseSummary, "course_id" | 
 
   const title = normalizeTitle(course.title);
   if (title.includes("peptide dosing guide")) return true;
+  // Legacy AlphaBiomed titles only — Frontier BioMed titles must remain visible.
   if (title.includes("alpha biomed") && title.includes("sales training")) return true;
   if (
     title.includes("alpha biomed") &&
@@ -21,6 +26,7 @@ export function isHiddenLectureCourse(course: Pick<CourseSummary, "course_id" | 
   ) {
     return true;
   }
+  if (title.includes("alpha biomed") && title.includes("faq")) return true;
 
   return false;
 }

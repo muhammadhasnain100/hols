@@ -42,6 +42,9 @@ export type Order = {
   status: string;
   payment_method_id?: string;
   created_at: string;
+  /** Present on admin order history when affiliate attribution is included. */
+  affiliate_id?: string | null;
+  affiliate_commission?: number | null;
 };
 
 export type CardCreatePayload = {

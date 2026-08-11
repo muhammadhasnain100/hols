@@ -18,12 +18,8 @@ logger = logging.getLogger(__name__)
 
 DEFAULT_CATALOG_SECTION = "lectures"
 
-HIDDEN_COURSE_IDS = frozenset(
-    {
-        "18e729a6-7061-48cf-9d51-a04ffa77124a",
-        "0eed2662-8a08-443b-8146-357b3f51232e",
-    }
-)
+# Frontier BioMed courses reuse the former AlphaBiomed IDs — do not hide by ID.
+HIDDEN_COURSE_IDS = frozenset()
 
 _courses_cache: dict[str, list[dict[str, Any]]] = {}
 _course_bundle_cache: dict[str, dict[str, Any]] = {}
@@ -208,9 +204,12 @@ def _is_hidden_course(course: dict[str, Any]) -> bool:
     title = str(course.get("title") or "").lower()
     if "peptide dosing guide" in title:
         return True
+    # Legacy AlphaBiomed titles only — Frontier BioMed must remain visible.
     if "alpha biomed" in title and "sales training" in title:
         return True
     if "alpha biomed" in title and ("do's" in title or "dont" in title or "don't" in title):
+        return True
+    if "alpha biomed" in title and "faq" in title:
         return True
     return False
 

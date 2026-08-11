@@ -23,6 +23,7 @@ import {
   type PaginationMeta,
 } from "@/lib/integrate/provider/student/lectures";
 import type { ButtonVariant } from "@/lib/button-styles";
+import { scrollAppToTopSoon } from "@/lib/scroll-to-top";
 import { cn } from "@/lib/utils";
 
 function courseMatchesSearch(course: CourseSummary, query: string) {
@@ -69,6 +70,10 @@ export function StudentLecturesPage() {
     const timer = window.setTimeout(() => void load(), 0);
     return () => window.clearTimeout(timer);
   }, [load]);
+
+  useEffect(() => {
+    scrollAppToTopSoon();
+  }, [page]);
 
   useEffect(() => {
     if (!isSearching) return;
@@ -142,13 +147,19 @@ export function StudentLecturesPage() {
           <div className="grid grid-cols-2 gap-2 sm:flex sm:gap-2">
             <PagerButton
               disabled={!pagination.has_previous || loading}
-              onClick={() => setPage((prev) => Math.max(1, prev - 1))}
+              onClick={() => {
+                scrollAppToTopSoon();
+                setPage((prev) => Math.max(1, prev - 1));
+              }}
             >
               Previous
             </PagerButton>
             <PagerButton
               disabled={!pagination.has_next || loading}
-              onClick={() => setPage((prev) => prev + 1)}
+              onClick={() => {
+                scrollAppToTopSoon();
+                setPage((prev) => prev + 1);
+              }}
             >
               Next
             </PagerButton>

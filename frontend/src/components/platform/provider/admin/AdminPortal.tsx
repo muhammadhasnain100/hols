@@ -250,38 +250,19 @@ function OverviewHeroCard({
       </p>
 
       <div className="mt-4 grid w-full grid-cols-1 gap-2 min-[380px]:grid-cols-3 sm:mt-5 sm:flex sm:w-auto sm:flex-wrap sm:gap-2.5">
-        <HeroPill href="/admin/students" variant="solid">
-          Students
-        </HeroPill>
-        <HeroPill href="/admin/affiliates" variant="soft">
-          Affiliates
-        </HeroPill>
-        <HeroPill href="/admin/plans" variant="soft">
-          Plans
-        </HeroPill>
+        <HeroPill href="/admin/students">Students</HeroPill>
+        <HeroPill href="/admin/affiliates">Affiliates</HeroPill>
+        <HeroPill href="/admin/plans">Plans</HeroPill>
       </div>
     </section>
   );
 }
 
-function HeroPill({
-  href,
-  variant,
-  children,
-}: {
-  href: string;
-  variant: "solid" | "soft";
-  children: React.ReactNode;
-}) {
+function HeroPill({ href, children }: { href: string; children: React.ReactNode }) {
   return (
     <Link
       href={href}
-      className={cn(
-        "font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-3 text-sm font-medium tracking-[0.01em] transition sm:w-auto sm:px-5",
-        variant === "solid"
-          ? "bg-[#DDE466] text-[#152744] hover:brightness-105"
-          : "dashboard-pill-soft text-[color:var(--dash-text)]",
-      )}
+      className="dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-3 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition sm:w-auto sm:px-5"
     >
       {children}
     </Link>
@@ -404,7 +385,7 @@ function QuickLinksCard({
       <div className="mt-4 grid grid-cols-1 gap-2.5 min-[380px]:grid-cols-2">
         <Link
           href="/admin/students"
-          className="font-sans inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full bg-[#DDE466] px-4 text-sm font-medium text-[#152744] transition hover:brightness-105"
+          className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full px-4 text-sm font-medium text-[color:var(--dash-text)] transition"
         >
           Open students
         </Link>

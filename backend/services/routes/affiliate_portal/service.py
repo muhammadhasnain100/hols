@@ -301,9 +301,12 @@ async def sum_affiliate_commission(
             currency = str(item.get("currency") or currency)
 
             if history_limit and len(items) < history_limit:
+                pk = str(item.get("PK") or "")
+                student_user_id = pk.removeprefix("USER#") if pk.startswith("USER#") else None
                 items.append(
                     {
                         "order_id": item.get("order_id") or "",
+                        "student_user_id": student_user_id,
                         "plan_type": item.get("plan_type"),
                         "amount": _as_money(item.get("amount")),
                         "commission": commission,

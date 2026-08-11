@@ -401,11 +401,103 @@ async def _count_orders(user_id: str) -> int:
     return total
 
 
+def _public_order_item(item: dict[str, Any], *, include_affiliate: bool = False) -> dict[str, Any]:
+    row = {
+        "order_id": item.get("order_id"),
+        "plan_type": item.get("plan_type"),
+        "amount": normalize_value(item.get("amount")),
+        "currency": item.get("currency", "USD"),
+        "status": item.get("status"),
+        "payment_method_id": item.get("payment_method_id"),
+        "created_at": item.get("created_at"),
+    }
+    if include_affiliate:
+        row["affiliate_id"] = item.get("affiliate_id")
+        commission = normalize_value(item.get("affiliate_commission"))
+        row["affiliate_commission"] = commission
+    return row
+
+
+async def sum_student_spend(user_id: str) -> dict[str, Any]:
+    """Sum paid order amounts for a student and capture the latest purchase."""
+    query_kwargs: dict[str, Any] = {
+        "KeyConditionExpression": Key("PK").eq(Membership.pk(user_id))
+        & Key("SK").begins_with("ORDER#"),
+        "ScanIndexForward": False,
+    }
+
+    total_spent = 0.0
+    order_count = 0
+    paid_count = 0
+    currency = "USD"
+    last_purchase_at: Optional[str] = None
+    last_purchase_amount: Optional[float] = None
+    last_plan_type: Optional[str] = None
+
+    while True:
+        def _query(kw=query_kwargs):
+            return _table().query(**kw)
+
+        response = await run_sync(_query)
+        for item in response.get("Items", []):
+            order_count += 1
+            status_value = str(item.get("status") or "").lower()
+            amount = float(normalize_value(item.get("amount")) or 0)
+            if status_value == OrderStatus.PAID.value:
+                paid_count += 1
+                total_spent += amount
+                currency = str(item.get("currency") or currency)
+                if last_purchase_at is None:
+                    last_purchase_at = item.get("created_at")
+                    last_purchase_amount = round(amount, 2)
+                    last_plan_type = item.get("plan_type")
+
+        last_key = response.get("LastEvaluatedKey")
+        if not last_key:
+            break
+        query_kwargs["ExclusiveStartKey"] = last_key
+
+    return {
+        "total_spent": round(total_spent, 2),
+        "order_count": order_count,
+        "paid_order_count": paid_count,
+        "currency": currency,
+        "last_purchase_at": last_purchase_at,
+        "last_purchase_amount": last_purchase_amount,
+        "last_plan_type": last_plan_type,
+    }
+
+
+async def get_student_commerce_summary(user_id: str) -> dict[str, Any]:
+    """Admin-facing spend + membership snapshot for one student."""
+    user = await get_user_by_id(user_id)
+    if not user or user.get("role") != UserRole.STUDENT.value:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "Student not found")
+
+    spend = await sum_student_spend(user_id)
+    membership = await get_membership(user_id)
+    return {
+        "user_id": user_id,
+        "total_spent": spend["total_spent"],
+        "order_count": spend["order_count"],
+        "paid_order_count": spend["paid_order_count"],
+        "currency": spend["currency"],
+        "last_purchase_at": spend["last_purchase_at"],
+        "last_purchase_amount": spend["last_purchase_amount"],
+        "last_plan_type": spend["last_plan_type"],
+        "current_plan": membership.get("plan_type") if membership else None,
+        "membership_status": membership.get("status") if membership else None,
+        "membership_end_date": membership.get("end_date") if membership else None,
+    }
+
+
 async def list_orders(
     user_id: str,
     page: int = 1,
     limit: int = 20,
     cursor: Optional[str] = None,
+    *,
+    include_affiliate: bool = False,
 ) -> dict[str, Any]:
     if page < 1:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "page must be >= 1")
@@ -437,17 +529,7 @@ async def list_orders(
             if skipped < start_index:
                 skipped += 1
                 continue
-            collected.append(
-                {
-                    "order_id": item.get("order_id"),
-                    "plan_type": item.get("plan_type"),
-                    "amount": normalize_value(item.get("amount")),
-                    "currency": item.get("currency", "USD"),
-                    "status": item.get("status"),
-                    "payment_method_id": item.get("payment_method_id"),
-                    "created_at": item.get("created_at"),
-                }
-            )
+            collected.append(_public_order_item(item, include_affiliate=include_affiliate))
             if len(collected) == limit:
                 break
 

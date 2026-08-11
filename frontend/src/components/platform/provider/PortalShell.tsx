@@ -14,6 +14,7 @@ import { HeroLogo } from "@/components/hero/HeroLogo";
 import {
   BookOpen,
   Calculator,
+  Calendar,
   ChevronLeft,
   ChevronRight,
   CreditCard,
@@ -581,6 +582,7 @@ export function PortalShell({
 export const portalIcons = {
   dashboard: <NavIcon icon={LayoutDashboard} />,
   courses: <NavIcon icon={BookOpen} />,
+  webinars: <NavIcon icon={Calendar} />,
   membership: <NavIcon icon={Star} />,
   payment: <NavIcon icon={CreditCard} />,
   profile: <NavIcon icon={User} />,

@@ -20,6 +20,7 @@ from routes import (
     lectures_router,
     payment_router,
     users_router,
+    webinars_router,
 )
 from services.routes.chat import service as chat_service
 from services.routes.payment.service import ensure_default_plans
@@ -76,6 +77,7 @@ app.include_router(affiliates_router, prefix="/api")
 app.include_router(affiliate_portal_router, prefix="/api")
 app.include_router(payment_router, prefix="/api")
 app.include_router(lectures_router, prefix="/api")
+app.include_router(webinars_router, prefix="/api")
 app.include_router(chat_router, prefix="/api")
 
 

@@ -16,6 +16,11 @@ import type {
   TopicListData,
 } from "@/lib/integrate/provider/student/lectures/types";
 
+const API_BASE_URL =
+  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:8000";
+/** Bump when lecture payload shape changes so stale session caches are ignored. */
+const LECTURE_CACHE_VERSION = "v2";
+
 export type {
   CourseBundleData,
   CourseDetailData,
@@ -48,7 +53,13 @@ const lectureMemoryCache = new Map<string, unknown>();
 const lecturePendingRequests = new Map<string, Promise<unknown>>();
 
 function cacheKey(kind: string, ...parts: Array<string | number | undefined | null>) {
-  return ["lectures", kind, ...parts.map((part) => part ?? "")].join(":");
+  return [
+    "lectures",
+    LECTURE_CACHE_VERSION,
+    API_BASE_URL,
+    kind,
+    ...parts.map((part) => part ?? ""),
+  ].join(":");
 }
 
 function readSessionCache<T>(key: string): T | null {

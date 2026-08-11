@@ -114,6 +114,7 @@ def affiliate_summary(user: dict[str, Any]) -> dict[str, Any]:
         "invitation_quota": _decimal_to_int(clean.get("invitation_quota")),
         "student_count": _decimal_to_int(clean.get("student_count")) or 0,
         "total_earned": 0.0,
+        "order_count": 0,
         "earnings_currency": "USD",
         "created_at": clean.get("created_at"),
     }
@@ -127,6 +128,7 @@ async def affiliate_summary_with_earnings(user: dict[str, Any]) -> dict[str, Any
     try:
         summed = await sum_affiliate_commission(str(user_id))
         summary["total_earned"] = summed["total_earned"]
+        summary["order_count"] = summed["order_count"]
         summary["earnings_currency"] = summed["currency"]
     except Exception:
         logger.exception("Failed to sum commission for affiliate_id=%s", user_id)

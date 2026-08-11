@@ -23,6 +23,7 @@ import {
   type LessonDetail,
 } from "@/lib/integrate/provider/student/lectures";
 import { prefersReducedMotion } from "@/lib/motion";
+import { scrollAppToTop } from "@/lib/scroll-to-top";
 import { cn } from "@/lib/utils";
 
 type StudentLessonsWorkspaceProps = {
@@ -199,6 +200,7 @@ export function StudentLessonsWorkspace({
 
   function navigateLesson(lessonId: string) {
     setActiveLessonId(lessonId);
+    scrollAppToTop();
     router.replace(buildLessonsHref(courseId, lessonId, topicId, l1Name));
   }
 
@@ -208,6 +210,7 @@ export function StudentLessonsWorkspace({
       return;
     }
     setActiveLessonId(lessonId);
+    scrollAppToTop();
     router.push(buildLessonsHref(courseId, lessonId, topicId, l1Name));
   }
 

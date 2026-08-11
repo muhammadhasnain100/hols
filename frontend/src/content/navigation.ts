@@ -14,8 +14,8 @@ export const footerNav = {
     { label: "Log in", href: "/login" },
   ],
   legal: [
-    { label: "Terms", href: "/" },
-    { label: "Privacy", href: "/" },
+    { label: "Terms", href: "/legal/terms" },
+    { label: "Privacy", href: "/legal/privacy" },
   ],
   address: ["House of Life Sciences", "Clinical Education Platform"],
   contact: {

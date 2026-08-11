@@ -62,6 +62,7 @@ class AffiliateReferralStudentListData(BaseModel):
 
 class AffiliateCommissionItem(BaseModel):
     order_id: str
+    student_user_id: Optional[str] = None
     plan_type: Optional[str] = None
     amount: float = 0
     commission: float = 0

@@ -17,6 +17,7 @@ from database_entities import UserRole
 from services.common.pagination import build_pagination, decode_cursor, encode_cursor, normalize_value
 from services.routes.auth.service import get_user_by_id, public_profile, user_role_count_key
 from services.routes.affiliate_portal.service import sum_affiliate_commission
+from services.routes.payment.service import get_membership, sum_student_spend
 
 logger = logging.getLogger(__name__)
 LIST_CACHE_TTL_SECONDS = 10
@@ -139,6 +140,7 @@ def _affiliate_summary(user: dict[str, Any]) -> dict[str, Any]:
         "invitation_quota": invitation_quota,
         "student_count": student_count or 0,
         "total_earned": 0.0,
+        "order_count": 0,
         "earnings_currency": "USD",
         "created_at": clean.get("created_at"),
     }
@@ -152,6 +154,7 @@ async def _affiliate_summary_with_earnings(user: dict[str, Any]) -> dict[str, An
     try:
         summed = await sum_affiliate_commission(str(user_id))
         summary["total_earned"] = summed["total_earned"]
+        summary["order_count"] = summed["order_count"]
         summary["earnings_currency"] = summed["currency"]
     except Exception:
         logger.exception("Failed to sum commission for affiliate_id=%s", user_id)
@@ -175,8 +178,40 @@ async def _student_summary(user: dict[str, Any]) -> dict[str, Any]:
         "marketing_pref": clean.get("marketing_pref", False),
         "referred_by_affiliate_id": affiliate_id,
         "affiliate": affiliate,
+        "total_spent": 0.0,
+        "order_count": 0,
+        "paid_order_count": 0,
+        "spend_currency": "USD",
+        "current_plan": None,
+        "membership_status": None,
+        "last_purchase_at": None,
+        "last_purchase_amount": None,
         "created_at": clean.get("created_at"),
     }
+
+
+async def _student_summary_with_spend(user: dict[str, Any]) -> dict[str, Any]:
+    summary = await _student_summary(user)
+    user_id = summary.get("user_id")
+    if not user_id:
+        return summary
+    try:
+        spend, membership = await asyncio.gather(
+            sum_student_spend(str(user_id)),
+            get_membership(str(user_id)),
+        )
+        summary["total_spent"] = spend["total_spent"]
+        summary["order_count"] = spend["order_count"]
+        summary["paid_order_count"] = spend["paid_order_count"]
+        summary["spend_currency"] = spend["currency"]
+        summary["last_purchase_at"] = spend["last_purchase_at"]
+        summary["last_purchase_amount"] = spend["last_purchase_amount"]
+        if membership:
+            summary["current_plan"] = membership.get("plan_type")
+            summary["membership_status"] = membership.get("status")
+    except Exception:
+        logger.exception("Failed to sum spend for student_id=%s", user_id)
+    return summary
 
 
 async def list_affiliates(page: int = 1, limit: int = 20, cursor: Optional[str] = None) -> dict[str, Any]:
@@ -217,10 +252,10 @@ async def list_students(page: int = 1, limit: int = 20, cursor: Optional[str] = 
         cursor=cursor,
     )
     total = total_from_query if total_from_query is not None else await _count_by_role(UserRole.STUDENT.value)
-    summaries = [await _student_summary(item) for item in items]
+    summaries = await asyncio.gather(*[_student_summary_with_spend(item) for item in items])
     logger.info("Listed students page=%s limit=%s count=%s", page, limit, len(items))
     return _set_cached(key, {
-        "items": summaries,
+        "items": list(summaries),
         "pagination": build_pagination(
             page=page,
             limit=limit,

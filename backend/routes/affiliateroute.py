@@ -8,6 +8,7 @@ from fastapi import APIRouter, Depends, Query, status
 from core.route_handlers import handle_route_errors
 from database_entities import UserRole
 from dependencies import CurrentUser, require_roles
+from models.affiliate_portal import AffiliateEarningsData, AffiliateEarningsResponse
 from models.affiliates import (
     AffiliateCreateData,
     AffiliateCreateRequest,
@@ -21,6 +22,7 @@ from models.affiliates import (
 )
 from models.common import success_response
 from models.users import AffiliateListData
+from services.routes.affiliate_portal import service as affiliate_portal_service
 from services.routes.affiliates import service as affiliates_service
 
 router = APIRouter(prefix="/admin/affiliates", tags=["admin-affiliates"])
@@ -87,6 +89,22 @@ async def get_affiliate(
     _ = current_user
     affiliate = await affiliates_service.get_affiliate(affiliate_id)
     return success_response(AffiliateDetailData(affiliate=affiliate))
+
+
+@router.get("/{affiliate_id}/earnings", response_model=AffiliateEarningsResponse)
+@handle_route_errors("get affiliate earnings for admin", log_prefix="Affiliates")
+async def get_affiliate_earnings_admin(
+    affiliate_id: str,
+    current_user: Annotated[CurrentUser, Depends(require_roles(UserRole.ADMIN))],
+    history_limit: int = Query(default=25, ge=1, le=500),
+) -> AffiliateEarningsResponse:
+    """Admin — commission totals + recent line items for one affiliate."""
+    _ = current_user
+    result = await affiliate_portal_service.get_earnings(
+        affiliate_id=affiliate_id,
+        history_limit=history_limit,
+    )
+    return success_response(AffiliateEarningsData(**result))
 
 
 @router.patch(

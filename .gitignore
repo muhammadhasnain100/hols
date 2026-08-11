@@ -63,5 +63,8 @@ coverage/
 backend/lectures/courses_complete.json
 backend/lectures/*.complete.json
 
+# Local client deliverables (course JSON/PDF + legal Word docs)
+courses/
+
 # Local brand assets (too large for GitHub)
 HOLS brand Guidelines.pdf

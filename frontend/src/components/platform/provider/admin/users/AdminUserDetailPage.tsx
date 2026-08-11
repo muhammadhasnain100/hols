@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { Icon, Menu } from "@/components/icons";
 import { PortalShell } from "@/components/platform/provider/PortalShell";
@@ -15,7 +15,24 @@ import {
   type AdminProfile,
   type ProfileAccess,
 } from "@/lib/integrate/provider/admin/profile/api";
-import { formatDate } from "@/lib/integrate/provider/student/payment/types";
+import {
+  getAffiliateEarnings,
+  getStudentCommerce,
+  listStudentOrders,
+  type AffiliateEarningsSummary,
+  type StudentCommerceSummary,
+} from "@/lib/integrate/provider/admin/users/api";
+import {
+  exportAffiliateCommissionsExcel,
+  exportStudentOrdersExcel,
+} from "@/lib/integrate/provider/admin/users/exportPayments";
+import {
+  formatDate,
+  formatMoney,
+  planLabels,
+  type Order,
+  type PlanType,
+} from "@/lib/integrate/provider/student/payment/types";
 import { cn } from "@/lib/utils";
 
 type AdminUserDetailPageProps = {
@@ -100,11 +117,25 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
   const [profile, setProfile] = useState<AdminProfile | null>(null);
   const [access, setAccess] = useState<ProfileAccess | null>(null);
   const [form, setForm] = useState<FormState>(profileToForm({ role: "student" } as AdminProfile));
+  const [commerce, setCommerce] = useState<StudentCommerceSummary | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [ordersPage, setOrdersPage] = useState(1);
+  const [ordersTotal, setOrdersTotal] = useState(0);
+  const [ordersHasNext, setOrdersHasNext] = useState(false);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [earnings, setEarnings] = useState<AffiliateEarningsSummary | null>(null);
+  const [moneyLoading, setMoneyLoading] = useState(false);
+  const [moneyError, setMoneyError] = useState<string | null>(null);
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     async function load() {
       setLoading(true);
       setError(null);
+      setCommerce(null);
+      setOrders([]);
+      setEarnings(null);
+      setOrdersPage(1);
 
       try {
         const data = await getUserProfile(userId);
@@ -121,6 +152,76 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
 
     void load();
   }, [userId]);
+
+  const loadStudentMoney = useCallback(
+    async (pageNum: number) => {
+      setMoneyLoading(true);
+      setOrdersLoading(true);
+      setMoneyError(null);
+      try {
+        const [commerceData, orderData] = await Promise.all([
+          getStudentCommerce(userId),
+          listStudentOrders(userId, { page: pageNum, limit: 8 }),
+        ]);
+        setCommerce(commerceData);
+        setOrders(orderData.items);
+        setOrdersTotal(orderData.pagination.total);
+        setOrdersHasNext(orderData.pagination.has_next);
+        setOrdersPage(pageNum);
+      } catch (err) {
+        setMoneyError(
+          err instanceof ApiRequestError ? err.message : "Failed to load purchase history.",
+        );
+      } finally {
+        setMoneyLoading(false);
+        setOrdersLoading(false);
+      }
+    },
+    [userId],
+  );
+
+  const loadAffiliateMoney = useCallback(async () => {
+    setMoneyLoading(true);
+    setMoneyError(null);
+    try {
+      setEarnings(await getAffiliateEarnings(userId, 25));
+    } catch (err) {
+      setMoneyError(
+        err instanceof ApiRequestError ? err.message : "Failed to load affiliate earnings.",
+      );
+    } finally {
+      setMoneyLoading(false);
+    }
+  }, [userId]);
+
+  useEffect(() => {
+    if (!profile) return;
+    if (profile.role === "student") {
+      void loadStudentMoney(1);
+    } else if (profile.role === "affiliate") {
+      void loadAffiliateMoney();
+    }
+  }, [profile, loadStudentMoney, loadAffiliateMoney]);
+
+  async function handleExportPayments() {
+    if (!profile) return;
+    setExporting(true);
+    setMoneyError(null);
+    const label = `${profile.first_name ?? ""}-${profile.last_name ?? ""}`.trim() || profile.email;
+    try {
+      if (profile.role === "student") {
+        await exportStudentOrdersExcel(userId, label);
+      } else if (profile.role === "affiliate") {
+        await exportAffiliateCommissionsExcel(userId, label);
+      }
+    } catch (err) {
+      setMoneyError(
+        err instanceof ApiRequestError ? err.message : "Failed to export payment details.",
+      );
+    } finally {
+      setExporting(false);
+    }
+  }
 
   function canEdit(field: string) {
     return access?.editable_fields.includes(field) ?? false;
@@ -201,6 +302,7 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
 
         <div className="grid w-full min-w-0 gap-3 sm:gap-4">
           {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
+          {moneyError ? <AuthAlert variant="error">{moneyError}</AuthAlert> : null}
           {success ? <AuthAlert variant="success">{success}</AuthAlert> : null}
 
           {loading ? (
@@ -421,11 +523,251 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
                   </section>
                 ) : null}
               </div>
+
+              {isStudent ? (
+                <section className="dashboard-surface min-w-0 rounded-2xl p-3.5 sm:p-5 md:p-6">
+                  <div className="flex flex-wrap items-end justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+                        Purchases
+                      </p>
+                      <h2 className="font-sans mt-1 text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg">
+                        Spend &amp; order history
+                      </h2>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-brand-caption font-medium text-[color:var(--dash-accent)]">
+                        {moneyLoading && !commerce
+                          ? "Loading…"
+                          : `${ordersTotal} ${ordersTotal === 1 ? "order" : "orders"}`}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={exporting || moneyLoading}
+                        onClick={() => void handleExportPayments()}
+                        className="dashboard-pill-soft font-sans inline-flex min-h-9 items-center justify-center rounded-full px-3.5 text-sm font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-55"
+                      >
+                        {exporting ? "Exporting…" : "Export Excel"}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid gap-2.5 grid-cols-2 lg:grid-cols-4">
+                    <MoneyStat
+                      label="Total spent"
+                      value={
+                        commerce
+                          ? formatMoney(commerce.total_spent, commerce.currency)
+                          : "—"
+                      }
+                    />
+                    <MoneyStat
+                      label="Current plan"
+                      value={
+                        commerce?.current_plan
+                          ? planLabels[commerce.current_plan as PlanType] ?? commerce.current_plan
+                          : "No plan"
+                      }
+                    />
+                    <MoneyStat
+                      label="Paid orders"
+                      value={commerce ? String(commerce.paid_order_count) : "—"}
+                    />
+                    <MoneyStat
+                      label="Last purchase"
+                      value={
+                        commerce?.last_purchase_at
+                          ? formatDate(commerce.last_purchase_at)
+                          : "—"
+                      }
+                    />
+                  </div>
+
+                  <div className="mt-5 space-y-2.5">
+                    {ordersLoading && orders.length === 0 ? (
+                      <p className="text-brand-body py-6 text-center text-[color:var(--dash-faint)]">
+                        Loading orders…
+                      </p>
+                    ) : orders.length === 0 ? (
+                      <p className="text-brand-body py-6 text-center text-[color:var(--dash-faint)]">
+                        No purchases on this account yet.
+                      </p>
+                    ) : (
+                      orders.map((order) => (
+                        <article
+                          key={order.order_id}
+                          className="rounded-xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)]/40 px-3.5 py-3 sm:px-4"
+                        >
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="font-sans text-sm font-semibold text-[color:var(--dash-text)]">
+                                {planLabels[order.plan_type] ?? order.plan_type}
+                              </p>
+                              <p className="text-brand-caption mt-0.5 text-[color:var(--dash-faint)]">
+                                {order.created_at ? formatDate(order.created_at) : "—"}
+                                {" · "}
+                                <span className="capitalize">{order.status}</span>
+                              </p>
+                            </div>
+                            <p className="font-sans text-sm font-semibold text-[color:var(--dash-accent)]">
+                              {formatMoney(order.amount, order.currency)}
+                            </p>
+                          </div>
+                        </article>
+                      ))
+                    )}
+                  </div>
+
+                  {ordersTotal > 8 ? (
+                    <div className="mt-4 flex items-center justify-between gap-2">
+                      <button
+                        type="button"
+                        disabled={ordersPage <= 1 || ordersLoading}
+                        onClick={() => void loadStudentMoney(ordersPage - 1)}
+                        className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center rounded-full px-4 text-sm font-medium disabled:opacity-50"
+                      >
+                        Previous
+                      </button>
+                      <span className="text-brand-caption text-[color:var(--dash-faint)]">
+                        Page {ordersPage}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={!ordersHasNext || ordersLoading}
+                        onClick={() => void loadStudentMoney(ordersPage + 1)}
+                        className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center rounded-full px-4 text-sm font-medium disabled:opacity-50"
+                      >
+                        Next
+                      </button>
+                    </div>
+                  ) : null}
+                </section>
+              ) : null}
+
+              {profile?.role === "affiliate" ? (
+                <section className="dashboard-surface min-w-0 rounded-2xl p-3.5 sm:p-5 md:p-6">
+                  <div className="flex flex-wrap items-end justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+                        Earnings
+                      </p>
+                      <h2 className="font-sans mt-1 text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg">
+                        Commission line items
+                      </h2>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-brand-caption font-medium text-[color:var(--dash-accent)]">
+                        {moneyLoading && !earnings
+                          ? "Loading…"
+                          : `${earnings?.order_count ?? 0} commissionable`}
+                      </span>
+                      <button
+                        type="button"
+                        disabled={exporting || moneyLoading}
+                        onClick={() => void handleExportPayments()}
+                        className="dashboard-pill-soft font-sans inline-flex min-h-9 items-center justify-center rounded-full px-3.5 text-sm font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-55"
+                      >
+                        {exporting ? "Exporting…" : "Export Excel"}
+                      </button>
+                    </div>
+                  </div>
+
+                  <div className="mt-4 grid gap-2.5 grid-cols-2 lg:grid-cols-4">
+                    <MoneyStat
+                      label="Total earned"
+                      value={
+                        earnings
+                          ? formatMoney(earnings.total_earned, earnings.currency)
+                          : "—"
+                      }
+                    />
+                    <MoneyStat
+                      label="Pending payout"
+                      value={
+                        earnings
+                          ? formatMoney(earnings.pending_payout, earnings.currency)
+                          : "—"
+                      }
+                    />
+                    <MoneyStat
+                      label="Margin"
+                      value={
+                        earnings?.margin_percent != null
+                          ? `${earnings.margin_percent}%`
+                          : "—"
+                      }
+                    />
+                    <MoneyStat
+                      label="Paid orders"
+                      value={earnings ? String(earnings.order_count) : "—"}
+                    />
+                  </div>
+
+                  <div className="mt-5 space-y-2.5">
+                    {moneyLoading && !earnings ? (
+                      <p className="text-brand-body py-6 text-center text-[color:var(--dash-faint)]">
+                        Loading earnings…
+                      </p>
+                    ) : !earnings?.items.length ? (
+                      <p className="text-brand-body py-6 text-center text-[color:var(--dash-faint)]">
+                        No commissionable orders yet.
+                      </p>
+                    ) : (
+                      earnings.items.map((item) => (
+                        <article
+                          key={item.order_id}
+                          className="rounded-xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)]/40 px-3.5 py-3 sm:px-4"
+                        >
+                          <div className="flex flex-wrap items-start justify-between gap-2">
+                            <div className="min-w-0">
+                              <p className="font-sans text-sm font-semibold text-[color:var(--dash-text)]">
+                                {item.plan_type
+                                  ? planLabels[item.plan_type as PlanType] ?? item.plan_type
+                                  : "Order"}
+                              </p>
+                              <p className="text-brand-caption mt-0.5 text-[color:var(--dash-faint)]">
+                                {item.created_at ? formatDate(item.created_at) : "—"}
+                                {" · "}
+                                Order {formatMoney(item.amount, item.currency)}
+                                {item.student_user_id ? (
+                                  <>
+                                    {" · "}
+                                    <Link
+                                      href={`/admin/users/${encodeURIComponent(item.student_user_id)}`}
+                                      className="underline-offset-2 hover:underline"
+                                    >
+                                      Student
+                                    </Link>
+                                  </>
+                                ) : null}
+                              </p>
+                            </div>
+                            <p className="font-sans text-sm font-semibold text-[color:var(--dash-accent)]">
+                              +{formatMoney(item.commission, item.currency)}
+                            </p>
+                          </div>
+                        </article>
+                      ))
+                    )}
+                  </div>
+                </section>
+              ) : null}
             </>
           )}
         </div>
       </div>
     </PortalShell>
+  );
+}
+
+function MoneyStat({ label, value }: { label: string; value: string }) {
+  return (
+    <div className="rounded-xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)]/35 px-3 py-3">
+      <p className="text-brand-caption font-medium text-[color:var(--dash-faint)]">{label}</p>
+      <p className="font-sans mt-1 text-sm font-semibold tracking-[0.01em] text-[color:var(--dash-text)]">
+        {value}
+      </p>
+    </div>
   );
 }
 

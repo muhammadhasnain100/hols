@@ -44,8 +44,8 @@ const linkColumns: Array<{ title: string; links: FooterItem[] }> = [
         external: true,
       },
       { label: "FAQs", href: "/#faqs" },
-      { label: "Terms", href: "/" },
-      { label: "Privacy", href: "/" },
+      { label: "Terms", href: "/legal/terms" },
+      { label: "Privacy", href: "/legal/privacy" },
     ],
   },
   {

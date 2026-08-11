@@ -77,10 +77,17 @@ const COURSE_COVER_ENTRIES: CourseCoverEntry[] = [
     },
   },
   {
-    id: "alpha-biomed-sales-training",
+    id: "frontier-biomed-sales-training",
     courseIds: ["18e729a6-7061-48cf-9d51-a04ffa77124a"],
-    slugs: ["alpha-biomed-sales-training"],
-    keywords: [["alpha", "biomed", "sales", "training"]],
+    slugs: [
+      "frontier-biomed-sales-training",
+      "alpha-biomed-sales-training",
+    ],
+    keywords: [
+      ["frontier", "biomed", "sales", "training"],
+      ["alpha", "biomed", "sales", "training"],
+      ["biomed", "sales", "training"],
+    ],
     photos: {
       light: "/assets/lectures/alpha-biomed-sales-training-light.png",
       dark: "/assets/lectures/alpha-biomed-sales-training-dark.png",
@@ -89,29 +96,40 @@ const COURSE_COVER_ENTRIES: CourseCoverEntry[] = [
     layout: "book",
   },
   {
-    id: "alpha-biomed-sales-dos-and-donts",
+    id: "frontier-biomed-sales-dos-and-donts",
     courseIds: ["0eed2662-8a08-443b-8146-357b3f51232e"],
-    slugs: ["alpha-biomed-sales-dos-and-donts"],
+    slugs: [
+      "frontier-biomed-sales-dos-and-donts",
+      "alpha-biomed-sales-dos-and-donts",
+    ],
     keywords: [
+      ["frontier", "biomed", "sales", "dos"],
+      ["frontier", "biomed", "sales", "dont"],
       ["biomed", "sales", "dos"],
       ["biomed", "sales", "dont"],
     ],
     photos: {
-      light: "/assets/lectures/alpha-biomed-sales-dos-and-donts-light.png",
-      dark: "/assets/lectures/alpha-biomed-sales-dos-and-donts-dark.png",
+      light: "/assets/lectures/alpha-biomed-sales-dos-and-donts-light.png?v=4",
+      dark: "/assets/lectures/alpha-biomed-sales-dos-and-donts-dark.png?v=4",
     },
-    objectPosition: "78% 46%",
+    // Book sits mid-frame with empty studio on the left — bias right like Sales Training.
+    objectPosition: "68% 48%",
     layout: "book",
   },
   {
-    id: "alpha-biomed-sales-faq",
-    slugs: ["alpha-biomed-sales-faq"],
-    keywords: [["alpha", "biomed", "sales", "faq"], ["biomed", "sales", "faq"]],
+    id: "frontier-biomed-sales-faq",
+    courseIds: ["d8868e43-43fc-426f-9ab2-9c26e72bc567"],
+    slugs: ["frontier-biomed-sales-faq", "alpha-biomed-sales-faq"],
+    keywords: [
+      ["frontier", "biomed", "sales", "faq"],
+      ["alpha", "biomed", "sales", "faq"],
+      ["biomed", "sales", "faq"],
+    ],
     photos: {
-      light: "/assets/lectures/alpha-biomed-sales-faq-light.png",
-      dark: "/assets/lectures/alpha-biomed-sales-faq-dark.png",
+      light: "/assets/lectures/alpha-biomed-sales-faq-light.png?v=4",
+      dark: "/assets/lectures/alpha-biomed-sales-faq-dark.png?v=4",
     },
-    objectPosition: "82% 46%",
+    objectPosition: "70% 48%",
     layout: "book",
   },
   {
@@ -662,8 +680,9 @@ const COURSE_COVER_ENTRIES: CourseCoverEntry[] = [
   },
   {
     id: "ovagen",
-    slugs: ["ovagen"],
-    keywords: [["ovagen"]],
+    // Course title sometimes arrives as "Ovangen" from the catalog.
+    slugs: ["ovagen", "ovangen"],
+    keywords: [["ovagen"], ["ovangen"]],
     photos: {
       light: "/assets/lectures/ovagen-light.png?v=2",
       dark: "/assets/lectures/ovagen-dark.png?v=2",

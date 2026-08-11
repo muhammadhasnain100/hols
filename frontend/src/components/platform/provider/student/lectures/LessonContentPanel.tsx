@@ -21,6 +21,7 @@ import { LessonProse } from "@/components/platform/provider/student/lectures/les
 import { gsap, registerGsap } from "@/lib/gsap";
 import type { LessonDetail, LessonQuizResult } from "@/lib/integrate/provider/student/lectures";
 import { prefersReducedMotion } from "@/lib/motion";
+import { scrollAppToTop, scrollAppToTopSoon } from "@/lib/scroll-to-top";
 
 function PageSection({ title, text }: { title: string; text: string }) {
   return (
@@ -138,9 +139,9 @@ export function LessonContentPanel({
     };
   }, [lesson.lesson_id]);
 
-  // Reset to the top of the page when a new lesson opens.
+  // Reset to the top when a new lesson opens (next/prev, sidebar, deep link).
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? "auto" : "smooth" });
+    scrollAppToTopSoon();
   }, [lesson.lesson_id]);
 
   // Keyboard page-turning with the arrow keys.
@@ -152,8 +153,10 @@ export function LessonContentPanel({
         return;
       }
       if (event.key === "ArrowRight" && nextLessonId) {
+        scrollAppToTop();
         router.push(lessonHref(courseId, nextLessonId, topicId, l1Name));
       } else if (event.key === "ArrowLeft" && prevLessonId) {
+        scrollAppToTop();
         router.push(lessonHref(courseId, prevLessonId, topicId, l1Name));
       }
     };
@@ -290,6 +293,7 @@ export function LessonContentPanel({
               {prevLessonId ? (
                 <Link
                   href={lessonHref(courseId, prevLessonId, topicId, l1Name)}
+                  onClick={() => scrollAppToTop()}
                   className="lesson-prev-cta dashboard-pill-soft font-sans inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-full px-4 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition sm:flex-initial sm:px-5"
                 >
                   <Icon icon={ChevronLeft} size={15} strokeWidth={2} />
@@ -300,6 +304,7 @@ export function LessonContentPanel({
               {nextLessonId ? (
                 <Link
                   href={lessonHref(courseId, nextLessonId, topicId, l1Name)}
+                  onClick={() => scrollAppToTop()}
                   className="lesson-next-cta font-sans inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-full bg-[#DDE466] px-4 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 sm:flex-initial sm:px-5"
                 >
                   <span className="sm:hidden">Next</span>
@@ -314,7 +319,13 @@ export function LessonContentPanel({
 
       <button
         type="button"
-        onClick={() => window.scrollTo({ top: 0, behavior: prefersReducedMotion() ? "auto" : "smooth" })}
+        onClick={() => {
+          if (prefersReducedMotion()) {
+            scrollAppToTop();
+            return;
+          }
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }}
         className="lesson-to-top"
         data-visible={showTop ? "true" : "false"}
         aria-label="Back to top"

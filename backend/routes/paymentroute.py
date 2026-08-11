@@ -27,6 +27,8 @@ from models.payment import (
     PurchasePlanData,
     PurchasePlanRequest,
     PurchasePlanResponse,
+    StudentCommerceData,
+    StudentCommerceResponse,
 )
 from services.routes.payment import service as payment_service
 
@@ -103,6 +105,39 @@ async def list_order_history(
         cursor=cursor,
     )
     return success_response(OrderHistoryData(**result))
+
+
+@router.get("/orders/{user_id}", response_model=OrderHistoryResponse)
+@handle_route_errors("list student orders for admin", log_prefix="Payment")
+async def list_student_orders_admin(
+    user_id: str,
+    current_user: Annotated[CurrentUser, Depends(require_roles(UserRole.ADMIN))],
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=20, ge=1, le=100),
+    cursor: Optional[str] = Query(default=None),
+) -> OrderHistoryResponse:
+    """Admin — paginated order history for any student."""
+    _ = current_user
+    result = await payment_service.list_orders(
+        user_id=user_id,
+        page=page,
+        limit=limit,
+        cursor=cursor,
+        include_affiliate=True,
+    )
+    return success_response(OrderHistoryData(**result))
+
+
+@router.get("/students/{user_id}/commerce", response_model=StudentCommerceResponse)
+@handle_route_errors("get student commerce summary", log_prefix="Payment")
+async def get_student_commerce(
+    user_id: str,
+    current_user: Annotated[CurrentUser, Depends(require_roles(UserRole.ADMIN))],
+) -> StudentCommerceResponse:
+    """Admin — spend totals + current membership for one student."""
+    _ = current_user
+    summary = await payment_service.get_student_commerce_summary(user_id)
+    return success_response(StudentCommerceData(**summary))
 
 
 @router.post("/card", response_model=CardResponse)

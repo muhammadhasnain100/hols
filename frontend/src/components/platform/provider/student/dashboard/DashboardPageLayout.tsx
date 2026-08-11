@@ -1,8 +1,9 @@
 "use client";
 
-import { Bell, Icon, Menu, Settings } from "@/components/icons";
+import { Icon, Menu, Settings } from "@/components/icons";
 import { PortalShell } from "@/components/platform/provider/PortalShell";
 import { WelcomeChip } from "@/components/platform/provider/student/WelcomeChip";
+import { WebinarNotificationsBell } from "@/components/platform/provider/student/webinars/WebinarNotificationsBell";
 import { studentNav } from "@/components/platform/provider/student/studentNav";
 
 type DashboardPageLayoutProps = {
@@ -47,13 +48,7 @@ export function DashboardPageLayout({ children }: DashboardPageLayoutProps) {
             >
               <Icon icon={Settings} size={16} />
             </button>
-            <button
-              type="button"
-              aria-label="Notifications"
-              className="dashboard-icon-btn flex h-9 w-9 items-center justify-center rounded-full"
-            >
-              <Icon icon={Bell} size={16} />
-            </button>
+            <WebinarNotificationsBell />
 
             <WelcomeChip />
           </div>

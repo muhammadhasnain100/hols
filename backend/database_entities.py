@@ -26,6 +26,8 @@ Lesson / lecture    PK=COURSE#<courseId>    SK=LESSON#<order:05d>#<lessonId>
 Lesson test result  PK=USER#<userId>        SK=TEST_RESULT#<courseId>#<lessonId>
 Adviser patient     PK=USER#<userId>        SK=PATIENT#<patientId>
 Adviser patient chat PK=USER#<userId>       SK=PATIENT#<patientId>#CHAT
+Webinar             PK=WEBINAR#<id>         SK=METADATA
+Webinar registration PK=USER#<userId>       SK=WEBINAR_REG#<webinarId>
 Glossary term       PK=GLOSSARY             SK=TERM#<termId>
 Dosing guide        PK=DOSING               SK=GUIDE#<guideId>
 """
@@ -92,6 +94,18 @@ class AdviserPatientStatus(str, Enum):
     DRAFT = "draft"
     RECOMMENDED = "recommended"
     CHATTING = "chatting"
+
+
+class WebinarStatus(str, Enum):
+    DRAFT = "draft"
+    PUBLISHED = "published"
+    CANCELLED = "cancelled"
+    COMPLETED = "completed"
+
+
+class WebinarRegistrationStatus(str, Enum):
+    BOOKED = "booked"
+    CANCELLED = "cancelled"
 
 
 # --------------------------------------------------------------------------- #
@@ -855,3 +869,99 @@ class AdviserPatientChat(BaseEntity):
 def plan_unlocks(student_plan: str, required_plan: str) -> bool:
     """True if a student's plan tier is >= the course's required plan."""
     return PLAN_RANK.get(student_plan, 0) >= PLAN_RANK.get(required_plan, 0)
+
+
+# --------------------------------------------------------------------------- #
+# WEBINAR
+# --------------------------------------------------------------------------- #
+class Webinar(BaseEntity):
+    webinar_id: str
+    title: str
+    description: Optional[str] = None
+    starts_at: str
+    ends_at: Optional[str] = None
+    price: float | Decimal = 0
+    currency: str = "USD"
+    capacity: int = 100
+    seats_taken: int = 0
+    join_url: Optional[str] = None
+    status: WebinarStatus = WebinarStatus.DRAFT
+    created_by: Optional[str] = None
+    created_at: str = Field(default_factory=now_iso)
+    updated_at: str = Field(default_factory=now_iso)
+
+    ENTITY: ClassVar[str] = "WEBINAR"
+
+    @staticmethod
+    def pk(webinar_id: str) -> str:
+        return f"WEBINAR#{webinar_id}"
+
+    @staticmethod
+    def sk() -> str:
+        return "METADATA"
+
+    def to_item(self) -> dict[str, Any]:
+        return self._clean(
+            {
+                "PK": self.pk(self.webinar_id),
+                "SK": self.sk(),
+                "entity": self.ENTITY,
+                "webinar_id": self.webinar_id,
+                "title": self.title,
+                "description": self.description,
+                "starts_at": self.starts_at,
+                "ends_at": self.ends_at,
+                "price": _money(self.price),
+                "currency": self.currency,
+                "capacity": self.capacity,
+                "seats_taken": self.seats_taken,
+                "join_url": self.join_url,
+                "status": self.status,
+                "created_by": self.created_by,
+                "created_at": self.created_at,
+                "updated_at": self.updated_at,
+                # Catalog feed for published + draft admin listings
+                "GSI1PK": "SECTION#webinars",
+                "GSI1SK": f"START#{self.starts_at}#{self.webinar_id}",
+            }
+        )
+
+
+class WebinarRegistration(BaseEntity):
+    user_id: str
+    webinar_id: str
+    order_id: Optional[str] = None
+    amount: float | Decimal = 0
+    currency: str = "USD"
+    status: WebinarRegistrationStatus = WebinarRegistrationStatus.BOOKED
+    payment_method_id: Optional[str] = None
+    created_at: str = Field(default_factory=now_iso)
+
+    ENTITY: ClassVar[str] = "WEBINAR_REGISTRATION"
+
+    @staticmethod
+    def pk(user_id: str) -> str:
+        return f"USER#{user_id}"
+
+    @staticmethod
+    def sk(webinar_id: str) -> str:
+        return f"WEBINAR_REG#{webinar_id}"
+
+    def to_item(self) -> dict[str, Any]:
+        return self._clean(
+            {
+                "PK": self.pk(self.user_id),
+                "SK": self.sk(self.webinar_id),
+                "entity": self.ENTITY,
+                "user_id": self.user_id,
+                "webinar_id": self.webinar_id,
+                "order_id": self.order_id,
+                "amount": _money(self.amount),
+                "currency": self.currency,
+                "status": self.status,
+                "payment_method_id": self.payment_method_id,
+                "created_at": self.created_at,
+                "GSI1PK": f"WEBINAR#{self.webinar_id}",
+                "GSI1SK": f"REG#{self.created_at}#{self.user_id}",
+            }
+        )

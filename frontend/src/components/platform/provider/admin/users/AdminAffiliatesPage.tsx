@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { Icon, Menu } from "@/components/icons";
 import { PortalShell } from "@/components/platform/provider/PortalShell";
 import {
   DataField,
   DirectoryListSkeleton,
+  DirectorySearchBar,
   PaginationControls,
   StatPill,
   StatusBadge,
@@ -25,6 +26,7 @@ import {
   listAdminAffiliates,
   updateAffiliateInvitationQuota,
 } from "@/lib/integrate/provider/admin/affiliates/api";
+import { exportAffiliatesPaymentExcel } from "@/lib/integrate/provider/admin/users/exportPayments";
 import type { AffiliateSummary } from "@/lib/integrate/provider/admin/users/types";
 import { formatDate, formatMoney } from "@/lib/integrate/provider/student/payment/types";
 
@@ -50,6 +52,20 @@ function initials(first: string, last: string) {
   return `${first?.[0] ?? ""}${last?.[0] ?? ""}`.toUpperCase() || "A";
 }
 
+function affiliateMatchesSearch(affiliate: AffiliateSummary, query: string) {
+  const haystack = [
+    affiliate.first_name,
+    affiliate.last_name,
+    affiliate.email,
+    affiliate.invite_code,
+    affiliate.user_id,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return haystack.includes(query);
+}
+
 export function AdminAffiliatesPage() {
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -58,12 +74,18 @@ export function AdminAffiliatesPage() {
   const [dialogError, setDialogError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [affiliates, setAffiliates] = useState<AffiliateSummary[]>([]);
+  const [searchPool, setSearchPool] = useState<AffiliateSummary[] | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [quotaDrafts, setQuotaDrafts] = useState<Record<string, string>>({});
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [hasNext, setHasNext] = useState(false);
   const [hasPrevious, setHasPrevious] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  const trimmedSearch = searchQuery.trim();
+  const isSearching = trimmedSearch.length > 0;
 
   const loadAffiliates = useCallback(async () => {
     const cachedPage = getCachedAdminAffiliates({ page, limit: 15 });
@@ -99,6 +121,33 @@ export function AdminAffiliatesPage() {
     }, 0);
     return () => window.clearTimeout(timer);
   }, [loadAffiliates]);
+
+  useEffect(() => {
+    if (!isSearching) {
+      setSearchPool(null);
+      return;
+    }
+
+    let cancelled = false;
+    void listAdminAffiliates({ page: 1, limit: 100 })
+      .then((data) => {
+        if (!cancelled) setSearchPool(data.items);
+      })
+      .catch(() => {
+        if (!cancelled) setSearchPool(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isSearching]);
+
+  const visibleAffiliates = useMemo(() => {
+    const source = isSearching ? searchPool ?? affiliates : affiliates;
+    if (!isSearching) return source;
+    const query = trimmedSearch.toLowerCase();
+    return source.filter((affiliate) => affiliateMatchesSearch(affiliate, query));
+  }, [affiliates, isSearching, searchPool, trimmedSearch]);
 
   function openCreateDialog() {
     setDialogError(null);
@@ -162,6 +211,13 @@ export function AdminAffiliatesPage() {
           affiliate.user_id === affiliateId ? data.affiliate : affiliate,
         ),
       );
+      setSearchPool((current) =>
+        current
+          ? current.map((affiliate) =>
+              affiliate.user_id === affiliateId ? data.affiliate : affiliate,
+            )
+          : current,
+      );
       setQuotaDrafts((current) => ({
         ...current,
         [affiliateId]: String(data.affiliate.invitation_quota ?? ""),
@@ -174,21 +230,40 @@ export function AdminAffiliatesPage() {
     }
   }
 
-  const visibleStudentCount = affiliates.reduce((sum, affiliate) => sum + affiliate.student_count, 0);
-  const visibleQuotaTotal = affiliates.reduce(
+  const visibleStudentCount = visibleAffiliates.reduce(
+    (sum, affiliate) => sum + affiliate.student_count,
+    0,
+  );
+  const visibleQuotaTotal = visibleAffiliates.reduce(
     (sum, affiliate) => sum + (affiliate.invitation_quota ?? 0),
     0,
   );
-  const atCapacityCount = affiliates.filter(
+  const atCapacityCount = visibleAffiliates.filter(
     (affiliate) =>
       affiliate.invitation_quota != null && affiliate.student_count >= affiliate.invitation_quota,
   ).length;
-  const visibleTotalEarned = affiliates.reduce(
+  const visibleTotalEarned = visibleAffiliates.reduce(
     (sum, affiliate) => sum + (affiliate.total_earned ?? 0),
     0,
   );
   const earningsCurrency =
-    affiliates.find((affiliate) => affiliate.earnings_currency)?.earnings_currency ?? "USD";
+    visibleAffiliates.find((affiliate) => affiliate.earnings_currency)?.earnings_currency ?? "USD";
+
+  async function handleExportPayments() {
+    setExporting(true);
+    setError(null);
+    try {
+      await exportAffiliatesPaymentExcel(
+        isSearching ? { affiliates: visibleAffiliates } : undefined,
+      );
+    } catch (err) {
+      setError(
+        err instanceof ApiRequestError ? err.message : "Failed to export affiliate earnings.",
+      );
+    } finally {
+      setExporting(false);
+    }
+  }
 
   return (
     <PortalShell
@@ -241,6 +316,14 @@ export function AdminAffiliatesPage() {
               </div>
 
               <div className="grid w-full shrink-0 grid-cols-2 gap-2 sm:ml-auto sm:flex sm:w-auto sm:justify-end sm:gap-2.5 lg:shrink-0">
+                <button
+                  type="button"
+                  disabled={exporting || loading || (isSearching && visibleAffiliates.length === 0)}
+                  onClick={() => void handleExportPayments()}
+                  className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center rounded-full px-3 text-sm font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-55 sm:px-5"
+                >
+                  {exporting ? "Exporting…" : "Export Excel"}
+                </button>
                 <Link
                   href="/admin/students"
                   className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center rounded-full px-3 text-sm font-medium text-[color:var(--dash-text)] transition sm:px-5"
@@ -250,7 +333,7 @@ export function AdminAffiliatesPage() {
                 <button
                   type="button"
                   onClick={openCreateDialog}
-                  className="font-sans inline-flex min-h-10 items-center justify-center rounded-full bg-[#DDE466] px-3 text-sm font-medium text-[#152744] transition hover:brightness-105 sm:px-5"
+                  className="font-sans col-span-2 inline-flex min-h-10 items-center justify-center rounded-full bg-[#DDE466] px-3 text-sm font-medium text-[#152744] transition hover:brightness-105 sm:col-span-1 sm:px-5"
                 >
                   <span className="sm:hidden">Add</span>
                   <span className="hidden sm:inline">Add affiliate</span>
@@ -294,26 +377,39 @@ export function AdminAffiliatesPage() {
                 </h2>
               </div>
               <span className="text-brand-caption font-medium text-[color:var(--dash-accent)]">
-                Page {page}
+                {isSearching
+                  ? `${visibleAffiliates.length} match${visibleAffiliates.length === 1 ? "" : "es"}`
+                  : `Page ${page}`}
               </span>
             </div>
 
+            <DirectorySearchBar
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Search by name, email, or invite code…"
+              label="Search affiliates"
+            />
+
             <div className="mt-4 space-y-3 sm:mt-5 sm:space-y-4">
-              {loading && affiliates.length === 0 ? (
+              {loading && visibleAffiliates.length === 0 ? (
                 <DirectoryListSkeleton />
-              ) : affiliates.length === 0 ? (
+              ) : visibleAffiliates.length === 0 ? (
                 <div className="py-10 text-center">
-                  <p className="text-brand-body text-[color:var(--dash-faint)]">No affiliates found.</p>
-                  <button
-                    type="button"
-                    onClick={openCreateDialog}
-                    className="font-sans mt-3 inline-flex min-h-10 items-center justify-center rounded-full bg-[#DDE466] px-5 text-sm font-medium text-[#152744] transition hover:brightness-105"
-                  >
-                    Create first affiliate
-                  </button>
+                  <p className="text-brand-body text-[color:var(--dash-faint)]">
+                    {isSearching ? "No affiliates match your search." : "No affiliates found."}
+                  </p>
+                  {!isSearching ? (
+                    <button
+                      type="button"
+                      onClick={openCreateDialog}
+                      className="font-sans mt-3 inline-flex min-h-10 items-center justify-center rounded-full bg-[#DDE466] px-5 text-sm font-medium text-[#152744] transition hover:brightness-105"
+                    >
+                      Create first affiliate
+                    </button>
+                  ) : null}
                 </div>
               ) : (
-                affiliates.map((affiliate) => {
+                visibleAffiliates.map((affiliate) => {
                   const atCapacity =
                     affiliate.invitation_quota != null &&
                     affiliate.student_count >= affiliate.invitation_quota;
@@ -417,6 +513,10 @@ export function AdminAffiliatesPage() {
                             </span>
                           }
                         />
+                        <DataField
+                          label="Paid orders"
+                          value={String(affiliate.order_count ?? 0)}
+                        />
                         <DataField label="Quota usage" value={formatQuota(affiliate)} />
                         <DataField
                           label="Joined"
@@ -466,15 +566,17 @@ export function AdminAffiliatesPage() {
               )}
             </div>
 
-            <PaginationControls
-              page={page}
-              total={total}
-              hasNext={hasNext}
-              hasPrevious={hasPrevious}
-              loading={loading}
-              onPrevious={() => setPage((current) => Math.max(1, current - 1))}
-              onNext={() => setPage((current) => current + 1)}
-            />
+            {!isSearching ? (
+              <PaginationControls
+                page={page}
+                total={total}
+                hasNext={hasNext}
+                hasPrevious={hasPrevious}
+                loading={loading}
+                onPrevious={() => setPage((current) => Math.max(1, current - 1))}
+                onNext={() => setPage((current) => current + 1)}
+              />
+            ) : null}
           </section>
         </div>
       </div>

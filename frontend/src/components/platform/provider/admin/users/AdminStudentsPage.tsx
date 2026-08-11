@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { Icon, Menu } from "@/components/icons";
 import { PortalShell } from "@/components/platform/provider/PortalShell";
 import {
   DataField,
   DirectoryListSkeleton,
+  DirectorySearchBar,
   PaginationControls,
   StatPill,
   StatusBadge,
@@ -20,7 +21,13 @@ import {
   listStudents,
   type StudentSummary,
 } from "@/lib/integrate/provider/admin/users/api";
-import { formatDate } from "@/lib/integrate/provider/student/payment/types";
+import { exportStudentsPaymentExcel } from "@/lib/integrate/provider/admin/users/exportPayments";
+import {
+  formatDate,
+  formatMoney,
+  planLabels,
+  type PlanType,
+} from "@/lib/integrate/provider/student/payment/types";
 
 function openSidebar() {
   window.dispatchEvent(new Event("hols-portal-open-sidebar"));
@@ -37,14 +44,38 @@ function affiliateLabel(student: StudentSummary) {
   return null;
 }
 
+function studentMatchesSearch(student: StudentSummary, query: string) {
+  const haystack = [
+    student.first_name,
+    student.last_name,
+    student.email,
+    student.current_plan,
+    student.affiliate?.first_name,
+    student.affiliate?.last_name,
+    student.affiliate?.email,
+    student.affiliate?.invite_code,
+    student.referred_by_affiliate_id,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return haystack.includes(query);
+}
+
 export function AdminStudentsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [students, setStudents] = useState<StudentSummary[]>([]);
+  const [searchPool, setSearchPool] = useState<StudentSummary[] | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [hasNext, setHasNext] = useState(false);
   const [hasPrevious, setHasPrevious] = useState(false);
+  const [exporting, setExporting] = useState(false);
+
+  const trimmedSearch = searchQuery.trim();
+  const isSearching = trimmedSearch.length > 0;
 
   const loadStudents = useCallback(async () => {
     const cachedPage = getCachedStudents({ page, limit: 15 });
@@ -79,10 +110,56 @@ export function AdminStudentsPage() {
     return () => window.clearTimeout(timer);
   }, [loadStudents]);
 
-  const visibleReferredCount = students.filter(
+  useEffect(() => {
+    if (!isSearching) {
+      setSearchPool(null);
+      return;
+    }
+
+    let cancelled = false;
+    void listStudents({ page: 1, limit: 100 })
+      .then((data) => {
+        if (!cancelled) setSearchPool(data.items);
+      })
+      .catch(() => {
+        if (!cancelled) setSearchPool(null);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isSearching]);
+
+  const visibleStudents = useMemo(() => {
+    const source = isSearching ? searchPool ?? students : students;
+    if (!isSearching) return source;
+    const query = trimmedSearch.toLowerCase();
+    return source.filter((student) => studentMatchesSearch(student, query));
+  }, [isSearching, searchPool, students, trimmedSearch]);
+
+  const visibleReferredCount = visibleStudents.filter(
     (student) => student.affiliate || student.referred_by_affiliate_id,
   ).length;
-  const visibleMarketingCount = students.filter((student) => student.marketing_pref).length;
+  const visibleMarketingCount = visibleStudents.filter((student) => student.marketing_pref).length;
+  const visibleSpent = visibleStudents.reduce((sum, student) => sum + (student.total_spent ?? 0), 0);
+  const spendCurrency =
+    visibleStudents.find((student) => student.spend_currency)?.spend_currency ?? "USD";
+
+  async function handleExportPayments() {
+    setExporting(true);
+    setError(null);
+    try {
+      await exportStudentsPaymentExcel(
+        isSearching ? { students: visibleStudents } : undefined,
+      );
+    } catch (err) {
+      setError(
+        err instanceof ApiRequestError ? err.message : "Failed to export student payments.",
+      );
+    } finally {
+      setExporting(false);
+    }
+  }
 
   return (
     <PortalShell
@@ -129,11 +206,19 @@ export function AdminStudentsPage() {
                   </span>
                 </div>
                 <p className="text-brand-body mt-2 text-sm text-[color:var(--dash-muted)] sm:text-base">
-                  Full account details for each learner — open a profile to view fields.
+                  Spend, membership plan, and purchase history for each learner.
                 </p>
               </div>
 
               <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:gap-2.5">
+                <button
+                  type="button"
+                  disabled={exporting || loading || (isSearching && visibleStudents.length === 0)}
+                  onClick={() => void handleExportPayments()}
+                  className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center rounded-full px-3 text-sm font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-55 sm:px-5"
+                >
+                  {exporting ? "Exporting…" : "Export Excel"}
+                </button>
                 <Link
                   href="/admin/affiliates"
                   className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center rounded-full px-3 text-sm font-medium text-[color:var(--dash-text)] transition sm:px-5"
@@ -142,7 +227,7 @@ export function AdminStudentsPage() {
                 </Link>
                 <Link
                   href="/admin"
-                  className="font-sans inline-flex min-h-10 items-center justify-center rounded-full bg-[#DDE466] px-3 text-sm font-medium text-[#152744] transition hover:brightness-105 sm:px-5"
+                  className="font-sans col-span-2 inline-flex min-h-10 items-center justify-center rounded-full bg-[#DDE466] px-3 text-sm font-medium text-[#152744] transition hover:brightness-105 sm:col-span-1 sm:px-5"
                 >
                   Dashboard
                 </Link>
@@ -150,8 +235,17 @@ export function AdminStudentsPage() {
             </div>
           </section>
 
-          <div className="grid min-w-0 gap-2.5 sm:grid-cols-3 sm:gap-3">
-            <StatPill label="Total students" value={String(total)} />
+          <div className="grid min-w-0 gap-2.5 grid-cols-2 sm:grid-cols-4 sm:gap-3">
+            <StatPill label="Total students" value={loading ? "—" : String(total)} />
+            <StatPill
+              label={
+                <>
+                  <span className="sm:hidden">Spent</span>
+                  <span className="hidden sm:inline">Spent (this page)</span>
+                </>
+              }
+              value={loading ? "—" : formatMoney(visibleSpent, spendCurrency)}
+            />
             <StatPill
               label={
                 <>
@@ -159,7 +253,7 @@ export function AdminStudentsPage() {
                   <span className="hidden sm:inline">Referred (this page)</span>
                 </>
               }
-              value={String(visibleReferredCount)}
+              value={loading ? "—" : String(visibleReferredCount)}
             />
             <StatPill
               label={
@@ -168,7 +262,7 @@ export function AdminStudentsPage() {
                   <span className="hidden sm:inline">Marketing opt-in</span>
                 </>
               }
-              value={String(visibleMarketingCount)}
+              value={loading ? "—" : String(visibleMarketingCount)}
             />
           </div>
 
@@ -183,19 +277,28 @@ export function AdminStudentsPage() {
                 </h2>
               </div>
               <span className="text-brand-caption font-medium text-[color:var(--dash-accent)]">
-                Page {page}
+                {isSearching
+                  ? `${visibleStudents.length} match${visibleStudents.length === 1 ? "" : "es"}`
+                  : `Page ${page}`}
               </span>
             </div>
 
+            <DirectorySearchBar
+              value={searchQuery}
+              onChange={setSearchQuery}
+              placeholder="Search by name, email, plan, or affiliate…"
+              label="Search students"
+            />
+
             <div className="mt-4 space-y-3 sm:mt-5 sm:space-y-4">
-              {loading && students.length === 0 ? (
+              {loading && visibleStudents.length === 0 ? (
                 <DirectoryListSkeleton />
-              ) : students.length === 0 ? (
+              ) : visibleStudents.length === 0 ? (
                 <p className="text-brand-body py-10 text-center text-[color:var(--dash-faint)]">
-                  No students found.
+                  {isSearching ? "No students match your search." : "No students found."}
                 </p>
               ) : (
-                students.map((student) => {
+                visibleStudents.map((student) => {
                   const referredName = affiliateLabel(student);
                   const fullName = `${student.first_name} ${student.last_name}`.trim() || "Student";
                   const profileHref = student.user_id
@@ -254,8 +357,26 @@ export function AdminStudentsPage() {
                         )}
                       </div>
 
-                      <div className="mt-3.5 grid grid-cols-1 gap-3 border-t border-[color:var(--dash-surface-border)] pt-3.5 min-[420px]:grid-cols-2 lg:grid-cols-4 sm:mt-4 sm:pt-4">
-                        <DataField label="Email" value={student.email} />
+                      <div className="mt-3.5 grid grid-cols-1 gap-3 border-t border-[color:var(--dash-surface-border)] pt-3.5 min-[420px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 sm:mt-4 sm:pt-4">
+                        <DataField
+                          label="Total spent"
+                          value={formatMoney(
+                            student.total_spent ?? 0,
+                            student.spend_currency ?? "USD",
+                          )}
+                        />
+                        <DataField
+                          label="Plan"
+                          value={
+                            student.current_plan
+                              ? planLabels[student.current_plan as PlanType] ?? student.current_plan
+                              : "No plan"
+                          }
+                        />
+                        <DataField
+                          label="Orders"
+                          value={String(student.paid_order_count ?? student.order_count ?? 0)}
+                        />
                         <DataField
                           label="Affiliate"
                           value={
@@ -269,13 +390,18 @@ export function AdminStudentsPage() {
                           }
                         />
                         <DataField
-                          label="Marketing"
+                          label="Last purchase"
                           value={
-                            student.marketing_pref ? (
-                              <StatusBadge tone="accent">Subscribed</StatusBadge>
-                            ) : (
-                              <StatusBadge tone="muted">Opted out</StatusBadge>
-                            )
+                            student.last_purchase_at
+                              ? `${formatDate(student.last_purchase_at)}${
+                                  student.last_purchase_amount != null
+                                    ? ` · ${formatMoney(
+                                        student.last_purchase_amount,
+                                        student.spend_currency ?? "USD",
+                                      )}`
+                                    : ""
+                                }`
+                              : "—"
                           }
                         />
                         <DataField
@@ -300,15 +426,17 @@ export function AdminStudentsPage() {
               )}
             </div>
 
-            <PaginationControls
-              page={page}
-              total={total}
-              hasNext={hasNext}
-              hasPrevious={hasPrevious}
-              loading={loading}
-              onPrevious={() => setPage((current) => Math.max(1, current - 1))}
-              onNext={() => setPage((current) => current + 1)}
-            />
+            {!isSearching ? (
+              <PaginationControls
+                page={page}
+                total={total}
+                hasNext={hasNext}
+                hasPrevious={hasPrevious}
+                loading={loading}
+                onPrevious={() => setPage((current) => Math.max(1, current - 1))}
+                onNext={() => setPage((current) => current + 1)}
+              />
+            ) : null}
           </section>
         </div>
       </div>

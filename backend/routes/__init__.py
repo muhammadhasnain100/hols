@@ -6,6 +6,7 @@ from routes.health import router as health_router
 from routes.lectureroute import router as lectures_router
 from routes.paymentroute import router as payment_router
 from routes.usersroute import router as users_router
+from routes.webinarroute import router as webinars_router
 
 __all__ = [
     "affiliate_portal_router",
@@ -16,4 +17,5 @@ __all__ = [
     "lectures_router",
     "payment_router",
     "users_router",
+    "webinars_router",
 ]

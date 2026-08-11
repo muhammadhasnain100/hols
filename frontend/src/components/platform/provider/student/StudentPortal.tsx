@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import {
   BookOpen,
   Calculator,
+  Calendar,
   ChevronRight,
   ClipboardList,
   CreditCard,
@@ -24,6 +25,8 @@ import {
   formatMoney,
   planLabels,
 } from "@/lib/integrate/provider/student/payment/types";
+import { listWebinars, type WebinarSummary } from "@/lib/integrate/provider/student/webinars/api";
+import { formatWebinarWhen } from "@/lib/integrate/provider/student/webinars/types";
 import { cn } from "@/lib/utils";
 
 type QuickTool = {
@@ -45,6 +48,11 @@ const QUICK_TOOLS: readonly QuickTool[] = [
     icon: <Icon icon={BookOpen} size={18} />,
   },
   {
+    label: "Webinars",
+    href: "/student/webinars",
+    icon: <Icon icon={Calendar} size={18} />,
+  },
+  {
     label: "Calculator",
     href: "/student/calculator",
     icon: <Icon icon={Calculator} size={18} />,
@@ -54,11 +62,6 @@ const QUICK_TOOLS: readonly QuickTool[] = [
     href: "/student/adviser",
     icon: <Icon icon={MessageSquare} size={18} />,
   },
-  {
-    label: "Profile",
-    href: "/student/profile",
-    icon: <Icon icon={User} size={18} />,
-  },
 ];
 
 const QUICK_LINKS: readonly QuickLink[] = [
@@ -66,6 +69,11 @@ const QUICK_LINKS: readonly QuickLink[] = [
     label: "Membership plans",
     href: "/student/payment",
     icon: <Icon icon={Star} size={16} />,
+  },
+  {
+    label: "Webinars",
+    href: "/student/webinars",
+    icon: <Icon icon={Calendar} size={16} />,
   },
   {
     label: "Order history",
@@ -77,11 +85,6 @@ const QUICK_LINKS: readonly QuickLink[] = [
     href: "/student/payment/card",
     icon: <Icon icon={CreditCard} size={16} />,
   },
-  {
-    label: "Account profile",
-    href: "/student/profile",
-    icon: <Icon icon={User} size={16} />,
-  },
 ];
 
 export function StudentPortal() {
@@ -91,14 +94,16 @@ export function StudentPortal() {
   const [membershipExpiry, setMembershipExpiry] = useState("—");
   const [orderCount, setOrderCount] = useState("—");
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
+  const [nextWebinar, setNextWebinar] = useState<WebinarSummary | null>(null);
 
   useEffect(() => {
     async function loadSummary() {
       setLoading(true);
       try {
-        const [membershipRes, ordersRes] = await Promise.all([
+        const [membershipRes, ordersRes, webinarsRes] = await Promise.all([
           getCurrentMembership(),
           listOrders({ page: 1, limit: 4 }),
+          listWebinars({ page: 1, limit: 5 }).catch(() => null),
         ]);
 
         if (membershipRes.membership) {
@@ -113,6 +118,7 @@ export function StudentPortal() {
 
         setOrderCount(String(ordersRes.pagination.total));
         setRecentOrders(ordersRes.items);
+        setNextWebinar(webinarsRes?.items?.[0] ?? null);
       } catch {
         setMembershipStatus("Could not load");
       } finally {
@@ -135,6 +141,7 @@ export function StudentPortal() {
               status={membershipStatus}
               expiry={membershipExpiry}
             />
+            {nextWebinar ? <NextWebinarCard webinar={nextWebinar} /> : null}
             <QuickToolsCard />
             <ActivityCard orders={recentOrders} />
           </div>
@@ -145,6 +152,35 @@ export function StudentPortal() {
         </>
       )}
     </DashboardPageLayout>
+  );
+}
+
+function NextWebinarCard({ webinar }: { webinar: WebinarSummary }) {
+  return (
+    <section className="dashboard-glass-card relative overflow-hidden rounded-2xl p-4 sm:p-5">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0">
+          <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+            Next webinar
+          </p>
+          <h2 className="font-sans mt-1 text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)]">
+            {webinar.title}
+          </h2>
+          <p className="text-brand-caption mt-1 text-[color:var(--dash-muted)]">
+            {formatWebinarWhen(webinar.starts_at)}
+            {" · "}
+            {webinar.price > 0 ? formatMoney(webinar.price, webinar.currency) : "Free"}
+            {webinar.is_booked ? " · Booked" : ""}
+          </p>
+        </div>
+        <Link
+          href={`/student/webinars/${encodeURIComponent(webinar.webinar_id)}`}
+          className="font-sans inline-flex min-h-10 items-center justify-center rounded-full bg-[#DDE466] px-5 text-sm font-medium text-[#152744] transition hover:brightness-105"
+        >
+          {webinar.is_booked ? "Open booking" : "Book seat"}
+        </Link>
+      </div>
+    </section>
   );
 }
 

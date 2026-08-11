@@ -64,6 +64,20 @@ class OrderHistoryData(BaseModel):
     pagination: PaginationMeta
 
 
+class StudentCommerceData(BaseModel):
+    user_id: str
+    total_spent: float = 0
+    order_count: int = 0
+    paid_order_count: int = 0
+    currency: str = "USD"
+    last_purchase_at: Optional[str] = None
+    last_purchase_amount: Optional[float] = None
+    last_plan_type: Optional[str] = None
+    current_plan: Optional[str] = None
+    membership_status: Optional[str] = None
+    membership_end_date: Optional[str] = None
+
+
 class CardData(BaseModel):
     card: dict[str, Any]
 
@@ -77,5 +91,6 @@ PlanUpdateResponse = ApiSuccessResponse[PlanUpdateData]
 PurchasePlanResponse = ApiSuccessResponse[PurchasePlanData]
 MembershipResponse = ApiSuccessResponse[MembershipData]
 OrderHistoryResponse = ApiSuccessResponse[OrderHistoryData]
+StudentCommerceResponse = ApiSuccessResponse[StudentCommerceData]
 CardResponse = ApiSuccessResponse[CardData]
 CardListResponse = ApiSuccessResponse[CardListData]
