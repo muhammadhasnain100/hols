@@ -4,7 +4,7 @@
  * (translateY) and liquid (y/height) animation keep working.
  */
 
-import type { CSSProperties, ReactNode } from "react";
+import { useLayoutEffect, useRef, type CSSProperties, type ReactNode } from "react";
 
 type SyringeArtProps = {
   uid: string;
@@ -16,8 +16,12 @@ type SyringeArtProps = {
   plungerTransform: string;
   plungerMotionStyle?: CSSProperties;
   liquidLayerStyle?: CSSProperties;
+  /** SVG presentation opacity (GSAP-safe). Prefer this over CSS opacity. */
+  liquidLayerOpacity?: number;
   liquidFill: { y: number; height: number };
   liquidNode?: ReactNode;
+  /** When true, React leaves y/height/transform alone after mount for GSAP. */
+  gsapOwned?: boolean;
 };
 
 /** Must stay in sync with calculatorGeometry SYRINGE_BARREL / TRAVEL. */
@@ -67,8 +71,10 @@ export function SyringeArt({
   plungerTransform,
   plungerMotionStyle,
   liquidLayerStyle,
+  liquidLayerOpacity,
   liquidFill,
   liquidNode,
+  gsapOwned = false,
 }: SyringeArtProps) {
   const barrelGrad = `syr-barrel-${uid}`;
   const plungerGrad = `syr-plunger-${uid}`;
@@ -86,15 +92,41 @@ export function SyringeArt({
   const needleShaftH = needleDown ? SYRINGE_ART.needleH : 42;
   const tip = needleDown ? tipY : 377;
 
+  const liquidFillRef = useRef<SVGRectElement>(null);
+  const liquidLayerRef = useRef<SVGGElement>(null);
+  const plungerRef = useRef<SVGGElement>(null);
+
+  /** Seed GSAP-owned geometry once — later React renders must not clobber animated attrs. */
+  useLayoutEffect(() => {
+    if (!gsapOwned) return;
+    const fill = liquidFillRef.current;
+    if (fill) {
+      fill.setAttribute("y", String(liquidFill.y));
+      fill.setAttribute("height", String(Math.max(0, liquidFill.height)));
+    }
+    const layer = liquidLayerRef.current;
+    if (layer && liquidLayerOpacity != null) {
+      layer.style.opacity = "";
+      layer.setAttribute("opacity", String(liquidLayerOpacity));
+    }
+    const plunger = plungerRef.current;
+    if (plunger) {
+      plunger.style.transform = "";
+      plunger.setAttribute("transform", plungerTransform);
+    }
+    // intentionally mount-only
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [gsapOwned]);
+
   return (
     <>
       <defs>
         <linearGradient id={barrelGrad} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.8" />
-          <stop offset="15%" stopColor="#e0f2fe" stopOpacity="0.5" />
-          <stop offset="50%" stopColor="#ffffff" stopOpacity="0.2" />
-          <stop offset="85%" stopColor="#bae6fd" stopOpacity="0.4" />
-          <stop offset="100%" stopColor="#7dd3fc" stopOpacity="0.7" />
+          <stop offset="0%" stopColor="#ffffff" stopOpacity="0.35" />
+          <stop offset="15%" stopColor="#e0f2fe" stopOpacity="0.18" />
+          <stop offset="50%" stopColor="#ffffff" stopOpacity="0.06" />
+          <stop offset="85%" stopColor="#bae6fd" stopOpacity="0.14" />
+          <stop offset="100%" stopColor="#7dd3fc" stopOpacity="0.22" />
         </linearGradient>
         <linearGradient id={plungerGrad} x1="0" y1="0" x2="1" y2="0">
           <stop offset="0%" stopColor="#f8fafc" />
@@ -116,13 +148,14 @@ export function SyringeArt({
           <stop offset="50%" stopColor="#ffffff" />
           <stop offset="100%" stopColor="#64748b" />
         </linearGradient>
+        {/* Solid bac-water blue — must read clearly through the glass barrel. */}
         <linearGradient id={liquidGrad} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#f0f9fc" />
-          <stop offset="0.45" stopColor="#8DC3E1" />
-          <stop offset="1" stopColor="#3853A4" stopOpacity="0.85" />
+          <stop offset="0" stopColor="#4AA3DE" />
+          <stop offset="0.4" stopColor="#2B6FB8" />
+          <stop offset="1" stopColor="#163A7A" />
         </linearGradient>
         <linearGradient id={liquidShine} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#ffffff" stopOpacity="0.6" />
+          <stop offset="0" stopColor="#ffffff" stopOpacity="0.22" />
           <stop offset="0.4" stopColor="#ffffff" stopOpacity="0" />
         </linearGradient>
         <clipPath id={clipId}>
@@ -144,8 +177,8 @@ export function SyringeArt({
           />
         </filter>
         <radialGradient id={glowId} cx="50%" cy="45%" r="50%">
-          <stop offset="0" stopColor="rgba(141,195,225,0.22)" />
-          <stop offset="1" stopColor="rgba(56,83,164,0)" />
+          <stop offset="0" stopColor="rgba(47,107,181,0.28)" />
+          <stop offset="1" stopColor="rgba(20,38,68,0)" />
         </radialGradient>
       </defs>
 
@@ -266,18 +299,39 @@ export function SyringeArt({
 
             {showLiquid ? (
               <g clipPath={`url(#${clipId})`}>
-                <g data-syringe-liquid-layer style={liquidLayerStyle}>
+                <g
+                  ref={liquidLayerRef}
+                  data-syringe-liquid-layer
+                  style={liquidLayerStyle}
+                  opacity={gsapOwned ? undefined : liquidLayerOpacity}
+                >
                   {liquidNode ?? (
                     <>
+                      {/* Solid blue body — GSAP animates y/height when gsapOwned. */}
                       <rect
+                        ref={liquidFillRef}
                         data-syringe-liquid-fill
                         x={SYRINGE_ART.interiorX}
-                        y={liquidFill.y}
                         width={SYRINGE_ART.interiorW}
-                        height={Math.max(0, liquidFill.height)}
-                        fill={`url(#${liquidGrad})`}
+                        fill="#2B6FB8"
+                        {...(gsapOwned
+                          ? {}
+                          : {
+                              y: liquidFill.y,
+                              height: Math.max(0, liquidFill.height),
+                            })}
                       />
-                      {liquidFill.height > 6 ? (
+                      {!gsapOwned && liquidFill.height > 2 ? (
+                        <rect
+                          x={SYRINGE_ART.interiorX}
+                          y={liquidFill.y}
+                          width={SYRINGE_ART.interiorW}
+                          height={Math.max(0, liquidFill.height)}
+                          fill={`url(#${liquidGrad})`}
+                          opacity="0.85"
+                        />
+                      ) : null}
+                      {!gsapOwned && liquidFill.height > 6 ? (
                         <rect
                           x={SYRINGE_ART.interiorX}
                           y={liquidFill.y}
@@ -331,7 +385,12 @@ export function SyringeArt({
             </g>
 
             {/* Plunger assembly — travels in Y (empty = toward needle) */}
-            <g data-syringe-plunger-layer transform={plungerTransform} style={plungerMotionStyle}>
+            <g
+              ref={plungerRef}
+              data-syringe-plunger-layer
+              transform={gsapOwned ? undefined : plungerTransform}
+              style={plungerMotionStyle}
+            >
               {/* Thumb press — held back by thumbStemGap so a stem shows above flanges when empty */}
               <path
                 d={`M14 ${SYRINGE_ART.thumbTop} C10 ${SYRINGE_ART.thumbTop} 10 ${SYRINGE_ART.thumbBottom} 14 ${SYRINGE_ART.thumbBottom} L66 ${SYRINGE_ART.thumbBottom} C70 ${SYRINGE_ART.thumbBottom} 70 ${SYRINGE_ART.thumbTop} 66 ${SYRINGE_ART.thumbTop} Z`}

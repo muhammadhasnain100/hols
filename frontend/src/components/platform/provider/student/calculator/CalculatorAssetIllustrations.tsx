@@ -49,8 +49,8 @@ const WATER_PALETTE: LiquidPalette = {
   bottom: HOLS_BRAND.babyBlue,
   edge: HOLS_BRAND.duskBlue,
   powder: "#f0f9fc",
-  cap: HOLS_BRAND.prussianBlue,
-  capDark: "#0d1a30",
+  cap: "#e23d8a",
+  capDark: "#b01560",
   glow: "transparent",
 };
 
@@ -186,6 +186,7 @@ export function AssetVial({
             <HexarelinVialArt
               uid={uid}
               productName={productName}
+              theme={variant === "water" ? "bac-water-pink" : "navy"}
               showBack={showBack}
               showFront={showFront}
               frontGlass={frontGlass}
@@ -274,16 +275,23 @@ export function AssetSyringe({
   const clamped = Math.min(0.98, Math.max(0, showFill ? fillRatio : 0));
   /** Empty → plunger pushed in (thumb kept back by stem gap); full → plunger pulled out above barrel. */
   const plungerY = (1 - clamped) * SYRINGE_BARREL_TRAVEL;
-  const plungerTransform = `translate(0 ${plungerY})`;
-  const liquid = syringeLiquidLayout(clamped);
+  /**
+   * When GSAP drives the draw scene, React seeds empty geometry once; later
+   * renders must not rewrite transform / y / height / CSS opacity (CSS opacity
+   * would beat SVG attribute opacity that GSAP sets during the draw).
+   */
+  const plungerTransform = gsapDriven
+    ? `translate(0 ${SYRINGE_BARREL_TRAVEL})`
+    : `translate(0 ${plungerY})`;
+  const liquid = gsapDriven ? syringeLiquidLayout(0) : syringeLiquidLayout(clamped);
   const showLiquid = showFill && (clamped > 0 || gsapDriven);
 
   /** Use SVG transform only — avoid stacking CSS + SVG transforms. */
   const plungerMotionStyle = { willChange: "transform" as const };
 
-  const liquidLayerStyle = gsapDriven
-    ? { willChange: "opacity" as const, opacity: clamped > 0.008 ? 1 : 0 }
-    : undefined;
+  /** Never set CSS opacity when GSAP-driven — attribute opacity is used instead. */
+  const liquidLayerStyle = gsapDriven ? ({ willChange: "opacity" } as const) : undefined;
+  const liquidLayerOpacity = gsapDriven ? 0 : undefined;
 
   const showNeedle = part === "full" || part === "needle";
   const showBarrel = part === "full" || part === "barrel";
@@ -322,7 +330,9 @@ export function AssetSyringe({
         plungerTransform={plungerTransform}
         plungerMotionStyle={plungerMotionStyle}
         liquidLayerStyle={liquidLayerStyle}
+        liquidLayerOpacity={liquidLayerOpacity}
         liquidFill={liquid}
+        gsapOwned={gsapDriven}
       />
     </svg>
   );

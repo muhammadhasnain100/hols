@@ -343,10 +343,10 @@ export function InjectionAnimation({
           dom.setSyringeLiquidHeight?.(liquid.height);
 
           if (dom.syringeLiquidLayer) {
-            dom.syringeLiquidLayer.setAttribute(
-              "opacity",
-              proxy.syringeFill > 0.008 ? "1" : "0",
-            );
+            const layer = dom.syringeLiquidLayer as HTMLElement & SVGElement;
+            // Clear any CSS opacity so the SVG attribute can take effect.
+            if (layer.style) layer.style.opacity = "";
+            layer.setAttribute("opacity", proxy.syringeFill > 0.008 ? "1" : "0");
           }
         };
 

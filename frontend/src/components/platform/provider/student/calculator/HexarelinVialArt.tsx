@@ -8,10 +8,18 @@
 
 import type { ReactNode, Ref } from "react";
 
+export type HexarelinVialTheme = "navy" | "bac-water-pink";
+
 type HexarelinVialArtProps = {
   uid: string;
   /** Printed product name on the label (e.g. "Bacteriostatic water", "Medication vial"). */
   productName: string;
+  /**
+   * Label / flip-cap theme.
+   * - navy: default HOLS medication vial
+   * - bac-water-pink: bacteriostatic water — Hospira-inspired pink label, HOLS branding kept
+   */
+  theme?: HexarelinVialTheme;
   showBack?: boolean;
   showFront?: boolean;
   frontGlass?: boolean;
@@ -28,6 +36,24 @@ type HexarelinVialArtProps = {
   powderLayerRef?: Ref<SVGGElement>;
   surfaceRef?: Ref<SVGCircleElement>;
   powderSurfaceY?: number;
+};
+
+type VialChrome = {
+  label0: string;
+  labelMid: string;
+  label1: string;
+  cap0: string;
+  capMid: string;
+  cap1: string;
+  capHighlight: string;
+  capLip: string;
+  brandMark: string;
+  brandSub: string;
+  productPrimary: string;
+  productAccent: string;
+  badgeBg: string;
+  badgeMuted: string;
+  badgeCircle: string;
 };
 
 /** Source-space vial center / top used by the outer scale transform. */
@@ -51,9 +77,51 @@ export function hexarelinSourceYToViewBox(sourceY: number): number {
   return 12 + HEXARELIN_VIAL_SCALE * (sourceY - HEXARELIN_SRC.top);
 }
 
+function vialChrome(theme: HexarelinVialTheme, coverMode: boolean): VialChrome {
+  if (theme === "bac-water-pink") {
+    return {
+      label0: "#f06aa8",
+      labelMid: "#e23d8a",
+      label1: "#c2186b",
+      cap0: "#f278b2",
+      capMid: "#e23d8a",
+      cap1: "#b01560",
+      capHighlight: "#ffb6d9",
+      capLip: "#8e104c",
+      // Keep lemon HOLS. mark; product copy reads dark like the Hospira reference.
+      brandMark: coverMode ? "#e4ec55" : "#d9e84b",
+      brandSub: "#ffffff",
+      productPrimary: "#142644",
+      productAccent: "#0a1424",
+      badgeBg: "#9c1458",
+      badgeMuted: "#ffd0e6",
+      badgeCircle: "#b01560",
+    };
+  }
+
+  return {
+    label0: "#18263e",
+    labelMid: "#101d34",
+    label1: "#09172d",
+    cap0: "#22334b",
+    capMid: "#0d2038",
+    cap1: "#07162a",
+    capHighlight: "#5e7189",
+    capLip: "#071425",
+    brandMark: coverMode ? "#e4ec55" : "#d9e84b",
+    brandSub: "#ffffff",
+    productPrimary: "#ffffff",
+    productAccent: "#d9e84b",
+    badgeBg: "#29436d",
+    badgeMuted: "#8ed8e6",
+    badgeCircle: "#345a91",
+  };
+}
+
 export function HexarelinVialArt({
   uid,
   productName,
+  theme = "navy",
   showBack = true,
   showFront = true,
   frontGlass = false,
@@ -76,6 +144,7 @@ export function HexarelinVialArt({
   const textRender = coverMode ? "geometricPrecision" : undefined;
   const shapeRender = coverMode ? "geometricPrecision" : undefined;
   const fillTransform = gsapDriven ? undefined : `translate(0 ${fillOffsetY})`;
+  const chrome = vialChrome(theme, coverMode);
   const glassBody = `hx-glass-${uid}`;
   const glassShade = `hx-shade-${uid}`;
   const labelGrad = `hx-label-${uid}`;
@@ -136,15 +205,27 @@ export function HexarelinVialArt({
           )}
         </linearGradient>
         <linearGradient id={labelGrad} x1="0" y1="0" x2="1" y2=".1">
-          <stop offset="0" stopColor="#18263e" />
-          <stop offset=".48" stopColor="#101d34" />
-          <stop offset="1" stopColor="#09172d" />
+          <stop offset="0" stopColor={chrome.label0} />
+          <stop offset=".48" stopColor={chrome.labelMid} />
+          <stop offset="1" stopColor={chrome.label1} />
         </linearGradient>
         <linearGradient id={labelSheen} x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="#ffffff" stopOpacity=".15" />
-          <stop offset=".17" stopColor="#ffffff" stopOpacity=".03" />
+          <stop
+            offset="0"
+            stopColor="#ffffff"
+            stopOpacity={theme === "bac-water-pink" ? ".28" : ".15"}
+          />
+          <stop
+            offset=".17"
+            stopColor="#ffffff"
+            stopOpacity={theme === "bac-water-pink" ? ".08" : ".03"}
+          />
           <stop offset=".76" stopColor="#ffffff" stopOpacity="0" />
-          <stop offset="1" stopColor="#ffffff" stopOpacity=".05" />
+          <stop
+            offset="1"
+            stopColor="#ffffff"
+            stopOpacity={theme === "bac-water-pink" ? ".12" : ".05"}
+          />
         </linearGradient>
         <linearGradient id={metal} x1="0" y1="0" x2="1" y2="0">
           <stop offset="0" stopColor="#a7a7a7" />
@@ -161,9 +242,9 @@ export function HexarelinVialArt({
           <stop offset="1" stopColor="#787878" />
         </linearGradient>
         <linearGradient id={cap} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#22334b" />
-          <stop offset=".55" stopColor="#0d2038" />
-          <stop offset="1" stopColor="#07162a" />
+          <stop offset="0" stopColor={chrome.cap0} />
+          <stop offset=".55" stopColor={chrome.capMid} />
+          <stop offset="1" stopColor={chrome.cap1} />
         </linearGradient>
         <radialGradient id={planet} cx=".38" cy=".35" r=".76">
           <stop offset="0" stopColor="#31acc9" />
@@ -286,7 +367,7 @@ export function HexarelinVialArt({
             fontSize={coverMode ? "19.5" : "19"}
             fontWeight="800"
             letterSpacing={coverMode ? "-1" : "-1.2"}
-            fill={coverMode ? "#e4ec55" : "#d9e84b"}
+            fill={chrome.brandMark}
             textRendering={textRender}
           >
             HOLS.
@@ -297,7 +378,7 @@ export function HexarelinVialArt({
             fontFamily="var(--font-secondary-stack, Arial, Helvetica, sans-serif)"
             fontSize={coverMode ? "5.4" : "5.1"}
             fontWeight="700"
-            fill="#ffffff"
+            fill={chrome.brandSub}
             textRendering={textRender}
           >
             house of
@@ -308,7 +389,7 @@ export function HexarelinVialArt({
             fontFamily="var(--font-secondary-stack, Arial, Helvetica, sans-serif)"
             fontSize={coverMode ? "5.4" : "5.1"}
             fontWeight="700"
-            fill="#ffffff"
+            fill={chrome.brandSub}
             textRendering={textRender}
           >
             life science
@@ -322,9 +403,9 @@ export function HexarelinVialArt({
                   y="219"
                   fontFamily="var(--font-primary-stack, Arial, Helvetica, sans-serif)"
                   fontSize="15"
-                  fontWeight="500"
+                  fontWeight={theme === "bac-water-pink" ? "700" : "500"}
                   letterSpacing="-0.6"
-                  fill="#ffffff"
+                  fill={chrome.productPrimary}
                 >
                   {productName.slice(0, productName.lastIndexOf(" "))}
                 </text>
@@ -333,9 +414,9 @@ export function HexarelinVialArt({
                   y="238"
                   fontFamily="var(--font-primary-stack, Arial, Helvetica, sans-serif)"
                   fontSize="15"
-                  fontWeight="500"
+                  fontWeight={theme === "bac-water-pink" ? "700" : "500"}
                   letterSpacing="-0.6"
-                  fill="#d9e84b"
+                  fill={chrome.productAccent}
                 >
                   {productName.slice(productName.lastIndexOf(" ") + 1)}
                 </text>
@@ -346,9 +427,9 @@ export function HexarelinVialArt({
                 y="226"
                 fontFamily="var(--font-primary-stack, Arial, Helvetica, sans-serif)"
                 fontSize="16"
-                fontWeight="500"
+                fontWeight={theme === "bac-water-pink" ? "700" : "500"}
                 letterSpacing="-0.6"
-                fill="#ffffff"
+                fill={chrome.productPrimary}
               >
                 {productName}
               </text>
@@ -385,14 +466,14 @@ export function HexarelinVialArt({
           </g>
 
           {/* USA badge */}
-          <rect x="199" y="286" width="55" height="25" rx="7" fill="#29436d" opacity="0.82" />
+          <rect x="199" y="286" width="55" height="25" rx="7" fill={chrome.badgeBg} opacity="0.82" />
           <text
             x="204"
             y="295"
             fontFamily="var(--font-secondary-stack, Arial, Helvetica, sans-serif)"
             fontSize="5"
             fontWeight="400"
-            fill="#8ed8e6"
+            fill={chrome.badgeMuted}
           >
             Manufactured
           </text>
@@ -406,7 +487,7 @@ export function HexarelinVialArt({
           >
             in the USA
           </text>
-          <circle cx="257.5" cy="298.5" r="8.4" fill="#345a91" />
+          <circle cx="257.5" cy="298.5" r="8.4" fill={chrome.badgeCircle} />
           <g clipPath={`url(#${flagClip})`}>
             <rect x="250.2" y="291.2" width="14.6" height="14.6" fill="#ffffff" />
             <g stroke="#e95d61" strokeWidth="1.1">
@@ -506,10 +587,26 @@ export function HexarelinVialArt({
             })}
           </g>
 
-          {/* Navy flip-cap */}
+          {/* Flip-cap (navy med / pink bac-water) */}
           <rect x="194" y="35" width="129" height="21" rx="5.5" fill={`url(#${cap})`} />
-          <rect x="199" y="36.5" width="119" height="3.5" rx="2" fill="#5e7189" opacity={coverMode ? 0.32 : 0.25} />
-          <rect x="194" y="52" width="129" height="4" rx="2" fill="#071425" opacity={coverMode ? 0.42 : 0.36} />
+          <rect
+            x="199"
+            y="36.5"
+            width="119"
+            height="3.5"
+            rx="2"
+            fill={chrome.capHighlight}
+            opacity={coverMode ? 0.32 : 0.25}
+          />
+          <rect
+            x="194"
+            y="52"
+            width="129"
+            height="4"
+            rx="2"
+            fill={chrome.capLip}
+            opacity={coverMode ? 0.42 : 0.36}
+          />
           {coverMode ? (
             <path
               d="M194 35.5 H323"
