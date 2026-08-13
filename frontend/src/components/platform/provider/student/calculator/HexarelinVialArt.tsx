@@ -54,6 +54,9 @@ type VialChrome = {
   badgeBg: string;
   badgeMuted: string;
   badgeCircle: string;
+  /** Hospira-style pink band on white label (bac-water only). */
+  accentBand?: string;
+  metaText?: string;
 };
 
 /** Source-space vial center / top used by the outer scale transform. */
@@ -70,32 +73,36 @@ export const HEXARELIN_SRC = {
 
 /** Fits the source vial into viewBox 0 0 120 205, centered on x=60. */
 export const HEXARELIN_VIAL_SCALE = 0.56;
-export const HEXARELIN_VIAL_TRANSFORM = `translate(60 12) scale(${HEXARELIN_VIAL_SCALE}) translate(${-HEXARELIN_SRC.cx} ${-HEXARELIN_SRC.top})`;
+/** Top offset chosen so the bottle base sits near the viewBox bottom (pairs with bac-water). */
+export const HEXARELIN_VIAL_TOP = 30;
+export const HEXARELIN_VIAL_TRANSFORM = `translate(60 ${HEXARELIN_VIAL_TOP}) scale(${HEXARELIN_VIAL_SCALE}) translate(${-HEXARELIN_SRC.cx} ${-HEXARELIN_SRC.top})`;
 
 /** Map a source Y into the outer 120×205 viewBox (for geometry constants). */
 export function hexarelinSourceYToViewBox(sourceY: number): number {
-  return 12 + HEXARELIN_VIAL_SCALE * (sourceY - HEXARELIN_SRC.top);
+  return HEXARELIN_VIAL_TOP + HEXARELIN_VIAL_SCALE * (sourceY - HEXARELIN_SRC.top);
 }
 
 function vialChrome(theme: HexarelinVialTheme, coverMode: boolean): VialChrome {
   if (theme === "bac-water-pink") {
     return {
-      label0: "#f06aa8",
-      labelMid: "#e23d8a",
-      label1: "#c2186b",
-      cap0: "#f278b2",
-      capMid: "#e23d8a",
-      cap1: "#b01560",
-      capHighlight: "#ffb6d9",
-      capLip: "#8e104c",
-      // Keep lemon HOLS. mark; product copy reads dark like the Hospira reference.
-      brandMark: coverMode ? "#e4ec55" : "#d9e84b",
-      brandSub: "#ffffff",
-      productPrimary: "#142644",
-      productAccent: "#0a1424",
-      badgeBg: "#9c1458",
-      badgeMuted: "#ffd0e6",
-      badgeCircle: "#b01560",
+      // White clinical label + magenta accents (vector twin of the product bottle).
+      label0: "#ffffff",
+      labelMid: "#f7f8fa",
+      label1: "#eef0f3",
+      cap0: "#ff4fa3",
+      capMid: "#e0167a",
+      cap1: "#b0105e",
+      capHighlight: "#ffb0d8",
+      capLip: "#8e0d4c",
+      brandMark: coverMode ? "#142644" : "#142644",
+      brandSub: "#3853A4",
+      productPrimary: "#0a0a0a",
+      productAccent: "#0a0a0a",
+      badgeBg: "#f3f4f6",
+      badgeMuted: "#6b7280",
+      badgeCircle: "#e0167a",
+      accentBand: "#e0167a",
+      metaText: "#111827",
     };
   }
 
@@ -356,161 +363,258 @@ export function HexarelinVialArt({
           {/* Label */}
           <rect x="194" y="145" width="130" height="174" rx="4" fill={`url(#${labelGrad})`} />
           <rect x="194" y="145" width="130" height="174" rx="4" fill={`url(#${labelSheen})`} />
-          <path d="M198 149 L214 149 L214 315 L199 315 Z" fill="#ffffff" opacity="0.035" />
-          <path d="M320 149 L324 149 L324 315 L320 315 Z" fill="#ffffff" opacity="0.035" />
+          {theme === "bac-water-pink" ? (
+            <rect
+              x="194"
+              y="145"
+              width="130"
+              height="174"
+              rx="4"
+              fill="none"
+              stroke="#d1d5db"
+              strokeWidth="1.2"
+            />
+          ) : (
+            <>
+              <path d="M198 149 L214 149 L214 315 L199 315 Z" fill="#ffffff" opacity="0.035" />
+              <path d="M320 149 L324 149 L324 315 L320 315 Z" fill="#ffffff" opacity="0.035" />
+            </>
+          )}
 
-          {/* HOLS. branding */}
-          <text
-            x="198"
-            y="178"
-            fontFamily="var(--font-primary-stack, Arial, Helvetica, sans-serif)"
-            fontSize={coverMode ? "19.5" : "19"}
-            fontWeight="800"
-            letterSpacing={coverMode ? "-1" : "-1.2"}
-            fill={chrome.brandMark}
-            textRendering={textRender}
-          >
-            HOLS.
-          </text>
-          <text
-            x="250"
-            y="168.5"
-            fontFamily="var(--font-secondary-stack, Arial, Helvetica, sans-serif)"
-            fontSize={coverMode ? "5.4" : "5.1"}
-            fontWeight="700"
-            fill={chrome.brandSub}
-            textRendering={textRender}
-          >
-            house of
-          </text>
-          <text
-            x="250"
-            y="175"
-            fontFamily="var(--font-secondary-stack, Arial, Helvetica, sans-serif)"
-            fontSize={coverMode ? "5.4" : "5.1"}
-            fontWeight="700"
-            fill={chrome.brandSub}
-            textRendering={textRender}
-          >
-            life science
-          </text>
-
-          {productName ? (
-            productName.includes(" ") ? (
-              <>
-                <text
-                  x="198"
-                  y="219"
-                  fontFamily="var(--font-primary-stack, Arial, Helvetica, sans-serif)"
-                  fontSize="15"
-                  fontWeight={theme === "bac-water-pink" ? "700" : "500"}
-                  letterSpacing="-0.6"
-                  fill={chrome.productPrimary}
-                >
-                  {productName.slice(0, productName.lastIndexOf(" "))}
-                </text>
-                <text
-                  x="198"
-                  y="238"
-                  fontFamily="var(--font-primary-stack, Arial, Helvetica, sans-serif)"
-                  fontSize="15"
-                  fontWeight={theme === "bac-water-pink" ? "700" : "500"}
-                  letterSpacing="-0.6"
-                  fill={chrome.productAccent}
-                >
-                  {productName.slice(productName.lastIndexOf(" ") + 1)}
-                </text>
-              </>
-            ) : (
+          {theme === "bac-water-pink" ? (
+            <>
               <text
-                x="198"
-                y="226"
+                x="200"
+                y="168"
                 fontFamily="var(--font-primary-stack, Arial, Helvetica, sans-serif)"
                 fontSize="16"
-                fontWeight={theme === "bac-water-pink" ? "700" : "500"}
-                letterSpacing="-0.6"
-                fill={chrome.productPrimary}
+                fontWeight="800"
+                letterSpacing="-1"
+                fill={chrome.brandMark}
+                textRendering={textRender}
               >
-                {productName}
+                HOLS.
               </text>
-            )
-          ) : null}
+              <text
+                x="200"
+                y="180"
+                fontFamily="var(--font-secondary-stack, Arial, Helvetica, sans-serif)"
+                fontSize="5.2"
+                fontWeight="600"
+                fill={chrome.brandSub}
+                textRendering={textRender}
+              >
+                house of life science
+              </text>
+              <text
+                x="200"
+                y="196"
+                fontFamily="var(--font-secondary-stack, Arial, Helvetica, sans-serif)"
+                fontSize="5.4"
+                fontWeight="700"
+                fill={chrome.metaText ?? "#111827"}
+              >
+                30 mL Multiple-dose
+              </text>
+              <rect x="194" y="206" width="130" height="62" fill={chrome.accentBand ?? "#e0167a"} />
+              <text
+                x="200"
+                y="230"
+                fontFamily="var(--font-primary-stack, Arial, Helvetica, sans-serif)"
+                fontSize="11.5"
+                fontWeight="800"
+                letterSpacing="-0.35"
+                fill="#0a0a0a"
+              >
+                BACTERIOSTATIC
+              </text>
+              <text
+                x="200"
+                y="248"
+                fontFamily="var(--font-primary-stack, Arial, Helvetica, sans-serif)"
+                fontSize="15.5"
+                fontWeight="800"
+                letterSpacing="-0.5"
+                fill="#0a0a0a"
+              >
+                WATER
+              </text>
+              <text
+                x="200"
+                y="261"
+                fontFamily="var(--font-secondary-stack, Arial, Helvetica, sans-serif)"
+                fontSize="6.2"
+                fontWeight="500"
+                fill="#111827"
+              >
+                for Injection, USP
+              </text>
+              <text
+                x="200"
+                y="292"
+                fontFamily="var(--font-secondary-stack, Arial, Helvetica, sans-serif)"
+                fontSize="5"
+                fontWeight="500"
+                fill={chrome.badgeMuted}
+              >
+                Manufactured in the USA
+              </text>
+              <circle cx="304" cy="298" r="7.5" fill={chrome.badgeCircle} />
+              <circle cx="304" cy="298" r="3.2" fill="#ffffff" opacity="0.9" />
+            </>
+          ) : (
+            <>
+              <text
+                x="198"
+                y="178"
+                fontFamily="var(--font-primary-stack, Arial, Helvetica, sans-serif)"
+                fontSize={coverMode ? "19.5" : "19"}
+                fontWeight="800"
+                letterSpacing={coverMode ? "-1" : "-1.2"}
+                fill={chrome.brandMark}
+                textRendering={textRender}
+              >
+                HOLS.
+              </text>
+              <text
+                x="250"
+                y="168.5"
+                fontFamily="var(--font-secondary-stack, Arial, Helvetica, sans-serif)"
+                fontSize={coverMode ? "5.4" : "5.1"}
+                fontWeight="700"
+                fill={chrome.brandSub}
+                textRendering={textRender}
+              >
+                house of
+              </text>
+              <text
+                x="250"
+                y="175"
+                fontFamily="var(--font-secondary-stack, Arial, Helvetica, sans-serif)"
+                fontSize={coverMode ? "5.4" : "5.1"}
+                fontWeight="700"
+                fill={chrome.brandSub}
+                textRendering={textRender}
+              >
+                life science
+              </text>
 
-          {/* Planet */}
-          <g clipPath={`url(#${planetClip})`}>
-            <circle cx="334" cy="275" r="54" fill={`url(#${planet})`} />
-            <circle cx="334" cy="275" r="54" fill="none" stroke="#6fc4d7" strokeOpacity="0.42" />
-            <path
-              d="M310 238 C314 228 326 224 335 231 C341 236 341 245 337 251 C333 256 326 257 319 253 C313 250 307 246 310 238 Z"
-              fill={`url(#${continent})`}
-            />
-            <path
-              d="M330 235 C336 232 343 235 346 240 C348 245 346 250 341 253 C337 255 332 252 330 248 C328 244 327 239 330 235 Z"
-              fill="#dce947"
-              opacity="0.8"
-            />
-            <path
-              d="M303 265 C311 257 322 256 330 263 C337 269 336 279 329 285 C321 292 310 289 304 281 C300 276 299 270 303 265 Z"
-              fill="#234d9b"
-              opacity="0.45"
-            />
-            <ellipse
-              cx="315"
-              cy="250"
-              rx="12"
-              ry="20"
-              fill="#ffffff"
-              opacity="0.08"
-              transform="rotate(24 315 250)"
-            />
-          </g>
+              {productName ? (
+                productName.includes(" ") ? (
+                  <>
+                    <text
+                      x="198"
+                      y="219"
+                      fontFamily="var(--font-primary-stack, Arial, Helvetica, sans-serif)"
+                      fontSize="15"
+                      fontWeight="500"
+                      letterSpacing="-0.6"
+                      fill={chrome.productPrimary}
+                    >
+                      {productName.slice(0, productName.lastIndexOf(" "))}
+                    </text>
+                    <text
+                      x="198"
+                      y="238"
+                      fontFamily="var(--font-primary-stack, Arial, Helvetica, sans-serif)"
+                      fontSize="15"
+                      fontWeight="500"
+                      letterSpacing="-0.6"
+                      fill={chrome.productAccent}
+                    >
+                      {productName.slice(productName.lastIndexOf(" ") + 1)}
+                    </text>
+                  </>
+                ) : (
+                  <text
+                    x="198"
+                    y="226"
+                    fontFamily="var(--font-primary-stack, Arial, Helvetica, sans-serif)"
+                    fontSize="16"
+                    fontWeight="500"
+                    letterSpacing="-0.6"
+                    fill={chrome.productPrimary}
+                  >
+                    {productName}
+                  </text>
+                )
+              ) : null}
 
-          {/* USA badge */}
-          <rect x="199" y="286" width="55" height="25" rx="7" fill={chrome.badgeBg} opacity="0.82" />
-          <text
-            x="204"
-            y="295"
-            fontFamily="var(--font-secondary-stack, Arial, Helvetica, sans-serif)"
-            fontSize="5"
-            fontWeight="400"
-            fill={chrome.badgeMuted}
-          >
-            Manufactured
-          </text>
-          <text
-            x="204"
-            y="301.5"
-            fontFamily="var(--font-secondary-stack, Arial, Helvetica, sans-serif)"
-            fontSize="5"
-            fontWeight="400"
-            fill="#ffffff"
-          >
-            in the USA
-          </text>
-          <circle cx="257.5" cy="298.5" r="8.4" fill={chrome.badgeCircle} />
-          <g clipPath={`url(#${flagClip})`}>
-            <rect x="250.2" y="291.2" width="14.6" height="14.6" fill="#ffffff" />
-            <g stroke="#e95d61" strokeWidth="1.1">
-              <line x1="250" y1="292.2" x2="265" y2="292.2" />
-              <line x1="250" y1="294.4" x2="265" y2="294.4" />
-              <line x1="250" y1="296.6" x2="265" y2="296.6" />
-              <line x1="250" y1="298.8" x2="265" y2="298.8" />
-              <line x1="250" y1="301" x2="265" y2="301" />
-              <line x1="250" y1="303.2" x2="265" y2="303.2" />
-              <line x1="250" y1="305.4" x2="265" y2="305.4" />
-            </g>
-            <rect x="250.2" y="291.2" width="6.3" height="6.2" fill="#294c85" />
-            <g fill="#ffffff" opacity="0.9">
-              <circle cx="251.8" cy="292.6" r="0.25" />
-              <circle cx="253.4" cy="292.6" r="0.25" />
-              <circle cx="255" cy="292.6" r="0.25" />
-              <circle cx="252.6" cy="294" r="0.25" />
-              <circle cx="254.2" cy="294" r="0.25" />
-              <circle cx="251.8" cy="295.4" r="0.25" />
-              <circle cx="253.4" cy="295.4" r="0.25" />
-              <circle cx="255" cy="295.4" r="0.25" />
-            </g>
-          </g>
+              <g clipPath={`url(#${planetClip})`}>
+                <circle cx="334" cy="275" r="54" fill={`url(#${planet})`} />
+                <circle cx="334" cy="275" r="54" fill="none" stroke="#6fc4d7" strokeOpacity="0.42" />
+                <path
+                  d="M310 238 C314 228 326 224 335 231 C341 236 341 245 337 251 C333 256 326 257 319 253 C313 250 307 246 310 238 Z"
+                  fill={`url(#${continent})`}
+                />
+                <path
+                  d="M330 235 C336 232 343 235 346 240 C348 245 346 250 341 253 C337 255 332 252 330 248 C328 244 327 239 330 235 Z"
+                  fill="#dce947"
+                  opacity="0.8"
+                />
+                <path
+                  d="M303 265 C311 257 322 256 330 263 C337 269 336 279 329 285 C321 292 310 290 304 281 C300 276 299 270 303 265 Z"
+                  fill="#234d9b"
+                  opacity="0.45"
+                />
+                <ellipse
+                  cx="315"
+                  cy="250"
+                  rx="12"
+                  ry="20"
+                  fill="#ffffff"
+                  opacity="0.08"
+                  transform="rotate(24 315 250)"
+                />
+              </g>
+
+              <rect x="199" y="286" width="55" height="25" rx="7" fill={chrome.badgeBg} opacity="0.82" />
+              <text
+                x="204"
+                y="295"
+                fontFamily="var(--font-secondary-stack, Arial, Helvetica, sans-serif)"
+                fontSize="5"
+                fontWeight="400"
+                fill={chrome.badgeMuted}
+              >
+                Manufactured
+              </text>
+              <text
+                x="204"
+                y="301.5"
+                fontFamily="var(--font-secondary-stack, Arial, Helvetica, sans-serif)"
+                fontSize="5"
+                fontWeight="400"
+                fill="#ffffff"
+              >
+                in the USA
+              </text>
+              <circle cx="257.5" cy="298.5" r="8.4" fill={chrome.badgeCircle} />
+              <g clipPath={`url(#${flagClip})`}>
+                <rect x="250.2" y="291.2" width="14.6" height="14.6" fill="#ffffff" />
+                <g stroke="#e95d61" strokeWidth="1.1">
+                  <line x1="250" y1="292.2" x2="265" y2="292.2" />
+                  <line x1="250" y1="294.4" x2="265" y2="294.4" />
+                  <line x1="250" y1="296.6" x2="265" y2="296.6" />
+                  <line x1="250" y1="298.8" x2="265" y2="298.8" />
+                  <line x1="250" y1="301" x2="265" y2="301" />
+                  <line x1="250" y1="303.2" x2="265" y2="303.2" />
+                  <line x1="250" y1="305.4" x2="265" y2="305.4" />
+                </g>
+                <rect x="250.2" y="291.2" width="6.3" height="6.2" fill="#294c85" />
+                <g fill="#ffffff" opacity="0.9">
+                  <circle cx="251.8" cy="292.6" r="0.25" />
+                  <circle cx="253.4" cy="292.6" r="0.25" />
+                  <circle cx="255" cy="292.6" r="0.25" />
+                  <circle cx="252.6" cy="294" r="0.25" />
+                  <circle cx="254.2" cy="294" r="0.25" />
+                  <circle cx="251.8" cy="295.4" r="0.25" />
+                  <circle cx="253.4" cy="295.4" r="0.25" />
+                  <circle cx="255" cy="295.4" r="0.25" />
+                </g>
+              </g>
+            </>
+          )}
 
           {/* Reflections */}
           <g clipPath={`url(#${bottleClip})`}>

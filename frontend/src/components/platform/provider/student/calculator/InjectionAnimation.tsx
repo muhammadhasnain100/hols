@@ -19,6 +19,7 @@ import {
   syringeLiquidLayout,
   vialLiquidOffsetY,
 } from "@/components/platform/provider/student/calculator/calculatorGeometry";
+import { BAC_WATER_SRC } from "@/components/platform/provider/student/calculator/BacWaterVialArt";
 import { HEXARELIN_SRC } from "@/components/platform/provider/student/calculator/HexarelinVialArt";
 import { gsap, registerGsap } from "@/lib/gsap";
 import type { MassUnit, SyringeSizeMl } from "@/lib/integrate/provider/student/calculator";
@@ -320,7 +321,7 @@ export function InjectionAnimation({
 
         const applyFillLayers = () => {
           const waterOffset = vialLiquidOffsetY(proxy.waterFill, {
-            interiorHeight: HEXARELIN_SRC.interiorHeight,
+            interiorHeight: BAC_WATER_SRC.interiorHeight,
           });
           dom.setWaterLiquidY?.(waterOffset);
           dom.setWaterSurfaceY?.(waterOffset);

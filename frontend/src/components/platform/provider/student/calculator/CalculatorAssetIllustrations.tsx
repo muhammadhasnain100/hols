@@ -8,6 +8,11 @@ import {
   syringeLiquidLayout,
 } from "@/components/platform/provider/student/calculator/calculatorGeometry";
 import {
+  BAC_WATER_SRC,
+  BacWaterLiquidFill,
+  BacWaterVialArt,
+} from "@/components/platform/provider/student/calculator/BacWaterVialArt";
+import {
   HEXARELIN_SRC,
   HexarelinLiquidFill,
   HexarelinPowderCake,
@@ -108,12 +113,13 @@ export function AssetVial({
 
   const isEmpty = empty || fillRatio <= 0.02;
   const clamped = isEmpty ? 0 : Math.min(0.95, Math.max(0.06, fillRatio));
-  const targetOffsetY = isEmpty
-    ? HEXARELIN_SRC.interiorHeight - 6
-    : (1 - clamped) * HEXARELIN_SRC.interiorHeight;
+  const interiorHeight =
+    variant === "water" ? BAC_WATER_SRC.interiorHeight : HEXARELIN_SRC.interiorHeight;
+  const targetOffsetY = isEmpty ? interiorHeight - 6 : (1 - clamped) * interiorHeight;
   const waterEmpty = variant === "water" && isEmpty;
   const productName = variant === "water" ? "Bacteriostatic water" : "Medication vial";
   const showPowder = variant === "peptide" && powder;
+  const isWater = variant === "water";
 
   const rootRef = useRef<HTMLDivElement>(null);
   const fillProxy = useRef({ y: targetOffsetY });
@@ -160,22 +166,28 @@ export function AssetVial({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [uid, gsapDriven, showPowder]);
 
-  /** Both bacteriostatic water and medication use the same serum-vial art. */
   return (
-    <div ref={rootRef} className={cn("flex w-full flex-col items-center", className)}>
+    <div
+      ref={rootRef}
+      className={cn("flex h-full w-full flex-col items-center justify-end", className)}
+    >
       <div className="relative w-full">
         <div
           className={cn(
             "relative mx-auto w-full shrink-0",
             mini ? "max-w-[2.6rem] sm:max-w-12" : "max-w-none",
           )}
-          style={mini ? undefined : { aspectRatio: "120 / 205" }}
+          style={
+            mini
+              ? undefined
+              : { aspectRatio: isWater ? "160 / 210" : "120 / 205" }
+          }
         >
           <svg
-            viewBox="0 0 120 205"
+            viewBox={isWater ? "0 0 160 210" : "0 0 120 205"}
             width="100%"
             height="100%"
-            preserveAspectRatio="xMidYMid meet"
+            preserveAspectRatio="xMidYMax meet"
             className={cn(
               "overflow-visible",
               mini ? "h-24 w-full sm:h-28" : "absolute inset-0 h-full w-full",
@@ -183,28 +195,43 @@ export function AssetVial({
             role="img"
             aria-hidden
           >
-            <HexarelinVialArt
-              uid={uid}
-              productName={productName}
-              theme={variant === "water" ? "bac-water-pink" : "navy"}
-              showBack={showBack}
-              showFront={showFront}
-              frontGlass={frontGlass}
-              powder={showPowder}
-              empty={isEmpty}
-              gsapDriven={gsapDriven}
-              fillOffsetY={targetOffsetY}
-              liquidLayerRef={liquidLayerRef}
-              surfaceRef={surfaceRef}
-              liquidLayer={
-                <HexarelinLiquidFill
-                  paletteTop={palette.top}
-                  paletteBottom={palette.bottom}
-                  paletteEdge={palette.edge}
-                />
-              }
-              powderLayer={<HexarelinPowderCake fillRatio={clamped || 0.2} />}
-            />
+            {isWater ? (
+              <BacWaterVialArt
+                uid={uid}
+                showBack={showBack}
+                showFront={showFront}
+                frontGlass={frontGlass}
+                empty={isEmpty}
+                gsapDriven={gsapDriven}
+                fillOffsetY={targetOffsetY}
+                liquidLayerRef={liquidLayerRef}
+                surfaceRef={surfaceRef}
+                liquidLayer={<BacWaterLiquidFill />}
+              />
+            ) : (
+              <HexarelinVialArt
+                uid={uid}
+                productName={productName}
+                theme="navy"
+                showBack={showBack}
+                showFront={showFront}
+                frontGlass={frontGlass}
+                powder={showPowder}
+                empty={isEmpty}
+                gsapDriven={gsapDriven}
+                fillOffsetY={targetOffsetY}
+                liquidLayerRef={liquidLayerRef}
+                surfaceRef={surfaceRef}
+                liquidLayer={
+                  <HexarelinLiquidFill
+                    paletteTop={palette.top}
+                    paletteBottom={palette.bottom}
+                    paletteEdge={palette.edge}
+                  />
+                }
+                powderLayer={<HexarelinPowderCake fillRatio={clamped || 0.2} />}
+              />
+            )}
           </svg>
         </div>
       </div>

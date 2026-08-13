@@ -82,6 +82,7 @@ export function SyringeArt({
   const hubGrad = `syr-hub-${uid}`;
   const needleGrad = `syr-needle-${uid}`;
   const liquidGrad = `syr-liq-${uid}`;
+  const liquidEdge = `syr-liq-edge-${uid}`;
   const liquidShine = `syr-liq-shine-${uid}`;
   const clipId = `syr-clip-${uid}`;
   const shadowId = `syr-shadow-${uid}`;
@@ -148,15 +149,21 @@ export function SyringeArt({
           <stop offset="50%" stopColor="#ffffff" />
           <stop offset="100%" stopColor="#64748b" />
         </linearGradient>
-        {/* Solid bac-water blue — must read clearly through the glass barrel. */}
+        {/* Translucent bac-water — pale aqua, reads as water not opaque dye. */}
         <linearGradient id={liquidGrad} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#4AA3DE" />
-          <stop offset="0.4" stopColor="#2B6FB8" />
-          <stop offset="1" stopColor="#163A7A" />
+          <stop offset="0" stopColor="#f4fbfe" stopOpacity="0.42" />
+          <stop offset="0.28" stopColor="#b9e3f4" stopOpacity="0.5" />
+          <stop offset="0.65" stopColor="#7ec8e6" stopOpacity="0.58" />
+          <stop offset="1" stopColor="#5aaed4" stopOpacity="0.66" />
+        </linearGradient>
+        <linearGradient id={liquidEdge} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#3d8eb8" stopOpacity="0.22" />
+          <stop offset="0.45" stopColor="#ffffff" stopOpacity="0.08" />
+          <stop offset="1" stopColor="#2f7aa3" stopOpacity="0.2" />
         </linearGradient>
         <linearGradient id={liquidShine} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#ffffff" stopOpacity="0.22" />
-          <stop offset="0.4" stopColor="#ffffff" stopOpacity="0" />
+          <stop offset="0" stopColor="#ffffff" stopOpacity="0.55" />
+          <stop offset="0.45" stopColor="#ffffff" stopOpacity="0" />
         </linearGradient>
         <clipPath id={clipId}>
           <rect
@@ -307,13 +314,13 @@ export function SyringeArt({
                 >
                   {liquidNode ?? (
                     <>
-                      {/* Solid blue body — GSAP animates y/height when gsapOwned. */}
+                      {/* Translucent water column — GSAP animates y/height when gsapOwned. */}
                       <rect
                         ref={liquidFillRef}
                         data-syringe-liquid-fill
                         x={SYRINGE_ART.interiorX}
                         width={SYRINGE_ART.interiorW}
-                        fill="#2B6FB8"
+                        fill={`url(#${liquidGrad})`}
                         {...(gsapOwned
                           ? {}
                           : {
@@ -327,18 +334,27 @@ export function SyringeArt({
                           y={liquidFill.y}
                           width={SYRINGE_ART.interiorW}
                           height={Math.max(0, liquidFill.height)}
-                          fill={`url(#${liquidGrad})`}
-                          opacity="0.85"
+                          fill={`url(#${liquidEdge})`}
                         />
                       ) : null}
-                      {!gsapOwned && liquidFill.height > 6 ? (
-                        <rect
-                          x={SYRINGE_ART.interiorX}
-                          y={liquidFill.y}
-                          width={SYRINGE_ART.interiorW}
-                          height={Math.min(22, liquidFill.height)}
-                          fill={`url(#${liquidShine})`}
-                        />
+                      {!gsapOwned && liquidFill.height > 4 ? (
+                        <>
+                          <ellipse
+                            cx={SYRINGE_ART.cx}
+                            cy={liquidFill.y + 1.5}
+                            rx={SYRINGE_ART.interiorW / 2 - 1}
+                            ry="2.2"
+                            fill="#ffffff"
+                            opacity="0.45"
+                          />
+                          <rect
+                            x={SYRINGE_ART.interiorX}
+                            y={liquidFill.y}
+                            width={SYRINGE_ART.interiorW}
+                            height={Math.min(18, liquidFill.height)}
+                            fill={`url(#${liquidShine})`}
+                          />
+                        </>
                       ) : null}
                     </>
                   )}
