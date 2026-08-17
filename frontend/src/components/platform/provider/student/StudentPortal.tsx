@@ -118,7 +118,10 @@ export function StudentPortal() {
 
         setOrderCount(String(ordersRes.pagination.total));
         setRecentOrders(ordersRes.items);
-        setNextWebinar(webinarsRes?.items?.[0] ?? null);
+        const upcoming = (webinarsRes?.items ?? [])
+          .slice()
+          .sort((a, b) => new Date(a.starts_at).getTime() - new Date(b.starts_at).getTime());
+        setNextWebinar(upcoming[0] ?? null);
       } catch {
         setMembershipStatus("Could not load");
       } finally {
@@ -159,22 +162,40 @@ export function StudentPortal() {
 function NextWebinarCard({ webinar }: { webinar: WebinarSummary | null }) {
   return (
     <section className="dashboard-glass-card relative overflow-hidden rounded-2xl p-4 sm:p-5 md:p-6">
-      <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-        Next webinar
-      </p>
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+          Next webinar
+        </p>
+        <Link
+          href="/student/webinars"
+          className="text-brand-caption shrink-0 font-medium text-[color:var(--dash-accent)] hover:brightness-110"
+        >
+          View all
+        </Link>
+      </div>
 
       {webinar ? (
         <div className="mt-2 flex flex-col gap-3 sm:mt-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
-          <div className="min-w-0">
-            <h2 className="font-sans text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl md:text-[2rem] md:leading-tight">
-              {webinar.title}
-            </h2>
-            <p className="text-brand-caption mt-1.5 text-[color:var(--dash-muted)] sm:mt-2">
-              {formatWebinarWhen(webinar.starts_at)}
-              {" · "}
-              {webinar.price > 0 ? formatMoney(webinar.price, webinar.currency) : "Free"}
-              {webinar.is_booked ? " · Booked" : ""}
-            </p>
+          <div className="flex min-w-0 flex-1 flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+            {webinar.thumbnail_url ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={webinar.thumbnail_url}
+                alt=""
+                className="h-36 w-full shrink-0 rounded-xl object-cover sm:h-24 sm:w-40 md:h-28 md:w-44"
+              />
+            ) : null}
+            <div className="min-w-0 flex-1">
+              <h2 className="font-sans text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl md:text-[2rem] md:leading-tight">
+                {webinar.title}
+              </h2>
+              <p className="text-brand-caption mt-1.5 text-[color:var(--dash-muted)] sm:mt-2">
+                {formatWebinarWhen(webinar.starts_at)}
+                {" · "}
+                {webinar.price > 0 ? formatMoney(webinar.price, webinar.currency) : "Free"}
+                {webinar.is_booked ? " · Booked" : ""}
+              </p>
+            </div>
           </div>
           <Link
             href={`/student/webinars/${encodeURIComponent(webinar.webinar_id)}`}
@@ -184,21 +205,13 @@ function NextWebinarCard({ webinar }: { webinar: WebinarSummary | null }) {
           </Link>
         </div>
       ) : (
-        <div className="mt-2 flex flex-col gap-3 sm:mt-3 sm:flex-row sm:items-end sm:justify-between">
-          <div className="min-w-0">
-            <h2 className="font-sans text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl">
-              No upcoming webinars
-            </h2>
-            <p className="text-brand-caption mt-1 text-[color:var(--dash-muted)]">
-              Check back soon — new sessions appear here first.
-            </p>
-          </div>
-          <Link
-            href="/student/webinars"
-            className="dashboard-pill-soft font-sans inline-flex min-h-10 shrink-0 items-center justify-center rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] transition"
-          >
-            Browse webinars
-          </Link>
+        <div className="mt-2 sm:mt-3">
+          <h2 className="font-sans text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl">
+            No upcoming webinars
+          </h2>
+          <p className="text-brand-caption mt-1 text-[color:var(--dash-muted)]">
+            Check back soon — new sessions appear here first.
+          </p>
         </div>
       )}
     </section>
@@ -214,10 +227,18 @@ function DashboardSkeleton() {
     <>
       <div className="flex min-w-0 flex-col gap-3 sm:gap-4" aria-busy="true" aria-label="Loading dashboard">
         <section className="dashboard-glass-card relative overflow-hidden rounded-2xl p-4 sm:p-5 md:p-6">
-          <SkeletonBlock className="h-3 w-24 rounded-full" />
-          <SkeletonBlock className="mt-3 h-8 w-48 rounded-full sm:h-9 sm:w-64" />
-          <SkeletonBlock className="mt-2 h-4 w-40 rounded-full" />
-          <SkeletonBlock className="mt-4 h-10 w-28 rounded-full" />
+          <div className="flex items-center justify-between gap-2">
+            <SkeletonBlock className="h-3 w-24 rounded-full" />
+            <SkeletonBlock className="h-3 w-14 rounded-full" />
+          </div>
+          <div className="mt-3 flex flex-col gap-3 sm:flex-row sm:items-start sm:gap-4">
+            <SkeletonBlock className="h-36 w-full rounded-xl sm:h-24 sm:w-40 md:h-28 md:w-44" />
+            <div className="min-w-0 flex-1 space-y-2">
+              <SkeletonBlock className="h-8 w-48 rounded-full sm:h-9 sm:w-64" />
+              <SkeletonBlock className="h-4 w-40 rounded-full" />
+              <SkeletonBlock className="mt-2 h-10 w-28 rounded-full" />
+            </div>
+          </div>
         </section>
 
         <section className="dashboard-glass-card rounded-2xl px-3.5 py-3 sm:px-4 sm:py-3.5">
