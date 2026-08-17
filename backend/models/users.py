@@ -31,6 +31,8 @@ class AffiliateSummary(BaseModel):
     invitation_quota: Optional[int] = None
     student_count: int = 0
     total_earned: float = 0
+    admin_earned: float = 0
+    total_order_amount: float = 0
     order_count: int = 0
     earnings_currency: str = "USD"
     created_at: Optional[str] = None
@@ -57,6 +59,7 @@ class StudentSummary(BaseModel):
     referred_by_affiliate_id: Optional[str] = None
     affiliate: Optional[StudentAffiliateInfo] = None
     total_spent: float = 0
+    admin_earned: float = 0
     order_count: int = 0
     paid_order_count: int = 0
     spend_currency: str = "USD"

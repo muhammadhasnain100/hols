@@ -885,6 +885,7 @@ class Webinar(BaseEntity):
     capacity: int = 100
     seats_taken: int = 0
     join_url: Optional[str] = None
+    thumbnail_url: Optional[str] = None
     status: WebinarStatus = WebinarStatus.DRAFT
     created_by: Optional[str] = None
     created_at: str = Field(default_factory=now_iso)
@@ -916,6 +917,7 @@ class Webinar(BaseEntity):
                 "capacity": self.capacity,
                 "seats_taken": self.seats_taken,
                 "join_url": self.join_url,
+                "thumbnail_url": self.thumbnail_url,
                 "status": self.status,
                 "created_by": self.created_by,
                 "created_at": self.created_at,

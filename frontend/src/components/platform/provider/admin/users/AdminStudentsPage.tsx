@@ -142,6 +142,10 @@ export function AdminStudentsPage() {
   ).length;
   const visibleMarketingCount = visibleStudents.filter((student) => student.marketing_pref).length;
   const visibleSpent = visibleStudents.reduce((sum, student) => sum + (student.total_spent ?? 0), 0);
+  const visibleAdminEarned = visibleStudents.reduce(
+    (sum, student) => sum + (student.admin_earned ?? student.total_spent ?? 0),
+    0,
+  );
   const spendCurrency =
     visibleStudents.find((student) => student.spend_currency)?.spend_currency ?? "USD";
 
@@ -206,7 +210,8 @@ export function AdminStudentsPage() {
                   </span>
                 </div>
                 <p className="text-brand-body mt-2 text-sm text-[color:var(--dash-muted)] sm:text-base">
-                  Spend, membership plan, and purchase history for each learner.
+                  Spend, membership plan, and purchase history for each learner. Your earnings are
+                  student spend minus affiliate commissions.
                 </p>
               </div>
 
@@ -235,13 +240,22 @@ export function AdminStudentsPage() {
             </div>
           </section>
 
-          <div className="grid min-w-0 gap-2.5 grid-cols-2 sm:grid-cols-4 sm:gap-3">
+          <div className="grid min-w-0 gap-2.5 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 sm:gap-3">
             <StatPill label="Total students" value={loading ? "—" : String(total)} />
             <StatPill
               label={
                 <>
+                  <span className="sm:hidden">Your earn</span>
+                  <span className="hidden sm:inline">Your earnings</span>
+                </>
+              }
+              value={loading ? "—" : formatMoney(visibleAdminEarned, spendCurrency)}
+            />
+            <StatPill
+              label={
+                <>
                   <span className="sm:hidden">Spent</span>
-                  <span className="hidden sm:inline">Spent (this page)</span>
+                  <span className="hidden sm:inline">Student spend</span>
                 </>
               }
               value={loading ? "—" : formatMoney(visibleSpent, spendCurrency)}
@@ -364,6 +378,17 @@ export function AdminStudentsPage() {
                             student.total_spent ?? 0,
                             student.spend_currency ?? "USD",
                           )}
+                        />
+                        <DataField
+                          label="Your earnings"
+                          value={
+                            <span className="text-[color:var(--dash-accent)]">
+                              {formatMoney(
+                                student.admin_earned ?? student.total_spent ?? 0,
+                                student.spend_currency ?? "USD",
+                              )}
+                            </span>
+                          }
                         />
                         <DataField
                           label="Plan"

@@ -38,6 +38,7 @@ type RequestOptions = Omit<RequestInit, "body"> & {
 
 type FormRequestOptions = Omit<RequestInit, "body"> & {
   auth?: boolean;
+  method?: "POST" | "PUT" | "PATCH";
 };
 
 let refreshPromise: Promise<string | null> | null = null;
@@ -175,7 +176,7 @@ export async function apiFormRequest<T>(
   formData: FormData,
   options: FormRequestOptions = {},
 ): Promise<T> {
-  const { auth, headers, ...rest } = options;
+  const { auth, headers, method = "PUT", ...rest } = options;
 
   const buildHeaders = (token?: string | null) => {
     const requestHeaders = new Headers(headers);
@@ -187,7 +188,7 @@ export async function apiFormRequest<T>(
   const token = auth ? readAccessToken() : null;
   const init: RequestInit = {
     ...rest,
-    method: "PUT",
+    method,
     headers: buildHeaders(token),
     body: formData,
   };
@@ -205,7 +206,7 @@ export async function apiFormRequest<T>(
       path,
       {
         ...rest,
-        method: "PUT",
+        method,
         headers: buildHeaders(refreshedToken),
         body: formData,
       },

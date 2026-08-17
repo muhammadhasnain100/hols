@@ -108,6 +108,14 @@ export function StudentWebinarDetailPage({ webinarId }: { webinarId: string }) {
           ) : (
             <>
               <section className="dashboard-hero relative overflow-hidden rounded-2xl p-3.5 sm:p-5 md:p-6">
+                {webinar.thumbnail_url ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img
+                    src={webinar.thumbnail_url}
+                    alt=""
+                    className="mb-4 aspect-[16/9] w-full max-h-64 rounded-xl object-cover"
+                  />
+                ) : null}
                 <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
                   {formatWebinarWhen(webinar.starts_at)}
                 </p>

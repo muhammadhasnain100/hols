@@ -51,6 +51,7 @@ class WebinarSummary(BaseModel):
     seats_remaining: int = 0
     status: str
     join_url: Optional[str] = None
+    thumbnail_url: Optional[str] = None
     is_booked: bool = False
     created_at: Optional[str] = None
 

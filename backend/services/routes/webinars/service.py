@@ -65,6 +65,7 @@ def _public_webinar(
         "seats_remaining": max(capacity - seats_taken, 0),
         "status": item.get("status"),
         "join_url": join_url,
+        "thumbnail_url": item.get("thumbnail_url"),
         "is_booked": is_booked,
         "created_at": item.get("created_at"),
     }
@@ -192,6 +193,7 @@ async def create_webinar(
         capacity=capacity,
         seats_taken=0,
         join_url=(join_url or "").strip() or None,
+        thumbnail_url=None,
         status=WebinarStatus(status_value),
         created_by=admin_user_id,
         created_at=created_at,
@@ -244,6 +246,7 @@ async def update_webinar(webinar_id: str, **fields: Any) -> dict[str, Any]:
         capacity=int(item.get("capacity") or 100),
         seats_taken=int(item.get("seats_taken") or 0),
         join_url=item.get("join_url"),
+        thumbnail_url=item.get("thumbnail_url"),
         status=WebinarStatus(item.get("status") or WebinarStatus.DRAFT.value),
         created_by=item.get("created_by"),
         created_at=item.get("created_at") or now_iso(),
@@ -251,6 +254,64 @@ async def update_webinar(webinar_id: str, **fields: Any) -> dict[str, Any]:
     )
     saved = webinar.to_item()
     await run_sync(_table().put_item, Item=saved)
+    return _public_webinar(saved, reveal_join_url=True)
+
+
+MAX_THUMBNAIL_BYTES = 5 * 1024 * 1024
+ALLOWED_THUMBNAIL_TYPES = frozenset(
+    {"image/jpeg", "image/png", "image/webp", "image/gif"}
+)
+
+
+async def upload_webinar_thumbnail(
+    webinar_id: str,
+    *,
+    filename: str,
+    content_type: str,
+    data: bytes,
+) -> dict[str, Any]:
+    """Upload a webinar thumbnail to S3 and persist its public URL."""
+    if not data:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Thumbnail file is empty")
+    if len(data) > MAX_THUMBNAIL_BYTES:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "Thumbnail must be 5 MB or smaller",
+        )
+    if content_type not in ALLOWED_THUMBNAIL_TYPES:
+        raise HTTPException(
+            status.HTTP_400_BAD_REQUEST,
+            "Thumbnail must be JPEG, PNG, WebP, or GIF",
+        )
+
+    item = await _get_webinar_item(webinar_id)
+    from services.common import s3bucket
+
+    key = s3bucket.build_key(f"webinars/{webinar_id}/thumb", filename or "thumb.jpg")
+    public_url = s3bucket.public_url(key)
+    await s3bucket.upload_image_async(key=key, data=data, content_type=content_type)
+    item["thumbnail_url"] = public_url
+    item["updated_at"] = now_iso()
+    webinar = Webinar(
+        webinar_id=item["webinar_id"],
+        title=item["title"],
+        description=item.get("description"),
+        starts_at=item["starts_at"],
+        ends_at=item.get("ends_at"),
+        price=float(normalize_value(item.get("price")) or 0),
+        currency=item.get("currency") or "USD",
+        capacity=int(item.get("capacity") or 100),
+        seats_taken=int(item.get("seats_taken") or 0),
+        join_url=item.get("join_url"),
+        thumbnail_url=item.get("thumbnail_url"),
+        status=WebinarStatus(item.get("status") or WebinarStatus.DRAFT.value),
+        created_by=item.get("created_by"),
+        created_at=item.get("created_at") or now_iso(),
+        updated_at=item["updated_at"],
+    )
+    saved = webinar.to_item()
+    await run_sync(_table().put_item, Item=saved)
+    logger.info("Webinar thumbnail updated webinar_id=%s", webinar_id)
     return _public_webinar(saved, reveal_join_url=True)
 
 

@@ -275,6 +275,7 @@ async def sum_affiliate_commission(
     }
 
     total_earned = 0.0
+    total_order_amount = 0.0
     order_count = 0
     currency = "USD"
     items: list[dict[str, Any]] = []
@@ -292,15 +293,15 @@ async def sum_affiliate_commission(
             if status_value and status_value != "paid":
                 continue
 
+            amount = _as_money(item.get("amount"))
             commission = _as_money(item.get("affiliate_commission"))
-            if commission <= 0:
-                continue
-
-            total_earned += commission
+            total_order_amount += amount
+            if commission > 0:
+                total_earned += commission
             order_count += 1
             currency = str(item.get("currency") or currency)
 
-            if history_limit and len(items) < history_limit:
+            if history_limit and commission > 0 and len(items) < history_limit:
                 pk = str(item.get("PK") or "")
                 student_user_id = pk.removeprefix("USER#") if pk.startswith("USER#") else None
                 items.append(
@@ -308,7 +309,7 @@ async def sum_affiliate_commission(
                         "order_id": item.get("order_id") or "",
                         "student_user_id": student_user_id,
                         "plan_type": item.get("plan_type"),
-                        "amount": _as_money(item.get("amount")),
+                        "amount": amount,
                         "commission": commission,
                         "currency": str(item.get("currency") or "USD"),
                         "status": status_value or "paid",
@@ -321,8 +322,12 @@ async def sum_affiliate_commission(
             break
         query_kwargs["ExclusiveStartKey"] = last_key
 
+    total_earned_rounded = round(total_earned, 2)
+    total_order_rounded = round(total_order_amount, 2)
     return {
-        "total_earned": round(total_earned, 2),
+        "total_earned": total_earned_rounded,
+        "total_order_amount": total_order_rounded,
+        "admin_earned": round(total_order_rounded - total_earned_rounded, 2),
         "order_count": order_count,
         "currency": currency,
         "items": items,

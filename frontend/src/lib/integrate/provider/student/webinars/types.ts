@@ -11,6 +11,7 @@ export type WebinarSummary = {
   seats_remaining: number;
   status: string;
   join_url?: string | null;
+  thumbnail_url?: string | null;
   is_booked?: boolean;
   created_at?: string | null;
 };

@@ -67,6 +67,7 @@ class OrderHistoryData(BaseModel):
 class StudentCommerceData(BaseModel):
     user_id: str
     total_spent: float = 0
+    admin_earned: float = 0
     order_count: int = 0
     paid_order_count: int = 0
     currency: str = "USD"

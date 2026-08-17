@@ -12,6 +12,7 @@ import {
   getWebinar,
   listWebinarRegistrants,
   updateWebinar,
+  uploadWebinarThumbnail,
   type WebinarRegistration,
   type WebinarSummary,
 } from "@/lib/integrate/provider/student/webinars/api";
@@ -25,6 +26,7 @@ function openSidebar() {
 export function AdminWebinarDetailPage({ webinarId }: { webinarId: string }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [uploadingThumb, setUploadingThumb] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [webinar, setWebinar] = useState<WebinarSummary | null>(null);
@@ -78,6 +80,24 @@ export function AdminWebinarDetailPage({ webinarId }: { webinarId: string }) {
     }
   }
 
+  async function handleThumbnailChange(event: React.ChangeEvent<HTMLInputElement>) {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+    setUploadingThumb(true);
+    setError(null);
+    setSuccess(null);
+    try {
+      const data = await uploadWebinarThumbnail(webinarId, file);
+      setWebinar(data.webinar);
+      setSuccess("Thumbnail updated.");
+    } catch (err) {
+      setError(err instanceof ApiRequestError ? err.message : "Could not upload thumbnail.");
+    } finally {
+      setUploadingThumb(false);
+    }
+  }
+
   return (
     <PortalShell
       role="admin"
@@ -116,15 +136,27 @@ export function AdminWebinarDetailPage({ webinarId }: { webinarId: string }) {
           ) : (
             <>
               <section className="dashboard-hero rounded-2xl p-4 sm:p-6">
-                <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
-                  {formatWebinarWhen(webinar.starts_at)} · {webinar.status}
-                </p>
-                <h2 className="font-sans mt-2 text-2xl font-bold text-[color:var(--dash-text)]">
-                  {webinar.title}
-                </h2>
-                <p className="text-brand-body mt-2 text-[color:var(--dash-muted)]">
-                  {webinar.seats_taken}/{webinar.capacity} seats booked
-                </p>
+                <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
+                  {webinar.thumbnail_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={webinar.thumbnail_url}
+                      alt=""
+                      className="h-28 w-full shrink-0 rounded-xl object-cover sm:h-24 sm:w-40"
+                    />
+                  ) : null}
+                  <div className="min-w-0 flex-1">
+                    <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
+                      {formatWebinarWhen(webinar.starts_at)} · {webinar.status}
+                    </p>
+                    <h2 className="font-sans mt-2 text-2xl font-bold text-[color:var(--dash-text)]">
+                      {webinar.title}
+                    </h2>
+                    <p className="text-brand-body mt-2 text-[color:var(--dash-muted)]">
+                      {webinar.seats_taken}/{webinar.capacity} seats booked
+                    </p>
+                  </div>
+                </div>
               </section>
 
               <section className="dashboard-surface rounded-2xl p-4 sm:p-6">
@@ -132,6 +164,21 @@ export function AdminWebinarDetailPage({ webinarId }: { webinarId: string }) {
                   Settings
                 </h3>
                 <form className="mt-4 grid gap-3 sm:grid-cols-2" onSubmit={handleSave}>
+                  <label className="grid gap-2 sm:col-span-2">
+                    <span className="dashboard-field-label">Thumbnail</span>
+                    <input
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      disabled={uploadingThumb}
+                      onChange={(event) => void handleThumbnailChange(event)}
+                      className="dashboard-field file:mr-3 file:rounded-full file:border-0 file:bg-[#DDE466] file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-[#152744]"
+                    />
+                    <span className="text-brand-caption text-[color:var(--dash-faint)]">
+                      {uploadingThumb
+                        ? "Uploading…"
+                        : "JPEG, PNG, WebP, or GIF up to 5 MB. Replaces the current image."}
+                    </span>
+                  </label>
                   <label className="grid gap-2 sm:col-span-2">
                     <span className="dashboard-field-label">Join URL</span>
                     <input

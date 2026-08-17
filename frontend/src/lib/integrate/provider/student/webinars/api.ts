@@ -1,4 +1,4 @@
-import { apiRequest } from "@/lib/integrate/client";
+import { apiFormRequest, apiRequest } from "@/lib/integrate/client";
 import type {
   WebinarCreatePayload,
   WebinarNotification,
@@ -68,6 +68,16 @@ export function createWebinar(payload: WebinarCreatePayload) {
     auth: true,
     body: payload,
   });
+}
+
+export function uploadWebinarThumbnail(webinarId: string, file: File) {
+  const formData = new FormData();
+  formData.append("thumbnail", file);
+  return apiFormRequest<{ webinar: WebinarSummary }>(
+    `/api/webinars/${encodeURIComponent(webinarId)}/thumbnail`,
+    formData,
+    { auth: true, method: "POST" },
+  );
 }
 
 export function updateWebinar(webinarId: string, payload: WebinarUpdatePayload) {

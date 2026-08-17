@@ -102,7 +102,15 @@ export function StudentWebinarsPage() {
                     className="rounded-2xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)]/35 p-3.5 sm:p-5"
                   >
                     <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-                      <div className="min-w-0">
+                      {webinar.thumbnail_url ? (
+                        // eslint-disable-next-line @next/next/no-img-element
+                        <img
+                          src={webinar.thumbnail_url}
+                          alt=""
+                          className="h-24 w-full shrink-0 rounded-xl object-cover sm:h-20 sm:w-32"
+                        />
+                      ) : null}
+                      <div className="min-w-0 flex-1">
                         <div className="flex flex-wrap items-center gap-2">
                           <h3 className="font-sans text-base font-bold text-[color:var(--dash-text)] sm:text-lg">
                             {webinar.title}

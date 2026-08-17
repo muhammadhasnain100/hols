@@ -427,6 +427,7 @@ async def sum_student_spend(user_id: str) -> dict[str, Any]:
     }
 
     total_spent = 0.0
+    admin_earned = 0.0
     order_count = 0
     paid_count = 0
     currency = "USD"
@@ -443,9 +444,11 @@ async def sum_student_spend(user_id: str) -> dict[str, Any]:
             order_count += 1
             status_value = str(item.get("status") or "").lower()
             amount = float(normalize_value(item.get("amount")) or 0)
+            commission = float(normalize_value(item.get("affiliate_commission")) or 0)
             if status_value == OrderStatus.PAID.value:
                 paid_count += 1
                 total_spent += amount
+                admin_earned += max(amount - commission, 0)
                 currency = str(item.get("currency") or currency)
                 if last_purchase_at is None:
                     last_purchase_at = item.get("created_at")
@@ -459,6 +462,7 @@ async def sum_student_spend(user_id: str) -> dict[str, Any]:
 
     return {
         "total_spent": round(total_spent, 2),
+        "admin_earned": round(admin_earned, 2),
         "order_count": order_count,
         "paid_order_count": paid_count,
         "currency": currency,
@@ -479,6 +483,7 @@ async def get_student_commerce_summary(user_id: str) -> dict[str, Any]:
     return {
         "user_id": user_id,
         "total_spent": spend["total_spent"],
+        "admin_earned": spend["admin_earned"],
         "order_count": spend["order_count"],
         "paid_order_count": spend["paid_order_count"],
         "currency": spend["currency"],

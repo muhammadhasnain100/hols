@@ -246,6 +246,10 @@ export function AdminAffiliatesPage() {
     (sum, affiliate) => sum + (affiliate.total_earned ?? 0),
     0,
   );
+  const visibleAdminEarned = visibleAffiliates.reduce(
+    (sum, affiliate) => sum + (affiliate.admin_earned ?? 0),
+    0,
+  );
   const earningsCurrency =
     visibleAffiliates.find((affiliate) => affiliate.earnings_currency)?.earnings_currency ?? "USD";
 
@@ -311,7 +315,8 @@ export function AdminAffiliatesPage() {
                   </span>
                 </div>
                 <p className="text-brand-body mt-2 text-sm text-[color:var(--dash-muted)] sm:text-base">
-                  Full partner details, referral counts, commission earned, and invitation quotas in one place.
+                  Full partner details, referral counts, commissions, your cut from referred sales,
+                  and invitation quotas.
                 </p>
               </div>
 
@@ -342,7 +347,7 @@ export function AdminAffiliatesPage() {
             </div>
           </section>
 
-          <div className="grid min-w-0 gap-2.5 grid-cols-2 md:grid-cols-3 xl:grid-cols-5 sm:gap-3">
+          <div className="grid min-w-0 gap-2.5 grid-cols-2 md:grid-cols-3 xl:grid-cols-6 sm:gap-3">
             <StatPill label="Total affiliates" value={loading ? "—" : String(total)} />
             <StatPill
               label={
@@ -356,11 +361,20 @@ export function AdminAffiliatesPage() {
             <StatPill
               label={
                 <>
-                  <span className="sm:hidden">Earned</span>
-                  <span className="hidden sm:inline">Total earned</span>
+                  <span className="sm:hidden">Affiliate $</span>
+                  <span className="hidden sm:inline">Affiliate earned</span>
                 </>
               }
               value={loading ? "—" : formatMoney(visibleTotalEarned, earningsCurrency)}
+            />
+            <StatPill
+              label={
+                <>
+                  <span className="sm:hidden">Your earn</span>
+                  <span className="hidden sm:inline">Your earnings</span>
+                </>
+              }
+              value={loading ? "—" : formatMoney(visibleAdminEarned, earningsCurrency)}
             />
             <StatPill label="Quota total" value={loading ? "—" : String(visibleQuotaTotal)} />
             <StatPill label="At capacity" value={loading ? "—" : String(atCapacityCount)} />
@@ -503,11 +517,22 @@ export function AdminAffiliatesPage() {
                           }
                         />
                         <DataField
-                          label="Total earned"
+                          label="Affiliate earned"
                           value={
                             <span className="text-[color:var(--dash-accent)]">
                               {formatMoney(
                                 affiliate.total_earned ?? 0,
+                                affiliate.earnings_currency ?? "USD",
+                              )}
+                            </span>
+                          }
+                        />
+                        <DataField
+                          label="Your earnings"
+                          value={
+                            <span className="text-[color:var(--dash-accent)]">
+                              {formatMoney(
+                                affiliate.admin_earned ?? 0,
                                 affiliate.earnings_currency ?? "USD",
                               )}
                             </span>

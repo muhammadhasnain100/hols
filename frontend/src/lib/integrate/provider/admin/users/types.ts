@@ -20,6 +20,8 @@ export type AffiliateSummary = {
   invitation_quota?: number;
   student_count: number;
   total_earned?: number;
+  admin_earned?: number;
+  total_order_amount?: number;
   order_count?: number;
   earnings_currency?: string;
   created_at?: string;
@@ -46,6 +48,7 @@ export type StudentSummary = {
   referred_by_affiliate_id?: string;
   affiliate?: StudentAffiliateInfo | null;
   total_spent?: number;
+  admin_earned?: number;
   order_count?: number;
   paid_order_count?: number;
   spend_currency?: string;
@@ -59,6 +62,7 @@ export type StudentSummary = {
 export type StudentCommerceSummary = {
   user_id: string;
   total_spent: number;
+  admin_earned?: number;
   order_count: number;
   paid_order_count: number;
   currency: string;

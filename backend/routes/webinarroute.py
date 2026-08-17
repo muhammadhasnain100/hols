@@ -2,7 +2,7 @@
 
 from typing import Annotated, Optional
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, File, Query, UploadFile
 
 from core.route_handlers import handle_route_errors
 from database_entities import UserRole
@@ -138,6 +138,24 @@ async def update_webinar(
         capacity=body.capacity,
         join_url=body.join_url,
         status=body.status,
+    )
+    return success_response(WebinarDetailData(webinar=WebinarSummary(**webinar)))
+
+
+@router.post("/{webinar_id}/thumbnail", response_model=WebinarDetailResponse)
+@handle_route_errors("upload webinar thumbnail", log_prefix="Webinars")
+async def upload_webinar_thumbnail(
+    webinar_id: str,
+    current_user: Annotated[CurrentUser, Depends(require_roles(UserRole.ADMIN))],
+    thumbnail: UploadFile = File(...),
+) -> WebinarDetailResponse:
+    _ = current_user
+    data = await thumbnail.read()
+    webinar = await webinars_service.upload_webinar_thumbnail(
+        webinar_id,
+        filename=thumbnail.filename or "thumb.jpg",
+        content_type=thumbnail.content_type or "application/octet-stream",
+        data=data,
     )
     return success_response(WebinarDetailData(webinar=WebinarSummary(**webinar)))
 

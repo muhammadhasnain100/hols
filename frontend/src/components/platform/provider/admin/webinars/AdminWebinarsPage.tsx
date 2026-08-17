@@ -13,6 +13,7 @@ import {
   createWebinar,
   listWebinars,
   updateWebinar,
+  uploadWebinarThumbnail,
   type WebinarSummary,
 } from "@/lib/integrate/provider/student/webinars/api";
 import { formatWebinarWhen } from "@/lib/integrate/provider/student/webinars/types";
@@ -62,6 +63,7 @@ export function AdminWebinarsPage() {
   const [success, setSuccess] = useState<string | null>(null);
   const [webinars, setWebinars] = useState<WebinarSummary[]>([]);
   const [form, setForm] = useState<FormState>(emptyForm);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
   const [showForm, setShowForm] = useState(false);
 
   const load = useCallback(async () => {
@@ -88,7 +90,7 @@ export function AdminWebinarsPage() {
     setError(null);
     setSuccess(null);
     try {
-      await createWebinar({
+      const created = await createWebinar({
         title: form.title.trim(),
         description: form.description.trim() || undefined,
         starts_at: new Date(form.starts_at).toISOString(),
@@ -97,7 +99,11 @@ export function AdminWebinarsPage() {
         join_url: form.join_url.trim() || undefined,
         status: form.status,
       });
+      if (thumbnailFile) {
+        await uploadWebinarThumbnail(created.webinar.webinar_id, thumbnailFile);
+      }
       setForm(emptyForm());
+      setThumbnailFile(null);
       setShowForm(false);
       setSuccess("Webinar created.");
       await load();
@@ -211,6 +217,18 @@ export function AdminWebinarsPage() {
                   className="sm:col-span-2"
                 />
                 <label className="grid gap-2 sm:col-span-2">
+                  <span className="dashboard-field-label">Thumbnail</span>
+                  <input
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    onChange={(event) => setThumbnailFile(event.target.files?.[0] ?? null)}
+                    className="dashboard-field file:mr-3 file:rounded-full file:border-0 file:bg-[#DDE466] file:px-3 file:py-1.5 file:text-sm file:font-medium file:text-[#152744]"
+                  />
+                  <span className="text-brand-caption text-[color:var(--dash-faint)]">
+                    Optional. JPEG, PNG, WebP, or GIF up to 5 MB.
+                  </span>
+                </label>
+                <label className="grid gap-2 sm:col-span-2">
                   <span className="dashboard-field-label">Description</span>
                   <textarea
                     value={form.description}
@@ -265,7 +283,20 @@ export function AdminWebinarsPage() {
                     className="rounded-2xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)]/35 p-3.5 sm:p-5"
                   >
                     <div className="flex flex-col gap-3 lg:flex-row lg:items-start lg:justify-between">
-                      <div className="min-w-0">
+                      <div className="flex min-w-0 gap-3">
+                        {webinar.thumbnail_url ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img
+                            src={webinar.thumbnail_url}
+                            alt=""
+                            className="h-16 w-16 shrink-0 rounded-xl object-cover sm:h-20 sm:w-20"
+                          />
+                        ) : (
+                          <span className="flex h-16 w-16 shrink-0 items-center justify-center rounded-xl bg-[color:var(--dash-soft)] text-brand-caption font-semibold text-[color:var(--dash-faint)] sm:h-20 sm:w-20">
+                            No art
+                          </span>
+                        )}
+                        <div className="min-w-0">
                         <div className="flex flex-wrap items-center gap-2">
                           <h4 className="font-sans text-base font-bold text-[color:var(--dash-text)]">
                             {webinar.title}
@@ -286,6 +317,7 @@ export function AdminWebinarsPage() {
                             Join: {webinar.join_url}
                           </p>
                         ) : null}
+                        </div>
                       </div>
                       <div className="flex flex-wrap gap-2">
                         <button

@@ -140,6 +140,8 @@ def _affiliate_summary(user: dict[str, Any]) -> dict[str, Any]:
         "invitation_quota": invitation_quota,
         "student_count": student_count or 0,
         "total_earned": 0.0,
+        "admin_earned": 0.0,
+        "total_order_amount": 0.0,
         "order_count": 0,
         "earnings_currency": "USD",
         "created_at": clean.get("created_at"),
@@ -154,6 +156,8 @@ async def _affiliate_summary_with_earnings(user: dict[str, Any]) -> dict[str, An
     try:
         summed = await sum_affiliate_commission(str(user_id))
         summary["total_earned"] = summed["total_earned"]
+        summary["admin_earned"] = summed["admin_earned"]
+        summary["total_order_amount"] = summed["total_order_amount"]
         summary["order_count"] = summed["order_count"]
         summary["earnings_currency"] = summed["currency"]
     except Exception:
@@ -179,6 +183,7 @@ async def _student_summary(user: dict[str, Any]) -> dict[str, Any]:
         "referred_by_affiliate_id": affiliate_id,
         "affiliate": affiliate,
         "total_spent": 0.0,
+        "admin_earned": 0.0,
         "order_count": 0,
         "paid_order_count": 0,
         "spend_currency": "USD",
@@ -201,6 +206,7 @@ async def _student_summary_with_spend(user: dict[str, Any]) -> dict[str, Any]:
             get_membership(str(user_id)),
         )
         summary["total_spent"] = spend["total_spent"]
+        summary["admin_earned"] = spend["admin_earned"]
         summary["order_count"] = spend["order_count"]
         summary["paid_order_count"] = spend["paid_order_count"]
         summary["spend_currency"] = spend["currency"]
