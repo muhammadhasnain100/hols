@@ -136,12 +136,13 @@ export function StudentPortal() {
       ) : (
         <>
           <div className="flex min-w-0 flex-col gap-3 sm:gap-4">
-            <MembershipHeroCard
+            {/* Webinar owns the primary slot; membership stays compact beside/below */}
+            <NextWebinarCard webinar={nextWebinar} />
+            <MembershipCompactCard
               planLabel={membershipLabel}
               status={membershipStatus}
               expiry={membershipExpiry}
             />
-            {nextWebinar ? <NextWebinarCard webinar={nextWebinar} /> : null}
             <QuickToolsCard />
             <ActivityCard orders={recentOrders} />
           </div>
@@ -155,31 +156,51 @@ export function StudentPortal() {
   );
 }
 
-function NextWebinarCard({ webinar }: { webinar: WebinarSummary }) {
+function NextWebinarCard({ webinar }: { webinar: WebinarSummary | null }) {
   return (
-    <section className="dashboard-glass-card relative overflow-hidden rounded-2xl p-4 sm:p-5">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-            Next webinar
-          </p>
-          <h2 className="font-sans mt-1 text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)]">
-            {webinar.title}
-          </h2>
-          <p className="text-brand-caption mt-1 text-[color:var(--dash-muted)]">
-            {formatWebinarWhen(webinar.starts_at)}
-            {" · "}
-            {webinar.price > 0 ? formatMoney(webinar.price, webinar.currency) : "Free"}
-            {webinar.is_booked ? " · Booked" : ""}
-          </p>
+    <section className="dashboard-glass-card relative overflow-hidden rounded-2xl p-4 sm:p-5 md:p-6">
+      <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+        Next webinar
+      </p>
+
+      {webinar ? (
+        <div className="mt-2 flex flex-col gap-3 sm:mt-3 sm:flex-row sm:items-end sm:justify-between sm:gap-4">
+          <div className="min-w-0">
+            <h2 className="font-sans text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl md:text-[2rem] md:leading-tight">
+              {webinar.title}
+            </h2>
+            <p className="text-brand-caption mt-1.5 text-[color:var(--dash-muted)] sm:mt-2">
+              {formatWebinarWhen(webinar.starts_at)}
+              {" · "}
+              {webinar.price > 0 ? formatMoney(webinar.price, webinar.currency) : "Free"}
+              {webinar.is_booked ? " · Booked" : ""}
+            </p>
+          </div>
+          <Link
+            href={`/student/webinars/${encodeURIComponent(webinar.webinar_id)}`}
+            className="font-sans inline-flex min-h-10 shrink-0 items-center justify-center rounded-full bg-[#DDE466] px-5 text-sm font-medium text-[#152744] transition hover:brightness-105 sm:min-h-11 sm:px-6"
+          >
+            {webinar.is_booked ? "Open booking" : "Book seat"}
+          </Link>
         </div>
-        <Link
-          href={`/student/webinars/${encodeURIComponent(webinar.webinar_id)}`}
-          className="font-sans inline-flex min-h-10 items-center justify-center rounded-full bg-[#DDE466] px-5 text-sm font-medium text-[#152744] transition hover:brightness-105"
-        >
-          {webinar.is_booked ? "Open booking" : "Book seat"}
-        </Link>
-      </div>
+      ) : (
+        <div className="mt-2 flex flex-col gap-3 sm:mt-3 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <h2 className="font-sans text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl">
+              No upcoming webinars
+            </h2>
+            <p className="text-brand-caption mt-1 text-[color:var(--dash-muted)]">
+              Check back soon — new sessions appear here first.
+            </p>
+          </div>
+          <Link
+            href="/student/webinars"
+            className="dashboard-pill-soft font-sans inline-flex min-h-10 shrink-0 items-center justify-center rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] transition"
+          >
+            Browse webinars
+          </Link>
+        </div>
+      )}
     </section>
   );
 }
@@ -193,13 +214,19 @@ function DashboardSkeleton() {
     <>
       <div className="flex min-w-0 flex-col gap-3 sm:gap-4" aria-busy="true" aria-label="Loading dashboard">
         <section className="dashboard-glass-card relative overflow-hidden rounded-2xl p-4 sm:p-5 md:p-6">
-          <SkeletonBlock className="h-3 w-28 rounded-full" />
-          <SkeletonBlock className="mt-3 h-8 w-40 rounded-full sm:h-10 sm:w-52" />
-          <SkeletonBlock className="mt-3 h-4 w-36 rounded-full" />
-          <div className="mt-5 flex flex-wrap gap-2">
-            <SkeletonBlock className="h-10 w-24 rounded-full" />
-            <SkeletonBlock className="h-10 w-20 rounded-full" />
-            <SkeletonBlock className="h-10 w-16 rounded-full" />
+          <SkeletonBlock className="h-3 w-24 rounded-full" />
+          <SkeletonBlock className="mt-3 h-8 w-48 rounded-full sm:h-9 sm:w-64" />
+          <SkeletonBlock className="mt-2 h-4 w-40 rounded-full" />
+          <SkeletonBlock className="mt-4 h-10 w-28 rounded-full" />
+        </section>
+
+        <section className="dashboard-glass-card rounded-2xl px-3.5 py-3 sm:px-4 sm:py-3.5">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="min-w-0 space-y-1.5">
+              <SkeletonBlock className="h-2.5 w-20 rounded-full" />
+              <SkeletonBlock className="h-4 w-32 rounded-full" />
+            </div>
+            <SkeletonBlock className="h-9 w-20 rounded-full" />
           </div>
         </section>
 
@@ -267,7 +294,7 @@ function DashboardSkeleton() {
   );
 }
 
-function MembershipHeroCard({
+function MembershipCompactCard({
   planLabel,
   status,
   expiry,
@@ -277,54 +304,38 @@ function MembershipHeroCard({
   expiry: string;
 }) {
   return (
-    <section className="dashboard-glass-card relative overflow-hidden rounded-2xl p-4 sm:p-5 md:p-6">
-      <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
-        Membership status
-      </p>
-      <div className="mt-2 flex flex-wrap items-end gap-x-2 gap-y-1">
-        <span className="font-sans text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl md:text-[2.5rem] md:leading-none">
-          {planLabel}
-        </span>
-        <span className="mb-0.5 text-brand-caption font-medium text-[color:var(--dash-faint)] sm:mb-1">{status}</span>
-      </div>
-      <p className="text-brand-body mt-2 text-[color:var(--dash-muted)]">Active until {expiry}</p>
-
-      <div className="mt-4 flex flex-wrap gap-2 sm:mt-5 sm:gap-2.5">
-        <HeroPill href="/student/payment" variant="solid">
-          Upgrade
-        </HeroPill>
-        <HeroPill href="/student/payment/orders" variant="soft">
-          Orders
-        </HeroPill>
-        <HeroPill href="/student/payment/card" variant="soft">
-          Card
-        </HeroPill>
+    <section className="dashboard-glass-card rounded-2xl px-3.5 py-3 sm:px-4 sm:py-3.5">
+      <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
+        <div className="min-w-0">
+          <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
+            Membership
+          </p>
+          <div className="mt-0.5 flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span className="font-sans truncate text-base font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-lg">
+              {planLabel}
+            </span>
+            <span className="text-brand-caption font-medium text-[color:var(--dash-faint)]">{status}</span>
+          </div>
+          <p className="text-brand-caption mt-0.5 text-[color:var(--dash-muted)]">
+            Active until {expiry}
+          </p>
+        </div>
+        <div className="flex shrink-0 flex-wrap gap-1.5">
+          <Link
+            href="/student/payment"
+            className="font-sans inline-flex min-h-9 items-center justify-center rounded-full bg-[#DDE466] px-3.5 text-xs font-medium text-[#152744] transition hover:brightness-105 sm:px-4 sm:text-sm"
+          >
+            Upgrade
+          </Link>
+          <Link
+            href="/student/payment/orders"
+            className="dashboard-pill-soft font-sans inline-flex min-h-9 items-center justify-center rounded-full px-3.5 text-xs font-medium text-[color:var(--dash-text)] transition sm:px-4 sm:text-sm"
+          >
+            Orders
+          </Link>
+        </div>
       </div>
     </section>
-  );
-}
-
-function HeroPill({
-  href,
-  variant,
-  children,
-}: {
-  href: string;
-  variant: "solid" | "soft";
-  children: React.ReactNode;
-}) {
-  return (
-    <Link
-      href={href}
-      className={cn(
-        "font-sans inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-full px-4 text-sm font-medium tracking-[0.01em] transition sm:flex-none sm:px-5",
-        variant === "solid"
-          ? "bg-[#DDE466] text-[#152744] hover:brightness-105"
-          : "dashboard-pill-soft text-[color:var(--dash-text)]",
-      )}
-    >
-      {children}
-    </Link>
   );
 }
 
