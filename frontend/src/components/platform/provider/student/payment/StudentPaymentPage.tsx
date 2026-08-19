@@ -40,7 +40,7 @@ const PLAN_META: Record<
   }
 > = {
   monthly: {
-    period: "per month",
+    period: "billed monthly",
     features: [
       "Lecture library access",
       "Peptide calculator tools",
@@ -50,7 +50,7 @@ const PLAN_META: Record<
     icon: <Icon icon={Calendar} size={24} strokeWidth={1.7} />,
   },
   biannual: {
-    period: "every 6 months",
+    period: "billed every 6 months",
     badge: "Favourite",
     favourite: true,
     features: [
@@ -62,7 +62,7 @@ const PLAN_META: Record<
     icon: <Icon icon={Star} size={24} strokeWidth={1.7} />,
   },
   annual: {
-    period: "per year",
+    period: "billed yearly",
     badge: "Best value",
     features: [
       "Everything in Biannual",
@@ -150,17 +150,24 @@ export function StudentPaymentPage() {
   async function handlePurchase(planType: PlanType) {
     setError(null);
     setSuccess(null);
+
+    if (!card) {
+      setError("Add a payment card before purchasing a plan.");
+      return;
+    }
+
+    const label = planLabels[planType];
+    const confirmed = window.confirm(
+      `Purchase the ${label} plan now? This creates a new order and updates your membership.`,
+    );
+    if (!confirmed) return;
+
     setPurchasingPlan(planType);
 
     try {
-      if (!card) {
-        setError("Add a payment card before purchasing a plan.");
-        return;
-      }
-
       const result = await purchasePlan(planType, card.payment_method_id);
       setMembership(result.membership ?? null);
-      setSuccess(`Purchased ${planLabels[planType]}.`);
+      setSuccess(`Purchased ${label}.`);
     } catch (err) {
       setError(err instanceof ApiRequestError ? err.message : "Purchase failed.");
     } finally {
@@ -333,7 +340,9 @@ export function StudentPaymentPage() {
                         ? "Current plan"
                         : purchasingPlan === plan.plan_type
                           ? "Processing…"
-                          : "Add plan"}
+                          : membership
+                            ? "Switch to this plan"
+                            : "Purchase plan"}
                     </button>
                   </article>
                 );

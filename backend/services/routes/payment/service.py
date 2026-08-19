@@ -347,6 +347,19 @@ async def edit_student_card(
     )
 
 
+async def delete_student_card(user_id: str) -> None:
+    """Remove the authenticated student's saved card."""
+    item = await _get_student_card_item(user_id)
+    if not item:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "No saved card found")
+
+    def _delete():
+        _table().delete_item(Key={"PK": item["PK"], "SK": item["SK"]})
+
+    await run_sync(_delete)
+    logger.info("Payment card removed for user_id=%s", user_id)
+
+
 async def get_card(user_id: str, payment_method_id: str) -> dict[str, Any]:
     item = await _get_payment_method(user_id, payment_method_id)
     if not item:

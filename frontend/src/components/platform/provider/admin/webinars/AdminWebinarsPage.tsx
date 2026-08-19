@@ -90,13 +90,35 @@ export function AdminWebinarsPage() {
     setError(null);
     setSuccess(null);
     try {
+      const title = form.title.trim();
+      const joinUrl = form.join_url.trim();
+      const capacityRaw = form.capacity.trim();
+      const capacity = Number(capacityRaw);
+      const startsAt = new Date(form.starts_at);
+
+      if (!title) {
+        throw new Error("Title is required.");
+      }
+      if (!joinUrl) {
+        throw new Error("Join URL is required.");
+      }
+      if (!Number.isFinite(startsAt.getTime())) {
+        throw new Error("Enter a valid start date and time.");
+      }
+      if (startsAt.getTime() <= Date.now()) {
+        throw new Error("Start time must be in the future.");
+      }
+      if (!capacityRaw || !Number.isInteger(capacity) || capacity < 1) {
+        throw new Error("Capacity must be a whole number of at least 1.");
+      }
+
       const created = await createWebinar({
-        title: form.title.trim(),
+        title,
         description: form.description.trim() || undefined,
-        starts_at: new Date(form.starts_at).toISOString(),
+        starts_at: startsAt.toISOString(),
         price: Number(form.price) || 0,
-        capacity: Number(form.capacity) || 100,
-        join_url: form.join_url.trim() || undefined,
+        capacity,
+        join_url: joinUrl,
         status: form.status,
       });
       if (thumbnailFile) {
@@ -108,7 +130,13 @@ export function AdminWebinarsPage() {
       setSuccess("Webinar created.");
       await load();
     } catch (err) {
-      setError(err instanceof ApiRequestError ? err.message : "Could not create webinar.");
+      setError(
+        err instanceof ApiRequestError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Could not create webinar.",
+      );
     } finally {
       setSaving(false);
     }
@@ -209,12 +237,16 @@ export function AdminWebinarsPage() {
                   type="number"
                   value={form.capacity}
                   onChange={(value) => setForm((prev) => ({ ...prev, capacity: value }))}
+                  required
+                  min={1}
                 />
                 <Field
                   label="Join URL"
                   value={form.join_url}
                   onChange={(value) => setForm((prev) => ({ ...prev, join_url: value }))}
                   className="sm:col-span-2"
+                  required
+                  placeholder="https://…"
                 />
                 <label className="grid gap-2 sm:col-span-2">
                   <span className="dashboard-field-label">Thumbnail</span>
@@ -353,6 +385,8 @@ function Field({
   type = "text",
   required,
   className,
+  min,
+  placeholder,
 }: {
   label: string;
   value: string;
@@ -360,6 +394,8 @@ function Field({
   type?: string;
   required?: boolean;
   className?: string;
+  min?: number;
+  placeholder?: string;
 }) {
   return (
     <label className={`grid gap-2 ${className ?? ""}`}>
@@ -368,6 +404,8 @@ function Field({
         type={type}
         value={value}
         required={required}
+        min={min}
+        placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
         className="dashboard-field"
       />

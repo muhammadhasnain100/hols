@@ -26,6 +26,8 @@ export type ResolvedCourseCover = {
   /** CSS object-position for full-bleed Magnific art. */
   objectPosition?: string;
   layout?: CourseCoverLayout;
+  /** Custom art already includes the course title — suppress UI title overlays. */
+  titleInArt?: boolean;
 };
 
 /** Strip Peptide University prefix for display + matching. */
@@ -824,6 +826,8 @@ function resolveCoverEntry(entry: CourseCoverEntry): ResolvedCourseCover {
     coverId: entry.id,
     objectPosition: entry.objectPosition ?? (isBook ? undefined : "40% 46%"),
     layout: entry.layout,
+    // Custom Magnific/product covers bake the title into the artwork.
+    titleInArt: true,
   };
 }
 
@@ -898,8 +902,12 @@ export function getCourseCoverPhotos(title?: string): CourseCoverPhotos {
 }
 
 /** @deprecated Use resolveCourseCover */
-export function hasCustomCourseCover(title?: string): boolean {
-  return resolveCourseCover("", title).isCustom;
+export function hasCustomCourseCover(courseId: string, title?: string): boolean {
+  return resolveCourseCover(courseId, title).isCustom;
+}
+
+export function courseCoverTitleInArt(courseId: string, title?: string): boolean {
+  return Boolean(resolveCourseCover(courseId, title).titleInArt);
 }
 
 export type CourseCoverPalette = {

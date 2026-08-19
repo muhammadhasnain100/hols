@@ -47,7 +47,7 @@ export type WebinarCreatePayload = {
   price: number;
   currency?: string;
   capacity: number;
-  join_url?: string;
+  join_url: string;
   status: "draft" | "published" | "cancelled" | "completed";
 };
 

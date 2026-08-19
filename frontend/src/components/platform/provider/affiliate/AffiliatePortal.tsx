@@ -55,6 +55,7 @@ export function AffiliatePortal() {
   const status =
     invitationQuota != null && studentCount >= invitationQuota ? "Full" : "Active";
   const displayName = affiliateDisplayName(profile);
+  const marginPercent = earnings?.margin_percent ?? profile?.margin_percent;
 
   useEffect(() => {
     const controller = new AbortController();
@@ -110,10 +111,10 @@ export function AffiliatePortal() {
               </div>
               <p className="text-brand-body mt-2 text-sm text-[color:var(--dash-muted)] sm:text-base">
                 <span className="sm:hidden">
-                  {studentCount} referred · {formatAffiliatePercent(profile?.margin_percent)}
+                  {studentCount} referred · {formatAffiliatePercent(marginPercent)}
                 </span>
                 <span className="hidden sm:inline">
-                  {studentCount} referred · {quotaLabel} quota · {formatAffiliatePercent(profile?.margin_percent)} margin
+                  {studentCount} referred · {quotaLabel} quota · {formatAffiliatePercent(marginPercent)} margin
                 </span>
               </p>
 
@@ -141,7 +142,7 @@ export function AffiliatePortal() {
                   Quick tools
                 </h2>
                 <Link
-                  href="/affiliate/referrals"
+                  href="/affiliate/earnings"
                   className="text-brand-caption shrink-0 font-medium text-[color:var(--dash-accent)] hover:brightness-110"
                 >
                   View all
@@ -240,7 +241,7 @@ export function AffiliatePortal() {
                 <div className="dashboard-row min-w-0 rounded-xl px-3 py-3">
                   <p className="text-brand-caption font-medium text-[color:var(--dash-faint)]">Commission</p>
                   <p className="font-sans mt-1 text-sm font-semibold text-[color:var(--dash-text)]">
-                    {formatAffiliatePercent(profile?.margin_percent)}
+                    {formatAffiliatePercent(marginPercent)}
                   </p>
                 </div>
               </div>

@@ -66,15 +66,32 @@ export function AdminWebinarDetailPage({ webinarId }: { webinarId: string }) {
     setError(null);
     setSuccess(null);
     try {
+      const cleanedJoinUrl = joinUrl.trim();
+      const capacityRaw = capacity.trim();
+      const capacityValue = Number(capacityRaw);
+
+      if (!cleanedJoinUrl) {
+        throw new Error("Join URL is required.");
+      }
+      if (!capacityRaw || !Number.isInteger(capacityValue) || capacityValue < 1) {
+        throw new Error("Capacity must be a whole number of at least 1.");
+      }
+
       const data = await updateWebinar(webinarId, {
-        join_url: joinUrl.trim() || undefined,
+        join_url: cleanedJoinUrl,
         price: Number(price) || 0,
-        capacity: Number(capacity) || 100,
+        capacity: capacityValue,
       });
       setWebinar(data.webinar);
       setSuccess("Webinar updated.");
     } catch (err) {
-      setError(err instanceof ApiRequestError ? err.message : "Could not update webinar.");
+      setError(
+        err instanceof ApiRequestError
+          ? err.message
+          : err instanceof Error
+            ? err.message
+            : "Could not update webinar.",
+      );
     } finally {
       setSaving(false);
     }
@@ -201,6 +218,8 @@ export function AdminWebinarDetailPage({ webinarId }: { webinarId: string }) {
                     <span className="dashboard-field-label">Capacity</span>
                     <input
                       type="number"
+                      min={1}
+                      step={1}
                       value={capacity}
                       onChange={(event) => setCapacity(event.target.value)}
                       className="dashboard-field"

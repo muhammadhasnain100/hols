@@ -69,9 +69,8 @@ export async function cachedAdminRequest<T>(
   path: string,
   signal?: AbortSignal,
 ): Promise<T> {
-  const cachedValue = readAdminCache<T>(key);
-  if (cachedValue !== null) return cachedValue;
-
+  // Always hit the network so list pages stay fresh (spend, student_count, etc.).
+  // Callers use readAdminCache for instant paint while this revalidates.
   const pending = adminPendingRequests.get(key);
   if (pending) return pending as Promise<T>;
 

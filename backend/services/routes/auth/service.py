@@ -565,6 +565,7 @@ async def _increment_affiliate_student_count(affiliate_id: str) -> None:
         _table().put_item(Item=user_role_index_item(updated))
 
     await run_sync(_update)
+    _clear_user_list_cache()
 
 
 async def create_admin(

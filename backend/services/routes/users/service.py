@@ -149,19 +149,21 @@ def _affiliate_summary(user: dict[str, Any]) -> dict[str, Any]:
 
 
 async def _affiliate_summary_with_earnings(user: dict[str, Any]) -> dict[str, Any]:
-    summary = _affiliate_summary(user)
-    user_id = summary.get("user_id")
-    if not user_id:
+    # Prefer live profile for student_count — role-index rows can lag after referrals.
+    user_id = user.get("user_id")
+    profile = await get_user_by_id(str(user_id)) if user_id else None
+    summary = _affiliate_summary(profile or user)
+    if not summary.get("user_id"):
         return summary
     try:
-        summed = await sum_affiliate_commission(str(user_id))
+        summed = await sum_affiliate_commission(str(summary["user_id"]))
         summary["total_earned"] = summed["total_earned"]
         summary["admin_earned"] = summed["admin_earned"]
         summary["total_order_amount"] = summed["total_order_amount"]
         summary["order_count"] = summed["order_count"]
         summary["earnings_currency"] = summed["currency"]
     except Exception:
-        logger.exception("Failed to sum commission for affiliate_id=%s", user_id)
+        logger.exception("Failed to sum commission for affiliate_id=%s", summary.get("user_id"))
     return summary
 
 

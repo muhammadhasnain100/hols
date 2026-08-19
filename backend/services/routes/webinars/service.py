@@ -176,9 +176,18 @@ async def create_webinar(
 ) -> dict[str, Any]:
     if status_value not in VALID_STATUSES:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid webinar status")
-    _parse_iso(starts_at)
+    if capacity < 1:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Capacity must be at least 1")
+    cleaned_join_url = (join_url or "").strip()
+    if not cleaned_join_url:
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Join URL is required")
+    starts = _parse_iso(starts_at)
+    if starts < datetime.now(timezone.utc):
+        raise HTTPException(status.HTTP_400_BAD_REQUEST, "Start time must be in the future")
     if ends_at:
-        _parse_iso(ends_at)
+        ends = _parse_iso(ends_at)
+        if ends <= starts:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "End time must be after start time")
 
     webinar_id = uuid.uuid4().hex
     created_at = now_iso()
@@ -192,7 +201,7 @@ async def create_webinar(
         currency=currency.upper(),
         capacity=capacity,
         seats_taken=0,
-        join_url=(join_url or "").strip() or None,
+        join_url=cleaned_join_url,
         thumbnail_url=None,
         status=WebinarStatus(status_value),
         created_by=admin_user_id,
@@ -211,7 +220,9 @@ async def update_webinar(webinar_id: str, **fields: Any) -> dict[str, Any]:
     if "status" in updates and updates["status"] not in VALID_STATUSES:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid webinar status")
     if "starts_at" in updates:
-        _parse_iso(str(updates["starts_at"]))
+        starts = _parse_iso(str(updates["starts_at"]))
+        if starts < datetime.now(timezone.utc):
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Start time must be in the future")
     if "ends_at" in updates and updates["ends_at"]:
         _parse_iso(str(updates["ends_at"]))
     if "title" in updates:
@@ -221,11 +232,15 @@ async def update_webinar(webinar_id: str, **fields: Any) -> dict[str, Any]:
         updates["description"] = text or None
     if "join_url" in updates:
         url = str(updates["join_url"]).strip()
-        updates["join_url"] = url or None
+        if not url:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Join URL is required")
+        updates["join_url"] = url
     if "currency" in updates:
         updates["currency"] = str(updates["currency"]).upper()
     if "capacity" in updates:
         capacity = int(updates["capacity"])
+        if capacity < 1:
+            raise HTTPException(status.HTTP_400_BAD_REQUEST, "Capacity must be at least 1")
         if capacity < int(item.get("seats_taken") or 0):
             raise HTTPException(
                 status.HTTP_400_BAD_REQUEST,

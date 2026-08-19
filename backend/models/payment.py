@@ -26,7 +26,7 @@ class CardCreateRequest(BaseModel):
     exp_year: int = Field(ge=2024, le=2100)
     cvc: str = Field(min_length=3, max_length=4, pattern=r"^\d{3,4}$")
     pin: Optional[str] = Field(default=None, min_length=4, max_length=6, pattern=r"^\d{4,6}$")
-    card_holder_name: Optional[str] = None
+    card_holder_name: Optional[str] = Field(default=None, max_length=80)
     is_default: bool = False
     billing_address: Optional[dict[str, Any]] = None
 
@@ -37,7 +37,7 @@ class CardUpdateRequest(BaseModel):
     exp_year: Optional[int] = Field(default=None, ge=2024, le=2100)
     cvc: Optional[str] = Field(default=None, min_length=3, max_length=4, pattern=r"^\d{3,4}$")
     pin: Optional[str] = Field(default=None, min_length=4, max_length=6, pattern=r"^\d{4,6}$")
-    card_holder_name: Optional[str] = None
+    card_holder_name: Optional[str] = Field(default=None, max_length=80)
     is_default: Optional[bool] = None
     billing_address: Optional[dict[str, Any]] = None
 

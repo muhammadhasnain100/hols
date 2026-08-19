@@ -948,32 +948,46 @@ select:-webkit-autofill:focus {
 
 .portal-shell[data-theme="dark"] .dashboard-screen {
   --dash-text: #f4f7fb;
-  --dash-muted: rgba(244, 247, 251, 0.72);
-  --dash-faint: rgba(244, 247, 251, 0.5);
-  --dash-dim: rgba(244, 247, 251, 0.35);
+  --dash-muted: rgba(244, 247, 251, 0.82);
+  --dash-faint: rgba(244, 247, 251, 0.64);
+  --dash-dim: rgba(244, 247, 251, 0.48);
   --dash-accent: #dde466;
-  --dash-surface: rgba(255, 255, 255, 0.05);
-  --dash-surface-border: rgba(255, 255, 255, 0.16);
-  --dash-soft: rgba(255, 255, 255, 0.06);
-  --calc-stroke: #c5d8dc;
-  --calc-stroke-soft: #a8bdc2;
-  --calc-needle: #d7e0e3;
-  --calc-needle-hub: #b9c4c7;
-  --calc-metal-a: #9aa3a6;
-  --calc-metal-b: #eef1f2;
-  --calc-metal-c: #7c878a;
-  --calc-rod-a: #f3f6f7;
-  --calc-rod-b: #cfd7d9;
-  --calc-rod-c: #aab5b8;
-  --calc-barrel-edge: #b7ccd0;
+  --dash-surface: rgba(255, 255, 255, 0.08);
+  --dash-surface-border: rgba(255, 255, 255, 0.22);
+  --dash-soft: rgba(255, 255, 255, 0.1);
+  --calc-stroke: #d7e8ec;
+  --calc-stroke-soft: #b7cdd2;
+  --calc-needle: #e8f0f2;
+  --calc-needle-hub: #c5d0d3;
+  --calc-metal-a: #a8b2b5;
+  --calc-metal-b: #f4f7f8;
+  --calc-metal-c: #8a9598;
+  --calc-rod-a: #f8fafb;
+  --calc-rod-b: #d7e0e2;
+  --calc-rod-c: #b6c2c5;
+  --calc-barrel-edge: #c5d8dc;
   --calc-barrel-fill-a: #ffffff;
-  --calc-barrel-fill-b: #d4e2e5;
-  --calc-barrel-fill-c: #9eb4b9;
-  --calc-glass-fill: rgba(141, 195, 225, 0.1);
-  --calc-glass-edge: rgba(255, 255, 255, 0.55);
-  --calc-glass-outline: rgba(200, 220, 230, 0.35);
-  --calc-glass-highlight: rgba(255, 255, 255, 0.75);
-  --calc-asset-shadow: rgba(0, 0, 0, 0.35);
+  --calc-barrel-fill-b: #dce8eb;
+  --calc-barrel-fill-c: #a9bec3;
+  --calc-glass-fill: rgba(141, 195, 225, 0.16);
+  --calc-glass-edge: rgba(255, 255, 255, 0.7);
+  --calc-glass-outline: rgba(220, 235, 242, 0.45);
+  --calc-glass-highlight: rgba(255, 255, 255, 0.88);
+  --calc-asset-shadow: rgba(0, 0, 0, 0.4);
+}
+
+.portal-shell[data-theme="dark"] .dashboard-screen .dashboard-field {
+  background-color: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.28);
+  color: #f4f7fb;
+}
+
+.portal-shell[data-theme="dark"] .dashboard-screen .dashboard-field-label {
+  color: rgba(244, 247, 251, 0.78);
+}
+
+.portal-shell[data-theme="dark"] .dashboard-screen .dashboard-field::placeholder {
+  color: rgba(244, 247, 251, 0.55);
 }
 
 /* Shared light brand screen gradient — portal + auth
@@ -3642,7 +3656,24 @@ html[data-portal-theme="dark"] .hols-volume .book-interior-close:hover {
 }
 
 .membership-plan-card--current {
-  border-color: rgba(141, 195, 225, 0.7);
+  border-color: rgba(141, 195, 225, 0.85);
+  box-shadow:
+    0 0 0 1px rgba(141, 195, 225, 0.28),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
+}
+
+.portal-shell[data-theme="dark"] .membership-plan-card--current {
+  border-color: rgba(141, 195, 225, 0.72);
+  background:
+    radial-gradient(120% 90% at 0% 0%, rgba(141, 195, 225, 0.2), transparent 55%),
+    rgba(18, 36, 64, 0.55);
+  box-shadow:
+    0 0 0 1px rgba(141, 195, 225, 0.22),
+    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+}
+
+.portal-shell[data-theme="dark"] .membership-plan-card--favourite:not(.membership-plan-card--current) {
+  border-color: rgba(221, 228, 102, 0.62);
 }
 
 .membership-plan-badge {

@@ -144,9 +144,11 @@ export function formatAffiliateAddress(address?: AffiliateAddress) {
     .join("\n");
 }
 
-export function formatAffiliatePercent(value?: number) {
-  if (value == null) return "Not set";
-  return `${value}%`;
+export function formatAffiliatePercent(value?: number | null) {
+  if (value == null || Number.isNaN(Number(value))) return "Not set";
+  const n = Number(value);
+  const rounded = Number.isInteger(n) ? String(n) : n.toFixed(2).replace(/\.?0+$/, "");
+  return `${rounded}%`;
 }
 
 export function affiliateQuotaLabel(profile: AffiliateProfile | null) {

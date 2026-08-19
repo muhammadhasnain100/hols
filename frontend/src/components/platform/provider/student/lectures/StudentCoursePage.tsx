@@ -181,6 +181,7 @@ function HolsVolume({
   const displayTitle = getCoverDisplayTitle(course.title);
   const cover = resolveCourseCover(courseId, course.title);
   const isCustomVialCover = cover.isCustom && cover.layout !== "book";
+  const hideTitleOverlay = Boolean(cover.titleInArt);
   const volumeIndex = String((hashCourseId(courseId) % 12) + 1).padStart(2, "0");
   const volumeLabel = course.section?.trim()
     ? course.section.toUpperCase()
@@ -360,7 +361,14 @@ function HolsVolume({
                   </p>
                 </header>
 
-                <h2 className="book-cover-title font-sans">{displayTitle}</h2>
+                <h2
+                  className={cn(
+                    "book-cover-title font-sans",
+                    hideTitleOverlay && "sr-only",
+                  )}
+                >
+                  {displayTitle}
+                </h2>
                 <div className="book-cover-rule" aria-hidden />
 
                 <footer className="book-cover-footer">

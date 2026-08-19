@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, Query
 from core.route_handlers import handle_route_errors
 from database_entities import PlanType, UserRole
 from dependencies import CurrentUser, get_current_user, require_roles
-from models.common import success_response
+from models.common import ApiSuccessResponse, success_response
 from models.payment import (
     CardCreateRequest,
     CardData,
@@ -200,3 +200,13 @@ async def edit_card(
         billing_address=body.billing_address,
     )
     return success_response(CardData(card=card))
+
+
+@router.delete("/card", response_model=ApiSuccessResponse[dict])
+@handle_route_errors("remove card", log_prefix="Payment")
+async def remove_card(
+    current_user: Annotated[CurrentUser, Depends(require_roles(UserRole.STUDENT))],
+) -> ApiSuccessResponse[dict]:
+    """Student — remove the saved payment card."""
+    await payment_service.delete_student_card(current_user.user_id)
+    return success_response({})

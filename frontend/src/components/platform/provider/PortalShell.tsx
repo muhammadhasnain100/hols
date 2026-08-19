@@ -98,7 +98,7 @@ function isItemActive(pathname: string, href: string, exact?: boolean): boolean 
 
 function isNavItemActive(pathname: string, item: PortalNavItem): boolean {
   if (isItemActive(pathname, item.href, item.exact)) return true;
-  return item.children?.some((child) => isItemActive(pathname, child.href)) ?? false;
+  return item.children?.some((child) => isItemActive(pathname, child.href, child.exact)) ?? false;
 }
 
 export function PortalShell({
@@ -214,7 +214,7 @@ export function PortalShell({
     const timer = window.setTimeout(() => {
       const next = new Set<string>();
       nav.forEach((item) => {
-        if (item.children?.some((child) => isItemActive(pathname, child.href))) {
+        if (item.children?.some((child) => isItemActive(pathname, child.href, child.exact))) {
           next.add(item.href);
         }
       });
@@ -257,7 +257,9 @@ export function PortalShell({
     const href = opts?.child?.href ?? item.href;
     const label = opts?.child?.label ?? item.label;
     // Only color top-level items (e.g. Payment). Child routes stay unstyled.
-    const active = opts?.child ? false : isNavItemActive(pathname, item);
+    const active = opts?.child
+      ? isItemActive(pathname, opts.child.href, opts.child.exact)
+      : isNavItemActive(pathname, item);
     const showIcon = !opts?.inFlyout && !opts?.child;
 
     return (

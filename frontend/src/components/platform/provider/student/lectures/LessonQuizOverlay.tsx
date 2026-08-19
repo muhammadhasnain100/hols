@@ -299,19 +299,21 @@ export function LessonQuizOverlay({
   if (!open || typeof document === "undefined") return null;
 
   const overlayClass =
-    "adviser-dialog-overlay fixed inset-0 z-[130] flex items-center justify-center bg-black/45 px-3 py-4 sm:px-4 sm:py-6 max-sm:items-end max-sm:px-0 max-sm:py-0";
+    "adviser-dialog-overlay fixed inset-0 z-[130] flex items-center justify-center bg-black/60 px-3 py-4 backdrop-blur-sm sm:px-4 sm:py-6 max-sm:items-end max-sm:px-0 max-sm:py-0";
 
   const sheetPanelClass =
-    "adviser-dialog-panel relative z-10 flex w-full flex-col overflow-hidden rounded-2xl max-sm:rounded-b-none max-sm:rounded-t-3xl max-sm:pb-[env(safe-area-inset-bottom)]";
+    "adviser-dialog-panel relative z-10 flex w-full flex-col overflow-hidden rounded-2xl shadow-2xl max-sm:rounded-b-none max-sm:rounded-t-3xl max-sm:pb-[env(safe-area-inset-bottom)]";
 
   return createPortal(
-    <div className={overlayClass}>
+    <div className={overlayClass} role="presentation">
       <button
         type="button"
         aria-label="Close quiz"
-        className="absolute inset-0 cursor-default"
+        className="absolute inset-0 z-0 cursor-default"
         onClick={requestLeave}
       />
+      {/* Block interaction with lesson content behind the quiz */}
+      <div className="pointer-events-none absolute inset-0 z-0 bg-black/20" aria-hidden />
 
       {phase === "confirm" ? (
         <div

@@ -19,7 +19,7 @@ import {
   getCurrentMembership,
   listOrders,
 } from "@/lib/integrate/provider/student/payment/api";
-import type { Order } from "@/lib/integrate/provider/student/payment/types";
+import type { Order, PlanType } from "@/lib/integrate/provider/student/payment/types";
 import {
   formatDate,
   formatMoney,
@@ -92,6 +92,7 @@ export function StudentPortal() {
   const [membershipLabel, setMembershipLabel] = useState("—");
   const [membershipStatus, setMembershipStatus] = useState("Loading…");
   const [membershipExpiry, setMembershipExpiry] = useState("—");
+  const [planType, setPlanType] = useState<PlanType | null>(null);
   const [orderCount, setOrderCount] = useState("—");
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [nextWebinar, setNextWebinar] = useState<WebinarSummary | null>(null);
@@ -107,10 +108,12 @@ export function StudentPortal() {
         ]);
 
         if (membershipRes.membership) {
+          setPlanType(membershipRes.membership.plan_type);
           setMembershipLabel(planLabels[membershipRes.membership.plan_type]);
           setMembershipStatus(membershipRes.membership.status);
           setMembershipExpiry(formatDate(membershipRes.membership.end_date));
         } else {
+          setPlanType(null);
           setMembershipLabel("No plan");
           setMembershipStatus("Inactive");
           setMembershipExpiry("—");
@@ -143,6 +146,7 @@ export function StudentPortal() {
             <NextWebinarCard webinar={nextWebinar} />
             <MembershipCompactCard
               planLabel={membershipLabel}
+              planType={planType}
               status={membershipStatus}
               expiry={membershipExpiry}
             />
@@ -151,7 +155,7 @@ export function StudentPortal() {
           </div>
 
           <div className="flex min-w-0 flex-col gap-3 sm:gap-4">
-            <QuickLinksCard orderCount={orderCount} />
+            <QuickLinksCard orderCount={orderCount} planType={planType} />
           </div>
         </>
       )}
@@ -317,13 +321,16 @@ function DashboardSkeleton() {
 
 function MembershipCompactCard({
   planLabel,
+  planType,
   status,
   expiry,
 }: {
   planLabel: string;
+  planType: PlanType | null;
   status: string;
   expiry: string;
 }) {
+  const canUpgrade = planType !== "annual";
   return (
     <section className="dashboard-glass-card rounded-2xl px-3.5 py-3 sm:px-4 sm:py-3.5">
       <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-2">
@@ -342,12 +349,21 @@ function MembershipCompactCard({
           </p>
         </div>
         <div className="flex shrink-0 flex-wrap gap-1.5">
-          <Link
-            href="/student/payment"
-            className="font-sans inline-flex min-h-9 items-center justify-center rounded-full bg-[#DDE466] px-3.5 text-xs font-medium text-[#152744] transition hover:brightness-105 sm:px-4 sm:text-sm"
-          >
-            Upgrade
-          </Link>
+          {canUpgrade ? (
+            <Link
+              href="/student/payment"
+              className="font-sans inline-flex min-h-9 items-center justify-center rounded-full bg-[#DDE466] px-3.5 text-xs font-medium text-[#152744] transition hover:brightness-105 sm:px-4 sm:text-sm"
+            >
+              Upgrade
+            </Link>
+          ) : (
+            <Link
+              href="/student/payment"
+              className="dashboard-pill-soft font-sans inline-flex min-h-9 items-center justify-center rounded-full px-3.5 text-xs font-medium text-[color:var(--dash-text)] transition sm:px-4 sm:text-sm"
+            >
+              View plan
+            </Link>
+          )}
           <Link
             href="/student/payment/orders"
             className="dashboard-pill-soft font-sans inline-flex min-h-9 items-center justify-center rounded-full px-3.5 text-xs font-medium text-[color:var(--dash-text)] transition sm:px-4 sm:text-sm"
@@ -434,7 +450,14 @@ function ActivityCard({ orders }: { orders: Order[] }) {
   );
 }
 
-function QuickLinksCard({ orderCount }: { orderCount: string }) {
+function QuickLinksCard({
+  orderCount,
+  planType,
+}: {
+  orderCount: string;
+  planType: PlanType | null;
+}) {
+  const canUpgrade = planType !== "annual";
   return (
     <section className="dashboard-glass-card rounded-2xl p-4 sm:p-5">
       <div className="space-y-1">
@@ -465,12 +488,21 @@ function QuickLinksCard({ orderCount }: { orderCount: string }) {
       </div>
 
       <div className="mt-4 grid grid-cols-1 gap-2.5 min-[380px]:grid-cols-2">
-        <Link
-          href="/student/payment"
-          className="font-sans inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full bg-[#DDE466] px-4 text-sm font-medium text-[#152744] transition hover:brightness-105"
-        >
-          Upgrade plan
-        </Link>
+        {canUpgrade ? (
+          <Link
+            href="/student/payment"
+            className="font-sans inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full bg-[#DDE466] px-4 text-sm font-medium text-[#152744] transition hover:brightness-105"
+          >
+            Upgrade plan
+          </Link>
+        ) : (
+          <Link
+            href="/student/payment"
+            className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full px-4 text-sm font-medium text-[color:var(--dash-text)] transition"
+          >
+            View membership
+          </Link>
+        )}
         <Link
           href="/student/payment/card"
           className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full px-4 text-sm font-medium text-[color:var(--dash-text)] transition"

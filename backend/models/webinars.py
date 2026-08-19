@@ -18,7 +18,7 @@ class WebinarCreateRequest(BaseModel):
     price: float = Field(default=0, ge=0)
     currency: str = Field(default="USD", min_length=3, max_length=3)
     capacity: int = Field(default=100, ge=1, le=10000)
-    join_url: Optional[str] = Field(default=None, max_length=1000)
+    join_url: str = Field(min_length=1, max_length=1000)
     status: str = Field(default="draft")
 
 
@@ -30,7 +30,7 @@ class WebinarUpdateRequest(BaseModel):
     price: Optional[float] = Field(default=None, ge=0)
     currency: Optional[str] = Field(default=None, min_length=3, max_length=3)
     capacity: Optional[int] = Field(default=None, ge=1, le=10000)
-    join_url: Optional[str] = Field(default=None, max_length=1000)
+    join_url: Optional[str] = Field(default=None, min_length=1, max_length=1000)
     status: Optional[str] = None
 
 

@@ -98,9 +98,7 @@ async function cachedPaymentRequest<T>(
   path: string,
   signal?: AbortSignal,
 ): Promise<T> {
-  const cachedValue = readPaymentCache<T>(key);
-  if (cachedValue !== null) return cachedValue;
-
+  // Always revalidate so dashboard activity / membership stay fresh after purchases.
   const pending = paymentPendingRequests.get(key);
   if (pending) return pending as Promise<T>;
 
@@ -136,10 +134,13 @@ export function purchasePlan(plan_type: PlanType, payment_method_id?: string) {
     if (result.membership) {
       writePaymentCache(cacheKey("membership-current"), { membership: result.membership });
     }
-    paymentMemoryCache.delete(ordersCacheKey({ page: 1, limit: 10 }));
-    deleteSessionCache(ordersCacheKey({ page: 1, limit: 10 }));
-    paymentMemoryCache.delete(ordersCacheKey({ page: 1, limit: 1 }));
-    deleteSessionCache(ordersCacheKey({ page: 1, limit: 1 }));
+    // Clear every cached orders page (dashboard uses limit=4, orders page uses others).
+    for (const key of [...paymentMemoryCache.keys()]) {
+      if (key.includes(":orders:")) {
+        paymentMemoryCache.delete(key);
+        deleteSessionCache(key);
+      }
+    }
     return result;
   });
 }
@@ -216,6 +217,18 @@ export function updateCard(payload: CardUpdatePayload) {
     body: payload,
   }).then((result) => {
     writePaymentCache(cacheKey("card-default"), result);
+    return result;
+  });
+}
+
+export function removeCard() {
+  return apiRequest<Record<string, never>>("/api/payment/card", {
+    method: "DELETE",
+    auth: true,
+  }).then((result) => {
+    writePaymentCache(cacheKey("card-default"), CARD_NOT_FOUND);
+    paymentMemoryCache.delete(cacheKey("cards"));
+    deleteSessionCache(cacheKey("cards"));
     return result;
   });
 }

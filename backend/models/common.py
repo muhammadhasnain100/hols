@@ -74,14 +74,34 @@ def parse_http_exception_detail(detail: Any, status_code: int) -> tuple[str, str
         return error, error_code
 
     if isinstance(detail, list):
+        field_labels = {
+            "card_number": "Card number",
+            "exp_month": "Expiry month",
+            "exp_year": "Expiry year",
+            "cvc": "CVC",
+            "pin": "PIN",
+            "card_holder_name": "Cardholder name",
+            "join_url": "Join URL",
+            "capacity": "Capacity",
+            "starts_at": "Start time",
+            "title": "Title",
+        }
         messages = []
         for item in detail:
             if isinstance(item, dict):
-                loc = ".".join(str(part) for part in item.get("loc", []))
-                messages.append(f"{loc}: {item.get('msg', 'Invalid value')}")
+                loc_parts = [str(part) for part in item.get("loc", []) if part != "body"]
+                field = loc_parts[-1] if loc_parts else ""
+                label = field_labels.get(field, field.replace("_", " ").title() if field else "Field")
+                msg = str(item.get("msg") or "Invalid value")
+                # Soften pydantic jargon for the UI.
+                msg = msg.replace("String should have at least", "Must be at least")
+                msg = msg.replace("String should have at most", "Must be at most")
+                msg = msg.replace("Input should be a valid integer", "Enter a whole number")
+                msg = msg.replace("Value error, ", "")
+                messages.append(f"{label}: {msg}")
             else:
                 messages.append(str(item))
-        return "; ".join(messages) or "Validation failed", ErrorCodes.VALIDATION_ERROR
+        return "; ".join(messages) or "Please check the highlighted fields.", ErrorCodes.VALIDATION_ERROR
 
     message = str(detail) if detail else "Request failed"
     return message, STATUS_TO_ERROR_CODE.get(status_code, ErrorCodes.BAD_REQUEST)

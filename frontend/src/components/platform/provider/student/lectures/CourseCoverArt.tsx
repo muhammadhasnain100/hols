@@ -45,12 +45,14 @@ export function CourseCoverArt({
     coverId,
     objectPosition: coverObjectPosition = "center center",
     layout: coverLayout,
+    titleInArt,
   } = resolveCourseCover(courseId, title);
 
   const isBookCover = customCover && coverLayout === "book";
   const isCustomVialCover = customCover && coverLayout !== "book";
   const useLabeledVial = !isBookCover && !isCustomVialCover;
   const useFullBleedPhoto = !useLabeledVial;
+  const hideTitleOverlay = Boolean(titleInArt);
   const photoObjectPosition =
     variant === "panel" && isCustomVialCover
       ? shiftCoverObjectPositionForPanel(coverObjectPosition)
@@ -149,7 +151,12 @@ export function CourseCoverArt({
               <p className="lecture-cover-art-eyebrow lecture-cover-art-category">
                 HOLS Library
               </p>
-              <p className="lecture-cover-art-title font-sans mt-1.5 line-clamp-3 sm:mt-2">
+              <p
+                className={cn(
+                  "lecture-cover-art-title font-sans mt-1.5 line-clamp-3 sm:mt-2",
+                  hideTitleOverlay && "sr-only",
+                )}
+              >
                 {shortTitle}
               </p>
             </div>

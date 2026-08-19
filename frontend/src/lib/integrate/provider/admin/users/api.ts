@@ -44,26 +44,26 @@ type AdminListResult<T> = {
 
 export function getCachedAffiliates(params: PaginationParams = {}) {
   return readAdminCache<AdminListResult<AffiliateSummary>>(
-    adminCacheKey("users-affiliates-v2", params.page, params.limit, params.cursor),
+    adminCacheKey("users-affiliates-v3", params.page, params.limit, params.cursor),
   );
 }
 
 export function getCachedStudents(params: PaginationParams = {}) {
   return readAdminCache<AdminListResult<StudentSummary>>(
-    adminCacheKey("students-v2", params.page, params.limit, params.cursor),
+    adminCacheKey("students-v3", params.page, params.limit, params.cursor),
   );
 }
 
 export function listAffiliates(params: PaginationParams = {}) {
   return cachedAdminRequest<AdminListResult<AffiliateSummary>>(
-    adminCacheKey("users-affiliates-v2", params.page, params.limit, params.cursor),
+    adminCacheKey("users-affiliates-v3", params.page, params.limit, params.cursor),
     `/api/users/affiliates${buildQuery(params)}`,
   );
 }
 
 export function listStudents(params: PaginationParams = {}) {
   return cachedAdminRequest<AdminListResult<StudentSummary>>(
-    adminCacheKey("students-v2", params.page, params.limit, params.cursor),
+    adminCacheKey("students-v3", params.page, params.limit, params.cursor),
     `/api/users/students${buildQuery(params)}`,
   );
 }

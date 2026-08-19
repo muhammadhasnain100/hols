@@ -35,17 +35,16 @@ type CalculatorReconSceneProps = {
   className?: string;
 };
 
-/** Overview vials — larger reading size. */
-const vialSizeClass = "w-[4.35rem] sm:w-[4.9rem] md:w-[5.4rem]";
-/** Hospira-style bac-water bottle — larger than the serum med vial. */
-const waterVialSizeClass = "w-[6.1rem] sm:w-[6.85rem] md:w-[7.55rem]";
+/** Overview vials — widths chosen so bac-water and med render the same height. */
+const vialSizeClass = "w-[5rem] sm:w-[5.5rem] md:w-[6rem]";
+const waterVialSizeClass = "w-[6.5rem] sm:w-[7.15rem] md:w-[7.8rem]";
 /**
  * Draw column is wider than the vial art so captions don't collide;
  * vial art stays compact for the animation fit.
  */
 const drawColumnClass = "w-[5.5rem] sm:w-[6.25rem] md:w-[6.75rem]";
-const drawVialArtClass = "w-[3.25rem] sm:w-[3.6rem] md:w-[3.9rem]";
-const drawWaterVialArtClass = "w-[4.85rem] sm:w-[5.4rem] md:w-[5.95rem]";
+const drawVialArtClass = "w-[3.5rem] sm:w-[3.85rem] md:w-[4.2rem]";
+const drawWaterVialArtClass = "w-[4.55rem] sm:w-[5rem] md:w-[5.45rem]";
 /**
  * Back (liquid) + front (glass) overlays MUST share this exact flex layout.
  * Top padding reserves room for the syringe; composition sits lower in the card.

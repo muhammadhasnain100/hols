@@ -26,18 +26,33 @@ import type { ButtonVariant } from "@/lib/button-styles";
 import { scrollAppToTopSoon } from "@/lib/scroll-to-top";
 import { cn } from "@/lib/utils";
 
-function courseMatchesSearch(course: CourseSummary, query: string) {
-  const haystack = [
-    course.title,
-    course.description,
-    course.primary_topic,
-    course.section,
-  ]
-    .filter(Boolean)
-    .join(" ")
-    .toLowerCase();
+function tidySearchText(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}\s]+/gu, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
 
-  return haystack.includes(query);
+function courseMatchesSearch(course: CourseSummary, query: string) {
+  const needle = tidySearchText(query);
+  if (!needle) return true;
+
+  const title = tidySearchText(course.title ?? "");
+  if (!title) return false;
+
+  // Prefer whole-title / token matches so description noise doesn't flood results.
+  if (title === needle || title.startsWith(needle) || title.includes(` ${needle}`)) {
+    return true;
+  }
+
+  const titleTokens = title.split(" ").filter(Boolean);
+  const needleTokens = needle.split(" ").filter(Boolean);
+  if (needleTokens.length === 0) return true;
+
+  return needleTokens.every((token) =>
+    titleTokens.some((titleToken) => titleToken === token || titleToken.startsWith(token)),
+  );
 }
 
 export function StudentLecturesPage() {
