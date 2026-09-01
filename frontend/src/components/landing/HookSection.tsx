@@ -109,17 +109,17 @@ function buildConvergePath(start: Point, entry: Point, center: Point, seed: numb
   const c1x = start.x + dx * (0.28 + bendA * 0.22);
   const c1y = start.y + dy * (0.18 + swayA * 0.2) + bendA * (0.14 * dist);
 
-  // Second control point approaches the sphere along its radius so the wire
-  // lands cleanly on the surface, with a random stand-off distance.
-  let nx = entry.x - center.x;
-  let ny = entry.y - center.y;
+  // Second control sits just inside the sphere so the wire lands on the surface
+  // without an outward bulge that makes wires pinch together before the ball.
+  let nx = center.x - entry.x;
+  let ny = center.y - entry.y;
   const nlen = Math.hypot(nx, ny) || 1;
   nx /= nlen;
   ny /= nlen;
-  const out = 40 + seededUnit(seed * 11 + 3) * 70;
+  const inset = 16 + seededUnit(seed * 11 + 3) * 24;
 
-  const c2x = entry.x + nx * out + bendB * 26;
-  const c2y = entry.y + ny * out + bendB * 26;
+  const c2x = entry.x + nx * inset + bendB * 14;
+  const c2y = entry.y + ny * inset + bendB * 14;
 
   return `M ${start.x.toFixed(2)} ${start.y.toFixed(2)} C ${c1x.toFixed(2)} ${c1y.toFixed(2)}, ${c2x.toFixed(2)} ${c2y.toFixed(2)}, ${entry.x.toFixed(2)} ${entry.y.toFixed(2)}`;
 }
@@ -211,11 +211,63 @@ function syncTrunkArrow(line: SVGPathElement | undefined, arrow: SVGPolygonEleme
   else syncArrowToLine(line, arrow);
 }
 
-/** Gap before target border so tip + arrow sit in open space (not under chrome). Desktop only. */
-const ARROW_CLEAR_PX = 14;
-const MOBILE_ARROW_CLEAR_PX = 18;
 /** Space between ball bottom / label and the trunk stem start (mobile). */
 const MOBILE_TRUNK_AFTER_LABEL_PX = 10;
+
+/** Scrub timeline beats — branch/CTA must not start until trunk finishes. */
+const HOOK_TL = {
+  hub: 1.55,
+  trunkStart: 2.05,
+  trunkDuration: 1.0,
+  branchDuration: 0.95,
+  ctaDuration: 0.8,
+  hold: 0.9,
+} as const;
+
+function hookTrunkEndTime() {
+  return HOOK_TL.trunkStart + HOOK_TL.trunkDuration;
+}
+
+function appendHookOutboundBeats(
+  tl: gsap.core.Timeline,
+  trunkLines: SVGPathElement[],
+  branchLines: SVGPathElement[],
+  structLabel: HTMLElement[],
+  dashboard: HTMLElement[],
+  cta: HTMLElement[],
+) {
+  tl.to(
+    trunkLines,
+    { strokeDashoffset: 0, opacity: 1, duration: HOOK_TL.trunkDuration, ease: "none" },
+    HOOK_TL.trunkStart,
+  );
+
+  const trunkEnd = hookTrunkEndTime();
+
+  if (HOOK_SHOW_DASHBOARD) {
+    tl.to(structLabel, { autoAlpha: 1, y: 0, duration: 0.65, ease: "power1.out" }, trunkEnd - 0.1);
+    tl.to(
+      dashboard,
+      { autoAlpha: 1, y: 0, scale: 1, duration: 0.85, ease: "power1.out" },
+      trunkEnd - 0.02,
+    );
+    // Second connector starts only after ball → dashboard completes.
+    tl.to(
+      branchLines,
+      { strokeDashoffset: 0, opacity: 1, duration: HOOK_TL.branchDuration, ease: "none" },
+      trunkEnd,
+    );
+    tl.to(
+      cta,
+      { autoAlpha: 1, y: 0, duration: HOOK_TL.ctaDuration, ease: "power1.out" },
+      trunkEnd + HOOK_TL.branchDuration,
+    );
+  } else {
+    tl.to(cta, { autoAlpha: 1, y: 0, duration: HOOK_TL.ctaDuration, ease: "power1.out" }, trunkEnd + 0.12);
+  }
+
+  tl.to({}, { duration: HOOK_TL.hold });
+}
 
 /** Layout box for the portal — prefer the shell (no GSAP scale on the dashboard). */
 function getPortalLayoutRect(dashEl: HTMLElement | null): DOMRect | null {
@@ -247,6 +299,34 @@ function ballExitPoint(ballCX: number, ballCY: number, exitR: number, targetX: n
   };
 }
 
+/** Rim of the sphere at a fixed Y — keeps trunk/branch perfectly horizontal on desktop. */
+function ballSurfacePointAtY(
+  ballCX: number,
+  ballCY: number,
+  radius: number,
+  y: number,
+  side: "right" | "left",
+): Point {
+  const dy = y - ballCY;
+  if (Math.abs(dy) >= radius) {
+    return { x: ballCX + (side === "right" ? radius : -radius), y: ballCY };
+  }
+  const dx = Math.sqrt(radius * radius - dy * dy);
+  return { x: ballCX + (side === "right" ? dx : -dx), y };
+}
+
+/** One shared viewport Y for the ball → dashboard → CTA connector rail. */
+function desktopConnectorY(dashRect: DOMRect | null, ctaRect: DOMRect | null): number {
+  if (dashRect?.width && ctaRect?.width) {
+    const dashCY = dashRect.top + dashRect.height / 2;
+    const ctaCY = ctaRect.top + ctaRect.height / 2;
+    return (dashCY + ctaCY) / 2;
+  }
+  if (dashRect?.width) return dashRect.top + dashRect.height / 2;
+  if (ctaRect?.width) return ctaRect.top + ctaRect.height / 2;
+  return 0;
+}
+
 function buildDiagramGeometry(
   cardRects: DOMRect[],
   ballRect: DOMRect,
@@ -271,34 +351,53 @@ function buildDiagramGeometry(
 
   const paths: DiagramPath[] = [];
   const arrows: DiagramArrow[] = [];
-  const count = cardRects.length;
 
   cardRects.forEach((rect, i) => {
-    const start = toSvg(rect.right, rect.top + rect.height / 2);
-    const t = count > 1 ? i / (count - 1) : 0.5;
-    const jitter = seededUnit(i * 13 + 5) - 0.5;
-    const angleDeg = 128 + t * 104 + jitter * 10;
-    const angle = (angleDeg * Math.PI) / 180;
-    const entry: Point = {
-      x: center.x + Math.cos(angle) * entryR,
-      y: center.y + Math.sin(angle) * entryR,
-    };
+    const startX = rect.right;
+    const startY = rect.top + rect.height / 2;
+    const start = toSvg(startX, startY);
+    const entryViewport = ballExitPoint(ballCX, ballCY, entryR, startX, startY);
+    const entry = toSvg(entryViewport.x, entryViewport.y);
     paths.push({ id: `card-${i}`, group: "card", d: buildConvergePath(start, entry, center, i + 1) });
   });
 
-  // Single trunk: ball → Explore Courses. Dashboard (if present) layers above the line.
-  void dashRect;
-  if (ctaRect && ctaRect.width) {
-    const ctaCY = ctaRect.top + ctaRect.height / 2;
-    const trunkTipX = ctaRect.left - ARROW_CLEAR_PX;
-    const exit = ballExitPoint(ballCX, ballCY, exitR, trunkTipX, ctaCY);
-    const start = toSvg(exit.x, exit.y);
-    const trunkTip = toSvg(trunkTipX, ctaCY);
-    paths.push({ id: "trunk", group: "trunk", d: buildStraightLine(start, trunkTip) });
+  // With dashboard: ball → dashboard border, then dashboard → Explore CTA.
+  if (HOOK_SHOW_DASHBOARD && dashRect && dashRect.width) {
+    const flowY = desktopConnectorY(dashRect, ctaRect);
+    const exit = ballSurfacePointAtY(ballCX, ballCY, exitR, flowY, "right");
+    const trunkStart = toSvg(exit.x, exit.y);
+    const trunkTip = toSvg(dashRect.left, flowY);
+    paths.push({ id: "trunk", group: "trunk", d: buildStraightLine(trunkStart, trunkTip) });
     arrows.push({
       id: "trunk-arrow",
       group: "trunk",
-      points: buildArrowPolygon(trunkTip, start),
+      points: buildArrowPolygon(trunkTip, trunkStart),
+      tipX: trunkTip.x,
+      tipY: trunkTip.y,
+    });
+
+    if (ctaRect && ctaRect.width) {
+      const branchStart = toSvg(dashRect.right, flowY);
+      const branchTip = toSvg(ctaRect.left, flowY);
+      paths.push({ id: "branch", group: "branch", d: buildStraightLine(branchStart, branchTip) });
+      arrows.push({
+        id: "branch-arrow",
+        group: "branch",
+        points: buildArrowPolygon(branchTip, branchStart),
+        tipX: branchTip.x,
+        tipY: branchTip.y,
+      });
+    }
+  } else if (ctaRect && ctaRect.width) {
+    const flowY = desktopConnectorY(null, ctaRect);
+    const exit = ballSurfacePointAtY(ballCX, ballCY, exitR, flowY, "right");
+    const trunkStart = toSvg(exit.x, exit.y);
+    const trunkTip = toSvg(ctaRect.left, flowY);
+    paths.push({ id: "trunk", group: "trunk", d: buildStraightLine(trunkStart, trunkTip) });
+    arrows.push({
+      id: "trunk-arrow",
+      group: "trunk",
+      points: buildArrowPolygon(trunkTip, trunkStart),
       tipX: trunkTip.x,
       tipY: trunkTip.y,
     });
@@ -309,7 +408,7 @@ function buildDiagramGeometry(
 
 /**
  * Mobile: wires drop from each card's bottom edge onto the ball's top arc.
- * Single trunk: ball → Explore Courses. Dashboard (if present) layers above the line.
+ * With dashboard: ball → dashboard border, then dashboard → Explore CTA.
  */
 function buildVerticalDiagramGeometry(
   cardRects: DOMRect[],
@@ -335,35 +434,62 @@ function buildVerticalDiagramGeometry(
 
   const paths: DiagramPath[] = [];
   const arrows: DiagramArrow[] = [];
-  const count = cardRects.length;
 
   cardRects.forEach((rect, i) => {
-    const start = toSvg(rect.left + rect.width / 2, rect.bottom);
-    const t = count > 1 ? i / (count - 1) : 0.5;
-    const jitter = seededUnit(i * 13 + 5) - 0.5;
-    const angleDeg = 200 + t * 140 + jitter * 8;
-    const angle = (angleDeg * Math.PI) / 180;
-    const entry: Point = {
-      x: center.x + Math.cos(angle) * entryR,
-      y: center.y + Math.sin(angle) * entryR,
-    };
+    const startX = rect.left + rect.width / 2;
+    const startY = rect.bottom;
+    const start = toSvg(startX, startY);
+    const entryViewport = ballExitPoint(ballCX, ballCY, entryR, startX, startY);
+    const entry = toSvg(entryViewport.x, entryViewport.y);
     paths.push({ id: `card-${i}`, group: "card", d: buildConvergePath(start, entry, center, i + 1) });
   });
 
-  void dashRect;
   void structLabelRect;
-  if (ctaRect && ctaRect.width) {
+  if (HOOK_SHOW_DASHBOARD && dashRect && dashRect.width) {
     const flowX = ballCX;
     const trunkStartY = ballRect.bottom + MOBILE_TRUNK_AFTER_LABEL_PX;
-    const trunkTipY = ctaRect.top - MOBILE_ARROW_CLEAR_PX;
+    const trunkTipY = dashRect.top;
     if (trunkStartY < trunkTipY - 4) {
-      const start = toSvg(flowX, trunkStartY);
-      const trunkTip = toSvg(ctaRect.left + ctaRect.width / 2, trunkTipY);
-      paths.push({ id: "trunk", group: "trunk", d: buildStraightLine(start, trunkTip) });
+      const trunkStart = toSvg(flowX, trunkStartY);
+      const trunkTip = toSvg(dashRect.left + dashRect.width / 2, trunkTipY);
+      paths.push({ id: "trunk", group: "trunk", d: buildStraightLine(trunkStart, trunkTip) });
       arrows.push({
         id: "trunk-arrow",
         group: "trunk",
-        points: buildArrowPolygon(trunkTip, start),
+        points: buildArrowPolygon(trunkTip, trunkStart),
+        tipX: trunkTip.x,
+        tipY: trunkTip.y,
+      });
+    }
+
+    if (ctaRect && ctaRect.width) {
+      const branchStartY = dashRect.bottom;
+      const branchTipY = ctaRect.top;
+      if (branchStartY < branchTipY - 4) {
+        const branchStart = toSvg(dashRect.left + dashRect.width / 2, branchStartY);
+        const branchTip = toSvg(ctaRect.left + ctaRect.width / 2, branchTipY);
+        paths.push({ id: "branch", group: "branch", d: buildStraightLine(branchStart, branchTip) });
+        arrows.push({
+          id: "branch-arrow",
+          group: "branch",
+          points: buildArrowPolygon(branchTip, branchStart),
+          tipX: branchTip.x,
+          tipY: branchTip.y,
+        });
+      }
+    }
+  } else if (ctaRect && ctaRect.width) {
+    const flowX = ballCX;
+    const trunkStartY = ballRect.bottom + MOBILE_TRUNK_AFTER_LABEL_PX;
+    const trunkTipY = ctaRect.top;
+    if (trunkStartY < trunkTipY - 4) {
+      const trunkStart = toSvg(flowX, trunkStartY);
+      const trunkTip = toSvg(ctaRect.left + ctaRect.width / 2, trunkTipY);
+      paths.push({ id: "trunk", group: "trunk", d: buildStraightLine(trunkStart, trunkTip) });
+      arrows.push({
+        id: "trunk-arrow",
+        group: "trunk",
+        points: buildArrowPolygon(trunkTip, trunkStart),
         tipX: trunkTip.x,
         tipY: trunkTip.y,
       });
@@ -600,7 +726,11 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
     const observer = new ResizeObserver(syncPaths);
     observer.observe(diagram);
     if (ballRef.current) observer.observe(ballRef.current);
-    if (HOOK_SHOW_DASHBOARD && dashRef.current) observer.observe(dashRef.current);
+    if (HOOK_SHOW_DASHBOARD && dashRef.current) {
+      observer.observe(dashRef.current);
+      const portalShell = dashRef.current.closest<HTMLElement>("[data-hook-portal-shell]");
+      if (portalShell) observer.observe(portalShell);
+    }
     if (ctaRef.current) observer.observe(ctaRef.current);
     cardRefs.current.forEach((c) => c && observer.observe(c));
 
@@ -650,7 +780,7 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
               d={path.d}
               stroke={HOOK_LINE}
               strokeWidth={2}
-              strokeLinecap="round"
+              strokeLinecap="butt"
             />
           ),
         )}
@@ -886,7 +1016,11 @@ function MobileFlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
     const observer = new ResizeObserver(syncPaths);
     observer.observe(diagram);
     if (ballRef.current) observer.observe(ballRef.current);
-    if (HOOK_SHOW_DASHBOARD && dashRef.current) observer.observe(dashRef.current);
+    if (HOOK_SHOW_DASHBOARD && dashRef.current) {
+      observer.observe(dashRef.current);
+      const portalShell = dashRef.current.closest<HTMLElement>("[data-hook-portal-shell]");
+      if (portalShell) observer.observe(portalShell);
+    }
     if (ctaRef.current) observer.observe(ctaRef.current);
     if (HOOK_SHOW_DASHBOARD && structLabelRef.current) observer.observe(structLabelRef.current);
     cardRefs.current.forEach((c) => c && observer.observe(c));
@@ -937,7 +1071,7 @@ function MobileFlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
               d={path.d}
               stroke={HOOK_LINE}
               strokeWidth={2}
-              strokeLinecap="round"
+              strokeLinecap="butt"
             />
           ),
         )}
@@ -1104,7 +1238,7 @@ export function HookSection() {
     setReduceMotion(prefersReducedMotion());
   }, []);
 
-  const hookScrollDistance = () => window.innerHeight * 2.4;
+  const hookScrollDistance = () => window.innerHeight * 2.85;
 
   // Desktop pin only — never unmount pinWrap; CSS hides it on mobile.
   // pinWrap MUST stay a direct child of section or sibling ScrollTriggers break.
@@ -1167,18 +1301,21 @@ export function HookSection() {
         const cards = q<HTMLElement>("[data-hook-card]");
         const cardLines = q<SVGPathElement>('[data-hook-line][data-group="card"]');
         const trunkLines = q<SVGPathElement>('[data-hook-line][data-group="trunk"]');
+        const branchLines = q<SVGPathElement>('[data-hook-line][data-group="branch"]');
         const trunkArrows = q<SVGPolygonElement>('[data-hook-arrow][data-group="trunk"]');
+        const branchArrows = q<SVGPolygonElement>('[data-hook-arrow][data-group="branch"]');
         const hub = q<HTMLElement>("[data-hook-hub]");
         const dashboard = q<HTMLElement>("[data-hook-dashboard]");
         const scatterLabel = q<HTMLElement>("[data-hook-scatter-label]");
         const structLabel = q<HTMLElement>("[data-hook-struct-label]");
         const cta = q<HTMLElement>("[data-hook-cta]");
-        const allLines = [...cardLines, ...trunkLines];
+        const allLines = [...cardLines, ...trunkLines, ...branchLines];
 
         if (cards.length === 0) return;
 
         allLines.forEach((p) => prepareStroke(p, true));
         trunkArrows.forEach((arrow) => arrow.setAttribute("opacity", "0"));
+        branchArrows.forEach((arrow) => arrow.setAttribute("opacity", "0"));
         gsap.set(cards, { autoAlpha: 0, y: 10, yPercent: -50 });
         gsap.set(scatterLabel, { autoAlpha: 0, y: 6 });
         if (HOOK_SHOW_DASHBOARD) {
@@ -1190,6 +1327,7 @@ export function HookSection() {
 
         const syncAllArrows = () => {
           syncTrunkArrow(trunkLines[0], trunkArrows[0]);
+          syncTrunkArrow(branchLines[0], branchArrows[0]);
         };
 
         const tl = gsap.timeline({
@@ -1220,20 +1358,8 @@ export function HookSection() {
             0.9 + i * 0.07,
           );
         });
-        tl.to(hub, { autoAlpha: 1, scale: 1, duration: 0.85, ease: "power1.out" }, 1.55);
-        // One trunk ball → Explore Courses; dashboard (if on) fades in above that line.
-        tl.to(trunkLines, { strokeDashoffset: 0, opacity: 1, duration: 1.15, ease: "none" }, 2.05);
-        if (HOOK_SHOW_DASHBOARD) {
-          tl.to(structLabel, { autoAlpha: 1, y: 0, duration: 0.7, ease: "power1.out" }, 2.35);
-          tl.to(
-            dashboard,
-            { autoAlpha: 1, y: 0, scale: 1, duration: 0.95, ease: "power1.out" },
-            2.45,
-          );
-        }
-        tl.to(cta, { autoAlpha: 1, y: 0, duration: 0.8, ease: "power1.out" }, 2.85);
-        // Hold the finished frame so the last beat doesn't cut off mid-scroll.
-        tl.to({}, { duration: 0.9 });
+        tl.to(hub, { autoAlpha: 1, scale: 1, duration: 0.85, ease: "power1.out" }, HOOK_TL.hub);
+        appendHookOutboundBeats(tl, trunkLines, branchLines, structLabel, dashboard, cta);
 
         const onSync = () => {
           allLines.forEach(resyncPathStroke);
@@ -1279,18 +1405,21 @@ export function HookSection() {
         const cards = q<HTMLElement>("[data-hook-card]");
         const cardLines = q<SVGPathElement>('[data-hook-line][data-group="card"]');
         const trunkLines = q<SVGPathElement>('[data-hook-line][data-group="trunk"]');
+        const branchLines = q<SVGPathElement>('[data-hook-line][data-group="branch"]');
         const trunkArrows = q<SVGPolygonElement>('[data-hook-arrow][data-group="trunk"]');
+        const branchArrows = q<SVGPolygonElement>('[data-hook-arrow][data-group="branch"]');
         const hub = q<HTMLElement>("[data-hook-hub]");
         const dashboard = q<HTMLElement>("[data-hook-dashboard]");
         const scatterLabel = q<HTMLElement>("[data-hook-scatter-label]");
         const structLabel = q<HTMLElement>("[data-hook-struct-label]");
         const cta = q<HTMLElement>("[data-hook-cta]");
-        const allLines = [...cardLines, ...trunkLines];
+        const allLines = [...cardLines, ...trunkLines, ...branchLines];
 
         if (cards.length === 0) return;
 
         allLines.forEach((p) => prepareStroke(p, true));
         trunkArrows.forEach((arrow) => arrow.setAttribute("opacity", "0"));
+        branchArrows.forEach((arrow) => arrow.setAttribute("opacity", "0"));
         gsap.set(cards, { autoAlpha: 0, y: 10 });
         gsap.set(scatterLabel, { autoAlpha: 0, y: 6 });
         if (HOOK_SHOW_DASHBOARD) {
@@ -1302,6 +1431,7 @@ export function HookSection() {
 
         const syncAllArrows = () => {
           syncTrunkArrow(trunkLines[0], trunkArrows[0]);
+          syncTrunkArrow(branchLines[0], branchArrows[0]);
         };
 
         const tl = gsap.timeline({
@@ -1331,18 +1461,8 @@ export function HookSection() {
             0.9 + i * 0.07,
           );
         });
-        tl.to(hub, { autoAlpha: 1, scale: 1, duration: 0.85, ease: "power1.out" }, 1.55);
-        tl.to(trunkLines, { strokeDashoffset: 0, opacity: 1, duration: 1.15, ease: "none" }, 2.05);
-        if (HOOK_SHOW_DASHBOARD) {
-          tl.to(structLabel, { autoAlpha: 1, y: 0, duration: 0.7, ease: "power1.out" }, 2.35);
-          tl.to(
-            dashboard,
-            { autoAlpha: 1, y: 0, scale: 1, duration: 0.95, ease: "power1.out" },
-            2.45,
-          );
-        }
-        tl.to(cta, { autoAlpha: 1, y: 0, duration: 0.8, ease: "power1.out" }, 2.85);
-        tl.to({}, { duration: 0.9 });
+        tl.to(hub, { autoAlpha: 1, scale: 1, duration: 0.85, ease: "power1.out" }, HOOK_TL.hub);
+        appendHookOutboundBeats(tl, trunkLines, branchLines, structLabel, dashboard, cta);
 
         const onSync = () => {
           allLines.forEach(resyncPathStroke);

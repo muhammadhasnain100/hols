@@ -15,8 +15,8 @@ import { heroLayout } from "@/lib/hero-styles";
 import { useSmoothScroll } from "@/providers/SmoothScrollProvider";
 import { cn } from "@/lib/utils";
 
-/** Brand Prussian Blue — continuous with Final CTA above */
-const FOOTER_BG = brand.colors.primary.prussianBlue;
+/** Match Hook / Pillars / FAQs landing surface */
+const FOOTER_BG = "#E5E5E5";
 
 type FooterItem = {
   label: string;
@@ -60,7 +60,7 @@ const linkColumns: Array<{ title: string; links: FooterItem[] }> = [
 
 function FooterHeading({ children }: { children: ReactNode }) {
   return (
-    <h3 className="font-sans text-base font-bold leading-tight tracking-[0.01em] text-white sm:text-lg">
+    <h3 className="font-sans text-base font-bold leading-tight tracking-[0.01em] text-primary sm:text-lg">
       {children}
     </h3>
   );
@@ -117,7 +117,7 @@ function FooterLink({
         ? { target: "_blank", rel: "noopener noreferrer" }
         : {})}
       className={cn(
-        "text-brand-body text-white/70 transition-colors duration-200 hover:text-white",
+        "text-brand-body text-primary/70 transition-colors duration-200 hover:text-primary",
         className,
       )}
     >
@@ -140,7 +140,7 @@ function NewsletterSignup() {
   return (
     <div className="w-full min-w-0">
       <FooterHeading>Newsletter</FooterHeading>
-      <p className="text-brand-body mt-3 text-white/70 sm:mt-4">
+      <p className="text-brand-body mt-3 text-primary/75 sm:mt-4">
         Get clinical updates and product news from HOLS.
       </p>
 
@@ -169,7 +169,7 @@ function NewsletterSignup() {
             onChange={(event) => setEmail(event.target.value)}
             placeholder="Your Email Address"
             className={cn(
-              "min-h-11 w-full min-w-0 flex-1 rounded-full border border-white/15 bg-white/95 px-4",
+              "min-h-11 w-full min-w-0 flex-1 rounded-full border border-primary/15 bg-white px-4",
               "font-sans text-sm text-primary placeholder:text-primary/40",
               "outline-none transition-[border-color,box-shadow] duration-200",
               "focus:border-accent/60 focus:shadow-[0_0_0_3px_rgba(221,228,102,0.22)]",
@@ -196,7 +196,7 @@ function LinkColumn({ title, links }: { title: string; links: FooterItem[] }) {
         {links.map((item) => (
           <li key={`${item.label}-${item.href ?? "text"}`} className="min-w-0">
             {item.disabled || !item.href ? (
-              <span className="text-brand-body cursor-default text-white/70">
+              <span className="text-brand-body cursor-default text-primary/70">
                 {item.label}
               </span>
             ) : (
@@ -233,8 +233,8 @@ export function Footer() {
 
   return (
     <footer
-      data-nav-surface="dark"
-      className="relative z-10 w-full overflow-x-hidden text-white"
+      data-nav-surface="light"
+      className="relative z-10 w-full overflow-x-hidden text-primary"
       style={{ backgroundColor: FOOTER_BG }}
     >
       <div
@@ -245,8 +245,8 @@ export function Footer() {
       >
         {/* Brand */}
         <div className="mb-8 max-w-md sm:mb-10 lg:mb-12">
-          <Logo variant="light" className="h-8 sm:h-9 md:h-10" />
-          <p className="text-brand-body mt-3 max-w-sm text-pretty text-white/65 sm:mt-4">
+          <Logo variant="dark" className="h-8 sm:h-9 md:h-10" />
+          <p className="text-brand-body mt-3 max-w-sm text-pretty text-primary/65 sm:mt-4">
             {footerNav.disclaimer}
           </p>
         </div>
@@ -271,8 +271,8 @@ export function Footer() {
           </div>
         </div>
 
-        <div className="mt-10 flex flex-col gap-4 border-t border-white/12 pt-5 sm:mt-12 sm:pt-6 md:mt-14 md:flex-row md:items-center md:justify-between md:gap-6 md:pt-8">
-          <p className="text-brand-caption text-white/50">
+        <div className="mt-10 flex flex-col gap-4 border-t border-primary/12 pt-5 sm:mt-12 sm:pt-6 md:mt-14 md:flex-row md:items-center md:justify-between md:gap-6 md:pt-8">
+          <p className="text-brand-caption text-primary/50">
             © {year} {brand.name}. All Rights Reserved
           </p>
 
@@ -281,7 +281,7 @@ export function Footer() {
               <FooterLink
                 key={item.label}
                 href={item.href}
-                className="text-brand-caption text-white/70"
+                className="text-brand-caption text-primary/70"
               >
                 {item.label}
               </FooterLink>
@@ -290,8 +290,8 @@ export function Footer() {
               type="button"
               onClick={scrollToTop}
               className={cn(
-                "text-brand-caption text-white/70 transition-colors duration-200",
-                "hover:text-white",
+                "text-brand-caption text-primary/70 transition-colors duration-200",
+                "hover:text-primary",
                 "focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent/40",
               )}
             >
