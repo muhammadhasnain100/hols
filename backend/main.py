@@ -53,18 +53,7 @@ app.add_middleware(ApiResponseMiddleware)
 app.add_middleware(RequestLoggingMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000",
-        "http://127.0.0.1:3000",
-        "http://localhost:8000",
-        "http://127.0.0.1:8000",
-        "http://localhost:8012",
-        "http://127.0.0.1:8012",
-        "https://hols-ashen.vercel.app",
-        "https://hols-frontend.avishkarai.com",
-        "https://hols-backend.avishkarai.com",
-    ],
-    allow_origin_regex=r"https://.*\.vercel\.app",
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
