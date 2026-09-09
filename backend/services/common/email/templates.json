@@ -1,0 +1,42 @@
+{
+  "provider_agreement_ready": {
+    "subject": "Your Provider Agreement Is Ready To Sign",
+    "headline": "Your Provider Agreement",
+    "headline_accent": "Is Ready To Sign",
+    "body": "Welcome to Hols. To complete your onboarding, please review and sign your provider agreement.",
+    "body_secondary": "Once signed, we'll set up your account and send you a link to create your login credentials.",
+    "cta_label": "Review & Sign",
+    "notice": "This signing link expires on {{expiry_date}}.",
+    "footer_note": "If you have any questions, our support team is here to help."
+  },
+  "otp_verification": {
+    "subject": "Your HOLS login verification code",
+    "headline": "Your verification",
+    "headline_accent": "code",
+    "body": "Use the code below to finish signing in to your HOLS account. Do not share this code with anyone.",
+    "body_secondary": "If you did not request this code, you can ignore this email.",
+    "cta_label": "Open HOLS",
+    "notice": "Your verification code is {{otp_code}}. It expires in {{expiry_minutes}} minutes.",
+    "footer_note": "If you have any questions, our support team is here to help."
+  },
+  "affiliate_account_created": {
+    "subject": "Your HOLS affiliate account",
+    "headline": "Your affiliate account",
+    "headline_accent": "is ready",
+    "body": "Your HOLS affiliate account has been created. Use the details below to sign in.",
+    "body_secondary": "Please log in and change your password if required by your account policy.",
+    "cta_label": "Log in to HOLS",
+    "notice": "Email: {{account_email}} · Invite code: {{invite_code}} · Temporary password: {{password}}",
+    "footer_note": "If you have any questions, our support team is here to help."
+  },
+  "invite_to_join": {
+    "subject": "You are invited to join HOLS",
+    "headline": "You're invited",
+    "headline_accent": "to join HOLS",
+    "body": "{{inviter_name}} invited you to join House of Life Sciences. Create your account with the button below.",
+    "body_secondary": "If you were not expecting this invite, you can ignore this email.",
+    "cta_label": "Create your HOLS account",
+    "notice": "{{invite_extra}}",
+    "footer_note": "If you have any questions, our support team is here to help."
+  }
+}

@@ -423,19 +423,16 @@ async def send_otp_email(user: dict[str, Any], code: str) -> None:
     """Send the OTP code email. Intended to run as a background task."""
     first_name = user.get("first_name", "there")
     try:
+        email = email_service.render_email(
+            "otp_verification",
+            recipient_name=first_name,
+            otp_code=code,
+            expiry_minutes=settings.otp_expire_seconds // 60,
+        )
         await email_service.send_email_async(
             to=user["email"],
-            subject="Your HOLS login verification code",
-            text_body=(
-                f"Hi {first_name},\n\n"
-                f"Your verification code is: {code}\n\n"
-                f"This code expires in {settings.otp_expire_seconds // 60} minutes.\n"
-            ),
-            html_body=(
-                f"<p>Hi {first_name},</p>"
-                f"<p>Your verification code is: <strong>{code}</strong></p>"
-                f"<p>This code expires in {settings.otp_expire_seconds // 60} minutes.</p>"
-            ),
+            subject=email["subject"],
+            html_body=email["html_body"],
         )
     except Exception:
         logger.exception("Failed to send OTP email to %s", user.get("email"))

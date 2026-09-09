@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import html
 import logging
 import secrets
 import string
@@ -186,27 +185,17 @@ async def send_affiliate_credentials_email(user: dict[str, Any], password: str) 
     email = user.get("email")
     invite_code = user.get("invite_code") or "Not set"
     try:
+        rendered = email_service.render_email(
+            "affiliate_account_created",
+            recipient_name=first_name,
+            account_email=email,
+            invite_code=invite_code,
+            password=password,
+        )
         await email_service.send_email_async(
             to=email,
-            subject="Your HOLS affiliate account",
-            text_body=(
-                f"Hi {first_name},\n\n"
-                "Your HOLS affiliate account has been created.\n\n"
-                f"Email: {email}\n"
-                f"Password: {password}\n"
-                f"Invite code: {invite_code}\n\n"
-                "Please log in and change your password if required by your account policy.\n"
-            ),
-            html_body=(
-                f"<p>Hi {html.escape(str(first_name))},</p>"
-                "<p>Your HOLS affiliate account has been created.</p>"
-                "<p>"
-                f"<strong>Email:</strong> {html.escape(str(email))}<br>"
-                f"<strong>Password:</strong> {html.escape(password)}<br>"
-                f"<strong>Invite code:</strong> {html.escape(str(invite_code))}"
-                "</p>"
-                "<p>Please log in and change your password if required by your account policy.</p>"
-            ),
+            subject=rendered["subject"],
+            html_body=rendered["html_body"],
         )
         return True
     except Exception:

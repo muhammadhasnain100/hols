@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import html
 import logging
 from decimal import Decimal
 from typing import Any, Optional
@@ -108,33 +107,25 @@ async def send_student_invites(
     invite_url = build_invite_url(affiliate, public_origin)
     first_name = affiliate.get("first_name") or "Your HOLS affiliate"
     personal_message = (message or "").strip()
-    extra_text = f"\n\nMessage from {first_name}:\n{personal_message}" if personal_message else ""
-    extra_html = (
-        f"<p><strong>Message from {html.escape(str(first_name))}:</strong><br>"
-        f"{html.escape(personal_message)}</p>"
+    invite_extra = (
+        f"Message from {first_name}: {personal_message}"
         if personal_message
-        else ""
+        else f"Invite link: {invite_url['public_url']}"
     )
 
     for recipient in recipients:
         try:
+            rendered = email_service.render_email(
+                "invite_to_join",
+                recipient_name="there",
+                inviter_name=first_name,
+                cta_url=invite_url["public_url"],
+                invite_extra=invite_extra,
+            )
             await email_service.send_email_async(
                 to=recipient,
-                subject="You are invited to join HOLS",
-                text_body=(
-                    f"Hi,\n\n{first_name} invited you to join House of Life Sciences.\n"
-                    f"Use this link to sign up:\n{invite_url['public_url']}"
-                    f"{extra_text}\n\n"
-                    "If you were not expecting this invite, you can ignore this email.\n"
-                ),
-                html_body=(
-                    "<p>Hi,</p>"
-                    f"<p>{html.escape(str(first_name))} invited you to join House of Life Sciences.</p>"
-                    f"<p><a href=\"{html.escape(invite_url['public_url'])}\">Create your HOLS account</a></p>"
-                    f"<p>Invite link: {html.escape(invite_url['public_url'])}</p>"
-                    f"{extra_html}"
-                    "<p>If you were not expecting this invite, you can ignore this email.</p>"
-                ),
+                subject=rendered["subject"],
+                html_body=rendered["html_body"],
             )
         except Exception:
             logger.exception("Failed to send affiliate student invite to %s", recipient)
