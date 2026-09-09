@@ -180,8 +180,10 @@ function HolsVolume({
   );
   const displayTitle = getCoverDisplayTitle(course.title);
   const cover = resolveCourseCover(courseId, course.title);
+  const isBookCover = cover.layout === "book";
   const isCustomVialCover = cover.isCustom && cover.layout !== "book";
-  const hideTitleOverlay = Boolean(cover.titleInArt);
+  // Books bake the title into art; product vials need the overview title visible.
+  const hideTitleOverlay = Boolean(cover.titleInArt && isBookCover);
   const volumeIndex = String((hashCourseId(courseId) % 12) + 1).padStart(2, "0");
   const volumeLabel = course.section?.trim()
     ? course.section.toUpperCase()

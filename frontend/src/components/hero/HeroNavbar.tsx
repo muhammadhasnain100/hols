@@ -112,13 +112,14 @@ export function HeroNavbar({ variant = "landing" }: HeroNavbarProps) {
           </div>
         </header>
 
-        {/* Compact desktop nav — same glass menu icon + panel as mobile. */}
+        {/* Compact desktop nav — opacity-only transition (no translate):
+            transforms on this wrapper would trap fixed menu overlays. */}
         <div
           className={cn(
-            "fixed right-6 top-5 z-[60] hidden transition-all duration-300 md:block",
+            "fixed right-6 top-5 z-[110] hidden transition-opacity duration-300 md:block",
             scrolled
-              ? "visible translate-y-0 opacity-100"
-              : "invisible pointer-events-none -translate-y-2 opacity-0",
+              ? "visible opacity-100"
+              : "invisible pointer-events-none opacity-0",
           )}
           aria-hidden={!scrolled}
         >

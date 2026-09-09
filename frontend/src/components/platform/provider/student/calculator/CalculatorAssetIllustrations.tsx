@@ -2,7 +2,11 @@
 
 import { useId, useLayoutEffect, useRef } from "react";
 import { useGSAP } from "@gsap/react";
-import { SYRINGE_IMAGE_SCALE, HOLS_BRAND } from "@/components/platform/provider/student/calculator/calculatorAssets";
+import {
+  SYRINGE_IMAGE_SCALE,
+  syringeDisplayWidthRem,
+  HOLS_BRAND,
+} from "@/components/platform/provider/student/calculator/calculatorAssets";
 import {
   SYRINGE_BARREL_TRAVEL,
   syringeLiquidLayout,
@@ -19,6 +23,11 @@ import {
   HexarelinVialArt,
 } from "@/components/platform/provider/student/calculator/HexarelinVialArt";
 import { SYRINGE_ART, SyringeArt } from "@/components/platform/provider/student/calculator/SyringeArt";
+import {
+  HSYR_GEOMETRY,
+  HorizontalSyringeArt,
+} from "@/components/platform/provider/student/calculator/HorizontalSyringeArt";
+import { useCompactCalculatorScene } from "@/components/platform/provider/student/calculator/useCompactCalculatorScene";
 import { gsap, registerGsap } from "@/lib/gsap";
 import type { MassUnit, SyringeSizeMl } from "@/lib/integrate/provider/student/calculator";
 import { cn } from "@/lib/utils";
@@ -38,10 +47,13 @@ type LiquidPalette = {
 };
 
 function peptidePalette(_unit: MassUnit = "mg"): LiquidPalette {
+  // Reconstituted peptide reads as a clear, faintly cloudy clinical liquid —
+  // pale blue-white with a soft meniscus. The dry lyophilized cake stays
+  // cream (see `powder`) so the two states are visually distinct.
   return {
-    top: "#f4f1ea",
-    bottom: "#e8e2d6",
-    edge: "#cfc6b4",
+    top: "#eef6fb",
+    bottom: "#c9def0",
+    edge: "#8fb4d3",
     powder: "#f0ebe1",
     cap: HOLS_BRAND.prussianBlue,
     capDark: "#0a1424",
@@ -169,7 +181,11 @@ export function AssetVial({
   return (
     <div
       ref={rootRef}
-      className={cn("flex h-full w-full flex-col items-center justify-end", className)}
+      // Width comes from the caller (`w-full` in draw columns, fixed rem
+      // sizes in overview). Do not set `w-full` here — `cn` does not
+      // tailwind-merge, so a base `w-full` would fight overview size classes
+      // and both vials would stretch equal-width (med then looks taller).
+      className={cn("flex shrink-0 flex-col items-center justify-end", className)}
     >
       <div className="relative w-full">
         <div
@@ -238,7 +254,7 @@ export function AssetVial({
       {label ? (
         <p
           className={cn(
-            "mt-2 flex h-8 w-full items-end justify-center text-center text-[10px] font-semibold uppercase leading-tight tracking-[0.12em] sm:h-9",
+            "mt-2 flex min-h-8 w-full items-end justify-center px-0.5 text-center text-[9px] font-semibold uppercase leading-tight tracking-[0.06em] sm:min-h-9 sm:text-[10px] sm:tracking-[0.12em]",
             waterEmpty
               ? "text-[color:var(--dash-muted)]"
               : "text-[color:var(--dash-text)]",
@@ -295,11 +311,137 @@ export function AssetSyringe({
   className,
 }: AssetSyringeProps) {
   const uid = useId().replace(/:/g, "");
+  const narrowViewport = useCompactCalculatorScene();
+  const useCompactWidth = compact || narrowViewport;
   const rawScale = SYRINGE_IMAGE_SCALE[syringeMl] ?? 0.8;
-  // Draw/animation: keep compact so a full plunger never leaves the section.
-  const scale = needleDown ? Math.min(Math.max(rawScale * 0.72, 0.42), 0.58) : rawScale;
+  // Draw/animation: legible + fits horizontally in the scene when rotated.
+  const scale = needleDown ? Math.min(Math.max(rawScale * 0.85, 0.6), 0.78) : rawScale;
 
   const clamped = Math.min(0.98, Math.max(0, showFill ? fillRatio : 0));
+
+  /* --------------------------------------------------------------------- */
+  /*  Overview mode → dedicated horizontal syringe SVG (natively drawn).    */
+  /* --------------------------------------------------------------------- */
+  if (horizontal) {
+    // Dramatic per-capacity spread so the syringe visibly grows as users pick
+    // larger sizes — compact widths keep phones from overflowing.
+    const overviewWidthRem = syringeDisplayWidthRem(syringeMl, useCompactWidth);
+    return (
+      <div className={cn("flex w-full flex-col items-center", className)}>
+        <div
+          className="relative w-full"
+          style={{
+            maxWidth: `min(${overviewWidthRem}rem, 100%)`,
+            aspectRatio: "520 / 120",
+          }}
+        >
+          <HorizontalSyringeArt
+            uid={uid}
+            fillRatio={showFill ? clamped : 0}
+            showLiquid={showFill && clamped > 0}
+            active={active}
+            className="absolute inset-0 h-full w-full"
+          />
+        </div>
+        {label ? (
+          <p
+            className={cn(
+              "max-w-[16rem] px-1 text-center font-medium text-[color:var(--dash-text)]",
+              large ? "mt-2 text-xs sm:mt-3 sm:text-sm" : "mt-2 text-[11px]",
+            )}
+          >
+            {label}
+          </p>
+        ) : null}
+      </div>
+    );
+  }
+
+  /* --------------------------------------------------------------------- */
+  /*  Draw / animation mode → horizontal syringe SVG in a rotator wrapper.  */
+  /*  Rotation default = +90° so the natively-horizontal syringe reads as   */
+  /*  needle-down. The InjectionAnimation timeline overrides this at will.  */
+  /* --------------------------------------------------------------------- */
+  if (large && needleDown) {
+    // Match the OVERVIEW syringe size so the animation reads at the exact
+    // same visual scale users just saw during dose selection.
+    const drawWidthRem = syringeDisplayWidthRem(syringeMl, useCompactWidth);
+    const drawWidthPx = drawWidthRem * 16;
+    const drawHeightPx = drawWidthPx * (HSYR_GEOMETRY.viewH / HSYR_GEOMETRY.viewW);
+    // Padded box big enough to host the syringe rotated to any angle without
+    // clipping — a square with side = drawWidthPx.
+    const boxSide = drawWidthPx;
+
+    // The needle tip lives at (515, 60.2) inside the 520×120 viewBox.
+    // Convert to fraction of the SVG's rendered box (drawWidthPx × drawHeightPx):
+    const tipFracX = 515 / HSYR_GEOMETRY.viewW; // ~0.99
+    const tipFracY = 60.2 / HSYR_GEOMETRY.viewH; // 0.5017
+
+    return (
+      <div
+        className={cn("flex flex-col items-center", className)}
+        data-syringe-box="draw"
+      >
+        <div
+          className="relative max-w-full"
+          style={{ width: boxSide, height: boxSide }}
+        >
+          <div
+            data-syringe-rotator
+            className="absolute left-1/2 top-1/2"
+            // GSAP owns `transform` during the draw animation — putting rotation
+            // in React style would snap the syringe on every parent re-render.
+            style={{
+              width: drawWidthPx,
+              height: drawHeightPx,
+              transformOrigin: "center center",
+              ...(gsapDriven
+                ? {}
+                : { transform: "translate(-50%, -50%) rotate(90deg)" }),
+            }}
+            ref={(node) => {
+              if (!node || !gsapDriven) return;
+              if (!node.style.transform) {
+                node.style.transform = "translate(-50%, -50%) rotate(0deg)";
+              }
+            }}
+          >
+            <HorizontalSyringeArt
+              uid={uid}
+              fillRatio={0}
+              showLiquid
+              active={active}
+              gsapOwned={gsapDriven}
+              className="absolute inset-0 h-full w-full"
+            />
+            {/* Tip marker — sits inside the rotator so its getBoundingClientRect()
+                reflects the current rotation. Positioned at (tipFracX, tipFracY)
+                of the un-rotated SVG box. */}
+            <span
+              data-needle-tip
+              className="pointer-events-none absolute h-px w-px"
+              style={{
+                left: `${tipFracX * 100}%`,
+                top: `${tipFracY * 100}%`,
+              }}
+              aria-hidden
+            />
+          </div>
+        </div>
+        {label ? (
+          <p
+            className={cn(
+              "max-w-[16rem] text-center font-medium text-[color:var(--dash-text)]",
+              "mt-3 text-sm",
+            )}
+          >
+            {label}
+          </p>
+        ) : null}
+      </div>
+    );
+  }
+
   /** Empty → plunger pushed in (thumb kept back by stem gap); full → plunger pulled out above barrel. */
   const plungerY = (1 - clamped) * SYRINGE_BARREL_TRAVEL;
   /**
@@ -323,7 +465,7 @@ export function AssetSyringe({
   const showNeedle = part === "full" || part === "needle";
   const showBarrel = part === "full" || part === "barrel";
 
-  const baseHeight = horizontal ? 210 : large ? (needleDown ? 200 : 290) : compact ? 140 : 250;
+  const baseHeight = horizontal ? 240 : large ? (needleDown ? 260 : 290) : compact ? 140 : 250;
   const height = Math.round(baseHeight * scale);
   const viewTop = SYRINGE_ART.viewTop;
   const viewBottom = needleDown ? SYRINGE_ART.viewBottom : 380;
@@ -331,8 +473,8 @@ export function AssetSyringe({
   const width = Math.round(height * (92 / viewH));
   const needleTipY = needleDown ? SYRINGE_ART.tipY : 377;
 
-  /** Overview uses the reference −45° tilt; draw mode stays needle-down (0°). */
-  const rotate = horizontal ? -45 : 0;
+  /** Overview: lay syringe flat (needle right). Draw mode stays needle-down (0°). */
+  const rotate = horizontal ? -90 : 0;
 
   const rad = (Math.abs(rotate) * Math.PI) / 180;
   const boxW = Math.round(Math.abs(width * Math.cos(rad)) + Math.abs(height * Math.sin(rad)));

@@ -3,8 +3,8 @@
 import { coverPeptideName } from "@/components/platform/provider/student/lectures/courseCover";
 import { cn } from "@/lib/utils";
 
-const TEMPLATE_LIGHT = "/assets/lectures/vial-cover-template-light.png";
-const TEMPLATE_DARK = "/assets/lectures/vial-cover-template-dark.png";
+const TEMPLATE_LIGHT = "/assets/lectures/mode/light.png";
+const TEMPLATE_DARK = "/assets/lectures/mode/dark.png";
 
 type CourseCoverLabeledVialProps = {
   title: string;

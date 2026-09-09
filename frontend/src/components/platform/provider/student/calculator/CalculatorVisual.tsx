@@ -42,17 +42,41 @@ export function CalculatorVisual({
   const hasWater = waterAmount !== null;
   const hasPeptide = peptideVal !== null;
 
-  const waterEmpty = mode === "result" || !hasWater;
-  const medEmpty = mode !== "result" && !hasPeptide;
-  const medPowder = mode !== "result";
+  /**
+   * Medication vial state, following user flow (not strict physics):
+   * - Syringe step: empty (nothing selected yet)
+   * - Medication step: dry powder (peptide mass entered)
+   * - Water step: still powder — water is being drawn into the bac bottle,
+   *   not yet injected into the med vial
+   * - Dose step: liquid — visualise the reconstituted vial so the user can
+   *   picture the dose they are about to draw
+   * - Result step: liquid — reconstitution complete
+   */
+  const medReconstituted = mode === "result" || mode === "dose";
+
+  /**
+   * Bacteriostatic water bottle:
+   * - Empty on Syringe + Medication steps (user hasn't selected water yet).
+   * - Filled once the user is on the Water step (with volume entered) or the
+   *   Dose step (water already committed).
+   * - Empty again at the Result step — the animation has just transferred
+   *   the water into the medication vial.
+   */
+  const isAtOrAfterWaterStep = mode === "water" || mode === "dose";
+  const waterEmpty = mode === "result" || !hasWater || !isAtOrAfterWaterStep;
+  const medEmpty = !medReconstituted && !hasPeptide;
+  const medPowder = !medReconstituted;
 
   const waterFill = hasWater ? waterFillFromVolume(waterAmount) : 0;
-  const medFill =
-    mode === "result" && waterAmount !== null
+  const medFill = medReconstituted
+    ? hasWater
       ? medLiquidFillFromWaterVolume(waterAmount)
       : hasPeptide
         ? medPowderFillFromAmount(peptideVal, peptideUnit)
-        : 0;
+        : 0
+    : hasPeptide
+      ? medPowderFillFromAmount(peptideVal, peptideUnit)
+      : 0;
 
   useGSAP(
     () => {
@@ -84,7 +108,7 @@ export function CalculatorVisual({
   return (
     <div
       ref={rootRef}
-      className="dashboard-glass-card relative mx-auto flex h-full w-full max-w-sm flex-col justify-center overflow-visible rounded-2xl px-2 py-3 sm:max-w-md sm:px-6 sm:py-5 md:px-8 md:py-6 lg:mt-0 lg:max-w-none"
+      className="dashboard-glass-card relative mx-auto flex h-full w-full max-w-md flex-col justify-center overflow-x-hidden rounded-2xl px-2 py-3 sm:max-w-lg sm:px-5 sm:py-5 md:overflow-visible md:px-8 md:py-7 lg:mt-0 lg:max-w-none"
     >
       <div ref={sceneRef}>
         <CalculatorReconScene

@@ -4,14 +4,14 @@ import { useCallback, useEffect, useState } from "react";
 import {
   type CourseCoverPhotos,
   getCourseCoverPhotos,
-  VIAL_PHOTO_DARK,
-  VIAL_PHOTO_LIGHT,
+  MODE_PHOTO_DARK,
+  MODE_PHOTO_LIGHT,
 } from "@/components/platform/provider/student/lectures/courseCover";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_VIAL_PHOTOS: CourseCoverPhotos = {
-  light: VIAL_PHOTO_LIGHT,
-  dark: VIAL_PHOTO_DARK,
+  light: MODE_PHOTO_LIGHT,
+  dark: MODE_PHOTO_DARK,
 };
 
 type CourseCoverVialProps = {

@@ -4,6 +4,8 @@ import {
   AssetSyringe,
   AssetVial,
 } from "@/components/platform/provider/student/calculator/CalculatorAssetIllustrations";
+import { syringeDrawScenePaddingPx } from "@/components/platform/provider/student/calculator/calculatorAssets";
+import { useCompactCalculatorScene } from "@/components/platform/provider/student/calculator/useCompactCalculatorScene";
 import type { MassUnit, SyringeSizeMl } from "@/lib/integrate/provider/student/calculator";
 import { cn } from "@/lib/utils";
 import type { RefObject } from "react";
@@ -35,22 +37,33 @@ type CalculatorReconSceneProps = {
   className?: string;
 };
 
-/** Overview vials — widths chosen so bac-water and med render the same height. */
-const vialSizeClass = "w-[5rem] sm:w-[5.5rem] md:w-[6rem]";
-const waterVialSizeClass = "w-[6.5rem] sm:w-[7.15rem] md:w-[7.8rem]";
 /**
- * Draw column is wider than the vial art so captions don't collide;
- * vial art stays compact for the animation fit.
+ * Overview vials — bacteriostatic water is a 30 mL stock bottle; the medication
+ * vial is a small (~2–10 mL) peptide vial. It should render visibly smaller.
+ * Width ratio (~0.63 med/water) is kept across breakpoints so mobile matches
+ * the corrected desktop proportion; `md` restores full desktop drama.
+ *
+ * Peptide SVG (120×205) is taller per-rem than water (160×210), so med width
+ * must stay proportionally smaller or it reads as the larger bottle.
  */
-const drawColumnClass = "w-[5.5rem] sm:w-[6.25rem] md:w-[6.75rem]";
-const drawVialArtClass = "w-[3.5rem] sm:w-[3.85rem] md:w-[4.2rem]";
-const drawWaterVialArtClass = "w-[4.55rem] sm:w-[5rem] md:w-[5.45rem]";
+const vialSizeClass = "w-[4.25rem] sm:w-[5.5rem] md:w-[8.55rem]";
+const waterVialSizeClass = "w-[6.75rem] sm:w-[8.75rem] md:w-[13.5rem]";
+/**
+ * Draw (animation) column + art widths — follow overview proportions so the
+ * reconstitution scene matches the dose-selection preview on every breakpoint.
+ */
+const drawColumnClass = "w-[6.75rem] sm:w-[8.75rem] md:w-[14rem]";
+const drawVialArtClass = "w-[4.25rem] sm:w-[5.5rem] md:w-[8.55rem]";
+const drawWaterVialArtClass = "w-[6.75rem] sm:w-[8.75rem] md:w-[13.5rem]";
 /**
  * Back (liquid) + front (glass) overlays MUST share this exact flex layout.
- * Top padding reserves room for the syringe; composition sits lower in the card.
+ * Top padding is applied inline as `paddingTop` based on the selected syringe
+ * size (see `syringeDrawScenePaddingPx`) — small syringes get less empty
+ * space above the vials, large ones get just enough headroom for the fully
+ * retracted plunger in vertical pose.
  */
 const vialRowClass =
-  "flex items-end justify-center gap-4 pb-3 pt-[7.25rem] sm:gap-6 sm:pb-4 sm:pt-[8rem] md:gap-8 md:pt-[8.5rem]";
+  "flex items-end justify-center gap-3 pb-2 sm:gap-5 sm:pb-4 md:gap-12 md:pb-6";
 
 type DrawVialProps = {
   variant: "water" | "peptide";
@@ -155,6 +168,7 @@ export function CalculatorReconScene({
   gsapDriven = false,
   className,
 }: CalculatorReconSceneProps) {
+  const compact = useCompactCalculatorScene();
   const syringeCommon = {
     syringeMl,
     fillRatio: syringeFill,
@@ -168,31 +182,38 @@ export function CalculatorReconScene({
   };
 
   const useLayeredDraw = layout === "draw" && showSyringe && drawSyringeLarge;
+  // Dynamic top padding: sized to the actual retracted-plunger reach for
+  // the *selected* syringe capacity. Larger syringes → taller plunger swing.
+  const drawScenePaddingTop = drawSyringeLarge
+    ? `${syringeDrawScenePaddingPx(syringeMl, compact)}px`
+    : undefined;
 
   if (layout === "overview") {
     return (
       <div
         className={cn(
-          "mx-auto flex w-full max-w-[15rem] flex-col items-center gap-3 px-1 py-2 sm:max-w-[17rem] sm:gap-4 sm:px-2 sm:py-3 md:max-w-xs md:gap-5 md:py-4",
+          "mx-auto flex w-full max-w-[18rem] flex-col items-center gap-2 px-1 py-2 sm:max-w-[24rem] sm:gap-5 sm:px-2 sm:py-3 md:max-w-lg md:gap-8 md:py-5",
           className,
         )}
       >
         {showSyringe ? (
-          <AssetSyringe
-            syringeMl={syringeMl}
-            fillRatio={syringeFill}
-            large
-            horizontal
-            showFill={showSyringeFill}
-            active={syringeActive}
-            instantFill={instantFill}
-            gsapDriven={gsapDriven}
-            label={syringeLabel}
-            className="w-full origin-center scale-[0.92] sm:scale-[0.96] md:scale-100"
-          />
+          <div className="flex w-full min-w-0 items-center justify-center px-1 sm:px-3">
+            <AssetSyringe
+              syringeMl={syringeMl}
+              fillRatio={syringeFill}
+              large
+              horizontal
+              showFill={showSyringeFill}
+              active={syringeActive}
+              instantFill={instantFill}
+              gsapDriven={gsapDriven}
+              label={syringeLabel}
+              className="w-full min-w-0"
+            />
+          </div>
         ) : null}
 
-        <div className="flex w-full items-end justify-center gap-5 sm:gap-7 md:gap-9">
+        <div className="flex w-full min-w-0 items-end justify-center gap-3 sm:gap-6 md:gap-12">
           <AssetVial
             label="Bacteriostatic water"
             fillRatio={waterFill}
@@ -224,12 +245,14 @@ export function CalculatorReconScene({
     <div
       ref={sceneRef}
       className={cn(
-        // Clip to the section; smaller assets + lower composition keep the full
-        // (plunger-out) syringe inside these bounds.
-        "relative mx-auto w-full max-w-sm overflow-hidden px-0.5 sm:max-w-md sm:px-2 md:max-w-lg",
+        // Scene is clipped so the syringe never pokes outside the card.
+        // The paddingTop + vial height gives enough room for the full plunger.
+        "relative mx-auto w-full max-w-lg overflow-hidden px-0 sm:max-w-2xl sm:px-4 md:max-w-3xl md:px-6",
+        // min-h: paddingTop + vial column + bottom pad. Compact syringe keeps
+        // everything proportional to the desktop layout.
         drawSyringeLarge
-          ? "min-h-[17.5rem] sm:min-h-[19rem] md:min-h-[20rem]"
-          : "min-h-[14rem] sm:min-h-[16rem]",
+          ? "min-h-[22rem] sm:min-h-[30rem] md:min-h-[38rem]"
+          : "min-h-[10rem] sm:min-h-[14rem] md:min-h-[16rem]",
         className,
       )}
     >
@@ -259,7 +282,10 @@ export function CalculatorReconScene({
             ref={syringeWrapRef}
             className={cn(
               "pointer-events-none absolute left-0 top-0 will-change-transform",
-              useLayeredDraw ? "z-[5]" : "z-30",
+              // Keep syringe above vial art during travel so it never paints
+              // "under" the card content; needle still reads through the stopper
+              // via the vial front/back layers.
+              "z-30",
             )}
           >
             <AssetSyringe {...syringeCommon} part="full" />
@@ -273,7 +299,7 @@ export function CalculatorReconScene({
         beside the bottle silhouette.
       */}
       <div className="relative z-10">
-        <div className={vialRowClass}>
+        <div className={vialRowClass} style={{ paddingTop: drawScenePaddingTop }}>
           <DrawVialColumn
             variant="water"
             fillRatio={waterFill}
@@ -307,6 +333,7 @@ export function CalculatorReconScene({
               "pointer-events-none absolute inset-0 z-20",
               vialRowClass,
             )}
+            style={{ paddingTop: drawScenePaddingTop }}
           >
             <DrawVialColumn
               variant="water"

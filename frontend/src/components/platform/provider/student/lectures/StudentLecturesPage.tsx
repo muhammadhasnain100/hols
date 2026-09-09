@@ -3,11 +3,7 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
-import { ChevronRight, Icon } from "@/components/icons";
-import {
-  PortalCardButtonDisplay,
-  usePortalCardButtonHover,
-} from "@/components/platform/provider/PortalCardButton";
+import { ChevronLeft, ChevronRight, Icon } from "@/components/icons";
 import { useServerPortalTheme } from "@/components/platform/provider/PortalThemeProvider";
 import {
   getPortalThemeSnapshot,
@@ -22,9 +18,10 @@ import {
   type CourseSummary,
   type PaginationMeta,
 } from "@/lib/integrate/provider/student/lectures";
-import type { ButtonVariant } from "@/lib/button-styles";
 import { scrollAppToTopSoon } from "@/lib/scroll-to-top";
 import { cn } from "@/lib/utils";
+
+const PAGE_SIZE = 12;
 
 function tidySearchText(value: string) {
   return value
@@ -41,7 +38,6 @@ function courseMatchesSearch(course: CourseSummary, query: string) {
   const title = tidySearchText(course.title ?? "");
   if (!title) return false;
 
-  // Prefer whole-title / token matches so description noise doesn't flood results.
   if (title === needle || title.startsWith(needle) || title.includes(` ${needle}`)) {
     return true;
   }
@@ -71,7 +67,7 @@ export function StudentLecturesPage() {
     setLoading(true);
     setError(null);
     try {
-      const data = await listCourses({ page, limit: 12 });
+      const data = await listCourses({ page, limit: PAGE_SIZE });
       setCourses(data.items);
       setPagination(data.pagination);
     } catch (err) {
@@ -114,8 +110,7 @@ export function StudentLecturesPage() {
 
     if (!isSearching) return availableCourses;
 
-    const query = trimmedSearch.toLowerCase();
-    return availableCourses.filter((course) => courseMatchesSearch(course, query));
+    return availableCourses.filter((course) => courseMatchesSearch(course, trimmedSearch));
   }, [allCourses, courses, isSearching, trimmedSearch]);
 
   return (
@@ -161,22 +156,28 @@ export function StudentLecturesPage() {
           </p>
           <div className="grid grid-cols-2 gap-2 sm:flex sm:gap-2">
             <PagerButton
+              variant="prev"
               disabled={!pagination.has_previous || loading}
               onClick={() => {
                 scrollAppToTopSoon();
                 setPage((prev) => Math.max(1, prev - 1));
               }}
             >
-              Previous
+              <Icon icon={ChevronLeft} size={15} strokeWidth={2} />
+              <span className="sm:hidden">Prev</span>
+              <span className="hidden sm:inline">Previous page</span>
             </PagerButton>
             <PagerButton
+              variant="next"
               disabled={!pagination.has_next || loading}
               onClick={() => {
                 scrollAppToTopSoon();
                 setPage((prev) => prev + 1);
               }}
             >
-              Next
+              <span className="sm:hidden">Next</span>
+              <span className="hidden sm:inline">Next page</span>
+              <Icon icon={ChevronRight} size={15} strokeWidth={2} />
             </PagerButton>
           </div>
         </div>
@@ -189,18 +190,21 @@ function PagerButton({
   children,
   disabled,
   onClick,
+  variant,
 }: {
   children: React.ReactNode;
   disabled?: boolean;
   onClick: () => void;
+  variant: "prev" | "next";
 }) {
+  // Match lesson reading page: Previous = soft pill, Next = lemon CTA
+  const className =
+    variant === "next"
+      ? "lesson-next-cta font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full bg-[#DDE466] px-4 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 disabled:pointer-events-none disabled:opacity-50 disabled:hover:brightness-100 sm:w-auto sm:px-5"
+      : "lesson-prev-cta dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-4 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50 sm:w-auto sm:px-5";
+
   return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      className="dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center rounded-full px-5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition hover:-translate-y-0.5 disabled:pointer-events-none disabled:opacity-50 disabled:hover:translate-y-0 sm:w-auto"
-    >
+    <button type="button" disabled={disabled} onClick={onClick} className={className}>
       {children}
     </button>
   );
@@ -209,12 +213,8 @@ function PagerButton({
 function StatColumn({ label, value }: { label: string; value: number }) {
   return (
     <div className="lecture-stat-column flex flex-col items-center justify-center gap-px py-1">
-      <span className="lecture-stat-value font-sans leading-none tracking-tight">
-        {value}
-      </span>
-      <span className="lecture-stat-label font-medium uppercase">
-        {label}
-      </span>
+      <span className="lecture-stat-value font-sans leading-none tracking-tight">{value}</span>
+      <span className="lecture-stat-label font-medium uppercase">{label}</span>
     </div>
   );
 }
@@ -241,15 +241,9 @@ function CourseCardSkeleton({ index }: { index: number }) {
 
 function CourseCard({ course, index }: { course: CourseSummary; index: number }) {
   const featured = index === 0;
+  // Keep theme subscription so dark/light card chrome stays in sync.
   const serverTheme = useServerPortalTheme();
-  const portalTheme = useSyncExternalStore(
-    subscribePortalTheme,
-    getPortalThemeSnapshot,
-    () => serverTheme,
-  );
-  const buttonVariant: ButtonVariant = portalTheme === "dark" ? "accent" : "glass";
-  const { containerRef, fillRef, labelRef, onMouseEnter, onMouseLeave } =
-    usePortalCardButtonHover(buttonVariant);
+  useSyncExternalStore(subscribePortalTheme, getPortalThemeSnapshot, () => serverTheme);
 
   return (
     <Link
@@ -277,24 +271,15 @@ function CourseCard({ course, index }: { course: CourseSummary; index: number })
           <StatColumn label="Lessons" value={course.lesson_count} />
         </div>
 
-        <PortalCardButtonDisplay
-          variant={buttonVariant}
-          size="md"
-          className="mt-2.5"
-          containerRef={containerRef}
-          fillRef={fillRef}
-          labelRef={labelRef}
-          onMouseEnter={onMouseEnter}
-          onMouseLeave={onMouseLeave}
-        >
+        <span className="lecture-course-card-cta font-sans mt-2.5 inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full bg-[#DDE466] px-5 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105">
           Learn more
           <Icon
             icon={ChevronRight}
             size={14}
             strokeWidth={2.2}
-            className="transition-transform duration-300 ease-out group-hover/cta:translate-x-0.5"
+            className="transition-transform duration-300 ease-out group-hover:translate-x-0.5"
           />
-        </PortalCardButtonDisplay>
+        </span>
       </div>
     </Link>
   );

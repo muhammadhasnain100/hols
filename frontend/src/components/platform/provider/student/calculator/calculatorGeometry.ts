@@ -140,6 +140,42 @@ export function svgAttrSetter(
   };
 }
 
+/** Imperative translateX on an SVG layer using viewBox user units (not CSS px). */
+export function svgLayerTranslateXSetter(element: Element | null): ((x: number) => void) | null {
+  if (!element) return null;
+  return (x: number) => {
+    const el = element as HTMLElement & SVGElement;
+    if (el.style) {
+      el.style.transform = "";
+      el.style.translate = "";
+      el.style.willChange = "";
+    }
+    element.setAttribute("transform", `translate(${x} 0)`);
+  };
+}
+
+/**
+ * Imperative translateX for a *list* of SVG layers — used when several groups
+ * (e.g. the split plunger back + front on the horizontal syringe) must move
+ * as a single logical layer.
+ */
+export function svgLayersTranslateXSetter(
+  elements: ArrayLike<Element> | null,
+): ((x: number) => void) | null {
+  if (!elements || elements.length === 0) return null;
+  const list = Array.from(elements) as (HTMLElement & SVGElement)[];
+  return (x: number) => {
+    for (const el of list) {
+      if (el.style) {
+        el.style.transform = "";
+        el.style.translate = "";
+        el.style.willChange = "";
+      }
+      el.setAttribute("transform", `translate(${x} 0)`);
+    }
+  };
+}
+
 export function measureStaticDrawTargets(scene: HTMLElement, wrap: HTMLElement): StaticDrawTargets | null {
   const waterStopper = scene.querySelector('[data-vial-root="water"] [data-vial-stopper]');
   const medStopper = scene.querySelector('[data-vial-root="med"] [data-vial-stopper]');

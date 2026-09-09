@@ -1,16 +1,21 @@
 /**
  * Deterministic cover styling for lecture/course cards.
- * CourseSummary has no image field — palette / glow placement derive from course_id.
+ * Assets live under /assets/lectures:
+ *   lecture_book/{slug}-light|dark.png  — book covers (theme-specific)
+ *   lecture_vial/{slug}.png             — transparent product vials (shared)
+ *   mode/light|dark.png                 — studio backgrounds behind vials
  */
 
-/** Clinical product photo — light-gray studio background. */
-export const VIAL_PHOTO_LIGHT = "/assets/lectures/vial-hols-light.png";
+/** Theme studio backgrounds for product-vial covers. */
+export const MODE_PHOTO_LIGHT = "/assets/lectures/mode/light.png";
+export const MODE_PHOTO_DARK = "/assets/lectures/mode/dark.png";
 
-/** Clinical product photo — deep Prussian studio background. */
-export const VIAL_PHOTO_DARK = "/assets/lectures/vial-hols-dark.png";
-
-/** @deprecated Use VIAL_PHOTO_LIGHT or VIAL_PHOTO_DARK */
-export const VIAL_PHOTO_SRC = VIAL_PHOTO_LIGHT;
+/** @deprecated Prefer MODE_PHOTO_LIGHT / MODE_PHOTO_DARK */
+export const VIAL_PHOTO_LIGHT = MODE_PHOTO_LIGHT;
+/** @deprecated Prefer MODE_PHOTO_LIGHT / MODE_PHOTO_DARK */
+export const VIAL_PHOTO_DARK = MODE_PHOTO_DARK;
+/** @deprecated Use MODE_PHOTO_LIGHT */
+export const VIAL_PHOTO_SRC = MODE_PHOTO_LIGHT;
 
 export type CourseCoverPhotos = {
   light: string;
@@ -21,9 +26,11 @@ export type CourseCoverLayout = "product" | "book";
 
 export type ResolvedCourseCover = {
   photos: CourseCoverPhotos;
+  /** Transparent vial overlay for product covers (same file in light + dark). */
+  vialSrc?: string;
   isCustom: boolean;
   coverId?: string;
-  /** CSS object-position for full-bleed Magnific art. */
+  /** CSS object-position for full-bleed book art. */
   objectPosition?: string;
   layout?: CourseCoverLayout;
   /** Custom art already includes the course title — suppress UI title overlays. */
@@ -43,799 +50,6 @@ export function coverPeptideName(title: string): string {
     .trim();
 }
 
-type CourseCoverEntry = {
-  id: string;
-  photos: CourseCoverPhotos;
-  /** Exact slug aliases (after slugifyCoverTitle). */
-  slugs?: string[];
-  /** Loose title/slug keyword groups — all tokens in a group must appear. */
-  keywords?: string[][];
-  /** Direct course_id lookup — most reliable when title variants differ. */
-  courseIds?: string[];
-  objectPosition?: string;
-  layout?: CourseCoverLayout;
-};
-
-/** Per-lecture cover art registry. */
-const COURSE_COVER_ENTRIES: CourseCoverEntry[] = [
-  {
-    id: "peptide-dosing-guide",
-    slugs: ["peptide-dosing-guide", "dosing-guide"],
-    keywords: [["peptide", "dosing", "guide"]],
-    photos: {
-      light: "/assets/lectures/peptide-dosing-guide-light.png?v=2",
-      dark: "/assets/lectures/peptide-dosing-guide-dark.png?v=2",
-    },
-    objectPosition: "82% 46%",
-    layout: "book",
-  },
-  {
-    id: "pinealon",
-    slugs: ["pinealon"],
-    keywords: [["pinealon"]],
-    photos: {
-      light: "/assets/lectures/pinealon-light.png?v=6",
-      dark: "/assets/lectures/pinealon-dark.png?v=6",
-    },
-  },
-  {
-    id: "frontier-biomed-sales-training",
-    courseIds: ["18e729a6-7061-48cf-9d51-a04ffa77124a"],
-    slugs: [
-      "frontier-biomed-sales-training",
-      "alpha-biomed-sales-training",
-    ],
-    keywords: [
-      ["frontier", "biomed", "sales", "training"],
-      ["alpha", "biomed", "sales", "training"],
-      ["biomed", "sales", "training"],
-    ],
-    photos: {
-      light: "/assets/lectures/alpha-biomed-sales-training-light.png",
-      dark: "/assets/lectures/alpha-biomed-sales-training-dark.png",
-    },
-    objectPosition: "82% 46%",
-    layout: "book",
-  },
-  {
-    id: "frontier-biomed-sales-dos-and-donts",
-    courseIds: ["0eed2662-8a08-443b-8146-357b3f51232e"],
-    slugs: [
-      "frontier-biomed-sales-dos-and-donts",
-      "alpha-biomed-sales-dos-and-donts",
-    ],
-    keywords: [
-      ["frontier", "biomed", "sales", "dos"],
-      ["frontier", "biomed", "sales", "dont"],
-      ["biomed", "sales", "dos"],
-      ["biomed", "sales", "dont"],
-    ],
-    photos: {
-      light: "/assets/lectures/alpha-biomed-sales-dos-and-donts-light.png?v=4",
-      dark: "/assets/lectures/alpha-biomed-sales-dos-and-donts-dark.png?v=4",
-    },
-    // Book sits mid-frame with empty studio on the left — bias right like Sales Training.
-    objectPosition: "68% 48%",
-    layout: "book",
-  },
-  {
-    id: "frontier-biomed-sales-faq",
-    courseIds: ["d8868e43-43fc-426f-9ab2-9c26e72bc567"],
-    slugs: ["frontier-biomed-sales-faq", "alpha-biomed-sales-faq"],
-    keywords: [
-      ["frontier", "biomed", "sales", "faq"],
-      ["alpha", "biomed", "sales", "faq"],
-      ["biomed", "sales", "faq"],
-    ],
-    photos: {
-      light: "/assets/lectures/alpha-biomed-sales-faq-light.png?v=4",
-      dark: "/assets/lectures/alpha-biomed-sales-faq-dark.png?v=4",
-    },
-    objectPosition: "70% 48%",
-    layout: "book",
-  },
-  {
-    id: "hgh-fragment-176-191",
-    slugs: ["hgh-fragment-176-191", "hgh-fragment"],
-    keywords: [["hgh", "fragment", "176"]],
-    photos: {
-      light: "/assets/lectures/hgh-fragment-176-191-light.png?v=2",
-      dark: "/assets/lectures/hgh-fragment-176-191-dark.png?v=2",
-    },
-  },
-  {
-    id: "colostrum",
-    slugs: ["colostrum"],
-    keywords: [["colostrum"]],
-    photos: {
-      light: "/assets/lectures/colostrum-light.png?v=3",
-      dark: "/assets/lectures/colostrum-dark.png?v=3",
-    },
-  },
-  {
-    id: "tb-500",
-    slugs: ["tb-500", "tb500"],
-    keywords: [["tb", "500"], ["tb-500"]],
-    photos: {
-      light: "/assets/lectures/tb-500-light.png?v=2",
-      dark: "/assets/lectures/tb-500-dark.png?v=2",
-    },
-  },
-  {
-    id: "ghrp-2",
-    slugs: ["ghrp-2", "ghrp2"],
-    keywords: [["ghrp", "2"], ["ghrp-2"]],
-    photos: {
-      light: "/assets/lectures/ghrp-2-light.png?v=3",
-      dark: "/assets/lectures/ghrp-2-dark.png?v=3",
-    },
-  },
-  {
-    id: "peg-mgf",
-    slugs: ["peg-mgf", "pegmgf"],
-    keywords: [["peg", "mgf"], ["peg-mgf"]],
-    photos: {
-      light: "/assets/lectures/peg-mgf-light.png?v=2",
-      dark: "/assets/lectures/peg-mgf-dark.png?v=2",
-    },
-  },
-  {
-    id: "ghk-cu",
-    slugs: ["ghk-cu", "ghkcu"],
-    keywords: [["ghk", "cu"], ["ghk-cu"]],
-    photos: {
-      light: "/assets/lectures/ghk-cu-light.png?v=2",
-      dark: "/assets/lectures/ghk-cu-dark.png?v=2",
-    },
-  },
-  {
-    id: "kpv",
-    slugs: ["kpv"],
-    keywords: [["kpv"]],
-    photos: {
-      light: "/assets/lectures/kpv-light.png?v=2",
-      dark: "/assets/lectures/kpv-dark.png?v=2",
-    },
-  },
-  {
-    id: "slu-pp-332",
-    slugs: ["slu-pp-332", "slupp332"],
-    keywords: [["slu", "pp", "332"], ["slu-pp-332"]],
-    photos: {
-      light: "/assets/lectures/slu-pp-332-light.png?v=3",
-      dark: "/assets/lectures/slu-pp-332-dark.png?v=3",
-    },
-  },
-  {
-    id: "survodutide",
-    slugs: ["survodutide"],
-    keywords: [["survodutide"]],
-    photos: {
-      light: "/assets/lectures/survodutide-light.png?v=3",
-      dark: "/assets/lectures/survodutide-dark.png?v=3",
-    },
-  },
-  {
-    id: "gonadorelin",
-    slugs: ["gonadorelin"],
-    keywords: [["gonadorelin"]],
-    photos: {
-      light: "/assets/lectures/gonadorelin-light.png?v=2",
-      dark: "/assets/lectures/gonadorelin-dark.png?v=2",
-    },
-  },
-  {
-    id: "pnc-28",
-    slugs: ["pnc-28", "pnc28"],
-    keywords: [["pnc", "28"], ["pnc-28"]],
-    photos: {
-      light: "/assets/lectures/pnc-28-light.png?v=2",
-      dark: "/assets/lectures/pnc-28-dark.png?v=2",
-    },
-  },
-  {
-    id: "humanin",
-    slugs: ["humanin"],
-    keywords: [["humanin"]],
-    photos: {
-      light: "/assets/lectures/humanin-light.png?v=2",
-      dark: "/assets/lectures/humanin-dark.png?v=2",
-    },
-  },
-  {
-    id: "pe-22-28",
-    slugs: ["pe-22-28", "pe2228"],
-    keywords: [["pe", "22", "28"], ["pe-22-28"]],
-    photos: {
-      light: "/assets/lectures/pe-22-28-light.png?v=2",
-      dark: "/assets/lectures/pe-22-28-dark.png?v=2",
-    },
-  },
-  {
-    id: "ll-37",
-    slugs: ["ll-37", "ll37"],
-    keywords: [["ll", "37"], ["ll-37"]],
-    photos: {
-      light: "/assets/lectures/ll-37-light.png?v=2",
-      dark: "/assets/lectures/ll-37-dark.png?v=2",
-    },
-  },
-  {
-    id: "selank",
-    slugs: ["selank"],
-    keywords: [["selank"]],
-    photos: {
-      light: "/assets/lectures/selank-light.png?v=2",
-      dark: "/assets/lectures/selank-dark.png?v=2",
-    },
-  },
-  {
-    id: "pancragen",
-    slugs: ["pancragen"],
-    keywords: [["pancragen"]],
-    photos: {
-      light: "/assets/lectures/pancragen-light.png?v=2",
-      dark: "/assets/lectures/pancragen-dark.png?v=2",
-    },
-  },
-  {
-    id: "oxytocin",
-    slugs: ["oxytocin"],
-    keywords: [["oxytocin"]],
-    photos: {
-      light: "/assets/lectures/oxytocin-light.png?v=2",
-      dark: "/assets/lectures/oxytocin-dark.png?v=2",
-    },
-  },
-  {
-    id: "prostamax",
-    slugs: ["prostamax", "prostomax"],
-    keywords: [["prostamax"], ["prostomax"]],
-    photos: {
-      light: "/assets/lectures/prostamax-light.png?v=2",
-      dark: "/assets/lectures/prostamax-dark.png?v=2",
-    },
-  },
-  {
-    id: "bronchogen",
-    slugs: ["bronchogen"],
-    keywords: [["bronchogen"]],
-    photos: {
-      light: "/assets/lectures/bronchogen-light.png?v=2",
-      dark: "/assets/lectures/bronchogen-dark.png?v=2",
-    },
-  },
-  {
-    id: "mots-c",
-    slugs: ["mots-c", "motsc"],
-    keywords: [["mots", "c"], ["mots-c"]],
-    photos: {
-      light: "/assets/lectures/mots-c-light.png?v=2",
-      dark: "/assets/lectures/mots-c-dark.png?v=2",
-    },
-  },
-  {
-    id: "cjc-1295-no-dac",
-    slugs: ["cjc-1295-n0-dac", "cjc-1295-no-dac", "cjc-1295"],
-    keywords: [["cjc", "1295"], ["cjc-1295"]],
-    photos: {
-      light: "/assets/lectures/cjc-1295-no-dac-light.png?v=3",
-      dark: "/assets/lectures/cjc-1295-no-dac-dark.png?v=3",
-    },
-  },
-  {
-    id: "5-amino-1mq",
-    slugs: ["5-amino-1mq", "5-amino-1mq"],
-    keywords: [["amino", "1mq"], ["5", "amino", "1mq"]],
-    photos: {
-      light: "/assets/lectures/5-amino-1mq-light.png?v=2",
-      dark: "/assets/lectures/5-amino-1mq-dark.png?v=2",
-    },
-  },
-  {
-    id: "thymagen",
-    slugs: ["thymagen"],
-    keywords: [["thymagen"]],
-    photos: {
-      light: "/assets/lectures/thymagen-light.png?v=2",
-      dark: "/assets/lectures/thymagen-dark.png?v=2",
-    },
-  },
-  {
-    id: "trh-thyrotropin",
-    slugs: ["trh-thyrotropin", "trh-thyrotropin"],
-    keywords: [["trh", "thyrotropin"], ["thyrotropin"]],
-    photos: {
-      light: "/assets/lectures/trh-thyrotropin-light.png?v=2",
-      dark: "/assets/lectures/trh-thyrotropin-dark.png?v=2",
-    },
-  },
-  {
-    id: "nad-plus",
-    slugs: ["nad", "nad-plus"],
-    keywords: [["nad"]],
-    photos: {
-      light: "/assets/lectures/nad-plus-light.png?v=2",
-      dark: "/assets/lectures/nad-plus-dark.png?v=2",
-    },
-  },
-  {
-    id: "cortagen",
-    slugs: ["cortagen"],
-    keywords: [["cortagen"]],
-    photos: {
-      light: "/assets/lectures/cortagen-light.png?v=2",
-      dark: "/assets/lectures/cortagen-dark.png?v=2",
-    },
-  },
-  {
-    id: "cagrilintide",
-    slugs: ["cagrilintide"],
-    keywords: [["cagrilintide"]],
-    photos: {
-      light: "/assets/lectures/cagrilintide-light.png?v=2",
-      dark: "/assets/lectures/cagrilintide-dark.png?v=2",
-    },
-  },
-  {
-    id: "bdnf",
-    slugs: ["bdnf"],
-    keywords: [["bdnf"]],
-    photos: {
-      light: "/assets/lectures/bdnf-light.png?v=2",
-      dark: "/assets/lectures/bdnf-dark.png?v=2",
-    },
-  },
-  {
-    id: "thymosin-alpha-1",
-    slugs: ["thymosin-alpha-1", "thymosin-alpha-1"],
-    keywords: [["thymosin", "alpha"], ["thymosin", "alpha-1"]],
-    photos: {
-      light: "/assets/lectures/thymosin-alpha-1-light.png?v=2",
-      dark: "/assets/lectures/thymosin-alpha-1-dark.png?v=2",
-    },
-  },
-  {
-    id: "pnc-27",
-    slugs: ["pnc-27", "pnc27"],
-    keywords: [["pnc", "27"], ["pnc-27"]],
-    photos: {
-      light: "/assets/lectures/pnc-27-light.png?v=2",
-      dark: "/assets/lectures/pnc-27-dark.png?v=2",
-    },
-  },
-  {
-    id: "follistatin-344",
-    slugs: ["follistatin-344", "follistatin-344"],
-    keywords: [["follistatin", "344"], ["follistatin"]],
-    photos: {
-      light: "/assets/lectures/follistatin-344-light.png?v=2",
-      dark: "/assets/lectures/follistatin-344-dark.png?v=2",
-    },
-  },
-  {
-    id: "cardiogen",
-    slugs: ["cardiogen"],
-    keywords: [["cardiogen"]],
-    photos: {
-      light: "/assets/lectures/cardiogen-light.png?v=2",
-      dark: "/assets/lectures/cardiogen-dark.png?v=2",
-    },
-  },
-  {
-    id: "semaglutide",
-    slugs: ["semaglutide"],
-    keywords: [["semaglutide"]],
-    photos: {
-      light: "/assets/lectures/semaglutide-light.png?v=2",
-      dark: "/assets/lectures/semaglutide-dark.png?v=2",
-    },
-  },
-  {
-    id: "curcumin",
-    slugs: ["curcumin"],
-    keywords: [["curcumin"]],
-    photos: {
-      light: "/assets/lectures/curcumin-light.png?v=2",
-      dark: "/assets/lectures/curcumin-dark.png?v=2",
-    },
-  },
-  {
-    id: "retatrutide",
-    slugs: ["retatrutide"],
-    keywords: [["retatrutide"]],
-    photos: {
-      light: "/assets/lectures/retatrutide-light.png?v=2",
-      dark: "/assets/lectures/retatrutide-dark.png?v=2",
-    },
-  },
-  {
-    id: "tirzepatide",
-    slugs: ["tirzepatide", "tirzepeptide"],
-    keywords: [["tirzepatide"], ["tirzepeptide"]],
-    photos: {
-      light: "/assets/lectures/tirzepatide-light.png?v=2",
-      dark: "/assets/lectures/tirzepatide-dark.png?v=2",
-    },
-  },
-  {
-    id: "mazdutide",
-    slugs: ["mazdutide"],
-    keywords: [["mazdutide"]],
-    photos: {
-      light: "/assets/lectures/mazdutide-light.png?v=2",
-      dark: "/assets/lectures/mazdutide-dark.png?v=2",
-    },
-  },
-  {
-    id: "glp-1",
-    slugs: ["glp-1", "glp1"],
-    keywords: [["glp-1"], ["glp", "1"]],
-    photos: {
-      light: "/assets/lectures/glp-1-light.png?v=2",
-      dark: "/assets/lectures/glp-1-dark.png?v=2",
-    },
-  },
-  {
-    id: "aod-9604",
-    slugs: ["aod-9604", "aod9604"],
-    keywords: [["aod", "9604"], ["aod-9604"]],
-    photos: {
-      light: "/assets/lectures/aod-9604-light.png?v=2",
-      dark: "/assets/lectures/aod-9604-dark.png?v=2",
-    },
-  },
-  {
-    id: "vesugen",
-    slugs: ["vesugen"],
-    keywords: [["vesugen"]],
-    photos: {
-      light: "/assets/lectures/vesugen-light.png?v=2",
-      dark: "/assets/lectures/vesugen-dark.png?v=2",
-    },
-  },
-  {
-    id: "kisspeptin-10",
-    slugs: ["kisspeptin-10", "kisspeptin10"],
-    keywords: [["kisspeptin", "10"], ["kisspeptin-10"]],
-    photos: {
-      light: "/assets/lectures/kisspeptin-10-light.png?v=2",
-      dark: "/assets/lectures/kisspeptin-10-dark.png?v=2",
-    },
-  },
-  {
-    id: "hexarelin",
-    slugs: ["hexarelin"],
-    keywords: [["hexarelin"]],
-    photos: {
-      light: "/assets/lectures/hexarelin-light.png?v=2",
-      dark: "/assets/lectures/hexarelin-dark.png?v=2",
-    },
-  },
-  {
-    id: "vilon",
-    slugs: ["vilon"],
-    keywords: [["vilon"]],
-    photos: {
-      light: "/assets/lectures/vilon-light.png?v=2",
-      dark: "/assets/lectures/vilon-dark.png?v=2",
-    },
-  },
-  {
-    id: "melanotan-ii",
-    slugs: ["melanotan-ii", "melanotan-2"],
-    keywords: [["melanotan ii"], ["melanotan", "ii"], ["melanotan 2"]],
-    photos: {
-      light: "/assets/lectures/melanotan-ii-light.png?v=2",
-      dark: "/assets/lectures/melanotan-ii-dark.png?v=2",
-    },
-  },
-  {
-    id: "melanotan-i",
-    slugs: ["melanotan-i", "melanotan-1"],
-    keywords: [["melanotan i"]],
-    photos: {
-      light: "/assets/lectures/melanotan-i-light.png?v=2",
-      dark: "/assets/lectures/melanotan-i-dark.png?v=2",
-    },
-  },
-  {
-    id: "ipamorelin",
-    slugs: ["ipamorelin"],
-    keywords: [["ipamorelin"]],
-    photos: {
-      light: "/assets/lectures/ipamorelin-light.png?v=2",
-      dark: "/assets/lectures/ipamorelin-dark.png?v=2",
-    },
-  },
-  {
-    id: "ghrp-6",
-    slugs: ["ghrp-6", "ghrp6"],
-    keywords: [["ghrp", "6"], ["ghrp-6"]],
-    photos: {
-      light: "/assets/lectures/ghrp-6-light.png?v=2",
-      dark: "/assets/lectures/ghrp-6-dark.png?v=2",
-    },
-  },
-  {
-    id: "tesofensine",
-    slugs: ["tesofensine"],
-    keywords: [["tesofensine"]],
-    photos: {
-      light: "/assets/lectures/tesofensine-light.png?v=2",
-      dark: "/assets/lectures/tesofensine-dark.png?v=2",
-    },
-  },
-  {
-    id: "vip",
-    slugs: ["vip"],
-    keywords: [["vip"]],
-    photos: {
-      light: "/assets/lectures/vip-light.png?v=2",
-      dark: "/assets/lectures/vip-dark.png?v=2",
-    },
-  },
-  {
-    id: "cartalax",
-    slugs: ["cartalax"],
-    keywords: [["cartalax"]],
-    photos: {
-      light: "/assets/lectures/cartalax-light.png?v=2",
-      dark: "/assets/lectures/cartalax-dark.png?v=2",
-    },
-  },
-  {
-    id: "sermorelin",
-    slugs: ["sermorelin"],
-    keywords: [["sermorelin"]],
-    photos: {
-      light: "/assets/lectures/sermorelin-light.png?v=2",
-      dark: "/assets/lectures/sermorelin-dark.png?v=2",
-    },
-  },
-  {
-    id: "tesamorelin",
-    slugs: ["tesamorelin"],
-    keywords: [["tesamorelin"]],
-    photos: {
-      light: "/assets/lectures/tesamorelin-light.png?v=2",
-      dark: "/assets/lectures/tesamorelin-dark.png?v=2",
-    },
-  },
-  {
-    id: "b7-33",
-    slugs: ["b7-33", "b733"],
-    keywords: [["b7", "33"], ["b7-33"]],
-    photos: {
-      light: "/assets/lectures/b7-33-light.png?v=2",
-      dark: "/assets/lectures/b7-33-dark.png?v=2",
-    },
-  },
-  {
-    id: "dihexa",
-    slugs: ["dihexa"],
-    keywords: [["dihexa"]],
-    photos: {
-      light: "/assets/lectures/dihexa-light.png?v=2",
-      dark: "/assets/lectures/dihexa-dark.png?v=2",
-    },
-  },
-  {
-    id: "chonluten",
-    slugs: ["chonluten"],
-    keywords: [["chonluten"]],
-    photos: {
-      light: "/assets/lectures/chonluten-light.png?v=2",
-      dark: "/assets/lectures/chonluten-dark.png?v=2",
-    },
-  },
-  {
-    id: "mk-677",
-    slugs: ["mk-677", "mk677"],
-    keywords: [["mk", "677"], ["mk-677"], ["ibutamoren"]],
-    photos: {
-      light: "/assets/lectures/mk-677-light.png?v=2",
-      dark: "/assets/lectures/mk-677-dark.png?v=2",
-    },
-  },
-  {
-    id: "ara-290",
-    slugs: ["ara-290", "ara290"],
-    keywords: [["ara", "290"], ["ara-290"]],
-    photos: {
-      light: "/assets/lectures/ara-290-light.png?v=2",
-      dark: "/assets/lectures/ara-290-dark.png?v=2",
-    },
-  },
-  {
-    id: "igf-1-des",
-    slugs: ["igf-1-des", "igf1-des", "igf-1des"],
-    keywords: [["igf-1", "des"], ["igf", "1", "des"], ["igf-1 des"]],
-    photos: {
-      light: "/assets/lectures/igf-1-des-light.png?v=2",
-      dark: "/assets/lectures/igf-1-des-dark.png?v=2",
-    },
-  },
-  {
-    id: "igf-1-lr3",
-    slugs: ["igf-1-lr3", "igf1-lr3", "igf-lr3"],
-    keywords: [["igf-1", "lr3"], ["igf", "1", "lr3"], ["igf-lr3"], ["igf", "lr3"]],
-    photos: {
-      light: "/assets/lectures/igf-1-lr3-light.png?v=2",
-      dark: "/assets/lectures/igf-1-lr3-dark.png?v=2",
-    },
-  },
-  {
-    id: "n-acetyl-epitalon-amidate",
-    slugs: ["n-acetyl-epitalon-amidate", "n-acetyl-epithalon-amidate"],
-    keywords: [
-      ["n-acetyl", "epitalon", "amidate"],
-      ["n-acetyl", "epithalon", "amidate"],
-      ["n-acetyle", "epithalon", "amidate"],
-      ["epitalon", "amidate"],
-      ["epithalon", "amidate"],
-    ],
-    photos: {
-      light: "/assets/lectures/n-acetyl-epitalon-amidate-light.png?v=2",
-      dark: "/assets/lectures/n-acetyl-epitalon-amidate-dark.png?v=2",
-    },
-  },
-  {
-    id: "ovagen",
-    // Course title sometimes arrives as "Ovangen" from the catalog.
-    slugs: ["ovagen", "ovangen"],
-    keywords: [["ovagen"], ["ovangen"]],
-    photos: {
-      light: "/assets/lectures/ovagen-light.png?v=2",
-      dark: "/assets/lectures/ovagen-dark.png?v=2",
-    },
-  },
-  {
-    id: "livagen",
-    slugs: ["livagen"],
-    keywords: [["livagen"]],
-    photos: {
-      light: "/assets/lectures/livagen-light.png?v=2",
-      dark: "/assets/lectures/livagen-dark.png?v=2",
-    },
-  },
-  {
-    id: "bpc-157",
-    slugs: ["bpc-157", "bpc157"],
-    keywords: [["bpc", "157"], ["bpc-157"]],
-    photos: {
-      light: "/assets/lectures/bpc-157-light.png?v=2",
-      dark: "/assets/lectures/bpc-157-dark.png?v=2",
-    },
-  },
-  {
-    id: "dsip",
-    slugs: ["dsip"],
-    keywords: [["dsip"]],
-    photos: {
-      light: "/assets/lectures/dsip-light.png?v=2",
-      dark: "/assets/lectures/dsip-dark.png?v=2",
-    },
-  },
-  {
-    id: "thymalin",
-    slugs: ["thymalin"],
-    keywords: [["thymalin"]],
-    photos: {
-      light: "/assets/lectures/thymalin-light.png?v=2",
-      dark: "/assets/lectures/thymalin-dark.png?v=2",
-    },
-  },
-  {
-    id: "semax",
-    slugs: ["semax"],
-    keywords: [["semax"]],
-    photos: {
-      light: "/assets/lectures/semax-light.png?v=2",
-      dark: "/assets/lectures/semax-dark.png?v=2",
-    },
-  },
-  {
-    id: "ss-31",
-    slugs: ["ss-31", "ss31"],
-    keywords: [["ss", "31"], ["ss-31"], ["elamipretide"]],
-    photos: {
-      light: "/assets/lectures/ss-31-light.png?v=2",
-      dark: "/assets/lectures/ss-31-dark.png?v=2",
-    },
-  },
-  {
-    id: "pt-141",
-    slugs: ["pt-141", "pt141"],
-    keywords: [["pt", "141"], ["pt-141"], ["bremelanotide"]],
-    photos: {
-      light: "/assets/lectures/pt-141-light.png?v=2",
-      dark: "/assets/lectures/pt-141-dark.png?v=2",
-    },
-  },
-  {
-    id: "hgh",
-    slugs: ["hgh"],
-    keywords: [["hgh"]],
-    photos: {
-      light: "/assets/lectures/hgh-light.png?v=2",
-      dark: "/assets/lectures/hgh-dark.png?v=2",
-    },
-  },
-  {
-    id: "epitalon",
-    slugs: ["epitalon", "epithalon"],
-    keywords: [["epitalon"], ["epithalon"]],
-    photos: {
-      light: "/assets/lectures/epitalon-light.png?v=2",
-      dark: "/assets/lectures/epitalon-dark.png?v=2",
-    },
-  },
-  {
-    id: "hcg",
-    slugs: ["hcg"],
-    keywords: [["hcg"], ["human", "chorionic", "gonadotropin"]],
-    photos: {
-      light: "/assets/lectures/hcg-light.png?v=2",
-      dark: "/assets/lectures/hcg-dark.png?v=2",
-    },
-  },
-  {
-    id: "mgf",
-    slugs: ["mgf"],
-    keywords: [["mgf"], ["mechano", "growth", "factor"]],
-    photos: {
-      light: "/assets/lectures/mgf-light.png?v=2",
-      dark: "/assets/lectures/mgf-dark.png?v=2",
-    },
-  },
-  {
-    id: "foxo4-dri",
-    slugs: ["foxo4-dri", "foxo4dri"],
-    keywords: [["foxo4", "dri"], ["foxo4-dri"]],
-    photos: {
-      light: "/assets/lectures/foxo4-dri-light.png?v=2",
-      dark: "/assets/lectures/foxo4-dri-dark.png?v=2",
-    },
-  },
-  {
-    id: "thymulin",
-    slugs: ["thymulin"],
-    keywords: [["thymulin"]],
-    photos: {
-      light: "/assets/lectures/thymulin-light.png?v=2",
-      dark: "/assets/lectures/thymulin-dark.png?v=2",
-    },
-  },
-  {
-    id: "bacteriostatic-water",
-    slugs: ["bacteriostatic-water", "bac-water"],
-    keywords: [["bacteriostatic", "water"], ["bac", "water"]],
-    photos: {
-      light: "/assets/lectures/bacteriostatic-water-light.png?v=2",
-      dark: "/assets/lectures/bacteriostatic-water-dark.png?v=2",
-    },
-  },
-];
-
-function resolveCoverEntry(entry: CourseCoverEntry): ResolvedCourseCover {
-  const isBook = entry.layout === "book";
-  return {
-    photos: entry.photos,
-    isCustom: true,
-    coverId: entry.id,
-    objectPosition: entry.objectPosition ?? (isBook ? undefined : "40% 46%"),
-    layout: entry.layout,
-    // Custom Magnific/product covers bake the title into the artwork.
-    titleInArt: true,
-  };
-}
-
-const DEFAULT_COVER_PHOTOS: CourseCoverPhotos = {
-  light: VIAL_PHOTO_LIGHT,
-  dark: VIAL_PHOTO_DARK,
-};
-
 function slugifyCoverTitle(title: string): string {
   return tidyCoverTitle(title)
     .toLowerCase()
@@ -846,7 +60,183 @@ function slugifyCoverTitle(title: string): string {
     .replace(/^-|-$/g, "");
 }
 
-function matchesCourseCoverEntry(slug: string, normalizedTitle: string, entry: CourseCoverEntry): boolean {
+type BookCoverEntry = {
+  id: string;
+  bookFile: string;
+  slugs?: string[];
+  keywords?: string[][];
+  courseIds?: string[];
+  objectPosition?: string;
+};
+
+/** Book / manual covers — light + dark theme art in lecture_book/. */
+const BOOK_COVER_ENTRIES: BookCoverEntry[] = [
+  {
+    id: "peptide-dosing-guide",
+    bookFile: "peptide-dosing-guide",
+    slugs: ["peptide-dosing-guide", "dosing-guide"],
+    keywords: [["peptide", "dosing", "guide"]],
+    objectPosition: "82% 46%",
+  },
+  {
+    id: "frontier-biomed-sales-training",
+    bookFile: "alpha-biomed-sales-training",
+    courseIds: ["18e729a6-7061-48cf-9d51-a04ffa77124a"],
+    slugs: ["frontier-biomed-sales-training", "alpha-biomed-sales-training"],
+    keywords: [
+      ["frontier", "biomed", "sales", "training"],
+      ["alpha", "biomed", "sales", "training"],
+      ["biomed", "sales", "training"],
+    ],
+    objectPosition: "82% 46%",
+  },
+  {
+    id: "frontier-biomed-sales-dos-and-donts",
+    bookFile: "alpha-biomed-sales-dos-and-donts",
+    courseIds: ["0eed2662-8a08-443b-8146-357b3f51232e"],
+    slugs: ["frontier-biomed-sales-dos-and-donts", "alpha-biomed-sales-dos-and-donts"],
+    keywords: [
+      ["frontier", "biomed", "sales", "dos"],
+      ["frontier", "biomed", "sales", "dont"],
+      ["biomed", "sales", "dos"],
+      ["biomed", "sales", "dont"],
+    ],
+    objectPosition: "68% 48%",
+  },
+  {
+    id: "frontier-biomed-sales-faq",
+    bookFile: "alpha-biomed-sales-faq",
+    courseIds: ["d8868e43-43fc-426f-9ab2-9c26e72bc567"],
+    slugs: ["frontier-biomed-sales-faq", "alpha-biomed-sales-faq"],
+    keywords: [
+      ["frontier", "biomed", "sales", "faq"],
+      ["alpha", "biomed", "sales", "faq"],
+      ["biomed", "sales", "faq"],
+    ],
+    objectPosition: "70% 48%",
+  },
+];
+
+/**
+ * Title-slug → vial filename (without .png) when slugify does not match the file.
+ * Files live in /assets/lectures/lecture_vial/.
+ */
+const VIAL_SLUG_ALIASES: Record<string, string> = {
+  epithalon: "epitalon",
+  nad: "nad-plus",
+  "nad-": "nad-plus",
+  "fox04-dri": "foxo4-dri",
+  "cjc-1295-n0-dac": "cjc-1295-no-dac",
+  "cjc-1295-no-dac": "cjc-1295-no-dac",
+  "melanotan-i-mt-1": "melanotan-i",
+  "melanotan-ii-mt-ii": "melanotan-ii",
+  "semaglutide-glp-1-s": "semaglutide",
+  "retatrutide-glp-1-r": "retatrutide",
+  "tirzepatide-glp-1-t": "tirzepatide",
+  "n-acetyl-epitalon-amidate": "n-acetyl-epithalon-amidate",
+  ovagen: "ovangen",
+  "mgf-igf-1ec": "mgf-igf-1ec",
+  mgf: "mgf-igf-1ec",
+};
+
+/** Known vial asset stems present under lecture_vial/. */
+const VIAL_ASSET_SLUGS = new Set<string>([
+  "5-amino-1mq",
+  "aod-9604",
+  "ara-290",
+  "b7-33",
+  "bacteriostatic-water",
+  "bdnf",
+  "bpc-157",
+  "bronchogen",
+  "cagrilintide",
+  "cardiogen",
+  "cartalax",
+  "chonluten",
+  "cjc-1295-no-dac",
+  "cjc-1295-with-dac",
+  "colostrum",
+  "cortagen",
+  "curcumin",
+  "dihexa",
+  "dsip",
+  "epitalon",
+  "follistatin-344",
+  "foxo4-dri",
+  "ghk-cu",
+  "ghrp-2",
+  "ghrp-6",
+  "glp-1",
+  "gonadorelin",
+  "hcg",
+  "hexarelin",
+  "hgh",
+  "hgh-fragment-176-191",
+  "humanin",
+  "igf-1-des",
+  "igf-1-lr3",
+  "ipamorelin",
+  "kisspeptin-10",
+  "kpv",
+  "livagen",
+  "ll-37",
+  "mazdutide",
+  "melanotan-i",
+  "melanotan-ii",
+  "mgf-igf-1ec",
+  "mk-677",
+  "mots-c",
+  "n-acetyl-epithalon-amidate",
+  "nad-plus",
+  "ovangen",
+  "oxytocin",
+  "pancragen",
+  "pe-22-28",
+  "peg-mgf",
+  "pinealon",
+  "pnc-27",
+  "pnc-28",
+  "prostamax",
+  "pt-141",
+  "retatrutide",
+  "selank",
+  "semaglutide",
+  "semax",
+  "sermorelin",
+  "slu-pp-332",
+  "ss-31",
+  "survodutide",
+  "tb-500",
+  "tesamorelin",
+  "tesofensine",
+  "thymagen",
+  "thymalin",
+  "thymosin-alpha-1",
+  "thymulin",
+  "tirzepatide",
+  "trh-thyrotropin",
+  "vesugen",
+  "vilon",
+  "vip",
+]);
+
+const MODE_PHOTOS: CourseCoverPhotos = {
+  light: MODE_PHOTO_LIGHT,
+  dark: MODE_PHOTO_DARK,
+};
+
+function bookPhotos(bookFile: string): CourseCoverPhotos {
+  return {
+    light: `/assets/lectures/lecture_book/${bookFile}-light.png`,
+    dark: `/assets/lectures/lecture_book/${bookFile}-dark.png`,
+  };
+}
+
+function vialAssetPath(slug: string): string {
+  return `/assets/lectures/lecture_vial/${slug}.png`;
+}
+
+function matchesBookEntry(slug: string, normalizedTitle: string, entry: BookCoverEntry): boolean {
   if (entry.slugs?.some((alias) => slug === alias || slug.startsWith(`${alias}-`))) {
     return true;
   }
@@ -854,6 +244,56 @@ function matchesCourseCoverEntry(slug: string, normalizedTitle: string, entry: C
     return true;
   }
   return false;
+}
+
+function resolveVialSlug(title: string): string | undefined {
+  const slug = slugifyCoverTitle(title);
+  const candidates = [
+    VIAL_SLUG_ALIASES[slug],
+    slug,
+    slug.replace(/-glp-1-[srt]$/, ""),
+    slug.replace(/-mt-1$/, ""),
+    slug.replace(/-mt-ii$/, ""),
+  ].filter(Boolean) as string[];
+
+  for (const candidate of candidates) {
+    if (VIAL_ASSET_SLUGS.has(candidate)) return candidate;
+  }
+  return undefined;
+}
+
+function resolveBookCover(courseId: string, title?: string): ResolvedCourseCover | null {
+  if (courseId) {
+    for (const entry of BOOK_COVER_ENTRIES) {
+      if (entry.courseIds?.includes(courseId)) {
+        return {
+          photos: bookPhotos(entry.bookFile),
+          isCustom: true,
+          coverId: entry.id,
+          objectPosition: entry.objectPosition ?? "82% 46%",
+          layout: "book",
+          titleInArt: true,
+        };
+      }
+    }
+  }
+
+  if (!title) return null;
+  const slug = slugifyCoverTitle(title);
+  const normalizedTitle = tidyCoverTitle(title).toLowerCase();
+  for (const entry of BOOK_COVER_ENTRIES) {
+    if (matchesBookEntry(slug, normalizedTitle, entry)) {
+      return {
+        photos: bookPhotos(entry.bookFile),
+        isCustom: true,
+        coverId: entry.id,
+        objectPosition: entry.objectPosition ?? "82% 46%",
+        layout: "book",
+        titleInArt: true,
+      };
+    }
+  }
+  return null;
 }
 
 /** Nudge Magnific vial art right on the volume front cover so the left title column stays clear. */
@@ -870,30 +310,30 @@ export function shiftCoverObjectPositionForPanel(
   return `${x}% ${match[2]}%`;
 }
 
-/** Resolve light/dark cover photos + whether to use full-bleed custom art. */
+/** Resolve light/dark cover photos + optional transparent vial overlay. */
 export function resolveCourseCover(courseId: string, title?: string): ResolvedCourseCover {
-  if (courseId) {
-    for (const entry of COURSE_COVER_ENTRIES) {
-      if (entry.courseIds?.includes(courseId)) {
-        return resolveCoverEntry(entry);
-      }
-    }
-  }
+  const book = resolveBookCover(courseId, title);
+  if (book) return book;
 
   if (!title) {
-    return { photos: DEFAULT_COVER_PHOTOS, isCustom: false };
+    return { photos: MODE_PHOTOS, isCustom: false, layout: "product" };
   }
 
-  const slug = slugifyCoverTitle(title);
-  const normalizedTitle = tidyCoverTitle(title).toLowerCase();
-
-  for (const entry of COURSE_COVER_ENTRIES) {
-    if (matchesCourseCoverEntry(slug, normalizedTitle, entry)) {
-      return resolveCoverEntry(entry);
-    }
+  const vialSlug = resolveVialSlug(title);
+  if (vialSlug) {
+    return {
+      photos: MODE_PHOTOS,
+      vialSrc: vialAssetPath(vialSlug),
+      isCustom: true,
+      coverId: vialSlug,
+      objectPosition: "50% 50%",
+      layout: "product",
+      // Title is overlaid on overview / card capsule — not baked into the photo.
+      titleInArt: false,
+    };
   }
 
-  return { photos: DEFAULT_COVER_PHOTOS, isCustom: false };
+  return { photos: MODE_PHOTOS, isCustom: false, layout: "product" };
 }
 
 /** @deprecated Use resolveCourseCover */

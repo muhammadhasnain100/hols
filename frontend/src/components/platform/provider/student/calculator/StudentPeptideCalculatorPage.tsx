@@ -41,7 +41,7 @@ const amountControlClass = cn(
 );
 
 const unitFieldClass = cn(
-  "dashboard-field dashboard-field-select !h-9 !w-[4rem] !max-w-none shrink-0 appearance-none !rounded-full bg-[length:0.65rem] bg-[right_0.55rem_center] bg-no-repeat !px-2 !py-0 !pr-5 text-center text-xs font-medium sm:!h-10 sm:!w-[4.5rem] sm:!pr-6 sm:text-sm",
+  "dashboard-field dashboard-field-select !h-9 !w-[4.75rem] !max-w-none shrink-0 appearance-none !rounded-full bg-[length:0.65rem] bg-[right_0.7rem_center] bg-no-repeat !py-0 !pl-3 !pr-6 text-center text-xs font-medium sm:!h-10 sm:!w-[5.5rem] sm:!pl-3.5 sm:!pr-7 sm:bg-[length:0.7rem] sm:bg-[right_0.8rem_center] sm:text-sm",
 );
 
 const unitCapsuleClass =
@@ -79,10 +79,10 @@ export function StudentPeptideCalculatorPage({
   const [ready, setReady] = useState(embedded);
   const [step, setStep] = useState<Step>("syringe");
   const [syringeMl, setSyringeMl] = useState<SyringeSizeMl>(1);
-  const [peptideAmount, setPeptideAmount] = useState("");
+  const [peptideAmount, setPeptideAmount] = useState("5");
   const [peptideUnit, setPeptideUnit] = useState<MassUnit>("mg");
-  const [waterMl, setWaterMl] = useState("");
-  const [doseAmount, setDoseAmount] = useState("500");
+  const [waterMl, setWaterMl] = useState("2");
+  const [doseAmount, setDoseAmount] = useState("250");
   const [doseUnit, setDoseUnit] = useState<MassUnit>("mcg");
   const [result, setResult] = useState<PeptideCalculatorResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -169,10 +169,10 @@ export function StudentPeptideCalculatorPage({
   function restart() {
     setStep("syringe");
     setSyringeMl(1);
-    setPeptideAmount("");
+    setPeptideAmount("5");
     setPeptideUnit("mg");
-    setWaterMl("");
-    setDoseAmount("500");
+    setWaterMl("2");
+    setDoseAmount("250");
     setDoseUnit("mcg");
     setResult(null);
     pendingResultRef.current = null;
@@ -269,7 +269,7 @@ export function StudentPeptideCalculatorPage({
 
       {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
 
-      <section className="dashboard-surface min-w-0 overflow-visible rounded-2xl p-3 sm:p-5 md:p-6">
+      <section className="dashboard-surface min-w-0 overflow-x-hidden rounded-2xl p-3 sm:p-5 md:p-6">
         <nav
           aria-label="Calculator steps"
           className="flex gap-1 overflow-x-auto overscroll-x-contain rounded-full bg-[color:var(--dash-soft)] p-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-1.5 sm:p-1 [&::-webkit-scrollbar]:hidden"
@@ -312,11 +312,13 @@ export function StudentPeptideCalculatorPage({
           className={cn(
             "mt-4 min-w-0 sm:mt-5 md:mt-6",
             isWideLayout
-              ? "grid min-w-0 gap-4 md:gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-stretch lg:gap-6"
+              // Mobile: amount card first, vial/syringe visual second.
+              // Desktop (lg+): same DOM order → amount left, visual right (3fr : 5fr).
+              ? "grid min-w-0 gap-4 md:gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,5fr)] lg:items-stretch lg:gap-6"
               : "mx-auto w-full max-w-3xl",
           )}
         >
-          <div className="order-2 flex min-h-0 min-w-0 flex-col lg:order-1">
+          <div className="order-1 flex min-h-0 min-w-0 flex-col">
             {step === "syringe" ? (
               <StepPanel
                 eyebrow="Select size"
@@ -393,14 +395,14 @@ export function StudentPeptideCalculatorPage({
             ) : null}
 
             {step === "animating" ? (
-              <div className="overflow-visible text-center">
-                <h2 className="font-sans text-lg font-semibold leading-[1.15] tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl">
+              <div className="min-w-0 text-center">
+                <h2 className="font-sans text-base font-semibold leading-[1.15] tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl">
                   Preparing your dose
                 </h2>
                 <p className="text-brand-body mt-1.5 text-sm text-[color:var(--dash-muted)]">
                   Watch the reconstitution sequence
                 </p>
-                <div className="mt-4 min-w-0 overflow-visible sm:mt-5">
+                <div className="mt-3 min-w-0 sm:mt-5">
                   <InjectionAnimation
                     onComplete={finishAnimation}
                     syringeMl={syringeMl}
@@ -451,7 +453,7 @@ export function StudentPeptideCalculatorPage({
           </div>
 
           {showVisual ? (
-            <div className="order-1 flex min-h-0 min-w-0 lg:order-2">
+            <div className="order-2 flex min-h-0 min-w-0">
               <div className="w-full lg:sticky lg:top-4 lg:self-start">
                 <CalculatorVisual
                   mode={visualMode}
@@ -497,8 +499,8 @@ function StepPanel({
   actions: React.ReactNode;
 }) {
   return (
-    <div className="dashboard-glass-card flex h-full min-h-[18rem] flex-col justify-center rounded-2xl p-4 sm:min-h-[20rem] sm:p-6 md:min-h-[22rem] lg:min-h-full">
-      <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-4 text-center sm:gap-5 lg:mx-0 lg:max-w-none lg:items-start lg:text-left">
+    <div className="dashboard-glass-card flex h-full min-h-[15rem] flex-col justify-center rounded-2xl p-3.5 sm:min-h-[20rem] sm:p-6 md:min-h-[22rem] lg:min-h-full">
+      <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-3.5 text-center sm:gap-5 lg:mx-0 lg:max-w-none lg:items-start lg:text-left">
         <div className="min-w-0 w-full">
           <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
             {eyebrow}
@@ -508,7 +510,7 @@ function StepPanel({
           </h2>
           <p className="text-brand-body mt-2 text-sm text-[color:var(--dash-muted)]">{hint}</p>
         </div>
-        <div className="w-full">{children}</div>
+        <div className="w-full min-w-0">{children}</div>
         <div className="w-full border-t border-[color:var(--dash-surface-border)] pt-4">{actions}</div>
       </div>
     </div>
@@ -527,19 +529,19 @@ function StepActions({
   nextLabel: string;
 }) {
   return (
-    <div className="flex flex-row flex-wrap items-center justify-center gap-2 lg:justify-start">
+    <div className="flex w-full flex-row flex-wrap items-center justify-center gap-2 sm:flex-nowrap lg:justify-start">
       <button
         type="button"
         onClick={onBack}
         disabled={backDisabled}
-        className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-40"
+        className="dashboard-pill-soft font-sans inline-flex min-h-10 flex-1 items-center justify-center rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-40 sm:flex-none"
       >
         Back
       </button>
       <button
         type="button"
         onClick={onNext}
-        className="font-sans inline-flex min-h-10 items-center justify-center rounded-full bg-[#DDE466] px-6 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105"
+        className="font-sans inline-flex min-h-10 flex-1 items-center justify-center rounded-full bg-[#DDE466] px-6 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 sm:flex-none"
       >
         {nextLabel}
       </button>
@@ -573,13 +575,16 @@ function AmountRow({
   }
 
   return (
-    <div className="flex w-full flex-nowrap items-center justify-center gap-1.5 lg:justify-start">
+    <div className="flex w-full min-w-0 flex-wrap items-center justify-center gap-1.5 sm:flex-nowrap lg:justify-start">
       <div className={amountControlClass}>
         <input
           type="number"
           min="0"
           step={step}
           value={value}
+          placeholder="—"
+          autoComplete="off"
+          inputMode="decimal"
           onChange={(event) => onValueChange(event.target.value)}
           className={amountFieldClass}
           aria-label="Amount"

@@ -268,10 +268,10 @@ export function HexarelinVialArt({
           <path d={bodyPath} />
         </clipPath>
         <clipPath id={planetClip}>
-          <rect x="194" y="145" width="130" height="174" rx="4" />
+          <rect x="194" y="145" width="130" height="126" rx="4" />
         </clipPath>
         <clipPath id={flagClip}>
-          <circle cx="257.5" cy="298.5" r="7.1" />
+          <circle cx="257.5" cy="254.5" r="7.1" />
         </clipPath>
       </defs>
 
@@ -360,15 +360,65 @@ export function HexarelinVialArt({
           <ellipse cx="258.5" cy="318" rx="60.5" ry="11" fill="#4e565e" opacity={coverMode ? 0.2 : 0.17} />
           <ellipse cx="258.5" cy="318" rx="55" ry="8.2" fill="#ffffff" opacity={coverMode ? 0.28 : 0.22} />
 
-          {/* Label */}
-          <rect x="194" y="145" width="130" height="174" rx="4" fill={`url(#${labelGrad})`} />
-          <rect x="194" y="145" width="130" height="174" rx="4" fill={`url(#${labelSheen})`} />
+          {/*
+            Glass reflections MUST render BEFORE the label so the paper label
+            fully covers the shine strips inside its rect. Reflections above
+            the label (shoulder) and below the label (base) remain visible.
+          */}
+          <g clipPath={`url(#${bottleClip})`}>
+            {/* Broad left-side refraction wash */}
+            <path
+              d="M205 103 C201 128 202 157 203 186 L203 291 C203 305 208 315 216 321 L224 323 C216 306 215 285 215 260 L215 136 C215 121 218 111 226 104 Z"
+              fill="#ffffff"
+              opacity={coverMode ? 0.32 : 0.28}
+            />
+            {/* Right-side softer refraction */}
+            <path
+              d="M292 102 C305 118 311 132 312 149 L312 297 C312 311 306 322 298 326 L294 326 C299 309 300 290 300 266 L300 131 C300 118 297 109 292 102 Z"
+              fill="#ffffff"
+              opacity={coverMode ? 0.21 : 0.17}
+            />
+            {/* Bright specular shine strip on the visible left glass */}
+            <path
+              d="M208 122 L212 122 L212 320 L208 320 Z"
+              fill="#ffffff"
+              opacity="0.55"
+            />
+            {/* Softer secondary shine */}
+            <path
+              d="M216 122 L219 122 L219 320 L216 320 Z"
+              fill="#ffffff"
+              opacity="0.22"
+            />
+            {/* Right-side highlight edge */}
+            <path
+              d="M303 122 L306 122 L306 320 L303 320 Z"
+              fill="#ffffff"
+              opacity="0.28"
+            />
+            {/* Shoulder crown reflection */}
+            <ellipse cx="260" cy="127" rx="50" ry="12" fill="#ffffff" opacity={coverMode ? 0.24 : 0.2} />
+            <ellipse cx="260" cy="124" rx="38" ry="4" fill="#ffffff" opacity="0.55" />
+            {/* Base curve reflection */}
+            <ellipse cx="260" cy="322" rx="52" ry="7" fill="#ffffff" opacity="0.18" />
+            <ellipse cx="260" cy="329" rx="46" ry="3" fill="#0f172a" opacity="0.22" />
+          </g>
+
+          {/*
+            Label — shortened to height=126 (interior ends at y=303, so a
+            ~28 SVG-unit strip of glass is exposed at the base). This is
+            what lets users actually SEE the reconstituted liquid inside the
+            med vial — the label used to cover essentially the entire fluid
+            column, hiding the fill state completely.
+          */}
+          <rect x="194" y="145" width="130" height="126" rx="4" fill={`url(#${labelGrad})`} />
+          <rect x="194" y="145" width="130" height="126" rx="4" fill={`url(#${labelSheen})`} />
           {theme === "bac-water-pink" ? (
             <rect
               x="194"
               y="145"
               width="130"
-              height="174"
+              height="126"
               rx="4"
               fill="none"
               stroke="#d1d5db"
@@ -376,8 +426,8 @@ export function HexarelinVialArt({
             />
           ) : (
             <>
-              <path d="M198 149 L214 149 L214 315 L199 315 Z" fill="#ffffff" opacity="0.035" />
-              <path d="M320 149 L324 149 L324 315 L320 315 Z" fill="#ffffff" opacity="0.035" />
+              <path d="M198 149 L214 149 L214 267 L199 267 Z" fill="#ffffff" opacity="0.035" />
+              <path d="M320 149 L324 149 L324 267 L320 267 Z" fill="#ffffff" opacity="0.035" />
             </>
           )}
 
@@ -451,7 +501,7 @@ export function HexarelinVialArt({
               </text>
               <text
                 x="200"
-                y="292"
+                y="272"
                 fontFamily="var(--font-secondary-stack, Arial, Helvetica, sans-serif)"
                 fontSize="5"
                 fontWeight="500"
@@ -459,8 +509,8 @@ export function HexarelinVialArt({
               >
                 Manufactured in the USA
               </text>
-              <circle cx="304" cy="298" r="7.5" fill={chrome.badgeCircle} />
-              <circle cx="304" cy="298" r="3.2" fill="#ffffff" opacity="0.9" />
+              <circle cx="304" cy="278" r="7.5" fill={chrome.badgeCircle} />
+              <circle cx="304" cy="278" r="3.2" fill="#ffffff" opacity="0.9" />
             </>
           ) : (
             <>
@@ -504,9 +554,9 @@ export function HexarelinVialArt({
                   <>
                     <text
                       x="198"
-                      y="219"
+                      y="210"
                       fontFamily="var(--font-primary-stack, Arial, Helvetica, sans-serif)"
-                      fontSize="15"
+                      fontSize="14"
                       fontWeight="500"
                       letterSpacing="-0.6"
                       fill={chrome.productPrimary}
@@ -515,9 +565,9 @@ export function HexarelinVialArt({
                     </text>
                     <text
                       x="198"
-                      y="238"
+                      y="228"
                       fontFamily="var(--font-primary-stack, Arial, Helvetica, sans-serif)"
-                      fontSize="15"
+                      fontSize="14"
                       fontWeight="500"
                       letterSpacing="-0.6"
                       fill={chrome.productAccent}
@@ -528,9 +578,9 @@ export function HexarelinVialArt({
                 ) : (
                   <text
                     x="198"
-                    y="226"
+                    y="215"
                     fontFamily="var(--font-primary-stack, Arial, Helvetica, sans-serif)"
-                    fontSize="16"
+                    fontSize="15"
                     fontWeight="500"
                     letterSpacing="-0.6"
                     fill={chrome.productPrimary}
@@ -541,37 +591,37 @@ export function HexarelinVialArt({
               ) : null}
 
               <g clipPath={`url(#${planetClip})`}>
-                <circle cx="334" cy="275" r="54" fill={`url(#${planet})`} />
-                <circle cx="334" cy="275" r="54" fill="none" stroke="#6fc4d7" strokeOpacity="0.42" />
+                <circle cx="334" cy="251" r="54" fill={`url(#${planet})`} />
+                <circle cx="334" cy="251" r="54" fill="none" stroke="#6fc4d7" strokeOpacity="0.42" />
                 <path
-                  d="M310 238 C314 228 326 224 335 231 C341 236 341 245 337 251 C333 256 326 257 319 253 C313 250 307 246 310 238 Z"
+                  d="M310 214 C314 204 326 200 335 207 C341 212 341 221 337 227 C333 232 326 233 319 229 C313 226 307 222 310 214 Z"
                   fill={`url(#${continent})`}
                 />
                 <path
-                  d="M330 235 C336 232 343 235 346 240 C348 245 346 250 341 253 C337 255 332 252 330 248 C328 244 327 239 330 235 Z"
+                  d="M330 211 C336 208 343 211 346 216 C348 221 346 226 341 229 C337 231 332 228 330 224 C328 220 327 215 330 211 Z"
                   fill="#dce947"
                   opacity="0.8"
                 />
                 <path
-                  d="M303 265 C311 257 322 256 330 263 C337 269 336 279 329 285 C321 292 310 290 304 281 C300 276 299 270 303 265 Z"
+                  d="M303 241 C311 233 322 232 330 239 C337 245 336 255 329 261 C321 268 310 266 304 257 C300 252 299 246 303 241 Z"
                   fill="#234d9b"
                   opacity="0.45"
                 />
                 <ellipse
                   cx="315"
-                  cy="250"
+                  cy="226"
                   rx="12"
                   ry="20"
                   fill="#ffffff"
                   opacity="0.08"
-                  transform="rotate(24 315 250)"
+                  transform="rotate(24 315 226)"
                 />
               </g>
 
-              <rect x="199" y="286" width="55" height="25" rx="7" fill={chrome.badgeBg} opacity="0.82" />
+              <rect x="199" y="242" width="55" height="25" rx="7" fill={chrome.badgeBg} opacity="0.82" />
               <text
                 x="204"
-                y="295"
+                y="251"
                 fontFamily="var(--font-secondary-stack, Arial, Helvetica, sans-serif)"
                 fontSize="5"
                 fontWeight="400"
@@ -581,7 +631,7 @@ export function HexarelinVialArt({
               </text>
               <text
                 x="204"
-                y="301.5"
+                y="257.5"
                 fontFamily="var(--font-secondary-stack, Arial, Helvetica, sans-serif)"
                 fontSize="5"
                 fontWeight="400"
@@ -589,70 +639,47 @@ export function HexarelinVialArt({
               >
                 in the USA
               </text>
-              <circle cx="257.5" cy="298.5" r="8.4" fill={chrome.badgeCircle} />
+              <circle cx="257.5" cy="254.5" r="8.4" fill={chrome.badgeCircle} />
               <g clipPath={`url(#${flagClip})`}>
-                <rect x="250.2" y="291.2" width="14.6" height="14.6" fill="#ffffff" />
+                <rect x="250.2" y="247.2" width="14.6" height="14.6" fill="#ffffff" />
                 <g stroke="#e95d61" strokeWidth="1.1">
-                  <line x1="250" y1="292.2" x2="265" y2="292.2" />
-                  <line x1="250" y1="294.4" x2="265" y2="294.4" />
-                  <line x1="250" y1="296.6" x2="265" y2="296.6" />
-                  <line x1="250" y1="298.8" x2="265" y2="298.8" />
-                  <line x1="250" y1="301" x2="265" y2="301" />
-                  <line x1="250" y1="303.2" x2="265" y2="303.2" />
-                  <line x1="250" y1="305.4" x2="265" y2="305.4" />
+                  <line x1="250" y1="248.2" x2="265" y2="248.2" />
+                  <line x1="250" y1="250.4" x2="265" y2="250.4" />
+                  <line x1="250" y1="252.6" x2="265" y2="252.6" />
+                  <line x1="250" y1="254.8" x2="265" y2="254.8" />
+                  <line x1="250" y1="257" x2="265" y2="257" />
+                  <line x1="250" y1="259.2" x2="265" y2="259.2" />
+                  <line x1="250" y1="261.4" x2="265" y2="261.4" />
                 </g>
-                <rect x="250.2" y="291.2" width="6.3" height="6.2" fill="#294c85" />
+                <rect x="250.2" y="247.2" width="6.3" height="6.2" fill="#294c85" />
                 <g fill="#ffffff" opacity="0.9">
-                  <circle cx="251.8" cy="292.6" r="0.25" />
-                  <circle cx="253.4" cy="292.6" r="0.25" />
-                  <circle cx="255" cy="292.6" r="0.25" />
-                  <circle cx="252.6" cy="294" r="0.25" />
-                  <circle cx="254.2" cy="294" r="0.25" />
-                  <circle cx="251.8" cy="295.4" r="0.25" />
-                  <circle cx="253.4" cy="295.4" r="0.25" />
-                  <circle cx="255" cy="295.4" r="0.25" />
+                  <circle cx="251.8" cy="248.6" r="0.25" />
+                  <circle cx="253.4" cy="248.6" r="0.25" />
+                  <circle cx="255" cy="248.6" r="0.25" />
+                  <circle cx="252.6" cy="250" r="0.25" />
+                  <circle cx="254.2" cy="250" r="0.25" />
+                  <circle cx="251.8" cy="251.4" r="0.25" />
+                  <circle cx="253.4" cy="251.4" r="0.25" />
+                  <circle cx="255" cy="251.4" r="0.25" />
                 </g>
               </g>
             </>
           )}
 
-          {/* Reflections */}
-          <g clipPath={`url(#${bottleClip})`}>
-            <path
-              d="M205 103 C201 128 202 157 203 186 L203 291 C203 305 208 315 216 321 L224 323 C216 306 215 285 215 260 L215 136 C215 121 218 111 226 104 Z"
-              fill="#ffffff"
-              opacity={coverMode ? 0.28 : 0.23}
-            />
-            <path
-              d="M292 102 C305 118 311 132 312 149 L312 297 C312 311 306 322 298 326 L294 326 C299 309 300 290 300 266 L300 131 C300 118 297 109 292 102 Z"
-              fill="#ffffff"
-              opacity={coverMode ? 0.19 : 0.15}
-            />
-            <ellipse cx="260" cy="127" rx="50" ry="14" fill="#ffffff" opacity={coverMode ? 0.2 : 0.15} />
-            {coverMode ? (
-              <path
-                d="M210 118 L210 290"
-                stroke="#ffffff"
-                strokeWidth="1.8"
-                strokeOpacity="0.14"
-                strokeLinecap="round"
-              />
-            ) : null}
-          </g>
-
+          {/* Top rim (glass-to-collar seam) */}
           <path
             d="M205 120 C221 126 295 126 312 120"
             fill="none"
             stroke="#ffffff"
-            strokeOpacity={coverMode ? 0.52 : 0.42}
-            strokeWidth={rimStroke}
+            strokeOpacity={coverMode ? 0.65 : 0.55}
+            strokeWidth={rimStroke + 0.2}
           />
           <path
             d="M205 121 C221 128 295 128 312 121"
             fill="none"
-            stroke="#727980"
-            strokeOpacity={coverMode ? 0.36 : 0.28}
-            strokeWidth={coverMode ? 1 : 0.8}
+            stroke="#5b6169"
+            strokeOpacity={coverMode ? 0.4 : 0.32}
+            strokeWidth={coverMode ? 1 : 0.85}
           />
 
           {/* Neck */}

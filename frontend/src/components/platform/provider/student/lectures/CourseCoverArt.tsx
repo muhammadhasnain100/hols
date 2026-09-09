@@ -2,6 +2,7 @@
 
 import { type CSSProperties } from "react";
 import { CourseCoverLabeledVial } from "@/components/platform/provider/student/lectures/CourseCoverLabeledVial";
+import { CourseCoverProductVial } from "@/components/platform/provider/student/lectures/CourseCoverProductVial";
 import { CourseCoverVial } from "@/components/platform/provider/student/lectures/CourseCoverVial";
 import {
   courseCoverCssVars,
@@ -27,7 +28,8 @@ const LOGO_MARK_LIGHT = "/assets/logo/hols-logo-mark-light.png";
 const LOGO_MARK_DARK = "/assets/logo/hols-logo-mark.png";
 
 /**
- * HOLS-branded lecture cover — book/manual art or labeled vial template with dynamic peptide name.
+ * HOLS-branded lecture cover —
+ * books use theme light/dark art; products use mode bg + transparent vial.
  */
 export function CourseCoverArt({
   courseId,
@@ -41,20 +43,19 @@ export function CourseCoverArt({
   const vialLayout = getCoverVialLayout(courseId, variant);
   const {
     photos: coverPhotos,
+    vialSrc,
     isCustom: customCover,
     coverId,
     objectPosition: coverObjectPosition = "center center",
     layout: coverLayout,
-    titleInArt,
   } = resolveCourseCover(courseId, title);
 
   const isBookCover = customCover && coverLayout === "book";
-  const isCustomVialCover = customCover && coverLayout !== "book";
-  const useLabeledVial = !isBookCover && !isCustomVialCover;
-  const useFullBleedPhoto = !useLabeledVial;
-  const hideTitleOverlay = Boolean(titleInArt);
+  const isProductVialCover = Boolean(vialSrc) && coverLayout === "product";
+  const useLabeledVial = !isBookCover && !isProductVialCover;
+  const useFullBleedPhoto = isBookCover || isProductVialCover;
   const photoObjectPosition =
-    variant === "panel" && isCustomVialCover
+    variant === "panel" && isProductVialCover
       ? shiftCoverObjectPositionForPanel(coverObjectPosition)
       : coverObjectPosition;
 
@@ -63,7 +64,8 @@ export function CourseCoverArt({
       className={cn(
         "lecture-cover-art pointer-events-none absolute inset-0 overflow-hidden",
         useFullBleedPhoto && "lecture-cover-art--full-bleed",
-        (isBookCover || isCustomVialCover) && "lecture-cover-art--custom-photo",
+        (isBookCover || isProductVialCover) && "lecture-cover-art--custom-photo",
+        isProductVialCover && "lecture-cover-art--product-vial",
         useLabeledVial && "lecture-cover-art--labeled-vial",
         variant === "panel" && "lecture-cover-art-panel",
         className,
@@ -85,18 +87,35 @@ export function CourseCoverArt({
     >
       <div className="lecture-cover-art-scene absolute inset-0" aria-hidden>
         <div className="lecture-cover-art-media absolute inset-0">
-          {isBookCover || isCustomVialCover ? (
+          {isBookCover ? (
             <CourseCoverVial
               photos={coverPhotos}
               objectFit="cover"
               objectPosition={photoObjectPosition}
               className="lecture-cover-custom-photo"
             />
+          ) : isProductVialCover && vialSrc ? (
+            <CourseCoverProductVial
+              vialSrc={vialSrc}
+              rotate={
+                // Stronger editorial tilt on cards + overview
+                Math.sign(vialLayout.rotate || -1) *
+                Math.min(Math.max(Math.abs(vialLayout.rotate) * 2.4, 10), 16)
+              }
+              scale={
+                variant === "panel"
+                  ? Math.min(vialLayout.scale * 0.78, 1.22)
+                  : Math.min(vialLayout.scale * 0.78, 1.2)
+              }
+              objectPosition={vialLayout.objectPosition}
+              className="lecture-cover-custom-photo"
+            />
           ) : (
             <CourseCoverLabeledVial title={title} className="lecture-cover-custom-photo" />
           )}
         </div>
-        {variant !== "panel" ? (
+        {/* Soft overlays only for non-product covers — product vials stay sharp */}
+        {variant !== "panel" && !isProductVialCover ? (
           <>
             <div className="lecture-cover-art-atmosphere absolute inset-0 z-[2]" aria-hidden />
             <div className="lecture-cover-art-glow absolute inset-0 z-[3]" aria-hidden />
@@ -142,23 +161,13 @@ export function CourseCoverArt({
 
             <div
               className={cn(
-                "lecture-cover-art-card-text mt-auto min-w-0",
-                isCustomVialCover
+                "lecture-cover-art-card-text lecture-cover-art-name-capsule mt-auto min-w-0",
+                isProductVialCover
                   ? "lecture-cover-art-card-text--custom-vial"
                   : "max-w-[14.5rem] sm:max-w-[15.25rem]",
               )}
             >
-              <p className="lecture-cover-art-eyebrow lecture-cover-art-category">
-                HOLS Library
-              </p>
-              <p
-                className={cn(
-                  "lecture-cover-art-title font-sans mt-1.5 line-clamp-3 sm:mt-2",
-                  hideTitleOverlay && "sr-only",
-                )}
-              >
-                {shortTitle}
-              </p>
+              <p className="lecture-cover-art-lecture-name font-sans">{shortTitle}</p>
             </div>
           </div>
         </>

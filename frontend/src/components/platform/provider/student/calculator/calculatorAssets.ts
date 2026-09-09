@@ -30,3 +30,56 @@ export const SYRINGE_IMAGE_SCALE: Record<SyringeSizeMl, number> = {
   2: 0.9,
   3: 0.98,
 };
+
+/**
+ * Rendered width (in rem) of the horizontal syringe SVG, per syringe capacity.
+ * Chosen with a *dramatic* spread so users can clearly see the syringe grow
+ * when they pick a larger size on the "Syringe" step. Used in BOTH overview
+ * (selection) and draw (animation) modes so the animation reads at the same
+ * scale users just saw.
+ */
+export const SYRINGE_DISPLAY_WIDTH_REM: Record<SyringeSizeMl, number> = {
+  0.25: 15,
+  0.5: 17,
+  1: 20,
+  2: 22.5,
+  3: 25,
+};
+
+/**
+ * Narrow-viewport widths — fit draw/overview scenes inside ~320–390px columns
+ * (portal padding + card chrome) without horizontal scroll or clipped syringes.
+ */
+export const SYRINGE_DISPLAY_WIDTH_REM_COMPACT: Record<SyringeSizeMl, number> = {
+  0.25: 7.5,
+  0.5: 8.5,
+  1: 9.5,
+  2: 10.5,
+  3: 11.5,
+};
+
+export function syringeDisplayWidthRem(
+  syringeMl: SyringeSizeMl,
+  compact = false,
+): number {
+  const table = compact ? SYRINGE_DISPLAY_WIDTH_REM_COMPACT : SYRINGE_DISPLAY_WIDTH_REM;
+  return table[syringeMl] ?? (compact ? 14 : 20);
+}
+
+/**
+ * Vertical padding (px) needed above the vials in draw mode so the syringe's
+ * fully-retracted plunger doesn't clip the top of the animation card.
+ *
+ * Derived from the syringe's rendered width — the retracted thumb pad sits
+ * ~568 SVG-units above the needle tip, and SVG scale = widthPx / 520. Subtract
+ * the vial-top-to-stopper offset (~22 px avg) and add ~24 px breathing room.
+ */
+export function syringeDrawScenePaddingPx(
+  syringeMl: SyringeSizeMl,
+  compact = false,
+): number {
+  const widthRem = syringeDisplayWidthRem(syringeMl, compact);
+  const widthPx = widthRem * 16;
+  // Extra headroom so the vertical hover pose never clips the card top.
+  return Math.ceil((568 * widthPx) / 520 - 22 + 48);
+}

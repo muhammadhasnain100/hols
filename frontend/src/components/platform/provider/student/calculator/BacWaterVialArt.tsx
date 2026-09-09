@@ -160,35 +160,55 @@ export function BacWaterVialArt({
 
           {/* Glass edge highlights — drawn under the label so text stays crisp */}
           <g clipPath={`url(#${bottleClip})`} pointerEvents="none">
+            {/* Broad left-side refraction across the shoulder */}
             <path
               d="M46 50 C44 78 44 100 45 118 L45 118 C45 118 52 118 56 118 L56 100 C56 78 58 58 64 48 Z"
               fill="#ffffff"
-              opacity="0.28"
+              opacity="0.34"
             />
+            {/* Bright vertical specular strip (visible above + below the label) */}
+            <rect x="48" y="46" width="3" height="160" fill="#ffffff" opacity="0.55" />
+            {/* Softer secondary strip */}
+            <rect x="54" y="46" width="1.8" height="160" fill="#ffffff" opacity="0.28" />
+            {/* Bottom-left curve reflection */}
             <path
               d="M46 172 C45 180 45 190 45 196 C45 202 54 204 64 204 L64 204 C56 198 56 184 56 172 Z"
               fill="#ffffff"
-              opacity="0.22"
+              opacity="0.28"
             />
+            {/* Right-side refraction */}
             <path
               d="M108 52 C116 72 118 100 118 118 L104 118 C104 100 106 72 106 52 Z"
               fill="#ffffff"
-              opacity="0.16"
+              opacity="0.2"
             />
+            {/* Right-side thin specular */}
+            <rect x="109" y="52" width="2" height="150" fill="#ffffff" opacity="0.3" />
+            {/* Bottom-right curve */}
             <path
               d="M118 172 C118 184 118 196 112 202 C106 204 100 204 96 204 L96 172 Z"
               fill="#ffffff"
-              opacity="0.14"
+              opacity="0.16"
             />
+            {/* Shoulder crown highlight above the label */}
+            <ellipse cx="80" cy="72" rx="30" ry="4" fill="#ffffff" opacity="0.35" />
+            {/* Base contact reflection */}
+            <ellipse cx="80" cy="200" rx="34" ry="3.5" fill="#ffffff" opacity="0.22" />
+            <ellipse cx="80" cy="205" rx="30" ry="2" fill="#0f172a" opacity="0.2" />
           </g>
 
-          {/* Label on top of glass shine */}
-          <rect x="44" y="88" width="72" height="98" rx="2.5" fill="#ffffff" />
+          {/*
+            Label — trimmed from height=98 to 82 (bottom raised from y=186
+            to y=170). Interior ends at y=192, so the water fill now shows
+            through as a clearly visible ~22-unit strip at the base of the
+            bottle, letting the empty ⇄ filled state read at a glance.
+          */}
+          <rect x="44" y="88" width="72" height="82" rx="2.5" fill="#ffffff" />
           <rect
             x="44"
             y="88"
             width="72"
-            height="98"
+            height="82"
             rx="2.5"
             fill="none"
             stroke="#e5e7eb"
@@ -217,14 +237,14 @@ export function BacWaterVialArt({
             house of life science
           </text>
 
-          {/* Magenta band — no volume / measurement copy */}
-          <rect x="44" y="122" width="72" height="48" fill={MAGENTA} />
+          {/* Magenta band — trimmed to height=44 to fit the shorter label. */}
+          <rect x="44" y="122" width="72" height="44" fill={MAGENTA} />
           <text
             x="80"
-            y="140"
+            y="138"
             textAnchor="middle"
             fontFamily="Arial, Helvetica, sans-serif"
-            fontSize="6.4"
+            fontSize="6.2"
             fontWeight="800"
             letterSpacing="0.1"
             fill="#0a0a0a"
@@ -233,10 +253,10 @@ export function BacWaterVialArt({
           </text>
           <text
             x="80"
-            y="154"
+            y="152"
             textAnchor="middle"
             fontFamily="Arial, Helvetica, sans-serif"
-            fontSize="11"
+            fontSize="10.5"
             fontWeight="800"
             letterSpacing="0.3"
             fill="#0a0a0a"
@@ -245,7 +265,7 @@ export function BacWaterVialArt({
           </text>
           <text
             x="80"
-            y="164"
+            y="162"
             textAnchor="middle"
             fontFamily="Arial, Helvetica, sans-serif"
             fontSize="4"
@@ -334,23 +354,35 @@ export function BacWaterLiquidFill() {
   const { interiorTop, interiorHeight, cx } = BAC_WATER_SRC;
   return (
     <>
+      {/* Water column — layered pale aqua for depth, visible above the label. */}
       <rect
         x="42"
         y={interiorTop}
         width="76"
         height={interiorHeight + 14}
-        fill="#c5e8f5"
+        fill="#a8d8ec"
+        opacity="0.5"
+      />
+      <rect
+        x="42"
+        y={interiorTop}
+        width="76"
+        height={interiorHeight + 14}
+        fill="#e6f4fa"
         opacity="0.32"
       />
+      {/* Subtle vertical light refraction */}
       <rect
-        x="42"
+        x="52"
         y={interiorTop}
-        width="76"
+        width="4"
         height={interiorHeight + 14}
-        fill="#f7fcfe"
-        opacity="0.25"
+        fill="#ffffff"
+        opacity="0.18"
       />
-      <ellipse cx={cx} cy={interiorTop + 1} rx="34" ry="3.5" fill="#ffffff" opacity="0.5" />
+      {/* Meniscus — bright surface line + faint underside shadow */}
+      <ellipse cx={cx} cy={interiorTop + 1} rx="34" ry="3.5" fill="#ffffff" opacity="0.65" />
+      <ellipse cx={cx} cy={interiorTop + 3} rx="30" ry="1.3" fill="#5aa4c4" opacity="0.28" />
     </>
   );
 }

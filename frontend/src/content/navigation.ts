@@ -2,6 +2,7 @@ export const mainNav = [
   { label: "Features", href: "/#everything-inside" },
   { label: "FAQs", href: "/#faqs" },
   { label: "Who it's for", href: "/#who-its-for" },
+  { label: "Calculator", href: "/calculator" },
 ] as const;
 
 export const footerNav = {
@@ -10,6 +11,7 @@ export const footerNav = {
     { label: "Features", href: "/#everything-inside" },
     { label: "FAQs", href: "/#faqs" },
     { label: "Who it's for", href: "/#who-its-for" },
+    { label: "Calculator", href: "/calculator" },
     { label: "Get Started", href: "/register" },
     { label: "Log in", href: "/login" },
   ],
