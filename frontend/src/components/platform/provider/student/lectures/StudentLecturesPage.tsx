@@ -10,6 +10,7 @@ import {
   subscribePortalTheme,
 } from "@/components/platform/provider/portal-theme-store";
 import { CourseCoverArt } from "@/components/platform/provider/student/lectures/CourseCoverArt";
+import { tidyCoverTitle } from "@/components/platform/provider/student/lectures/courseCover";
 import { filterVisibleLectureCourses } from "@/components/platform/provider/student/lectures/hiddenCourses";
 import { LecturesPageLayout } from "@/components/platform/provider/student/lectures/LecturesPageLayout";
 import { ApiRequestError } from "@/lib/integrate/client";
@@ -263,7 +264,7 @@ function CourseCard({ course, index }: { course: CourseSummary; index: number })
       </div>
 
       <div className="lecture-course-card-glass relative z-[2] flex shrink-0 flex-col px-4 pt-3 pb-4">
-        <h2 className="sr-only">{course.title}</h2>
+        <h2 className="lecture-course-card-title font-sans">{tidyCoverTitle(course.title)}</h2>
 
         <div className="lecture-course-stats">
           <StatColumn label="Topics" value={course.topic_count} />

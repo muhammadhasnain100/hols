@@ -97,17 +97,10 @@ export function CourseCoverArt({
           ) : isProductVialCover && vialSrc ? (
             <CourseCoverProductVial
               vialSrc={vialSrc}
-              rotate={
-                // Stronger editorial tilt on cards + overview
-                Math.sign(vialLayout.rotate || -1) *
-                Math.min(Math.max(Math.abs(vialLayout.rotate) * 2.4, 10), 16)
-              }
-              scale={
-                variant === "panel"
-                  ? Math.min(vialLayout.scale * 0.78, 1.22)
-                  : Math.min(vialLayout.scale * 0.78, 1.2)
-              }
-              objectPosition={vialLayout.objectPosition}
+              // ~80° from horizontal ≈ 10° clockwise lean (was reading closer to ~70°/20°)
+              rotate={10}
+              scale={variant === "panel" ? 1.1 : 1.16}
+              objectPosition={variant === "panel" ? "72% 54%" : "62% 56%"}
               className="lecture-cover-custom-photo"
             />
           ) : (
@@ -126,51 +119,38 @@ export function CourseCoverArt({
       </div>
 
       {variant === "panel" ? null : (
-        <>
-          <div className="absolute inset-0 z-[5] flex flex-col px-5 pb-3 pt-5 sm:px-6 sm:pb-3.5 sm:pt-6">
-            <div className="lecture-cover-brand flex items-center gap-1.5">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={LOGO_MARK_DARK}
-                alt=""
-                className="lecture-cover-mark lecture-cover-logo--theme-light h-4 w-4 object-contain opacity-80 sm:h-[1.1rem] sm:w-[1.1rem]"
-                draggable={false}
-              />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={LOGO_MARK_LIGHT}
-                alt=""
-                className="lecture-cover-mark lecture-cover-logo--theme-dark h-4 w-4 object-contain opacity-85 sm:h-[1.1rem] sm:w-[1.1rem]"
-                draggable={false}
-              />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={LOGO_WORDMARK_DARK}
-                alt=""
-                className="lecture-cover-logo lecture-cover-logo--theme-light h-[0.85rem] w-auto object-contain object-left opacity-85 sm:h-[0.95rem]"
-                draggable={false}
-              />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={LOGO_WORDMARK_LIGHT}
-                alt=""
-                className="lecture-cover-logo lecture-cover-logo--theme-dark h-[0.85rem] w-auto object-contain object-left opacity-90 sm:h-[0.95rem]"
-                draggable={false}
-              />
-            </div>
-
-            <div
-              className={cn(
-                "lecture-cover-art-card-text lecture-cover-art-name-capsule mt-auto min-w-0",
-                isProductVialCover
-                  ? "lecture-cover-art-card-text--custom-vial"
-                  : "max-w-[14.5rem] sm:max-w-[15.25rem]",
-              )}
-            >
-              <p className="lecture-cover-art-lecture-name font-sans">{shortTitle}</p>
-            </div>
+        <div className="absolute inset-0 z-[5] flex flex-col px-5 pb-3 pt-5 sm:px-6 sm:pb-3.5 sm:pt-6">
+          <div className="lecture-cover-brand flex items-center gap-1.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={LOGO_MARK_DARK}
+              alt=""
+              className="lecture-cover-mark lecture-cover-logo--theme-light h-4 w-4 object-contain opacity-80 sm:h-[1.1rem] sm:w-[1.1rem]"
+              draggable={false}
+            />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={LOGO_MARK_LIGHT}
+              alt=""
+              className="lecture-cover-mark lecture-cover-logo--theme-dark h-4 w-4 object-contain opacity-85 sm:h-[1.1rem] sm:w-[1.1rem]"
+              draggable={false}
+            />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={LOGO_WORDMARK_DARK}
+              alt=""
+              className="lecture-cover-logo lecture-cover-logo--theme-light h-[0.85rem] w-auto object-contain object-left opacity-85 sm:h-[0.95rem]"
+              draggable={false}
+            />
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={LOGO_WORDMARK_LIGHT}
+              alt=""
+              className="lecture-cover-logo lecture-cover-logo--theme-dark h-[0.85rem] w-auto object-contain object-left opacity-90 sm:h-[0.95rem]"
+              draggable={false}
+            />
           </div>
-        </>
+        </div>
       )}
     </div>
   );

@@ -15,6 +15,14 @@ export const BAC_WATER_SRC = {
   interiorHeight: 100,
 } as const;
 
+/** Translate Y for bac-water liquid — full bottle height so draw→empty is obvious. */
+export function bacWaterLiquidOffsetY(fillRatio: number, empty = false): number {
+  const { interiorHeight } = BAC_WATER_SRC;
+  if (empty || fillRatio <= 0.02) return interiorHeight - 6;
+  const clamped = Math.min(0.95, Math.max(0.06, fillRatio));
+  return (1 - clamped) * interiorHeight;
+}
+
 type BacWaterVialArtProps = {
   uid: string;
   showBack?: boolean;
@@ -108,19 +116,24 @@ export function BacWaterVialArt({
         <>
           <ellipse cx={cx} cy="204" rx="46" ry="4.5" fill="#0f172a" opacity="0.16" />
           <g clipPath={`url(#${bottleClip})`}>
+            {/*
+              When gsapDriven, omit `transform` from React props entirely.
+              Passing transform={undefined} clears the attribute GSAP sets.
+            */}
             <g
               ref={liquidLayerRef}
               data-vial-liquid-layer
-              transform={
-                gsapDriven
-                  ? undefined
-                  : empty
-                    ? `translate(0 ${interiorHeight - 6})`
-                    : fillTransform
-              }
+              {...(!gsapDriven
+                ? {
+                    transform: empty
+                      ? `translate(0 ${interiorHeight - 6})`
+                      : fillTransform,
+                  }
+                : {})}
               opacity={empty ? 0 : 1}
+              style={{ display: empty && !gsapDriven ? "none" : undefined }}
             >
-              {liquidLayer}
+              {empty && !gsapDriven ? null : liquidLayer}
             </g>
           </g>
           <circle data-vial-stopper cx={cx} cy={stopperY} r="2.5" fill="transparent" />
@@ -131,19 +144,20 @@ export function BacWaterVialArt({
             cy={interiorTop + 1}
             r="2"
             fill="transparent"
-            transform={
-              gsapDriven
-                ? undefined
-                : empty
-                  ? `translate(0 ${interiorHeight - 6})`
-                  : fillTransform
-            }
+            {...(!gsapDriven
+              ? {
+                  transform: empty
+                    ? `translate(0 ${interiorHeight - 6})`
+                    : fillTransform,
+                }
+              : {})}
           />
         </>
       ) : null}
 
       {showFront ? (
-        <g opacity={frontGlass ? 0.97 : 1}>
+        <>
+          <g opacity={frontGlass ? 0.97 : 1}>
           {/* Clear glass body */}
           <path
             d={BODY_PATH}
@@ -196,13 +210,14 @@ export function BacWaterVialArt({
             <ellipse cx="80" cy="200" rx="34" ry="3.5" fill="#ffffff" opacity="0.22" />
             <ellipse cx="80" cy="205" rx="30" ry="2" fill="#0f172a" opacity="0.2" />
           </g>
+          </g>
 
           {/*
-            Label — trimmed from height=98 to 82 (bottom raised from y=186
-            to y=170). Interior ends at y=192, so the water fill now shows
-            through as a clearly visible ~22-unit strip at the base of the
-            bottle, letting the empty ⇄ filled state read at a glance.
+            Label — fully opaque (outside soft glass group) so rising water never
+            shows through the paper. Trimmed so a clear band under the label
+            reveals the meniscus during draw.
           */}
+          <g opacity="1" data-vial-label-layer>
           <rect x="44" y="88" width="72" height="82" rx="2.5" fill="#ffffff" />
           <rect
             x="44"
@@ -274,6 +289,7 @@ export function BacWaterVialArt({
           >
             for Injection, USP
           </text>
+          </g>
 
           {/* Neck — translucent glass (see-through, soft rim highlights) */}
           <rect
@@ -344,7 +360,7 @@ export function BacWaterVialArt({
           <rect x="52" y="12" width="56" height="10" fill={`url(#${capGrad})`} />
           <ellipse cx={cx} cy="22" rx="28" ry="4" fill={MAGENTA_DEEP} opacity="0.55" />
           <ellipse cx={cx} cy="11" rx="22" ry="3.2" fill="#ff9bc8" opacity="0.35" />
-        </g>
+        </>
       ) : null}
     </g>
   );

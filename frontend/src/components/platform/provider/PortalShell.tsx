@@ -556,7 +556,7 @@ export function PortalShell({
             className={cn(
               "flex-1 min-w-0",
               contentFlush
-                ? "px-3 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-4 md:px-6 lg:px-8"
+                ? "px-3 pb-[max(1.5rem,env(safe-area-inset-bottom))] pt-[max(0.75rem,env(safe-area-inset-top))] max-[390px]:px-2.5 sm:px-4 md:px-6 lg:px-8"
                 : brandBackdrop
                   ? "px-3 pb-8 pt-1 sm:px-4 md:px-6 lg:px-8"
                   : "px-3 pb-6 pt-2 sm:px-4 md:px-6 md:pb-8 lg:px-8 lg:pb-10",

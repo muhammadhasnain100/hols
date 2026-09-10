@@ -2594,7 +2594,8 @@ select:-webkit-autofill:focus {
 }
 
 .book-cover-content--photo-vial .book-cover-title {
-  max-width: min(10.25rem, 46%);
+  max-width: min(10.25rem, 44%);
+  margin-top: 0.15rem;
   font-size: clamp(1.35rem, 4vw, 2rem);
   font-weight: 700;
   line-height: 1.06;
@@ -2610,6 +2611,10 @@ select:-webkit-autofill:focus {
     inset 0 1px 0 rgba(255, 255, 255, 0.85),
     0 6px 18px rgba(20, 28, 48, 0.08);
   text-shadow: none;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
+  overflow: hidden;
 }
 
 .portal-shell[data-theme="dark"] .book-cover-content--photo-vial .book-cover-title {
@@ -2669,7 +2674,7 @@ select:-webkit-autofill:focus {
   }
 
   .book-cover-content--photo-vial .book-cover-title {
-    max-width: min(11rem, 44%);
+    max-width: min(10.5rem, 42%);
     font-size: clamp(1.65rem, 3.1vw, 2.45rem);
     line-height: 1.04;
     letter-spacing: -0.04em;
@@ -6078,16 +6083,17 @@ html.lenis main {
 }
 
 .lecture-cover-product-vial-img {
-  /* Keep full vial silhouette sharp — stronger editorial tilt */
+  /* Product-hero framing — slight right/down bias, clockwise lean */
   position: absolute;
   inset: 0;
   width: 100%;
   height: 100%;
   object-fit: contain;
-  object-position: var(--cover-photo-position, 58% 48%);
+  object-position: var(--cover-photo-position, 62% 56%);
   filter: none !important;
-  transform: rotate(var(--product-vial-rotate, -12deg)) scale(var(--product-vial-scale, 1.1));
-  transform-origin: 58% 62%;
+  transform: translate(var(--product-vial-x, 11%), var(--product-vial-y, 6%))
+    rotate(var(--product-vial-rotate, 10deg)) scale(var(--product-vial-scale, 1.16));
+  transform-origin: 50% 52%;
   transition: transform 0.55s cubic-bezier(0.22, 1, 0.36, 1);
   image-rendering: auto;
   -webkit-backface-visibility: hidden;
@@ -6105,10 +6111,10 @@ html.lenis main {
 
 .lecture-cover-product-vial-shadow {
   position: absolute;
-  left: 42%;
-  bottom: 6%;
-  width: 34%;
-  height: 8%;
+  left: 60%;
+  bottom: 4%;
+  width: 32%;
+  height: 7%;
   border-radius: 50%;
   background: radial-gradient(
     ellipse at center,
@@ -6116,7 +6122,7 @@ html.lenis main {
     rgba(12, 20, 40, 0.1) 45%,
     transparent 72%
   );
-  transform: translateX(-10%) rotate(-12deg) scaleX(1.15);
+  transform: translateX(-50%) rotate(10deg) scaleX(1.15);
   pointer-events: none;
 }
 
@@ -6158,8 +6164,9 @@ html.lenis main {
 /* Gentle hover: deepen the tilt slightly without softening the PNG */
 .lecture-course-card:hover .lecture-cover-art--product-vial .lecture-cover-product-vial-img,
 .lecture-course-card:focus-visible .lecture-cover-art--product-vial .lecture-cover-product-vial-img {
-  transform: rotate(calc(var(--product-vial-rotate, -12deg) * 1.08))
-    scale(calc(var(--product-vial-scale, 1.1) * 1.03));
+  transform: translate(var(--product-vial-x, 11%), var(--product-vial-y, 6%))
+    rotate(calc(var(--product-vial-rotate, 10deg) * 1.04))
+    scale(calc(var(--product-vial-scale, 1.16) * 1.02));
 }
 
 .lecture-course-card:hover .lecture-cover-art--product-vial .lecture-cover-art-scene,
@@ -6169,15 +6176,29 @@ html.lenis main {
 }
 
 .lecture-cover-art--product-vial.lecture-cover-art-panel .lecture-cover-product-vial-img {
-  /* Still strong tilt on overview cover; bias right so left title column stays clear */
-  object-position: 68% 48%;
-  transform: rotate(calc(var(--product-vial-rotate, -12deg) * 0.95))
+  /* Overview: keep vial on the right so left title column stays clear */
+  object-position: 72% 54%;
+  transform: translate(14%, 8%) rotate(calc(var(--product-vial-rotate, 10deg) * 0.95))
     scale(var(--product-vial-scale, 1.1));
-  transform-origin: 68% 54%;
+  transform-origin: 62% 52%;
 }
 
 .lecture-cover-art--product-vial.lecture-cover-art-panel .lecture-cover-product-vial-shadow {
-  left: 52%;
+  left: 70%;
+  bottom: 6%;
+}
+
+/* Product cards: lecture name sits under the brand so the centered vial stays clear */
+.lecture-cover-art-overlay--product-vial {
+  justify-content: flex-start;
+  gap: 0.7rem;
+}
+
+.lecture-cover-art-card-text--product-top {
+  margin-top: 0;
+  width: auto;
+  max-width: min(78%, 13.5rem);
+  padding: 0.5rem 0.75rem 0.55rem;
 }
 
 .lecture-cover-vial-photo-cover {
@@ -6487,7 +6508,7 @@ html.lenis main {
 .lecture-cover-art-card-text--custom-vial {
   box-sizing: border-box;
   width: auto;
-  max-width: min(72%, 12.5rem);
+  max-width: min(78%, 13.5rem);
   padding-right: 0.85rem;
 }
 
@@ -6993,6 +7014,24 @@ html.lenis main {
   backdrop-filter: blur(14px) saturate(140%);
   -webkit-backdrop-filter: blur(14px) saturate(140%);
   border-top: 1px solid rgba(18, 28, 45, 0.1);
+}
+
+.lecture-course-card-title {
+  margin: 0 0 0.7rem;
+  max-width: 100%;
+  font-size: clamp(0.95rem, 2.4vw, 1.125rem);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.03em;
+  color: #1a2140;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+
+.portal-shell[data-theme="dark"] .lecture-course-card-title {
+  color: #f5f7ff;
 }
 
 .lecture-course-stats {

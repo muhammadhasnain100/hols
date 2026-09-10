@@ -179,7 +179,11 @@ export function svgLayersTranslateXSetter(
 export function measureStaticDrawTargets(scene: HTMLElement, wrap: HTMLElement): StaticDrawTargets | null {
   const waterStopper = scene.querySelector('[data-vial-root="water"] [data-vial-stopper]');
   const medStopper = scene.querySelector('[data-vial-root="med"] [data-vial-stopper]');
-  const needleTip = wrap.querySelector("[data-needle-tip]");
+  // Tip may live on the needle-only layer (sibling wrap), not the barrel wrap.
+  const needleTip =
+    wrap.querySelector("[data-needle-tip]") ||
+    scene.querySelector("[data-syringe-needle-wrap] [data-needle-tip]") ||
+    scene.querySelector("[data-needle-tip]");
   if (!waterStopper || !medStopper || !needleTip) return null;
 
   const sceneRect = scene.getBoundingClientRect();

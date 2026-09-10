@@ -47,15 +47,15 @@ export const SYRINGE_DISPLAY_WIDTH_REM: Record<SyringeSizeMl, number> = {
 };
 
 /**
- * Narrow-viewport widths — fit draw/overview scenes inside ~320–390px columns
- * (portal padding + card chrome) without horizontal scroll or clipped syringes.
+ * Narrow-viewport widths — keep the same relative scale as desktop so insert
+ * depth, needle length, and vial size stay proportional (not crushed for SE).
  */
 export const SYRINGE_DISPLAY_WIDTH_REM_COMPACT: Record<SyringeSizeMl, number> = {
-  0.25: 7.5,
-  0.5: 8.5,
-  1: 9.5,
-  2: 10.5,
-  3: 11.5,
+  0.25: 8.75,
+  0.5: 9.75,
+  1: 11,
+  2: 12,
+  3: 13,
 };
 
 export function syringeDisplayWidthRem(
@@ -63,7 +63,7 @@ export function syringeDisplayWidthRem(
   compact = false,
 ): number {
   const table = compact ? SYRINGE_DISPLAY_WIDTH_REM_COMPACT : SYRINGE_DISPLAY_WIDTH_REM;
-  return table[syringeMl] ?? (compact ? 14 : 20);
+  return table[syringeMl] ?? (compact ? 8.25 : 20);
 }
 
 /**
@@ -72,7 +72,8 @@ export function syringeDisplayWidthRem(
  *
  * Derived from the syringe's rendered width — the retracted thumb pad sits
  * ~568 SVG-units above the needle tip, and SVG scale = widthPx / 520. Subtract
- * the vial-top-to-stopper offset (~22 px avg) and add ~24 px breathing room.
+ * the vial-top-to-stopper offset (~22 px avg) and add breathing room that
+ * scales with syringe size (same ratio on phone and desktop).
  */
 export function syringeDrawScenePaddingPx(
   syringeMl: SyringeSizeMl,
@@ -80,6 +81,7 @@ export function syringeDrawScenePaddingPx(
 ): number {
   const widthRem = syringeDisplayWidthRem(syringeMl, compact);
   const widthPx = widthRem * 16;
-  // Extra headroom so the vertical hover pose never clips the card top.
-  return Math.ceil((568 * widthPx) / 520 - 22 + 48);
+  // Hover lifts the tip above the stopper; breath must cover that lift plus margin.
+  const breath = Math.ceil(widthPx * 0.14) + (compact ? 20 : 28);
+  return Math.ceil((568 * widthPx) / 520 - 22 + breath);
 }

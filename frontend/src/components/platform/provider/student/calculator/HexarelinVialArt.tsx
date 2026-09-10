@@ -72,9 +72,13 @@ export const HEXARELIN_SRC = {
 } as const;
 
 /** Fits the source vial into viewBox 0 0 120 205, centered on x=60. */
-export const HEXARELIN_VIAL_SCALE = 0.56;
-/** Top offset chosen so the bottle base sits near the viewBox bottom (pairs with bac-water). */
-export const HEXARELIN_VIAL_TOP = 30;
+export const HEXARELIN_VIAL_SCALE = 0.63;
+/**
+ * Top offset seats the bottle base on the viewBox floor so it shares a
+ * surface with the bac-water bottle (xMidYMax) instead of floating.
+ * Paired with SCALE 0.63 so the silhouette reads the same height as water.
+ */
+export const HEXARELIN_VIAL_TOP = 16;
 export const HEXARELIN_VIAL_TRANSFORM = `translate(60 ${HEXARELIN_VIAL_TOP}) scale(${HEXARELIN_VIAL_SCALE}) translate(${-HEXARELIN_SRC.cx} ${-HEXARELIN_SRC.top})`;
 
 /** Map a source Y into the outer 120×205 viewBox (for geometry constants). */
@@ -293,6 +297,16 @@ export function HexarelinVialArt({
                   opacity={powder || empty ? 0 : 1}
                 >
                   {liquidLayer}
+                  {/* Bubbles live inside the liquid layer so they rise with the fill */}
+                  <HexarelinMixBubbles />
+                </g>
+                {/*
+                  Always paint an opaque label plate above liquid/powder in the
+                  label band. Front labels can be dimmed by focus(); this plate
+                  stops liquid from reading through the paper.
+                */}
+                <g transform="translate(0 18)" pointerEvents="none" data-vial-label-mask>
+                  <rect x="194" y="145" width="130" height="126" rx="4" fill="#09172d" />
                 </g>
                 <g
                   ref={powderLayerRef}
@@ -303,19 +317,34 @@ export function HexarelinVialArt({
                 </g>
               </>
             ) : powder && !empty ? (
-              <g data-vial-liquid-layer data-vial-powder="true" transform={fillTransform}>
-                {powderLayer}
-              </g>
+              <>
+                {/* Powder stays under glass, then a second pass above the base
+                    shade so the cake reads clearly in the bottom window. */}
+                <g data-vial-powder-layer {...(fillTransform ? { transform: fillTransform } : {})}>
+                  {powderLayer}
+                </g>
+              </>
             ) : (
               <g
                 ref={liquidLayerRef}
                 data-vial-liquid-layer
-                transform={empty ? `translate(0 ${HEXARELIN_SRC.interiorHeight - 6})` : fillTransform}
+                {...(empty
+                  ? { transform: `translate(0 ${HEXARELIN_SRC.interiorHeight - 6})` }
+                  : fillTransform
+                    ? { transform: fillTransform }
+                    : {})}
                 opacity={empty ? 0 : 1}
               >
                 {liquidLayer}
               </g>
             )}
+            {/* Mask liquid behind the label area in non-gsap liquid mode too */}
+            {!gsapDriven && !powder && !empty ? (
+              <g transform="translate(0 18)" pointerEvents="none">
+                <rect x="194" y="145" width="130" height="126" rx="4" fill="#09172d" />
+              </g>
+            ) : null}
+            {/* Bubbles render on the front layer during animation (see showFront). */}
           </g>
 
           <circle data-vial-stopper cx={HEXARELIN_SRC.cx} cy={HEXARELIN_SRC.stopperY} r="2" fill="transparent" />
@@ -336,99 +365,119 @@ export function HexarelinVialArt({
               cy={HEXARELIN_SRC.interiorTop + 1}
               r="2"
               fill="transparent"
-              transform={gsapDriven ? undefined : empty ? `translate(0 ${HEXARELIN_SRC.interiorHeight - 6})` : fillTransform}
+              {...(!gsapDriven
+                ? {
+                    transform: empty
+                      ? `translate(0 ${HEXARELIN_SRC.interiorHeight - 6})`
+                      : fillTransform,
+                  }
+                : {})}
             />
           )}
         </>
       ) : null}
 
       {showFront ? (
-        <g opacity={frontGlass ? 0.92 : 1}>
-          <path
-            d={bodyPath}
-            fill={`url(#${glassBody})`}
-            stroke="#7e858c"
-            strokeOpacity={coverMode ? 0.58 : 0.46}
-            strokeWidth={glassStroke}
-          />
+        <>
+          {/* Glass chrome — keep at full opacity; soft glass comes from the gradient itself */}
+          <g opacity={1}>
+            <path
+              d={bodyPath}
+              fill={`url(#${glassBody})`}
+              stroke="#7e858c"
+              strokeOpacity={coverMode ? 0.58 : 0.46}
+              strokeWidth={glassStroke}
+            />
 
-          <path
-            d="M197 299 C197 315 205 323 220 326 C240 330 278 330 298 326 C313 323 320 315 320 299 L320 310 C320 324 312 331 298 334 C278 338 240 338 220 334 C206 331 197 324 197 310 Z"
-            fill={`url(#${glassShade})`}
-            opacity={coverMode ? 0.88 : 0.8}
-          />
-          <ellipse cx="258.5" cy="318" rx="60.5" ry="11" fill="#4e565e" opacity={coverMode ? 0.2 : 0.17} />
-          <ellipse cx="258.5" cy="318" rx="55" ry="8.2" fill="#ffffff" opacity={coverMode ? 0.28 : 0.22} />
+            {/* Base glass weight — muted in powder mode so it doesn't read as liquid */}
+            <path
+              d="M197 299 C197 315 205 323 220 326 C240 330 278 330 298 326 C313 323 320 315 320 299 L320 310 C320 324 312 331 298 334 C278 338 240 338 220 334 C206 331 197 324 197 310 Z"
+              fill={`url(#${glassShade})`}
+              opacity={powder ? (coverMode ? 0.28 : 0.18) : coverMode ? 0.88 : 0.8}
+            />
+            <ellipse cx="258.5" cy="318" rx="60.5" ry="11" fill="#4e565e" opacity={powder ? 0.08 : coverMode ? 0.2 : 0.17} />
+            <ellipse cx="258.5" cy="318" rx="55" ry="8.2" fill="#ffffff" opacity={powder ? 0.1 : coverMode ? 0.28 : 0.22} />
 
-          {/*
-            Glass reflections MUST render BEFORE the label so the paper label
-            fully covers the shine strips inside its rect. Reflections above
-            the label (shoulder) and below the label (base) remain visible.
-          */}
-          <g clipPath={`url(#${bottleClip})`}>
-            {/* Broad left-side refraction wash */}
-            <path
-              d="M205 103 C201 128 202 157 203 186 L203 291 C203 305 208 315 216 321 L224 323 C216 306 215 285 215 260 L215 136 C215 121 218 111 226 104 Z"
-              fill="#ffffff"
-              opacity={coverMode ? 0.32 : 0.28}
-            />
-            {/* Right-side softer refraction */}
-            <path
-              d="M292 102 C305 118 311 132 312 149 L312 297 C312 311 306 322 298 326 L294 326 C299 309 300 290 300 266 L300 131 C300 118 297 109 292 102 Z"
-              fill="#ffffff"
-              opacity={coverMode ? 0.21 : 0.17}
-            />
-            {/* Bright specular shine strip on the visible left glass */}
-            <path
-              d="M208 122 L212 122 L212 320 L208 320 Z"
-              fill="#ffffff"
-              opacity="0.55"
-            />
-            {/* Softer secondary shine */}
-            <path
-              d="M216 122 L219 122 L219 320 L216 320 Z"
-              fill="#ffffff"
-              opacity="0.22"
-            />
-            {/* Right-side highlight edge */}
-            <path
-              d="M303 122 L306 122 L306 320 L303 320 Z"
-              fill="#ffffff"
-              opacity="0.28"
-            />
-            {/* Shoulder crown reflection */}
-            <ellipse cx="260" cy="127" rx="50" ry="12" fill="#ffffff" opacity={coverMode ? 0.24 : 0.2} />
-            <ellipse cx="260" cy="124" rx="38" ry="4" fill="#ffffff" opacity="0.55" />
-            {/* Base curve reflection */}
-            <ellipse cx="260" cy="322" rx="52" ry="7" fill="#ffffff" opacity="0.18" />
-            <ellipse cx="260" cy="329" rx="46" ry="3" fill="#0f172a" opacity="0.22" />
+            {/* Dry cake painted above base glass so it stays visible under the label */}
+            {powder && !empty && !gsapDriven ? (
+              <g clipPath={`url(#${bottleClip})`} data-vial-powder-front>
+                {powderLayer}
+              </g>
+            ) : null}
+
+            {/*
+              Glass reflections MUST render BEFORE the label so the paper label
+              fully covers the shine strips inside its rect. Reflections above
+              the label (shoulder) and below the label (base) remain visible.
+            */}
+            <g clipPath={`url(#${bottleClip})`}>
+              {/* Broad left-side refraction wash */}
+              <path
+                d="M205 103 C201 128 202 157 203 186 L203 291 C203 305 208 315 216 321 L224 323 C216 306 215 285 215 260 L215 136 C215 121 218 111 226 104 Z"
+                fill="#ffffff"
+                opacity={coverMode ? 0.32 : 0.28}
+              />
+              {/* Right-side softer refraction */}
+              <path
+                d="M292 102 C305 118 311 132 312 149 L312 297 C312 311 306 322 298 326 L294 326 C299 309 300 290 300 266 L300 131 C300 118 297 109 292 102 Z"
+                fill="#ffffff"
+                opacity={coverMode ? 0.21 : 0.17}
+              />
+              {/* Bright specular shine strip on the visible left glass */}
+              <path
+                d="M208 122 L212 122 L212 320 L208 320 Z"
+                fill="#ffffff"
+                opacity="0.55"
+              />
+              {/* Softer secondary shine */}
+              <path
+                d="M216 122 L219 122 L219 320 L216 320 Z"
+                fill="#ffffff"
+                opacity="0.22"
+              />
+              {/* Right-side highlight edge */}
+              <path
+                d="M303 122 L306 122 L306 320 L303 320 Z"
+                fill="#ffffff"
+                opacity="0.28"
+              />
+              {/* Shoulder crown reflection */}
+              <ellipse cx="260" cy="127" rx="50" ry="12" fill="#ffffff" opacity={coverMode ? 0.24 : 0.2} />
+              <ellipse cx="260" cy="124" rx="38" ry="4" fill="#ffffff" opacity="0.55" />
+              {/* Base curve reflection */}
+              <ellipse cx="260" cy="322" rx="52" ry="7" fill="#ffffff" opacity="0.18" />
+              <ellipse cx="260" cy="329" rx="46" ry="3" fill="#0f172a" opacity="0.22" />
+            </g>
           </g>
 
-          {/*
-            Label — shortened to height=126 (interior ends at y=303, so a
-            ~28 SVG-unit strip of glass is exposed at the base). This is
-            what lets users actually SEE the reconstituted liquid inside the
-            med vial — the label used to cover essentially the entire fluid
-            column, hiding the fill state completely.
-          */}
-          <rect x="194" y="145" width="130" height="126" rx="4" fill={`url(#${labelGrad})`} />
-          <rect x="194" y="145" width="130" height="126" rx="4" fill={`url(#${labelSheen})`} />
+          {/* Label + branding — always fully opaque so liquid never shows through */}
+          <g opacity="1" fillOpacity="1" data-vial-label-layer>
           {theme === "bac-water-pink" ? (
-            <rect
-              x="194"
-              y="145"
-              width="130"
-              height="126"
-              rx="4"
-              fill="none"
-              stroke="#d1d5db"
-              strokeWidth="1.2"
-            />
-          ) : (
             <>
+              <rect x="194" y="145" width="130" height="126" rx="4" fill="#ffffff" />
+              <rect x="194" y="145" width="130" height="126" rx="4" fill={`url(#${labelGrad})`} />
+              <rect x="194" y="145" width="130" height="126" rx="4" fill={`url(#${labelSheen})`} />
+              <rect
+                x="194"
+                y="145"
+                width="130"
+                height="126"
+                rx="4"
+                fill="none"
+                stroke="#d1d5db"
+                strokeWidth="1.2"
+              />
+            </>
+          ) : (
+            <g transform="translate(0 18)">
+              {/* Double solid backing — liquid must never read through the paper */}
+              <rect x="194" y="145" width="130" height="126" rx="4" fill="#09172d" />
+              <rect x="194" y="145" width="130" height="126" rx="4" fill="#0c1a30" />
+              <rect x="194" y="145" width="130" height="126" rx="4" fill={`url(#${labelGrad})`} />
+              <rect x="194" y="145" width="130" height="126" rx="4" fill={`url(#${labelSheen})`} />
               <path d="M198 149 L214 149 L214 267 L199 267 Z" fill="#ffffff" opacity="0.035" />
               <path d="M320 149 L324 149 L324 267 L320 267 Z" fill="#ffffff" opacity="0.035" />
-            </>
+            </g>
           )}
 
           {theme === "bac-water-pink" ? (
@@ -513,7 +562,7 @@ export function HexarelinVialArt({
               <circle cx="304" cy="278" r="3.2" fill="#ffffff" opacity="0.9" />
             </>
           ) : (
-            <>
+            <g transform="translate(0 18)">
               <text
                 x="198"
                 y="178"
@@ -663,7 +712,7 @@ export function HexarelinVialArt({
                   <circle cx="255" cy="251.4" r="0.25" />
                 </g>
               </g>
-            </>
+            </g>
           )}
 
           {/* Top rim (glass-to-collar seam) */}
@@ -747,26 +796,91 @@ export function HexarelinVialArt({
               strokeWidth="0.9"
             />
           ) : null}
-        </g>
+          </g>
+        </>
       ) : null}
     </g>
   );
 }
 
-/** Powder cake in Hexarelin source coordinates (inside bottle clip). */
+/** Powder cake — kept in the clear glass band BELOW the label so the dry
+ *  cake is visible. Uneven cream surface so it never reads as liquid. */
 export function HexarelinPowderCake({ fillRatio = 0.2 }: { fillRatio?: number }) {
-  const clamped = Math.min(0.95, Math.max(0.06, fillRatio));
-  const h = 28 + clamped * 22;
-  const topY = 318 - h;
+  const clamped = Math.min(0.95, Math.max(0.08, fillRatio));
+  // Label (after +18 shift) ends ~289; base cake sits ~318. Visible window ≈ 289–318.
+  const baseY = 318;
+  const maxVisibleH = 26;
+  const h = 7 + clamped * maxVisibleH;
+  const topY = baseY - h;
   return (
-    <>
+    <g data-vial-powder-cake>
       <path
-        d={`M200 ${topY} C200 ${topY + 8} 317 ${topY + 8} 317 ${topY} L317 316 C317 324 298 330 258.5 330 C219 330 200 324 200 316 Z`}
-        fill="#f8fafc"
+        d={`M202 ${topY + 2}
+            C210 ${topY - 3} 222 ${topY + 5} 236 ${topY - 1}
+            C248 ${topY - 4} 258 ${topY + 3} 270 ${topY - 2}
+            C282 ${topY - 5} 295 ${topY + 4} 314 ${topY + 1}
+            L314 316 C314 324 296 330 258.5 330 C221 330 202 324 202 316 Z`}
+        fill="#efe6d6"
       />
-      <ellipse cx="258.5" cy={topY} rx="56" ry="6" fill="#ffffff" />
-      <ellipse cx="258.5" cy={topY + 2} rx="44" ry="3.5" fill="#e2e8f0" opacity="0.5" />
-    </>
+      <path
+        d={`M208 ${topY + 3}
+            C220 ${topY - 1} 235 ${topY + 6} 250 ${topY + 1}
+            C262 ${topY - 2} 278 ${topY + 5} 308 ${topY + 2}
+            L308 ${topY + 12} L208 ${topY + 12} Z`}
+        fill="#faf6ee"
+        opacity="0.95"
+      />
+      {/* Clumpy highlights — reads as lyophilized cake, not a meniscus */}
+      <ellipse cx="232" cy={topY + 4} rx="9" ry="3.2" fill="#fffdf8" opacity="0.85" />
+      <ellipse cx="258" cy={topY + 2} rx="11" ry="3.6" fill="#e5dcc8" opacity="0.7" />
+      <ellipse cx="286" cy={topY + 5} rx="8" ry="2.8" fill="#fffdf8" opacity="0.75" />
+      <circle cx="244" cy={topY + 8} r="1.4" fill="#d9d0be" opacity="0.8" />
+      <circle cx="267" cy={topY + 9} r="1.1" fill="#d9d0be" opacity="0.7" />
+      <circle cx="278" cy={topY + 7} r="1.3" fill="#cfc5b2" opacity="0.65" />
+      <circle cx="225" cy={topY + 10} r="1" fill="#cfc5b2" opacity="0.6" />
+    </g>
+  );
+}
+
+/** Small reconstitution bubbles — drawn inside the liquid layer (below the meniscus). */
+export function HexarelinMixBubbles() {
+  const { interiorTop, cx } = HEXARELIN_SRC;
+  // Prefer the lower liquid band (below the label mask ~289) so bubbles stay
+  // visible in clear glass as the vial fills. A few sit nearer the meniscus
+  // for the early low-fill moments.
+  const bubbles = [
+    { cx: cx - 26, cy: interiorTop + 22, r: 1.8 },
+    { cx: cx + 10, cy: interiorTop + 30, r: 1.4 },
+    { cx: cx - 8, cy: interiorTop + 48, r: 2.0 },
+    { cx: cx + 24, cy: interiorTop + 56, r: 1.3 },
+    { cx: cx - 22, cy: interiorTop + 100, r: 2.2 },
+    { cx: cx + 6, cy: interiorTop + 108, r: 1.6 },
+    { cx: cx - 14, cy: interiorTop + 118, r: 1.9 },
+    { cx: cx + 20, cy: interiorTop + 126, r: 1.5 },
+    { cx: cx - 30, cy: interiorTop + 134, r: 1.2 },
+    { cx: cx + 14, cy: interiorTop + 140, r: 2.1 },
+    { cx: cx - 4, cy: interiorTop + 148, r: 1.7 },
+    { cx: cx + 28, cy: interiorTop + 152, r: 1.3 },
+    { cx: cx - 18, cy: interiorTop + 158, r: 1.5 },
+    { cx: cx + 8, cy: interiorTop + 164, r: 1.8 },
+  ];
+  return (
+    <g data-vial-mix-bubbles opacity="0" pointerEvents="none">
+      {bubbles.map((b, i) => (
+        <circle
+          key={i}
+          data-vial-mix-bubble
+          cx={b.cx}
+          cy={b.cy}
+          r={b.r}
+          fill="#ffffff"
+          opacity="0.75"
+          stroke="#8ebfd4"
+          strokeWidth="0.5"
+          strokeOpacity="0.55"
+        />
+      ))}
+    </g>
   );
 }
 

@@ -53,6 +53,10 @@ type HorizontalSyringeArtProps = {
    * `data-syringe-liquid-layer`, `data-syringe-liquid-fill`).
    */
   gsapOwned?: boolean;
+  /**
+   * Draw-scene depth split: metal needle under vial caps, barrel above them.
+   */
+  part?: "full" | "needle" | "barrel";
   className?: string;
   style?: CSSProperties;
   /** Optional label to render below (unused; consumer usually renders their own). */
@@ -99,6 +103,7 @@ export function HorizontalSyringeArt({
   showLiquid = false,
   active = false,
   gsapOwned = false,
+  part = "full",
   className,
   style,
 }: HorizontalSyringeArtProps) {
@@ -114,12 +119,22 @@ export function HorizontalSyringeArt({
   const shadowId = `hsyr-shadow-${uid}`;
   const clipId = `hsyr-clip-${uid}`;
   const glowId = `hsyr-glow-${uid}`;
+  const partClipId = `hsyr-part-clip-${uid}`;
 
   const staticFill = gsapOwned ? 0 : Math.min(0.98, Math.max(0, fillRatio));
   const liquid = hsyrLiquidLayout(staticFill);
   const plungerX = gsapOwned ? 0 : hsyrPlungerOffsetX(staticFill);
 
   const showLiquidNow = showLiquid && (gsapOwned || staticFill > 0);
+  // Hub ends ~440; metal needle starts there. Split so only the shaft goes under caps.
+  // Barrel clip MUST extend left of x=0 — full plunger retract moves the thumb
+  // pad to ~x=-53 (r=18), and a clip at x=0 was swallowing the ball.
+  const partClipRect =
+    part === "needle"
+      ? { x: 438, y: 0, w: 82, h: 120 }
+      : part === "barrel"
+        ? { x: -96, y: 0, w: 536, h: 120 }
+        : null;
 
   return (
     <svg
@@ -182,13 +197,13 @@ export function HorizontalSyringeArt({
         </linearGradient>
 
         <linearGradient id={liquidGrad} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#f4fbfe" stopOpacity="0.5" />
-          <stop offset="0.35" stopColor="#b9e3f4" stopOpacity="0.65" />
-          <stop offset="0.75" stopColor="#7ec8e6" stopOpacity="0.75" />
-          <stop offset="1" stopColor="#5aaed4" stopOpacity="0.8" />
+          <stop offset="0" stopColor="#d7f0fa" stopOpacity="0.82" />
+          <stop offset="0.35" stopColor="#8fd0ea" stopOpacity="0.9" />
+          <stop offset="0.75" stopColor="#5bb4d8" stopOpacity="0.94" />
+          <stop offset="1" stopColor="#3d9bc4" stopOpacity="0.96" />
         </linearGradient>
         <linearGradient id={liquidShine} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#ffffff" stopOpacity="0.55" />
+          <stop offset="0" stopColor="#ffffff" stopOpacity="0.4" />
           <stop offset="0.45" stopColor="#ffffff" stopOpacity="0" />
         </linearGradient>
 
@@ -216,9 +231,20 @@ export function HorizontalSyringeArt({
           <stop offset="0" stopColor="rgba(47,107,181,0.28)" />
           <stop offset="1" stopColor="rgba(20,38,68,0)" />
         </radialGradient>
+
+        {partClipRect ? (
+          <clipPath id={partClipId}>
+            <rect
+              x={partClipRect.x}
+              y={partClipRect.y}
+              width={partClipRect.w}
+              height={partClipRect.h}
+            />
+          </clipPath>
+        ) : null}
       </defs>
 
-      {active ? (
+      {active && part !== "needle" ? (
         <ellipse
           cx={HSYR_GEOMETRY.viewW / 2}
           cy={HSYR_GEOMETRY.viewH / 2}
@@ -229,7 +255,10 @@ export function HorizontalSyringeArt({
         />
       ) : null}
 
-      <g filter={`url(#${shadowId})`}>
+      <g
+        filter={part === "needle" ? undefined : `url(#${shadowId})`}
+        clipPath={partClipRect ? `url(#${partClipId})` : undefined}
+      >
         {/*
          * =============== PLUNGER BACK (thumb + shaft) ===============
          * Drawn BEFORE the barrel so the shaft is hidden by the barrel
@@ -451,6 +480,7 @@ export function HorizontalSyringeArt({
           width={HSYR_GEOMETRY.barrel.w}
           height={HSYR_GEOMETRY.barrel.h}
           fill={`url(#${glassSheen})`}
+          opacity="0.55"
           pointerEvents="none"
         />
 
@@ -470,13 +500,14 @@ export function HorizontalSyringeArt({
                 {labelled ? (
                   <text
                     x={x}
-                    y="62"
+                    y="63.5"
                     textAnchor="middle"
                     fontFamily="var(--font-secondary-stack, Arial, sans-serif)"
-                    fontSize="7"
+                    fontSize="10.5"
                     fontWeight="700"
                     fill="#0f172a"
                     stroke="none"
+                    textRendering="geometricPrecision"
                   >
                     {t === 1 ? "1" : "½"}
                   </text>
@@ -530,6 +561,7 @@ export function HorizontalSyringeArt({
         <rect x="400" y="51.5" width="34" height="3" rx="1.5" fill="#ffffff" opacity="0.45" />
         <rect x="434" y="53" width="6" height="14" rx="1.5" fill={`url(#${hubGrad})`} />
 
+        {/* Metal needle shaft + tip */}
         <rect
           x="440"
           y="57.5"
@@ -547,10 +579,7 @@ export function HorizontalSyringeArt({
           strokeOpacity="0.6"
           strokeWidth="0.6"
         />
-        <path
-          d={`M506 57.5 L506 62.5 L515 60.2 Z`}
-          fill="#64748b"
-        />
+        <path d="M506 57.5 L506 62.5 L515 60.2 Z" fill="#64748b" />
         <line
           x1="506"
           y1="58"
@@ -567,3 +596,4 @@ export function HorizontalSyringeArt({
     </svg>
   );
 }
+

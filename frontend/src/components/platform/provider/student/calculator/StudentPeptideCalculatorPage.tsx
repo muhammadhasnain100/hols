@@ -36,16 +36,16 @@ const amountFieldClass = cn(
 
 /** Compact pill — avoid `.dashboard-field { width: 100% }` stretching the counter. */
 const amountControlClass = cn(
-  "flex h-9 w-[6.25rem] shrink-0 items-stretch overflow-hidden rounded-full border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] transition sm:h-10 sm:w-[6.75rem]",
+  "flex h-8 w-[5.75rem] shrink-0 items-stretch overflow-hidden rounded-full border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] transition max-[390px]:h-8 max-[390px]:w-[5.5rem] sm:h-10 sm:w-[6.75rem]",
   "focus-within:border-[color:rgba(221,228,102,0.55)] focus-within:bg-[color:var(--dash-surface)] focus-within:shadow-[0_0_0_4px_rgba(221,228,102,0.18)]",
 );
 
 const unitFieldClass = cn(
-  "dashboard-field dashboard-field-select !h-9 !w-[4.75rem] !max-w-none shrink-0 appearance-none !rounded-full bg-[length:0.65rem] bg-[right_0.7rem_center] bg-no-repeat !py-0 !pl-3 !pr-6 text-center text-xs font-medium sm:!h-10 sm:!w-[5.5rem] sm:!pl-3.5 sm:!pr-7 sm:bg-[length:0.7rem] sm:bg-[right_0.8rem_center] sm:text-sm",
+  "dashboard-field dashboard-field-select !h-8 !w-[4.25rem] !max-w-none shrink-0 appearance-none !rounded-full bg-[length:0.6rem] bg-[right_0.6rem_center] bg-no-repeat !py-0 !pl-2.5 !pr-5 text-center text-[11px] font-medium max-[390px]:!w-[4rem] sm:!h-10 sm:!w-[5.5rem] sm:!pl-3.5 sm:!pr-7 sm:bg-[length:0.7rem] sm:bg-[right_0.8rem_center] sm:text-sm",
 );
 
 const unitCapsuleClass =
-  "dashboard-pill-soft inline-flex h-9 min-w-[3.25rem] shrink-0 items-center justify-center rounded-full px-2.5 text-xs font-medium text-[color:var(--dash-muted)] sm:h-10 sm:min-w-[3.75rem] sm:px-3 sm:text-sm";
+  "dashboard-pill-soft inline-flex h-8 min-w-[3rem] shrink-0 items-center justify-center rounded-full px-2 text-[11px] font-medium text-[color:var(--dash-muted)] sm:h-10 sm:min-w-[3.75rem] sm:px-3 sm:text-sm";
 
 /** Step size for the amount counter — matches typical vial / dose increments. */
 function amountStepForUnit(unit?: string): number {
@@ -79,10 +79,10 @@ export function StudentPeptideCalculatorPage({
   const [ready, setReady] = useState(embedded);
   const [step, setStep] = useState<Step>("syringe");
   const [syringeMl, setSyringeMl] = useState<SyringeSizeMl>(1);
-  const [peptideAmount, setPeptideAmount] = useState("5");
+  const [peptideAmount, setPeptideAmount] = useState("");
   const [peptideUnit, setPeptideUnit] = useState<MassUnit>("mg");
-  const [waterMl, setWaterMl] = useState("2");
-  const [doseAmount, setDoseAmount] = useState("250");
+  const [waterMl, setWaterMl] = useState("");
+  const [doseAmount, setDoseAmount] = useState("");
   const [doseUnit, setDoseUnit] = useState<MassUnit>("mcg");
   const [result, setResult] = useState<PeptideCalculatorResult | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -232,25 +232,25 @@ export function StudentPeptideCalculatorPage({
   ) : (
     <>
       {!hideHero ? (
-        <section className="dashboard-hero relative min-w-0 overflow-hidden rounded-2xl p-3.5 sm:p-5 md:p-6">
-          <div className="flex min-w-0 flex-col gap-3 sm:gap-4 md:flex-row md:items-end md:justify-between md:gap-5">
+        <section className="dashboard-hero relative min-w-0 overflow-hidden rounded-2xl p-3 max-[390px]:p-2.5 sm:p-5 md:p-6">
+          <div className="flex min-w-0 flex-col gap-2.5 max-[390px]:gap-2 sm:gap-4 md:flex-row md:items-end md:justify-between md:gap-5">
             <div className="min-w-0">
               <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
                 Learning tools
               </p>
-              <h2 className="font-sans mt-1.5 text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:mt-2 sm:text-2xl md:text-[2.25rem] md:leading-none">
+              <h2 className="font-sans mt-1 text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] max-[390px]:text-base sm:mt-2 sm:text-2xl md:text-[2.25rem] md:leading-none">
                 Peptide calculator
               </h2>
-              <p className="text-brand-body mt-1.5 max-w-2xl text-sm text-[color:var(--dash-muted)] sm:mt-2 sm:text-base">
+              <p className="text-brand-body mt-1 max-w-2xl text-xs text-[color:var(--dash-muted)] max-[390px]:leading-snug sm:mt-2 sm:text-base">
                 Step-by-step reconstitution and dosing helper for peptide preparations.
               </p>
             </div>
 
-            <div className="flex w-full shrink-0 gap-2 sm:w-auto sm:gap-2.5">
-              <span className="dashboard-pill-soft font-sans inline-flex min-h-9 flex-1 items-center justify-center rounded-full px-3 text-xs font-medium text-[color:var(--dash-text)] sm:min-h-10 sm:flex-none sm:px-4 sm:text-sm">
+            <div className="flex w-full shrink-0 gap-1.5 max-[390px]:gap-1 sm:w-auto sm:gap-2.5">
+              <span className="dashboard-pill-soft font-sans inline-flex min-h-8 flex-1 items-center justify-center rounded-full px-2.5 text-[11px] font-medium text-[color:var(--dash-text)] max-[390px]:min-h-7 max-[390px]:px-2 max-[390px]:text-[10px] sm:min-h-10 sm:flex-none sm:px-4 sm:text-sm">
                 {PROGRESS_STEPS[Math.min(progressIndex, PROGRESS_STEPS.length - 1)]?.label ?? "Syringe"}
               </span>
-              <span className="font-sans inline-flex min-h-9 flex-1 items-center justify-center rounded-full bg-[#DDE466] px-3 text-xs font-medium text-[#152744] sm:min-h-10 sm:flex-none sm:px-4 sm:text-sm">
+              <span className="font-sans inline-flex min-h-8 flex-1 items-center justify-center rounded-full bg-[#DDE466] px-2.5 text-[11px] font-medium text-[#152744] max-[390px]:min-h-7 max-[390px]:px-2 max-[390px]:text-[10px] sm:min-h-10 sm:flex-none sm:px-4 sm:text-sm">
                 Step {Math.min(progressIndex + 1, PROGRESS_STEPS.length)} / {PROGRESS_STEPS.length}
               </span>
             </div>
@@ -269,10 +269,10 @@ export function StudentPeptideCalculatorPage({
 
       {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
 
-      <section className="dashboard-surface min-w-0 overflow-x-hidden rounded-2xl p-3 sm:p-5 md:p-6">
+      <section className="dashboard-surface min-w-0 overflow-x-hidden rounded-2xl p-2.5 max-[390px]:p-2 sm:p-5 md:p-6">
         <nav
           aria-label="Calculator steps"
-          className="flex gap-1 overflow-x-auto overscroll-x-contain rounded-full bg-[color:var(--dash-soft)] p-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:gap-1.5 sm:p-1 [&::-webkit-scrollbar]:hidden"
+          className="flex gap-0.5 overflow-x-auto overscroll-x-contain rounded-full bg-[color:var(--dash-soft)] p-0.5 [-ms-overflow-style:none] [scrollbar-width:none] max-[390px]:gap-px sm:gap-1.5 sm:p-1 [&::-webkit-scrollbar]:hidden"
         >
           {PROGRESS_STEPS.map((item, index) => {
             const done = progressIndex > index || step === "result";
@@ -281,7 +281,7 @@ export function StudentPeptideCalculatorPage({
               <span
                 key={item.id}
                 className={cn(
-                  "font-sans inline-flex h-7 min-w-0 flex-1 items-center justify-center gap-1 rounded-full px-1.5 text-[10px] font-medium tracking-[0.005em] transition sm:h-8 sm:gap-1.5 sm:px-3 sm:text-xs md:text-sm",
+                  "font-sans inline-flex h-7 min-w-0 flex-1 items-center justify-center gap-0.5 rounded-full px-1 text-[9px] font-medium tracking-[0.005em] transition max-[390px]:h-6 max-[390px]:px-0.5 max-[390px]:text-[8px] sm:h-8 sm:gap-1.5 sm:px-3 sm:text-xs md:text-sm",
                   done
                     ? "bg-[#DDE466] text-[#152744] shadow-[0_1px_3px_rgba(21,39,68,0.12)]"
                     : active
@@ -291,7 +291,7 @@ export function StudentPeptideCalculatorPage({
               >
                 <span
                   className={cn(
-                    "flex h-3.5 w-3.5 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold leading-none",
+                    "flex h-3 w-3 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold leading-none max-[390px]:h-2.5 max-[390px]:w-2.5 max-[390px]:text-[8px] sm:h-3.5 sm:w-3.5 sm:text-[10px]",
                     done
                       ? "bg-[#152744]/15"
                       : active
@@ -310,11 +310,11 @@ export function StudentPeptideCalculatorPage({
         <div
           ref={panelRef}
           className={cn(
-            "mt-4 min-w-0 sm:mt-5 md:mt-6",
+            "mt-3 min-w-0 max-[390px]:mt-2.5 sm:mt-5 md:mt-6",
             isWideLayout
               // Mobile: amount card first, vial/syringe visual second.
               // Desktop (lg+): same DOM order → amount left, visual right (3fr : 5fr).
-              ? "grid min-w-0 gap-4 md:gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,5fr)] lg:items-stretch lg:gap-6"
+              ? "grid min-w-0 gap-3 max-[390px]:gap-2.5 md:gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,5fr)] lg:items-stretch lg:gap-6"
               : "mx-auto w-full max-w-3xl",
           )}
         >
@@ -333,7 +333,7 @@ export function StudentPeptideCalculatorPage({
                   />
                 }
               >
-                <div className="flex flex-wrap items-center justify-center gap-1.5 sm:gap-2 lg:justify-start">
+                <div className="flex flex-wrap items-center justify-center gap-1 max-[390px]:gap-1 sm:gap-2 lg:justify-start">
                   {SYRINGE_SIZES_ML.map((size) => (
                     <SyringeSizeOption
                       key={size}
@@ -396,13 +396,13 @@ export function StudentPeptideCalculatorPage({
 
             {step === "animating" ? (
               <div className="min-w-0 text-center">
-                <h2 className="font-sans text-base font-semibold leading-[1.15] tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl">
+                <h2 className="font-sans text-sm font-semibold leading-[1.15] tracking-[0.01em] text-[color:var(--dash-text)] max-[390px]:text-[13px] sm:text-xl">
                   Preparing your dose
                 </h2>
-                <p className="text-brand-body mt-1.5 text-sm text-[color:var(--dash-muted)]">
+                <p className="text-brand-body mt-1 text-xs text-[color:var(--dash-muted)] max-[390px]:text-[11px] sm:mt-1.5 sm:text-sm">
                   Watch the reconstitution sequence
                 </p>
-                <div className="mt-3 min-w-0 sm:mt-5">
+                <div className="mt-2.5 min-w-0 max-[390px]:mt-2 sm:mt-5">
                   <InjectionAnimation
                     onComplete={finishAnimation}
                     syringeMl={syringeMl}
@@ -415,36 +415,36 @@ export function StudentPeptideCalculatorPage({
             ) : null}
 
             {step === "result" && result ? (
-              <div className="dashboard-glass-card flex h-full flex-col justify-center rounded-2xl p-4 text-center sm:p-6 lg:text-left">
-                <h2 className="font-sans text-lg font-semibold leading-[1.15] tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl">
+              <div className="dashboard-glass-card flex h-full flex-col justify-center rounded-2xl p-3 text-center max-[390px]:p-2.5 sm:p-6 lg:text-left">
+                <h2 className="font-sans text-base font-semibold leading-[1.15] tracking-[0.01em] text-[color:var(--dash-text)] max-[390px]:text-sm sm:text-xl">
                   Results
                 </h2>
-                <div className="mt-4 grid grid-cols-1 gap-2.5 sm:grid-cols-2 sm:gap-3">
-                  <div className="dashboard-row rounded-2xl px-4 py-4 sm:px-5 sm:py-5">
+                <div className="mt-3 grid grid-cols-1 gap-2 max-[390px]:gap-1.5 sm:mt-4 sm:grid-cols-2 sm:gap-3">
+                  <div className="dashboard-row rounded-2xl px-3 py-3 max-[390px]:px-2.5 max-[390px]:py-2.5 sm:px-5 sm:py-5">
                     <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
                       Units per dose
                     </p>
-                    <p className="font-sans mt-1.5 text-2xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-3xl">
+                    <p className="font-sans mt-1 text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] max-[390px]:text-lg sm:mt-1.5 sm:text-3xl">
                       <span ref={unitsRef}>{result.unitsPerDose.toFixed(2)}</span>
                     </p>
                   </div>
-                  <div className="dashboard-row rounded-2xl px-4 py-4 sm:px-5 sm:py-5">
+                  <div className="dashboard-row rounded-2xl px-3 py-3 max-[390px]:px-2.5 max-[390px]:py-2.5 sm:px-5 sm:py-5">
                     <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
                       Total doses in vial
                     </p>
-                    <p className="font-sans mt-1.5 text-2xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-3xl">
+                    <p className="font-sans mt-1 text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] max-[390px]:text-lg sm:mt-1.5 sm:text-3xl">
                       <span ref={dosesRef}>{result.totalDoses.toFixed(2)}</span>
                     </p>
                   </div>
                 </div>
-                <p className="text-brand-body mx-auto mt-4 max-w-md text-sm text-[color:var(--dash-muted)] lg:mx-0">
+                <p className="text-brand-body mx-auto mt-3 max-w-md text-xs text-[color:var(--dash-muted)] max-[390px]:mt-2.5 sm:mt-4 sm:text-sm lg:mx-0">
                   Draw to {result.unitsPerDose.toFixed(2)} units ({result.doseVolumeMl} ml) on your{" "}
                   {syringeMl} ml syringe.
                 </p>
                 <button
                   type="button"
                   onClick={restart}
-                  className="font-sans mt-5 inline-flex min-h-10 w-full items-center justify-center rounded-full bg-[#DDE466] px-6 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 sm:mt-6 sm:min-h-11 sm:w-auto"
+                  className="font-sans mt-4 inline-flex min-h-9 w-full items-center justify-center rounded-full bg-[#DDE466] px-5 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 max-[390px]:min-h-8 max-[390px]:text-xs sm:mt-6 sm:min-h-11 sm:w-auto sm:px-6"
                 >
                   Restart
                 </button>
@@ -460,8 +460,8 @@ export function StudentPeptideCalculatorPage({
                   syringeMl={syringeMl}
                   unitsPerDose={result?.unitsPerDose ?? 0}
                   maxUnits={result?.maxUnitsOnSyringe ?? syringeMl * 100}
-                  waterFilled={step !== "syringe"}
-                  medicationFilled={step === "water" || step === "dose" || step === "result"}
+                  waterFilled={step === "water" || step === "dose" || step === "result"}
+                  medicationFilled={step === "result"}
                   peptideUnit={peptideUnit}
                   waterMl={waterMl}
                   peptideAmount={peptideAmount}
@@ -499,19 +499,19 @@ function StepPanel({
   actions: React.ReactNode;
 }) {
   return (
-    <div className="dashboard-glass-card flex h-full min-h-[15rem] flex-col justify-center rounded-2xl p-3.5 sm:min-h-[20rem] sm:p-6 md:min-h-[22rem] lg:min-h-full">
-      <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-3.5 text-center sm:gap-5 lg:mx-0 lg:max-w-none lg:items-start lg:text-left">
+    <div className="dashboard-glass-card flex h-full min-h-0 flex-col justify-center rounded-2xl p-3 max-[390px]:p-2.5 sm:min-h-[20rem] sm:p-6 md:min-h-[22rem] lg:min-h-full">
+      <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-3 text-center max-[390px]:gap-2.5 sm:gap-5 lg:mx-0 lg:max-w-none lg:items-start lg:text-left">
         <div className="min-w-0 w-full">
           <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
             {eyebrow}
           </p>
-          <h2 className="font-sans mt-1.5 text-base font-semibold leading-[1.3] tracking-[0.01em] text-[color:var(--dash-text)] sm:text-lg md:text-xl">
+          <h2 className="font-sans mt-1 text-sm font-semibold leading-[1.3] tracking-[0.01em] text-[color:var(--dash-text)] max-[390px]:text-[13px] sm:mt-1.5 sm:text-lg md:text-xl">
             {title}
           </h2>
-          <p className="text-brand-body mt-2 text-sm text-[color:var(--dash-muted)]">{hint}</p>
+          <p className="text-brand-body mt-1 text-xs text-[color:var(--dash-muted)] max-[390px]:text-[11px] max-[390px]:leading-snug sm:mt-2 sm:text-sm">{hint}</p>
         </div>
         <div className="w-full min-w-0">{children}</div>
-        <div className="w-full border-t border-[color:var(--dash-surface-border)] pt-4">{actions}</div>
+        <div className="w-full border-t border-[color:var(--dash-surface-border)] pt-2.5 max-[390px]:pt-2 sm:pt-4">{actions}</div>
       </div>
     </div>
   );
@@ -529,19 +529,19 @@ function StepActions({
   nextLabel: string;
 }) {
   return (
-    <div className="flex w-full flex-row flex-wrap items-center justify-center gap-2 sm:flex-nowrap lg:justify-start">
+    <div className="flex w-full flex-row flex-wrap items-center justify-center gap-1.5 max-[390px]:gap-1 sm:flex-nowrap sm:gap-2 lg:justify-start">
       <button
         type="button"
         onClick={onBack}
         disabled={backDisabled}
-        className="dashboard-pill-soft font-sans inline-flex min-h-10 flex-1 items-center justify-center rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-40 sm:flex-none"
+        className="dashboard-pill-soft font-sans inline-flex min-h-9 flex-1 items-center justify-center rounded-full px-4 text-xs font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-40 max-[390px]:min-h-8 max-[390px]:px-3 sm:min-h-10 sm:flex-none sm:px-5 sm:text-sm"
       >
         Back
       </button>
       <button
         type="button"
         onClick={onNext}
-        className="font-sans inline-flex min-h-10 flex-1 items-center justify-center rounded-full bg-[#DDE466] px-6 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 sm:flex-none"
+        className="font-sans inline-flex min-h-9 flex-1 items-center justify-center rounded-full bg-[#DDE466] px-5 text-xs font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 max-[390px]:min-h-8 max-[390px]:px-4 sm:min-h-10 sm:flex-none sm:px-6 sm:text-sm"
       >
         {nextLabel}
       </button>

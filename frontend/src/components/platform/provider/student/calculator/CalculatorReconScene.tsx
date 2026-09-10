@@ -38,23 +38,26 @@ type CalculatorReconSceneProps = {
 };
 
 /**
- * Overview vials — bacteriostatic water is a 30 mL stock bottle; the medication
- * vial is a small (~2–10 mL) peptide vial. It should render visibly smaller.
- * Width ratio (~0.63 med/water) is kept across breakpoints so mobile matches
- * the corrected desktop proportion; `md` restores full desktop drama.
- *
- * Peptide SVG (120×205) is taller per-rem than water (160×210), so med width
- * must stay proportionally smaller or it reads as the larger bottle.
+ * Overview vials — sized so both silhouettes read as the same height on a
+ * shared surface. Water uses 160×210 art; med uses 120×205 with a higher
+ * internal scale, so med CSS width stays ~0.77× water.
+ * `max-[390px]` targets iPhone SE / small phones — keep proportions close to
+ * desktop so needle insert depth scales correctly.
  */
-const vialSizeClass = "w-[4.25rem] sm:w-[5.5rem] md:w-[8.55rem]";
-const waterVialSizeClass = "w-[6.75rem] sm:w-[8.75rem] md:w-[13.5rem]";
+const vialSizeClass =
+  "w-[3.85rem] max-[390px]:w-[3.6rem] sm:w-[6.05rem] md:w-[9.35rem]";
+const waterVialSizeClass =
+  "w-[5rem] max-[390px]:w-[4.65rem] sm:w-[7.9rem] md:w-[12.15rem]";
 /**
  * Draw (animation) column + art widths — follow overview proportions so the
  * reconstitution scene matches the dose-selection preview on every breakpoint.
  */
-const drawColumnClass = "w-[6.75rem] sm:w-[8.75rem] md:w-[14rem]";
-const drawVialArtClass = "w-[4.25rem] sm:w-[5.5rem] md:w-[8.55rem]";
-const drawWaterVialArtClass = "w-[6.75rem] sm:w-[8.75rem] md:w-[13.5rem]";
+const drawColumnClass =
+  "w-[5.35rem] max-[390px]:w-[4.85rem] sm:w-[7.9rem] md:w-[12.5rem]";
+const drawVialArtClass =
+  "w-[3.85rem] max-[390px]:w-[3.55rem] sm:w-[6.05rem] md:w-[9.35rem]";
+const drawWaterVialArtClass =
+  "w-[5rem] max-[390px]:w-[4.65rem] sm:w-[7.9rem] md:w-[12.15rem]";
 /**
  * Back (liquid) + front (glass) overlays MUST share this exact flex layout.
  * Top padding is applied inline as `paddingTop` based on the selected syringe
@@ -63,7 +66,7 @@ const drawWaterVialArtClass = "w-[6.75rem] sm:w-[8.75rem] md:w-[13.5rem]";
  * retracted plunger in vertical pose.
  */
 const vialRowClass =
-  "flex items-end justify-center gap-3 pb-2 sm:gap-5 sm:pb-4 md:gap-12 md:pb-6";
+  "flex items-end justify-center gap-3 pb-1 max-[390px]:gap-2.5 max-[390px]:pb-1 sm:gap-5 sm:pb-4 md:gap-12 md:pb-6";
 
 type DrawVialProps = {
   variant: "water" | "peptide";
@@ -133,7 +136,7 @@ function DrawVialColumn({
       {caption ? (
         <p
           className={cn(
-            "mt-1.5 w-full whitespace-pre-line px-0.5 text-center text-[8px] font-semibold uppercase leading-[1.25] tracking-[0.06em] text-[color:var(--dash-text)] sm:mt-2 sm:text-[9px] sm:tracking-[0.08em]",
+            "mt-1.5 w-full max-w-full whitespace-pre-line px-0.5 text-center text-[8px] font-semibold uppercase leading-[1.2] tracking-[0.04em] text-[color:var(--dash-text)] max-[390px]:mt-1 max-[390px]:text-[7px] max-[390px]:tracking-[0.02em] sm:mt-2 sm:text-[9px] sm:tracking-[0.08em]",
             captionHidden && "invisible",
           )}
           aria-hidden={captionHidden}
@@ -192,7 +195,7 @@ export function CalculatorReconScene({
     return (
       <div
         className={cn(
-          "mx-auto flex w-full max-w-[18rem] flex-col items-center gap-2 px-1 py-2 sm:max-w-[24rem] sm:gap-5 sm:px-2 sm:py-3 md:max-w-lg md:gap-8 md:py-5",
+          "mx-auto flex w-full max-w-[18rem] flex-col items-center gap-2 px-1 py-1.5 max-[390px]:max-w-[17rem] max-[390px]:gap-1.5 max-[390px]:py-1 sm:max-w-[24rem] sm:gap-5 sm:px-2 sm:py-3 md:max-w-lg md:gap-8 md:py-5",
           className,
         )}
       >
@@ -213,9 +216,9 @@ export function CalculatorReconScene({
           </div>
         ) : null}
 
-        <div className="flex w-full min-w-0 items-end justify-center gap-3 sm:gap-6 md:gap-12">
+        <div className="flex w-full min-w-0 items-end justify-center gap-3 max-[390px]:gap-2.5 sm:gap-6 md:gap-12">
           <AssetVial
-            label="Bacteriostatic water"
+            label={compact ? "Bac water" : "Bacteriostatic water"}
             fillRatio={waterFill}
             variant="water"
             empty={waterEmpty}
@@ -225,7 +228,7 @@ export function CalculatorReconScene({
             className={cn(waterVialSizeClass, "self-end")}
           />
           <AssetVial
-            label="Medication vial"
+            label={compact ? "Medication" : "Medication vial"}
             fillRatio={medFill}
             variant="peptide"
             peptideUnit={peptideUnit}
@@ -249,10 +252,10 @@ export function CalculatorReconScene({
         // The paddingTop + vial height gives enough room for the full plunger.
         "relative mx-auto w-full max-w-lg overflow-hidden px-0 sm:max-w-2xl sm:px-4 md:max-w-3xl md:px-6",
         // min-h: paddingTop + vial column + bottom pad. Compact syringe keeps
-        // everything proportional to the desktop layout.
+        // everything proportional; SE gets a shorter floor so the card fits.
         drawSyringeLarge
-          ? "min-h-[22rem] sm:min-h-[30rem] md:min-h-[38rem]"
-          : "min-h-[10rem] sm:min-h-[14rem] md:min-h-[16rem]",
+          ? "min-h-[22rem] max-[390px]:min-h-[20.5rem] sm:min-h-[30rem] md:min-h-[38rem]"
+          : "min-h-[9rem] max-[390px]:min-h-[8.5rem] sm:min-h-[14rem] md:min-h-[16rem]",
         className,
       )}
     >
@@ -278,28 +281,32 @@ export function CalculatorReconScene({
             }}
             aria-hidden
           />
+          {/*
+            Needle under front caps (z-15); barrel above front (z-25).
+            Back vials are z-10, front glass/caps z-20 — same stacking context.
+          */}
+          <div
+            data-syringe-needle-wrap
+            className="pointer-events-none absolute left-0 top-0 z-[15] will-change-transform"
+            aria-hidden
+          >
+            <AssetSyringe {...syringeCommon} part="needle" />
+          </div>
           <div
             ref={syringeWrapRef}
-            className={cn(
-              "pointer-events-none absolute left-0 top-0 will-change-transform",
-              // Keep syringe above vial art during travel so it never paints
-              // "under" the card content; needle still reads through the stopper
-              // via the vial front/back layers.
-              "z-30",
-            )}
+            className="pointer-events-none absolute left-0 top-0 z-[25] will-change-transform"
           >
-            <AssetSyringe {...syringeCommon} part="full" />
+            <AssetSyringe {...syringeCommon} part="barrel" />
           </div>
         </>
       ) : null}
 
       {/*
+        Host has NO z-index so back/front z values compete with the syringe.
         Front glass must share this exact box with the back fill layer.
-        A scene-sized absolute overlay (different gap/pt/height) shifts liquid
-        beside the bottle silhouette.
       */}
-      <div className="relative z-10">
-        <div className={vialRowClass} style={{ paddingTop: drawScenePaddingTop }}>
+      <div className="relative">
+        <div className={cn(vialRowClass, "relative z-10")} style={{ paddingTop: drawScenePaddingTop }}>
           <DrawVialColumn
             variant="water"
             fillRatio={waterFill}
@@ -307,7 +314,7 @@ export function CalculatorReconScene({
             instantFill={instantFill}
             gsapDriven={gsapDriven}
             renderLayer={useLayeredDraw ? "back" : "full"}
-            caption={"Bacteriostatic\nwater"}
+            caption={compact ? "Bac water" : "Bacteriostatic\nwater"}
             active={waterActive}
             dimmed={medActive && !waterActive}
             rootAttrs={{ "data-vial": "water", "data-vial-root": "water", "data-vial-column": "water" }}
@@ -320,7 +327,7 @@ export function CalculatorReconScene({
             instantFill={instantFill}
             gsapDriven={gsapDriven}
             renderLayer={useLayeredDraw ? "back" : "full"}
-            caption={"Medication\nvial"}
+            caption={compact ? "Medication" : "Medication\nvial"}
             active={medActive}
             dimmed={waterActive && !medActive}
             rootAttrs={{ "data-vial": "med", "data-vial-root": "med", "data-vial-column": "med" }}
@@ -342,7 +349,7 @@ export function CalculatorReconScene({
               instantFill={instantFill}
               gsapDriven={gsapDriven}
               renderLayer="front"
-              caption={"Bacteriostatic\nwater"}
+              caption={compact ? "Bac water" : "Bacteriostatic\nwater"}
               captionHidden
               active={waterActive}
               dimmed={medActive && !waterActive}
@@ -356,7 +363,7 @@ export function CalculatorReconScene({
               instantFill={instantFill}
               gsapDriven={gsapDriven}
               renderLayer="front"
-              caption={"Medication\nvial"}
+              caption={compact ? "Medication" : "Medication\nvial"}
               captionHidden
               active={medActive}
               dimmed={waterActive && !medActive}

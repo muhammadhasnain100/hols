@@ -15,6 +15,7 @@ import {
   BAC_WATER_SRC,
   BacWaterLiquidFill,
   BacWaterVialArt,
+  bacWaterLiquidOffsetY,
 } from "@/components/platform/provider/student/calculator/BacWaterVialArt";
 import {
   HEXARELIN_SRC,
@@ -124,14 +125,22 @@ export function AssetVial({
   const palette = variant === "water" ? WATER_PALETTE : peptidePalette(peptideUnit);
 
   const isEmpty = empty || fillRatio <= 0.02;
+  const isWater = variant === "water";
+  const showPowder = variant === "peptide" && powder && !isEmpty;
   const clamped = isEmpty ? 0 : Math.min(0.95, Math.max(0.06, fillRatio));
   const interiorHeight =
     variant === "water" ? BAC_WATER_SRC.interiorHeight : HEXARELIN_SRC.interiorHeight;
-  const targetOffsetY = isEmpty ? interiorHeight - 6 : (1 - clamped) * interiorHeight;
+  // Powder height is drawn into the cake itself — never use liquid translate offsets.
+  // Bac-water meniscus stays in the clear glass under the label so level changes read.
+  const targetOffsetY = showPowder
+    ? 0
+    : isWater
+      ? bacWaterLiquidOffsetY(clamped, isEmpty)
+      : isEmpty
+        ? interiorHeight - 6
+        : (1 - clamped) * interiorHeight;
   const waterEmpty = variant === "water" && isEmpty;
   const productName = variant === "water" ? "Bacteriostatic water" : "Medication vial";
-  const showPowder = variant === "peptide" && powder;
-  const isWater = variant === "water";
 
   const rootRef = useRef<HTMLDivElement>(null);
   const fillProxy = useRef({ y: targetOffsetY });
@@ -254,7 +263,7 @@ export function AssetVial({
       {label ? (
         <p
           className={cn(
-            "mt-2 flex min-h-8 w-full items-end justify-center px-0.5 text-center text-[9px] font-semibold uppercase leading-tight tracking-[0.06em] sm:min-h-9 sm:text-[10px] sm:tracking-[0.12em]",
+            "mt-1.5 flex min-h-6 w-full items-end justify-center px-0.5 text-center text-[8px] font-semibold uppercase leading-tight tracking-[0.04em] max-[390px]:min-h-5 max-[390px]:text-[7px] sm:mt-2 sm:min-h-9 sm:text-[10px] sm:tracking-[0.12em]",
             waterEmpty
               ? "text-[color:var(--dash-muted)]"
               : "text-[color:var(--dash-text)]",
@@ -368,9 +377,11 @@ export function AssetSyringe({
     const drawWidthRem = syringeDisplayWidthRem(syringeMl, useCompactWidth);
     const drawWidthPx = drawWidthRem * 16;
     const drawHeightPx = drawWidthPx * (HSYR_GEOMETRY.viewH / HSYR_GEOMETRY.viewW);
-    // Padded box big enough to host the syringe rotated to any angle without
-    // clipping — a square with side = drawWidthPx.
-    const boxSide = drawWidthPx;
+    // Padded box big enough for any rotation PLUS the fully-retracted plunger
+    // thumb (extends ~plungerTravel past the left of the native SVG).
+    const plungerOverhangPx =
+      (HSYR_GEOMETRY.plungerTravel / HSYR_GEOMETRY.viewW) * drawWidthPx + 28;
+    const boxSide = drawWidthPx + plungerOverhangPx;
 
     // The needle tip lives at (515, 60.2) inside the 520×120 viewBox.
     // Convert to fraction of the SVG's rendered box (drawWidthPx × drawHeightPx):
@@ -379,16 +390,16 @@ export function AssetSyringe({
 
     return (
       <div
-        className={cn("flex flex-col items-center", className)}
+        className={cn("flex flex-col items-center overflow-visible", className)}
         data-syringe-box="draw"
       >
         <div
-          className="relative max-w-full"
+          className="relative max-w-full overflow-visible"
           style={{ width: boxSide, height: boxSide }}
         >
           <div
             data-syringe-rotator
-            className="absolute left-1/2 top-1/2"
+            className="absolute left-1/2 top-1/2 overflow-visible"
             // GSAP owns `transform` during the draw animation — putting rotation
             // in React style would snap the syringe on every parent re-render.
             style={{
@@ -407,25 +418,26 @@ export function AssetSyringe({
             }}
           >
             <HorizontalSyringeArt
-              uid={uid}
+              uid={`${uid}-${part}`}
               fillRatio={0}
-              showLiquid
-              active={active}
-              gsapOwned={gsapDriven}
-              className="absolute inset-0 h-full w-full"
+              showLiquid={part !== "needle"}
+              active={active && part !== "needle"}
+              gsapOwned={gsapDriven && part !== "needle"}
+              part={part}
+              className="absolute inset-0 h-full w-full overflow-visible"
             />
-            {/* Tip marker — sits inside the rotator so its getBoundingClientRect()
-                reflects the current rotation. Positioned at (tipFracX, tipFracY)
-                of the un-rotated SVG box. */}
-            <span
-              data-needle-tip
-              className="pointer-events-none absolute h-px w-px"
-              style={{
-                left: `${tipFracX * 100}%`,
-                top: `${tipFracY * 100}%`,
-              }}
-              aria-hidden
-            />
+            {/* Tip marker only on the needle (or full) layer — used for alignment */}
+            {part !== "barrel" ? (
+              <span
+                data-needle-tip
+                className="pointer-events-none absolute h-px w-px"
+                style={{
+                  left: `${tipFracX * 100}%`,
+                  top: `${tipFracY * 100}%`,
+                }}
+                aria-hidden
+              />
+            ) : null}
           </div>
         </div>
         {label ? (
@@ -567,7 +579,7 @@ export function SyringeSizeOption({
       type="button"
       onClick={onSelect}
       className={cn(
-        "relative z-10 inline-flex h-8 min-w-[3rem] items-center justify-center rounded-full border px-2 text-[11px] font-medium tracking-[0.01em] transition duration-200 sm:h-9 sm:min-w-[4.1rem] sm:px-3.5 sm:text-sm",
+        "relative z-10 inline-flex h-7 min-w-[2.75rem] items-center justify-center rounded-full border px-1.5 text-[10px] font-medium tracking-[0.01em] transition duration-200 max-[390px]:h-7 max-[390px]:min-w-[2.55rem] max-[390px]:px-1 max-[390px]:text-[9px] sm:h-9 sm:min-w-[4.1rem] sm:px-3.5 sm:text-sm",
         selected
           ? "border-[#DDE466] bg-[#DDE466] text-[#152744] shadow-[0_2px_10px_rgba(221,228,102,0.3)]"
           : "dashboard-pill-soft border-[color:var(--dash-surface-border)] text-[color:var(--dash-muted)] hover:text-[color:var(--dash-text)]",

@@ -18,10 +18,12 @@ import { memo, useEffect, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import { CalculatorReconScene } from "@/components/platform/provider/student/calculator/CalculatorReconScene";
 import {
+  isWaterSupplyEmpty,
   medFillAfterReconstitution,
   medPowderFillFromAmount,
   reconstitutionDrawVolumeMl,
   syringeFillFromDrawVolume,
+  waterFillAfterDraw,
   waterFillFromVolume,
 } from "@/components/platform/provider/student/calculator/calculatorFillLevels";
 import {
@@ -31,7 +33,7 @@ import {
   svgLayersTranslateXSetter,
   vialLiquidOffsetY,
 } from "@/components/platform/provider/student/calculator/calculatorGeometry";
-import { BAC_WATER_SRC } from "@/components/platform/provider/student/calculator/BacWaterVialArt";
+import { bacWaterLiquidOffsetY } from "@/components/platform/provider/student/calculator/BacWaterVialArt";
 import { HEXARELIN_SRC } from "@/components/platform/provider/student/calculator/HexarelinVialArt";
 import {
   hsyrLiquidLayout,
@@ -70,7 +72,13 @@ const STAGE = {
 
 const ROT_H = 0;
 const ROT_V = 90;
-const INSERT = 8;
+/** Desktop-tuned insert depth as a fraction of vial height (through the cap, not into the body). */
+const INSERT_FRAC = 0.12;
+const HOVER_FRAC = 0.09;
+const INSERT_MIN_PX = 5;
+const INSERT_MAX_PX = 32;
+const HOVER_MIN_PX = 7;
+const HOVER_MAX_PX = 22;
 
 type Pt = { x: number; y: number };
 
@@ -87,6 +95,15 @@ function pivotForTip(tip: Pt, tipRel: Pt, rotation: number): Pt {
   return { x: tip.x - r.x, y: tip.y - r.y };
 }
 
+/** Scale motion offsets with the rendered vial so phones match desktop proportions. */
+function vialMotionOffsets(scene: HTMLElement, which: "water" | "med") {
+  const root = scene.querySelector(`[data-vial-root="${which}"]`);
+  const height = root?.getBoundingClientRect().height || 160;
+  const insert = Math.min(INSERT_MAX_PX, Math.max(INSERT_MIN_PX, height * INSERT_FRAC));
+  const hover = Math.min(HOVER_MAX_PX, Math.max(HOVER_MIN_PX, height * HOVER_FRAC));
+  return { insert, hover, height };
+}
+
 type Dom = {
   waterColumn: HTMLElement | null;
   medColumn: HTMLElement | null;
@@ -99,8 +116,12 @@ type Dom = {
   syringeLiquidFill: SVGRectElement | null;
   syringePlungerLayers: NodeListOf<HTMLElement> | null;
   syringeRotator: HTMLElement | null;
+  syringeRotators: NodeListOf<HTMLElement> | null;
+  needleWrap: HTMLElement | null;
   contactShadow: HTMLElement | null;
   medGlow: HTMLElement | null;
+  mixBubbles: HTMLElement | null;
+  mixBubbleNodes: NodeListOf<HTMLElement> | null;
   setWaterLiquidY: ((v: number) => void) | null;
   setWaterSurfaceY: ((v: number) => void) | null;
   setMedLiquidY: ((v: number) => void) | null;
@@ -126,9 +147,13 @@ function queryDom(scene: HTMLElement, wrap: HTMLElement): Dom | null {
   const syringeLiquidFill = wrap.querySelector<SVGRectElement>("[data-syringe-liquid-fill]");
   const syringePlungerLayers = wrap.querySelectorAll<HTMLElement>("[data-syringe-plunger-layer]");
   const syringeRotator = wrap.querySelector<HTMLElement>("[data-syringe-rotator]");
+  const syringeRotators = scene.querySelectorAll<HTMLElement>("[data-syringe-rotator]");
+  const needleWrap = scene.querySelector<HTMLElement>("[data-syringe-needle-wrap]");
   const contactShadow = scene.querySelector<HTMLElement>("[data-syringe-contact-shadow]");
   const waterColumn = scene.querySelector<HTMLElement>('[data-vial-column="water"]');
   const medColumn = scene.querySelector<HTMLElement>('[data-vial-column="med"]');
+  const mixBubbles = medRoot.querySelector<HTMLElement>("[data-vial-mix-bubbles]");
+  const mixBubbleNodes = medRoot.querySelectorAll<HTMLElement>("[data-vial-mix-bubble]");
 
   let medGlow = medRoot.querySelector<HTMLElement>("[data-vial-recon-glow]");
   if (!medGlow && medRoot instanceof HTMLElement) {
@@ -157,8 +182,12 @@ function queryDom(scene: HTMLElement, wrap: HTMLElement): Dom | null {
     syringeLiquidFill,
     syringePlungerLayers,
     syringeRotator,
+    syringeRotators,
+    needleWrap,
     contactShadow,
     medGlow,
+    mixBubbles,
+    mixBubbleNodes,
     setWaterLiquidY: svgLayerTranslateYSetter(waterLiquidLayer),
     setWaterSurfaceY: svgLayerTranslateYSetter(waterSurfaceMarker),
     setMedLiquidY: svgLayerTranslateYSetter(medLiquidLayer),
@@ -177,6 +206,7 @@ const DrawScene = memo(function DrawScene({
   syringeMl,
   peptideUnit,
   waterFill,
+  waterEmpty = false,
   medFill,
 }: {
   sceneRef: RefObject<HTMLDivElement | null>;
@@ -184,6 +214,7 @@ const DrawScene = memo(function DrawScene({
   syringeMl: SyringeSizeMl;
   peptideUnit: MassUnit;
   waterFill: number;
+  waterEmpty?: boolean;
   medFill: number;
 }) {
   return (
@@ -199,10 +230,11 @@ const DrawScene = memo(function DrawScene({
       showSyringeFill
       syringeFill={0}
       waterFill={waterFill}
-      waterEmpty={false}
+      waterEmpty={waterEmpty}
       medFill={medFill}
       medPowder
-      waterActive
+      // GSAP focus() owns highlight — CSS dim would leave front labels translucent
+      waterActive={false}
       medActive={false}
     />
   );
@@ -271,11 +303,21 @@ export function InjectionAnimation({
 
         // Identity pose for measurement — tipRel is measured at rotation 0°.
         gsap.set(wrapEl, { x: 0, y: 0, force3D: true, opacity: 1 });
-        if (dom.syringeRotator) {
-          gsap.set(dom.syringeRotator, { clearProps: "transform" });
-          dom.syringeRotator.style.transformOrigin = "center center";
-          dom.syringeRotator.style.transform = "translate(-50%, -50%) rotate(0deg)";
+        if (dom.needleWrap) {
+          dom.needleWrap.style.transform = "translate(0px, 0px)";
+          dom.needleWrap.style.opacity = "1";
         }
+        const rotators =
+          dom.syringeRotators && dom.syringeRotators.length > 0
+            ? Array.from(dom.syringeRotators)
+            : dom.syringeRotator
+              ? [dom.syringeRotator]
+              : [];
+        rotators.forEach((el) => {
+          gsap.set(el, { clearProps: "transform" });
+          el.style.transformOrigin = "center center";
+          el.style.transform = "translate(-50%, -50%) rotate(0deg)";
+        });
         if (dom.contactShadow) gsap.set(dom.contactShadow, { opacity: 0, scale: 0.85 });
 
         const targets = measureStaticDrawTargets(sceneEl, wrapEl);
@@ -298,24 +340,33 @@ export function InjectionAnimation({
         // How far the tip sits below the pivot when needle-down.
         const tipDrop = Math.abs(rotateVec(tipRel, ROT_V).y) || Math.abs(tipRel.x);
 
+        const waterMotion = vialMotionOffsets(sceneEl, "water");
+        const medMotion = vialMotionOffsets(sceneEl, "med");
+        // tipDrop ≈ half the rendered syringe length; needle ≈ 30% of tipDrop.
+        // Cap insert at ~45% of needle so the hub never sinks into the bottle.
+        const needleLenPx = tipDrop * 0.3;
+        const maxInsertByNeedle = Math.max(INSERT_MIN_PX, needleLenPx * 0.45);
+        const waterInsertDepth = Math.min(waterMotion.insert, maxInsertByNeedle, INSERT_MAX_PX);
+        const medInsertDepth = Math.min(medMotion.insert, maxInsertByNeedle, INSERT_MAX_PX);
+
         /** Hover / insert pivots — tip locked onto the vial stopper. */
         const waterHover = pivotForTip(
-          { x: water.x, y: water.y - 18 },
+          { x: water.x, y: water.y - waterMotion.hover },
           tipRel,
           ROT_V,
         );
         const waterInsert = pivotForTip(
-          { x: water.x, y: water.y + INSERT },
+          { x: water.x, y: water.y + waterInsertDepth },
           tipRel,
           ROT_V,
         );
         const medHover = pivotForTip(
-          { x: med.x, y: med.y - 18 },
+          { x: med.x, y: med.y - medMotion.hover },
           tipRel,
           ROT_V,
         );
         const medInsert = pivotForTip(
-          { x: med.x, y: med.y + INSERT },
+          { x: med.x, y: med.y + medInsertDepth },
           tipRel,
           ROT_V,
         );
@@ -332,11 +383,17 @@ export function InjectionAnimation({
         // Intro: horizontal, pivot above water (body sits over the bottle).
         const waterIntro: Pt = {
           x: water.x,
-          y: Math.max(waterHover.y + tipDrop * 0.15, water.y - Math.min(48, tipDrop * 0.28)),
+          y: Math.max(
+            waterHover.y + tipDrop * 0.12,
+            water.y - Math.min(waterMotion.hover * 2.2, tipDrop * 0.22),
+          ),
         };
 
         const drawMl = reconstitutionDrawVolumeMl(waterMl, syringeMl);
         const startWater = waterFillFromVolume(waterMl);
+        // Drain the full chosen reconstitution volume — that water moves into
+        // the med vial. Results overview uses the same endWater (empty).
+        const endWater = waterFillAfterDraw(startWater, waterMl, waterMl);
         const startMed = medPowderFillFromAmount(peptideAmount, peptideUnit);
         const endSyringe = syringeFillFromDrawVolume(drawMl, syringeMl);
         const endMed = medFillAfterReconstitution(waterMl, peptideAmount, peptideUnit);
@@ -356,38 +413,43 @@ export function InjectionAnimation({
         let medPowder = true;
 
         const focus = (which: "water" | "med") => {
-          const on = which === "water" ? dom.waterColumn : dom.medColumn;
-          const off = which === "water" ? dom.medColumn : dom.waterColumn;
-          if (on) {
-            gsap.to(on, {
+          // Front + back columns — front holds the opaque labels; dimming only
+          // the back layer left labels at ~58% and made liquid show through.
+          const waterCols = sceneEl.querySelectorAll<HTMLElement>(
+            '[data-vial-column="water"], [data-vial-column="water-front"]',
+          );
+          const medCols = sceneEl.querySelectorAll<HTMLElement>(
+            '[data-vial-column="med"], [data-vial-column="med-front"]',
+          );
+          const on = which === "water" ? waterCols : medCols;
+          const off = which === "water" ? medCols : waterCols;
+          on.forEach((el) => {
+            gsap.to(el, {
               opacity: 1,
               filter: "brightness(1) saturate(1)",
               duration: 0.3,
               overwrite: "auto",
             });
-          }
-          if (off) {
-            gsap.to(off, {
+          });
+          off.forEach((el) => {
+            gsap.to(el, {
               opacity: 0.55,
               filter: "brightness(0.94) saturate(0.88)",
               duration: 0.3,
               overwrite: "auto",
             });
-          }
+          });
         };
 
         const applyFills = () => {
-          const waterEmpty = proxy.waterFill <= 0.02;
-          const wOff = vialLiquidOffsetY(proxy.waterFill, {
-            interiorHeight: BAC_WATER_SRC.interiorHeight,
-            empty: waterEmpty,
-          });
+          const waterEmpty = isWaterSupplyEmpty(proxy.waterFill) || proxy.waterOpacity <= 0.05;
+          const wOff = bacWaterLiquidOffsetY(proxy.waterFill, waterEmpty);
           dom.setWaterLiquidY?.(wOff);
           dom.setWaterSurfaceY?.(wOff);
           if (dom.waterLiquidLayer) {
             dom.waterLiquidLayer.setAttribute(
               "opacity",
-              String(Math.max(0, Math.min(1, proxy.waterOpacity))),
+              String(waterEmpty ? 0 : Math.max(0, Math.min(1, proxy.waterOpacity))),
             );
           }
 
@@ -415,14 +477,27 @@ export function InjectionAnimation({
 
         const updateFrame = () => {
           if (cancelled) return;
-          dom.setWrapX(proxy.pivotX - pivot0.x);
-          dom.setWrapY(proxy.pivotY - pivot0.y);
+          const dx = proxy.pivotX - pivot0.x;
+          const dy = proxy.pivotY - pivot0.y;
+          dom.setWrapX(dx);
+          dom.setWrapY(dy);
+          if (dom.needleWrap) {
+            dom.needleWrap.style.transform = `translate(${dx}px, ${dy}px)`;
+          }
           applyFills();
 
-          if (dom.syringeRotator) {
-            dom.syringeRotator.style.transform = `translate(-50%, -50%) rotate(${proxy.rotation}deg)`;
+          const rot = `translate(-50%, -50%) rotate(${proxy.rotation}deg)`;
+          if (dom.syringeRotators && dom.syringeRotators.length > 0) {
+            dom.syringeRotators.forEach((el) => {
+              el.style.transform = rot;
+            });
+          } else if (dom.syringeRotator) {
+            dom.syringeRotator.style.transform = rot;
           }
           wrapEl.style.opacity = String(Math.max(0, Math.min(1, proxy.wrapOpacity)));
+          if (dom.needleWrap) {
+            dom.needleWrap.style.opacity = String(Math.max(0, Math.min(1, proxy.wrapOpacity)));
+          }
 
           if (dom.contactShadow) {
             const tip = rotateVec(tipRel, proxy.rotation);
@@ -533,13 +608,13 @@ export function InjectionAnimation({
             tInsWater,
           )
 
-          // Draw
+          // Draw — drop the bottle level by the volume taken into the syringe
           .call(say("Drawing bacteriostatic water into the syringe…"), undefined, tDraw)
           .to(
             proxy,
             {
-              waterFill: 0,
-              waterOpacity: 0,
+              waterFill: endWater,
+              waterOpacity: isWaterSupplyEmpty(endWater) ? 0 : 1,
               syringeFill: endSyringe,
               duration: STAGE.draw,
               ease: "power1.inOut",
@@ -621,7 +696,7 @@ export function InjectionAnimation({
             tInsMed,
           )
 
-          // Inject + reconstitute
+          // Inject + reconstitute (powder dissolves with rising bubbles)
           .call(say("Injecting water and reconstituting…"), undefined, tInject)
           .call(
             () => {
@@ -630,7 +705,7 @@ export function InjectionAnimation({
               if (dom.medPowderLayer) {
                 gsap.to(dom.medPowderLayer, {
                   attr: { opacity: 0 },
-                  duration: STAGE.inject * 0.4,
+                  duration: STAGE.inject * 0.55,
                   ease: "power1.out",
                   force3D: false,
                 });
@@ -646,6 +721,43 @@ export function InjectionAnimation({
                     force3D: false,
                   },
                 );
+              }
+              if (dom.mixBubbles && dom.mixBubbleNodes && dom.mixBubbleNodes.length > 0) {
+                // Bubbles are children of the liquid layer — they travel with the
+                // rising fill. Only nudge them slightly under the meniscus.
+                gsap.set(dom.mixBubbles, { attr: { opacity: 1 } });
+                Array.from(dom.mixBubbleNodes).forEach((node, i) => {
+                  const startCy = Number(node.getAttribute("cy") || 180);
+                  const meniscusFloor = HEXARELIN_SRC.interiorTop + 8;
+                  const drift = 4 + (i % 5) * 2.2;
+                  const peak = Math.max(meniscusFloor, startCy - drift);
+                  const delay = (i % 7) * 0.06 + (i > 7 ? STAGE.inject * 0.22 : 0);
+                  gsap.fromTo(
+                    node,
+                    { attr: { opacity: 0, cy: startCy + 6 } },
+                    {
+                      attr: { opacity: 0.85, cy: peak },
+                      duration: STAGE.inject * 0.7,
+                      delay,
+                      ease: "sine.out",
+                      force3D: false,
+                    },
+                  );
+                  gsap.to(node, {
+                    attr: { opacity: 0.25 },
+                    duration: STAGE.inject * 0.35,
+                    delay: delay + STAGE.inject * 0.45,
+                    ease: "sine.inOut",
+                    force3D: false,
+                  });
+                });
+                gsap.to(dom.mixBubbles, {
+                  attr: { opacity: 0 },
+                  duration: 0.4,
+                  delay: STAGE.inject + STAGE.settle * 0.5,
+                  ease: "power1.out",
+                  force3D: false,
+                });
               }
               applyFills();
             },
@@ -723,13 +835,17 @@ export function InjectionAnimation({
     { scope: stageRef, dependencies: [onComplete, syringeMl, peptideUnit, waterMl, peptideAmount] },
   );
 
-  const sceneWaterFill = waterFillFromVolume(waterMl);
+  const sceneWaterStart = waterFillFromVolume(waterMl);
+  // Match timeline endWater — full reconstitution volume drained.
+  const sceneWaterEnd = waterFillAfterDraw(sceneWaterStart, waterMl, waterMl);
+  const sceneWaterFill = done ? sceneWaterEnd : sceneWaterStart;
+  const sceneWaterEmpty = done && isWaterSupplyEmpty(sceneWaterFill);
   const sceneMedFill = medPowderFillFromAmount(peptideAmount, peptideUnit);
 
   return (
     <div className="mx-auto mt-2 w-full min-w-0">
       <p
-        className="mb-2 break-words px-1 text-center text-[11px] font-medium leading-snug text-[color:var(--dash-text)] sm:mb-4 sm:text-base"
+        className="mb-1.5 break-words px-1 text-center text-[10px] font-medium leading-snug text-[color:var(--dash-text)] max-[390px]:mb-1 max-[390px]:text-[9px] sm:mb-4 sm:text-base"
         aria-live="polite"
       >
         {status}
@@ -737,7 +853,7 @@ export function InjectionAnimation({
 
       <div
         ref={stageRef}
-        className="dashboard-glass-card relative mx-auto w-full min-w-0 overflow-hidden rounded-2xl px-1 pb-2 pt-2 sm:px-10 sm:pb-5 sm:pt-5 md:px-12 md:pt-6"
+        className="dashboard-glass-card relative mx-auto w-full min-w-0 overflow-hidden rounded-2xl px-1 pb-2 pt-2 max-[390px]:rounded-xl max-[390px]:px-0.5 max-[390px]:pb-1.5 max-[390px]:pt-1.5 sm:px-10 sm:pb-5 sm:pt-5 md:px-12 md:pt-6"
       >
         <DrawScene
           sceneRef={sceneRef}
@@ -745,6 +861,7 @@ export function InjectionAnimation({
           syringeMl={syringeMl}
           peptideUnit={peptideUnit}
           waterFill={sceneWaterFill}
+          waterEmpty={sceneWaterEmpty}
           medFill={sceneMedFill}
         />
 

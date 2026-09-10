@@ -9,7 +9,7 @@ const MODE_DARK = "/assets/lectures/mode/dark.png";
 type CourseCoverProductVialProps = {
   /** Transparent product vial PNG (same art for light + dark). */
   vialSrc: string;
-  /** Degrees of editorial tilt (e.g. -6 … 6). */
+  /** Degrees of editorial tilt (positive = clockwise / lean right). */
   rotate?: number;
   /** Extra product scale for close framing. */
   scale?: number;
@@ -20,18 +20,20 @@ type CourseCoverProductVialProps = {
 
 /**
  * Theme mode background (light/dark) + full-quality transparent vial overlay.
- * Vial is staged with a gentle product tilt for an editorial look.
+ * Vial is staged with a gentle rightward product tilt for an editorial look.
  */
 export function CourseCoverProductVial({
   vialSrc,
-  rotate = -12,
-  scale = 1.08,
-  objectPosition = "54% 48%",
+  rotate = 10,
+  scale = 1.16,
+  objectPosition = "62% 56%",
   className,
 }: CourseCoverProductVialProps) {
   const vialStyle = {
     "--product-vial-rotate": `${rotate}deg`,
     "--product-vial-scale": String(scale),
+    "--product-vial-x": "11%",
+    "--product-vial-y": "6%",
     objectPosition,
   } as CSSProperties;
 
