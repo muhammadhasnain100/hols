@@ -5,6 +5,7 @@
  */
 
 import type { ReactNode, Ref } from "react";
+import { cylinderLabelPath } from "@/components/platform/provider/student/calculator/cylinderLabel";
 
 export const BAC_WATER_SRC = {
   viewW: 160,
@@ -64,6 +65,11 @@ export function BacWaterVialArt({
   const metalVert = `bw-metal-v-${uid}`;
   const capGrad = `bw-cap-${uid}`;
   const bottleClip = `bw-clip-${uid}`;
+  const labelClip = `bw-label-clip-${uid}`;
+  const labelWrap = `bw-label-wrap-${uid}`;
+  const labelSheen = `bw-label-sheen-${uid}`;
+  const bandWrap = `bw-band-wrap-${uid}`;
+  const labelPath = cylinderLabelPath(44, 88, 72, 82, 2.8);
 
   return (
     <g shapeRendering="geometricPrecision">
@@ -107,8 +113,33 @@ export function BacWaterVialArt({
           <stop offset="40%" stopColor={MAGENTA} />
           <stop offset="100%" stopColor={MAGENTA_DEEP} />
         </linearGradient>
+        {/* Cylinder wrap: edges fall away from the light, center faces camera. */}
+        <linearGradient id={labelWrap} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#d1d5db" />
+          <stop offset="14%" stopColor="#f3f4f6" />
+          <stop offset="50%" stopColor="#ffffff" />
+          <stop offset="86%" stopColor="#f3f4f6" />
+          <stop offset="100%" stopColor="#d1d5db" />
+        </linearGradient>
+        <linearGradient id={labelSheen} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor="#0f172a" stopOpacity="0.16" />
+          <stop offset="18%" stopColor="#0f172a" stopOpacity="0.04" />
+          <stop offset="50%" stopColor="#ffffff" stopOpacity="0.12" />
+          <stop offset="82%" stopColor="#0f172a" stopOpacity="0.04" />
+          <stop offset="100%" stopColor="#0f172a" stopOpacity="0.18" />
+        </linearGradient>
+        <linearGradient id={bandWrap} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0%" stopColor={MAGENTA_DEEP} />
+          <stop offset="18%" stopColor={MAGENTA} />
+          <stop offset="50%" stopColor="#ff3d96" />
+          <stop offset="82%" stopColor={MAGENTA} />
+          <stop offset="100%" stopColor={MAGENTA_DEEP} />
+        </linearGradient>
         <clipPath id={bottleClip}>
           <path d={BODY_PATH} />
+        </clipPath>
+        <clipPath id={labelClip}>
+          <path d={labelPath} />
         </clipPath>
       </defs>
 
@@ -213,82 +244,81 @@ export function BacWaterVialArt({
           </g>
 
           {/*
-            Label — fully opaque (outside soft glass group) so rising water never
-            shows through the paper. Trimmed so a clear band under the label
-            reveals the meniscus during draw.
+            Label — wrapped on the cylinder (bowed plate + edge falloff).
+            Fully opaque so rising water never shows through the paper.
           */}
           <g opacity="1" data-vial-label-layer>
-          <rect x="44" y="88" width="72" height="82" rx="2.5" fill="#ffffff" />
-          <rect
-            x="44"
-            y="88"
-            width="72"
-            height="82"
-            rx="2.5"
-            fill="none"
-            stroke="#e5e7eb"
-            strokeWidth="0.8"
-          />
+            <path d={labelPath} fill={`url(#${labelWrap})`} />
+            <path d={labelPath} fill={`url(#${labelSheen})`} />
+            <path
+              d={labelPath}
+              fill="none"
+              stroke="#9ca3af"
+              strokeOpacity="0.55"
+              strokeWidth="0.7"
+            />
 
-          <text
-            x="50"
-            y="108"
-            fontFamily="Arial, Helvetica, sans-serif"
-            fontSize="7.2"
-            fontWeight="800"
-            fill="#111827"
-          >
-            HOLS
-            <tspan fill="#3853A4">.</tspan>
-          </text>
-          <text
-            x="50"
-            y="116"
-            fontFamily="Arial, Helvetica, sans-serif"
-            fontSize="3.3"
-            fontWeight="600"
-            fill="#3853A4"
-          >
-            house of life science
-          </text>
+            <g clipPath={`url(#${labelClip})`}>
+              <text
+                x="50"
+                y="108"
+                fontFamily="Arial, Helvetica, sans-serif"
+                fontSize="7.2"
+                fontWeight="800"
+                fill="#111827"
+              >
+                HOLS
+                <tspan fill="#3853A4">.</tspan>
+              </text>
+              <text
+                x="50"
+                y="116"
+                fontFamily="Arial, Helvetica, sans-serif"
+                fontSize="3.3"
+                fontWeight="600"
+                fill="#3853A4"
+              >
+                house of life science
+              </text>
 
-          {/* Magenta band — trimmed to height=44 to fit the shorter label. */}
-          <rect x="44" y="122" width="72" height="44" fill={MAGENTA} />
-          <text
-            x="80"
-            y="138"
-            textAnchor="middle"
-            fontFamily="Arial, Helvetica, sans-serif"
-            fontSize="6.2"
-            fontWeight="800"
-            letterSpacing="0.1"
-            fill="#0a0a0a"
-          >
-            BACTERIOSTATIC
-          </text>
-          <text
-            x="80"
-            y="152"
-            textAnchor="middle"
-            fontFamily="Arial, Helvetica, sans-serif"
-            fontSize="10.5"
-            fontWeight="800"
-            letterSpacing="0.3"
-            fill="#0a0a0a"
-          >
-            WATER
-          </text>
-          <text
-            x="80"
-            y="162"
-            textAnchor="middle"
-            fontFamily="Arial, Helvetica, sans-serif"
-            fontSize="4"
-            fontWeight="500"
-            fill="#1f2937"
-          >
-            for Injection, USP
-          </text>
+              {/* Magenta band — same wrap shading as the plate */}
+              <path d={cylinderLabelPath(44, 120, 72, 46, 2.2)} fill={`url(#${bandWrap})`} />
+              <text
+                x="80"
+                y="138"
+                textAnchor="middle"
+                fontFamily="Arial, Helvetica, sans-serif"
+                fontSize="6.2"
+                fontWeight="800"
+                letterSpacing="0.1"
+                fill="#0a0a0a"
+              >
+                BACTERIOSTATIC
+              </text>
+              <text
+                x="80"
+                y="152"
+                textAnchor="middle"
+                fontFamily="Arial, Helvetica, sans-serif"
+                fontSize="10.5"
+                fontWeight="800"
+                letterSpacing="0.3"
+                fill="#0a0a0a"
+              >
+                WATER
+              </text>
+              <text
+                x="80"
+                y="162"
+                textAnchor="middle"
+                fontFamily="Arial, Helvetica, sans-serif"
+                fontSize="4"
+                fontWeight="500"
+                fill="#1f2937"
+              >
+                for Injection, USP
+              </text>
+            </g>
           </g>
 
           {/* Neck — translucent glass (see-through, soft rim highlights) */}

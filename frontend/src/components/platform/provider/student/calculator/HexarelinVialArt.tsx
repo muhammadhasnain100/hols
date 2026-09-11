@@ -7,6 +7,7 @@
  */
 
 import type { ReactNode, Ref } from "react";
+import { cylinderLabelPath } from "@/components/platform/provider/student/calculator/cylinderLabel";
 
 export type HexarelinVialTheme = "navy" | "bac-water-pink";
 
@@ -168,6 +169,9 @@ export function HexarelinVialArt({
   const bottleClip = `hx-bottle-clip-${uid}`;
   const planetClip = `hx-planet-clip-${uid}`;
   const flagClip = `hx-flag-clip-${uid}`;
+  const labelClip = `hx-label-clip-${uid}`;
+  const labelWrapShade = `hx-label-wrap-${uid}`;
+  const labelPath = cylinderLabelPath(194, 145, 130, 126, 4.5);
 
   const bodyPath =
     "M219 86 L219 105 C219 111 211 116 205 120 C197 125 193 136 193 148 L193 301 C193 318 202 328 218 331 C238 335 280 335 300 331 C316 328 324 318 324 301 L324 148 C324 136 320 125 312 120 C306 116 298 111 298 105 L298 86 Z";
@@ -215,28 +219,42 @@ export function HexarelinVialArt({
             </>
           )}
         </linearGradient>
-        <linearGradient id={labelGrad} x1="0" y1="0" x2="1" y2=".1">
-          <stop offset="0" stopColor={chrome.label0} />
-          <stop offset=".48" stopColor={chrome.labelMid} />
+        <linearGradient id={labelGrad} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor={chrome.label1} />
+          <stop offset=".16" stopColor={chrome.label0} />
+          <stop offset=".5" stopColor={chrome.labelMid} />
+          <stop offset=".84" stopColor={chrome.label0} />
           <stop offset="1" stopColor={chrome.label1} />
         </linearGradient>
         <linearGradient id={labelSheen} x1="0" y1="0" x2="1" y2="0">
           <stop
             offset="0"
-            stopColor="#ffffff"
-            stopOpacity={theme === "bac-water-pink" ? ".28" : ".15"}
+            stopColor={theme === "bac-water-pink" ? "#0f172a" : "#000000"}
+            stopOpacity={theme === "bac-water-pink" ? ".14" : ".22"}
           />
           <stop
-            offset=".17"
+            offset=".18"
+            stopColor="#ffffff"
+            stopOpacity={theme === "bac-water-pink" ? ".1" : ".04"}
+          />
+          <stop offset=".5" stopColor="#ffffff" stopOpacity={theme === "bac-water-pink" ? ".2" : ".08"} />
+          <stop
+            offset=".82"
             stopColor="#ffffff"
             stopOpacity={theme === "bac-water-pink" ? ".08" : ".03"}
           />
-          <stop offset=".76" stopColor="#ffffff" stopOpacity="0" />
           <stop
             offset="1"
-            stopColor="#ffffff"
-            stopOpacity={theme === "bac-water-pink" ? ".12" : ".05"}
+            stopColor={theme === "bac-water-pink" ? "#0f172a" : "#000000"}
+            stopOpacity={theme === "bac-water-pink" ? ".16" : ".24"}
           />
+        </linearGradient>
+        <linearGradient id={labelWrapShade} x1="0" y1="0" x2="1" y2="0">
+          <stop offset="0" stopColor="#000000" stopOpacity=".18" />
+          <stop offset=".12" stopColor="#000000" stopOpacity=".05" />
+          <stop offset=".5" stopColor="#ffffff" stopOpacity=".06" />
+          <stop offset=".88" stopColor="#000000" stopOpacity=".05" />
+          <stop offset="1" stopColor="#000000" stopOpacity=".2" />
         </linearGradient>
         <linearGradient id={metal} x1="0" y1="0" x2="1" y2="0">
           <stop offset="0" stopColor="#a7a7a7" />
@@ -272,7 +290,10 @@ export function HexarelinVialArt({
           <path d={bodyPath} />
         </clipPath>
         <clipPath id={planetClip}>
-          <rect x="194" y="145" width="130" height="126" rx="4" />
+          <path d={labelPath} />
+        </clipPath>
+        <clipPath id={labelClip}>
+          <path d={labelPath} />
         </clipPath>
         <clipPath id={flagClip}>
           <circle cx="257.5" cy="254.5" r="7.1" />
@@ -306,7 +327,7 @@ export function HexarelinVialArt({
                   stops liquid from reading through the paper.
                 */}
                 <g transform="translate(0 18)" pointerEvents="none" data-vial-label-mask>
-                  <rect x="194" y="145" width="130" height="126" rx="4" fill="#09172d" />
+                  <path d={labelPath} fill="#09172d" />
                 </g>
                 <g
                   ref={powderLayerRef}
@@ -341,7 +362,7 @@ export function HexarelinVialArt({
             {/* Mask liquid behind the label area in non-gsap liquid mode too */}
             {!gsapDriven && !powder && !empty ? (
               <g transform="translate(0 18)" pointerEvents="none">
-                <rect x="194" y="145" width="130" height="126" rx="4" fill="#09172d" />
+                <path d={labelPath} fill="#09172d" />
               </g>
             ) : null}
             {/* Bubbles render on the front layer during animation (see showFront). */}
@@ -450,33 +471,24 @@ export function HexarelinVialArt({
             </g>
           </g>
 
-          {/* Label + branding — always fully opaque so liquid never shows through */}
+          {/* Label + branding — wrapped on the cylinder; opaque so liquid never shows through */}
           <g opacity="1" fillOpacity="1" data-vial-label-layer>
           {theme === "bac-water-pink" ? (
             <>
-              <rect x="194" y="145" width="130" height="126" rx="4" fill="#ffffff" />
-              <rect x="194" y="145" width="130" height="126" rx="4" fill={`url(#${labelGrad})`} />
-              <rect x="194" y="145" width="130" height="126" rx="4" fill={`url(#${labelSheen})`} />
-              <rect
-                x="194"
-                y="145"
-                width="130"
-                height="126"
-                rx="4"
-                fill="none"
-                stroke="#d1d5db"
-                strokeWidth="1.2"
-              />
+              <path d={labelPath} fill="#ffffff" />
+              <path d={labelPath} fill={`url(#${labelGrad})`} />
+              <path d={labelPath} fill={`url(#${labelSheen})`} />
+              <path d={labelPath} fill={`url(#${labelWrapShade})`} />
+              <path d={labelPath} fill="none" stroke="#d1d5db" strokeWidth="1.2" />
             </>
           ) : (
             <g transform="translate(0 18)">
               {/* Double solid backing — liquid must never read through the paper */}
-              <rect x="194" y="145" width="130" height="126" rx="4" fill="#09172d" />
-              <rect x="194" y="145" width="130" height="126" rx="4" fill="#0c1a30" />
-              <rect x="194" y="145" width="130" height="126" rx="4" fill={`url(#${labelGrad})`} />
-              <rect x="194" y="145" width="130" height="126" rx="4" fill={`url(#${labelSheen})`} />
-              <path d="M198 149 L214 149 L214 267 L199 267 Z" fill="#ffffff" opacity="0.035" />
-              <path d="M320 149 L324 149 L324 267 L320 267 Z" fill="#ffffff" opacity="0.035" />
+              <path d={labelPath} fill="#09172d" />
+              <path d={labelPath} fill="#0c1a30" />
+              <path d={labelPath} fill={`url(#${labelGrad})`} />
+              <path d={labelPath} fill={`url(#${labelSheen})`} />
+              <path d={labelPath} fill={`url(#${labelWrapShade})`} />
             </g>
           )}
 
@@ -515,7 +527,14 @@ export function HexarelinVialArt({
               >
                 30 mL Multiple-dose
               </text>
-              <rect x="194" y="206" width="130" height="62" fill={chrome.accentBand ?? "#e0167a"} />
+              <path
+                d={cylinderLabelPath(194, 206, 130, 62, 2.8)}
+                fill={chrome.accentBand ?? "#e0167a"}
+              />
+              <path
+                d={cylinderLabelPath(194, 206, 130, 62, 2.8)}
+                fill={`url(#${labelWrapShade})`}
+              />
               <text
                 x="200"
                 y="230"
