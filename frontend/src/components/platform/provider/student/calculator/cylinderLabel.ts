@@ -1,7 +1,10 @@
 /**
- * Label plate geometry that reads as paper wrapped on a vertical cylinder —
- * bowed top/bottom edges + slight side bend, paired with a dark→light→dark
- * horizontal fill for wrap shading.
+ * Label plate for a vertical cylinder, viewed mostly straight-on.
+ *
+ * Keep a soft rounded rect — do NOT bow top/bottom in opposite directions
+ * (that reads as a puffy “eye”). Wrap is sold with horizontal edge-falloff
+ * shading. Callers should size the plate to the bottle body walls and clip
+ * to the bottle silhouette so L/R edges meet the glass.
  */
 
 /** Path for a cylindrical label plate in SVG user units. */
@@ -10,20 +13,24 @@ export function cylinderLabelPath(
   y: number,
   w: number,
   h: number,
-  bulge = 3.2,
+  /** Corner roundness — keep modest so the plate stays label-like. */
+  radius = 4,
 ): string {
+  const r = Math.min(radius, w / 4, h / 4);
   const x2 = x + w;
   const y2 = y + h;
-  const mx = x + w / 2;
-  const side = bulge * 0.4;
-  // Top: center sits slightly lower (front of cylinder nearer / slight top view).
-  // Bottom: center sits slightly higher. Sides bend gently with the bottle.
+  // Straight vertical sides — width is chosen to meet the cylinder walls;
+  // bottle clip handles the true silhouette.
   return [
-    `M ${x} ${y + bulge * 0.55}`,
-    `Q ${mx} ${y - bulge * 0.2} ${x2} ${y + bulge * 0.55}`,
-    `Q ${x2 + side} ${y + h * 0.5} ${x2} ${y2 - bulge * 0.55}`,
-    `Q ${mx} ${y2 + bulge * 0.2} ${x} ${y2 - bulge * 0.55}`,
-    `Q ${x - side} ${y + h * 0.5} ${x} ${y + bulge * 0.55}`,
+    `M ${x + r} ${y}`,
+    `L ${x2 - r} ${y}`,
+    `Q ${x2} ${y} ${x2} ${y + r}`,
+    `L ${x2} ${y2 - r}`,
+    `Q ${x2} ${y2} ${x2 - r} ${y2}`,
+    `L ${x + r} ${y2}`,
+    `Q ${x} ${y2} ${x} ${y2 - r}`,
+    `L ${x} ${y + r}`,
+    `Q ${x} ${y} ${x + r} ${y}`,
     `Z`,
   ].join(" ");
 }

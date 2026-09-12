@@ -69,7 +69,8 @@ export function BacWaterVialArt({
   const labelWrap = `bw-label-wrap-${uid}`;
   const labelSheen = `bw-label-sheen-${uid}`;
   const bandWrap = `bw-band-wrap-${uid}`;
-  const labelPath = cylinderLabelPath(44, 88, 72, 82, 2.8);
+  // Flush with BODY_PATH walls (38–122); bottle clip keeps edges on the glass.
+  const labelPath = cylinderLabelPath(37, 88, 86, 82, 2.5);
 
   return (
     <g shapeRendering="geometricPrecision">
@@ -244,10 +245,10 @@ export function BacWaterVialArt({
           </g>
 
           {/*
-            Label — wrapped on the cylinder (bowed plate + edge falloff).
+            Label — flush to cylinder walls (clipped) with edge falloff shading.
             Fully opaque so rising water never shows through the paper.
           */}
-          <g opacity="1" data-vial-label-layer>
+          <g opacity="1" data-vial-label-layer clipPath={`url(#${bottleClip})`}>
             <path d={labelPath} fill={`url(#${labelWrap})`} />
             <path d={labelPath} fill={`url(#${labelSheen})`} />
             <path
@@ -260,7 +261,7 @@ export function BacWaterVialArt({
 
             <g clipPath={`url(#${labelClip})`}>
               <text
-                x="50"
+                x="48"
                 y="108"
                 fontFamily="Arial, Helvetica, sans-serif"
                 fontSize="7.2"
@@ -271,7 +272,7 @@ export function BacWaterVialArt({
                 <tspan fill="#3853A4">.</tspan>
               </text>
               <text
-                x="50"
+                x="48"
                 y="116"
                 fontFamily="Arial, Helvetica, sans-serif"
                 fontSize="3.3"
@@ -282,7 +283,7 @@ export function BacWaterVialArt({
               </text>
 
               {/* Magenta band — same wrap shading as the plate */}
-              <path d={cylinderLabelPath(44, 120, 72, 46, 2.2)} fill={`url(#${bandWrap})`} />
+              <path d={cylinderLabelPath(37, 120, 86, 46, 2)} fill={`url(#${bandWrap})`} />
               <text
                 x="80"
                 y="138"

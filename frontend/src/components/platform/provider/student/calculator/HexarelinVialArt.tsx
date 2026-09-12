@@ -171,7 +171,8 @@ export function HexarelinVialArt({
   const flagClip = `hx-flag-clip-${uid}`;
   const labelClip = `hx-label-clip-${uid}`;
   const labelWrapShade = `hx-label-wrap-${uid}`;
-  const labelPath = cylinderLabelPath(194, 145, 130, 126, 4.5);
+  // Flush with body walls (193–324); bottle clip trims any overshoot to the glass.
+  const labelPath = cylinderLabelPath(192, 145, 133, 126, 3);
 
   const bodyPath =
     "M219 86 L219 105 C219 111 211 116 205 120 C197 125 193 136 193 148 L193 301 C193 318 202 328 218 331 C238 335 280 335 300 331 C316 328 324 318 324 301 L324 148 C324 136 320 125 312 120 C306 116 298 111 298 105 L298 86 Z";
@@ -220,41 +221,68 @@ export function HexarelinVialArt({
           )}
         </linearGradient>
         <linearGradient id={labelGrad} x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor={chrome.label1} />
-          <stop offset=".16" stopColor={chrome.label0} />
-          <stop offset=".5" stopColor={chrome.labelMid} />
-          <stop offset=".84" stopColor={chrome.label0} />
-          <stop offset="1" stopColor={chrome.label1} />
+          {theme === "bac-water-pink" ? (
+            <>
+              <stop offset="0" stopColor="#c5c9d0" />
+              <stop offset=".14" stopColor="#eef0f3" />
+              <stop offset=".5" stopColor="#ffffff" />
+              <stop offset=".86" stopColor="#eef0f3" />
+              <stop offset="1" stopColor="#c5c9d0" />
+            </>
+          ) : (
+            <>
+              {/* Strong L/R falloff so the plate clearly turns with the cylinder */}
+              <stop offset="0" stopColor="#03080f" />
+              <stop offset=".12" stopColor="#0a1528" />
+              <stop offset=".38" stopColor={chrome.labelMid} />
+              <stop offset=".5" stopColor={chrome.label0} />
+              <stop offset=".62" stopColor={chrome.labelMid} />
+              <stop offset=".88" stopColor="#0a1528" />
+              <stop offset="1" stopColor="#03080f" />
+            </>
+          )}
         </linearGradient>
         <linearGradient id={labelSheen} x1="0" y1="0" x2="1" y2="0">
-          <stop
-            offset="0"
-            stopColor={theme === "bac-water-pink" ? "#0f172a" : "#000000"}
-            stopOpacity={theme === "bac-water-pink" ? ".14" : ".22"}
-          />
-          <stop
-            offset=".18"
-            stopColor="#ffffff"
-            stopOpacity={theme === "bac-water-pink" ? ".1" : ".04"}
-          />
-          <stop offset=".5" stopColor="#ffffff" stopOpacity={theme === "bac-water-pink" ? ".2" : ".08"} />
-          <stop
-            offset=".82"
-            stopColor="#ffffff"
-            stopOpacity={theme === "bac-water-pink" ? ".08" : ".03"}
-          />
-          <stop
-            offset="1"
-            stopColor={theme === "bac-water-pink" ? "#0f172a" : "#000000"}
-            stopOpacity={theme === "bac-water-pink" ? ".16" : ".24"}
-          />
+          {theme === "bac-water-pink" ? (
+            <>
+              <stop offset="0" stopColor="#0f172a" stopOpacity=".2" />
+              <stop offset=".16" stopColor="#ffffff" stopOpacity=".12" />
+              <stop offset=".5" stopColor="#ffffff" stopOpacity=".28" />
+              <stop offset=".84" stopColor="#ffffff" stopOpacity=".1" />
+              <stop offset="1" stopColor="#0f172a" stopOpacity=".22" />
+            </>
+          ) : (
+            <>
+              <stop offset="0" stopColor="#000000" stopOpacity=".45" />
+              <stop offset=".14" stopColor="#000000" stopOpacity=".18" />
+              <stop offset=".32" stopColor="#ffffff" stopOpacity=".1" />
+              <stop offset=".48" stopColor="#ffffff" stopOpacity=".22" />
+              <stop offset=".58" stopColor="#ffffff" stopOpacity=".08" />
+              <stop offset=".78" stopColor="#000000" stopOpacity=".12" />
+              <stop offset="1" stopColor="#000000" stopOpacity=".48" />
+            </>
+          )}
         </linearGradient>
         <linearGradient id={labelWrapShade} x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="#000000" stopOpacity=".18" />
-          <stop offset=".12" stopColor="#000000" stopOpacity=".05" />
-          <stop offset=".5" stopColor="#ffffff" stopOpacity=".06" />
-          <stop offset=".88" stopColor="#000000" stopOpacity=".05" />
-          <stop offset="1" stopColor="#000000" stopOpacity=".2" />
+          {theme === "bac-water-pink" ? (
+            <>
+              <stop offset="0" stopColor="#0f172a" stopOpacity=".28" />
+              <stop offset=".12" stopColor="#0f172a" stopOpacity=".08" />
+              <stop offset=".5" stopColor="#ffffff" stopOpacity=".1" />
+              <stop offset=".88" stopColor="#0f172a" stopOpacity=".08" />
+              <stop offset="1" stopColor="#0f172a" stopOpacity=".3" />
+            </>
+          ) : (
+            <>
+              <stop offset="0" stopColor="#000000" stopOpacity=".55" />
+              <stop offset=".1" stopColor="#000000" stopOpacity=".28" />
+              <stop offset=".28" stopColor="#ffffff" stopOpacity=".04" />
+              <stop offset=".5" stopColor="#ffffff" stopOpacity=".14" />
+              <stop offset=".72" stopColor="#ffffff" stopOpacity=".04" />
+              <stop offset=".9" stopColor="#000000" stopOpacity=".28" />
+              <stop offset="1" stopColor="#000000" stopOpacity=".58" />
+            </>
+          )}
         </linearGradient>
         <linearGradient id={metal} x1="0" y1="0" x2="1" y2="0">
           <stop offset="0" stopColor="#a7a7a7" />
@@ -471,8 +499,13 @@ export function HexarelinVialArt({
             </g>
           </g>
 
-          {/* Label + branding — wrapped on the cylinder; opaque so liquid never shows through */}
-          <g opacity="1" fillOpacity="1" data-vial-label-layer>
+          {/* Label + branding — flush to cylinder walls (clipped); opaque so liquid never shows through */}
+          <g
+            opacity="1"
+            fillOpacity="1"
+            data-vial-label-layer
+            clipPath={`url(#${bottleClip})`}
+          >
           {theme === "bac-water-pink" ? (
             <>
               <path d={labelPath} fill="#ffffff" />
@@ -489,6 +522,13 @@ export function HexarelinVialArt({
               <path d={labelPath} fill={`url(#${labelGrad})`} />
               <path d={labelPath} fill={`url(#${labelSheen})`} />
               <path d={labelPath} fill={`url(#${labelWrapShade})`} />
+              <path
+                d={labelPath}
+                fill="none"
+                stroke="#4b6288"
+                strokeOpacity="0.35"
+                strokeWidth="1.1"
+              />
             </g>
           )}
 
@@ -528,11 +568,11 @@ export function HexarelinVialArt({
                 30 mL Multiple-dose
               </text>
               <path
-                d={cylinderLabelPath(194, 206, 130, 62, 2.8)}
+                d={cylinderLabelPath(192, 206, 133, 62, 2.5)}
                 fill={chrome.accentBand ?? "#e0167a"}
               />
               <path
-                d={cylinderLabelPath(194, 206, 130, 62, 2.8)}
+                d={cylinderLabelPath(192, 206, 133, 62, 2.5)}
                 fill={`url(#${labelWrapShade})`}
               />
               <text
@@ -581,7 +621,7 @@ export function HexarelinVialArt({
               <circle cx="304" cy="278" r="3.2" fill="#ffffff" opacity="0.9" />
             </>
           ) : (
-            <g transform="translate(0 18)">
+            <g transform="translate(0 18)" clipPath={`url(#${labelClip})`}>
               <text
                 x="198"
                 y="178"
@@ -733,7 +773,9 @@ export function HexarelinVialArt({
               </g>
             </g>
           )}
+          </g>
 
+          {/* Cap / collar sit above the body clip — keep outside the label clip group */}
           {/* Top rim (glass-to-collar seam) */}
           <path
             d="M205 120 C221 126 295 126 312 120"
@@ -815,7 +857,6 @@ export function HexarelinVialArt({
               strokeWidth="0.9"
             />
           ) : null}
-          </g>
         </>
       ) : null}
     </g>
