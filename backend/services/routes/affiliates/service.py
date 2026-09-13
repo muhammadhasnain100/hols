@@ -191,6 +191,7 @@ async def send_affiliate_credentials_email(user: dict[str, Any], password: str) 
             account_email=email,
             invite_code=invite_code,
             password=password,
+            cta_url=email_service.frontend_url("/login"),
         )
         await email_service.send_email_async(
             to=email,

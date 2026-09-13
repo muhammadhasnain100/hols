@@ -409,9 +409,10 @@ def _generate_otp_code() -> str:
 
 
 def otp_is_required(last_login_at: Optional[str], role: str) -> bool:
-    """True when the user must verify OTP before receiving auth tokens."""
-    if role == UserRole.ADMIN.value:
-        return False
+    """True when the user must verify OTP before receiving auth tokens.
+
+    Applies to admin, affiliate, and student logins.
+    """
     if not last_login_at:
         return True
     last_login = _parse_iso(last_login_at)
@@ -420,14 +421,15 @@ def otp_is_required(last_login_at: Optional[str], role: str) -> bool:
 
 
 async def send_otp_email(user: dict[str, Any], code: str) -> None:
-    """Send the OTP code email. Intended to run as a background task."""
-    first_name = user.get("first_name", "there")
+    """Send the OTP code email using the shared HTML template."""
+    first_name = user.get("first_name") or "there"
     try:
         email = email_service.render_email(
             "otp_verification",
             recipient_name=first_name,
             otp_code=code,
-            expiry_minutes=settings.otp_expire_seconds // 60,
+            expiry_minutes=max(1, settings.otp_expire_seconds // 60),
+            cta_url=email_service.frontend_url("/login"),
         )
         await email_service.send_email_async(
             to=user["email"],
@@ -585,7 +587,7 @@ async def create_admin(
         email_verified=True,
     )
     user = await save_user(profile)
-    await update_user_fields(user_id, {"last_login_at": now_iso()})
+    # Do not set last_login_at here — first login must still require OTP.
     logger.info("Admin account created for user_id=%s", user_id)
     return public_profile(user)
 

@@ -29,6 +29,7 @@ router = APIRouter(prefix="/affiliate", tags=["affiliate"])
 
 
 def _public_origin(request: Request) -> str:
+    """Prefer the browser Origin/Referer, else the configured frontend URL."""
     origin = request.headers.get("origin")
     if origin:
         return origin.rstrip("/")
@@ -39,7 +40,9 @@ def _public_origin(request: Request) -> str:
         if parsed.scheme and parsed.netloc:
             return f"{parsed.scheme}://{parsed.netloc}"
 
-    return str(request.base_url).rstrip("/")
+    from services.common import email as email_service
+
+    return email_service.frontend_origin()
 
 
 @router.get("/invite-url", response_model=AffiliateInviteUrlResponse)

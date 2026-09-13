@@ -90,7 +90,8 @@ def build_invite_url(affiliate: dict[str, Any], public_origin: str) -> dict[str,
 
 async def get_invite_url(affiliate_id: str, public_origin: str) -> dict[str, Any]:
     affiliate = await _get_affiliate(affiliate_id)
-    return build_invite_url(affiliate, public_origin)
+    origin = (public_origin or "").rstrip("/") or email_service.frontend_origin()
+    return build_invite_url(affiliate, origin)
 
 
 async def send_student_invites(
@@ -104,7 +105,9 @@ async def send_student_invites(
     if not affiliate.get("invite_code"):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Affiliate invite code is not assigned")
 
-    invite_url = build_invite_url(affiliate, public_origin)
+    # Prefer configured frontend URL so invite buttons never point at the API host.
+    origin = (public_origin or "").rstrip("/") or email_service.frontend_origin()
+    invite_url = build_invite_url(affiliate, origin)
     first_name = affiliate.get("first_name") or "Your HOLS affiliate"
     personal_message = (message or "").strip()
     invite_extra = (

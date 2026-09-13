@@ -142,9 +142,9 @@ export function StudentCoursePage({ courseId }: StudentCoursePageProps) {
       {loading && !course ? <CoursePageSkeleton /> : null}
 
       {course ? (
-        <div
+          <div
           ref={stageRef}
-          className="grid w-full min-w-0 max-w-full items-start gap-3 sm:gap-4 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.2fr)] xl:gap-5"
+          className="lecture-overview-stage grid w-full min-w-0 max-w-full items-stretch gap-3 sm:gap-4 md:gap-5 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.18fr)] xl:grid-cols-[minmax(0,0.88fr)_minmax(0,1.22fr)]"
         >
           <HolsVolume course={course} courseId={courseId} topicGroups={topicGroups} />
 
@@ -187,7 +187,9 @@ function HolsVolume({
   const volumeIndex = String((hashCourseId(courseId) % 12) + 1).padStart(2, "0");
   const volumeLabel = course.section?.trim()
     ? course.section.toUpperCase()
-    : `VOLUME ${volumeIndex}`;
+    : isCustomVialCover
+      ? "LECTURES"
+      : `VOLUME ${volumeIndex}`;
   const previewTopics = topicGroups.slice(0, 5);
   const description =
     course.description?.trim() ||
@@ -205,7 +207,7 @@ function HolsVolume({
   };
 
   return (
-    <div className="hols-volume-panel min-w-0 w-full max-w-full px-0.5 sm:px-1">
+    <div className="hols-volume-panel min-w-0 w-full max-w-full">
       <div
         data-book-cover
         data-paper-theme={paperTheme}
@@ -356,11 +358,15 @@ function HolsVolume({
                         draggable={false}
                       />
                     </div>
-                    <p className="book-cover-publisher">HOLS Library</p>
+                    {!isCustomVialCover ? (
+                      <p className="book-cover-publisher">HOLS Library</p>
+                    ) : null}
                   </div>
-                  <p className="book-cover-volume-label">
-                    <span className="book-cover-volume-label-text">{volumeLabel}</span>
-                  </p>
+                  {!isCustomVialCover ? (
+                    <p className="book-cover-volume-label">
+                      <span className="book-cover-volume-label-text">{volumeLabel}</span>
+                    </p>
+                  ) : null}
                 </header>
 
                 <h2
@@ -371,6 +377,13 @@ function HolsVolume({
                 >
                   {displayTitle}
                 </h2>
+
+                {isCustomVialCover && !hideTitleOverlay ? (
+                  <p className="book-cover-volume-label">
+                    <span className="book-cover-volume-label-text">{volumeLabel}</span>
+                  </p>
+                ) : null}
+
                 <div className="book-cover-rule" aria-hidden />
 
                 <footer className="book-cover-footer">
@@ -415,7 +428,7 @@ function TableOfContents({
   return (
     <section
       data-book-toc
-      className="course-book-toc relative min-w-0 overflow-hidden rounded-2xl p-3.5 sm:p-5 md:p-6"
+      className="course-book-toc relative min-w-0 w-full overflow-hidden rounded-2xl p-3 sm:p-5 md:p-6"
     >
       <div className="course-book-toc-gutter pointer-events-none absolute inset-y-0 left-0 w-1.5" aria-hidden />
       <div className="flex flex-col gap-3 border-b border-[color:var(--dash-surface-border)] pb-4 pl-1 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-2 sm:pl-2">
@@ -507,16 +520,16 @@ function TopicChapter({
         onClick={onToggle}
         data-expanded={expanded}
         className={cn(
-          "course-toc-row group flex w-full items-center gap-2.5 rounded-xl px-2.5 py-2.5 text-left sm:gap-4 sm:px-3.5 sm:py-3",
+          "course-toc-row group flex w-full items-start gap-2.5 rounded-xl px-2.5 py-2.5 text-left sm:items-center sm:gap-4 sm:px-3.5 sm:py-3",
           expanded && "bg-[color:var(--dash-soft)]",
         )}
         aria-expanded={expanded}
       >
-        <span className="course-toc-badge font-sans flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#DDE466]/15 text-[11px] font-bold tracking-[0.02em] text-[color:var(--dash-accent)] sm:h-10 sm:w-10 sm:text-sm">
+        <span className="course-toc-badge font-sans mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#DDE466]/15 text-[11px] font-bold tracking-[0.02em] text-[color:var(--dash-accent)] sm:mt-0 sm:h-10 sm:w-10 sm:text-sm">
           {romanChapter(index)}
         </span>
         <span className="min-w-0 flex-1">
-          <span className="font-sans block text-sm font-semibold tracking-[0.005em] text-[color:var(--dash-text)] transition group-hover:text-[color:var(--dash-accent)] sm:text-lg">
+          <span className="font-sans block break-words text-sm font-semibold leading-snug tracking-[0.005em] text-[color:var(--dash-text)] transition group-hover:text-[color:var(--dash-accent)] sm:text-lg sm:leading-normal">
             {topic.l1_name}
           </span>
           <span className="text-brand-caption mt-0.5 block text-[color:var(--dash-faint)]">
@@ -526,7 +539,7 @@ function TopicChapter({
         </span>
         <span
           className={cn(
-            "mt-1 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--dash-soft)] text-[color:var(--dash-muted)] transition duration-200",
+            "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--dash-soft)] text-[color:var(--dash-muted)] transition duration-200 sm:mt-1",
             expanded && "rotate-180 bg-[#DDE466]/25 text-[color:var(--dash-accent)]",
           )}
           aria-hidden
@@ -581,17 +594,17 @@ function SectionEntry({
     <li>
       <Link
         href={href}
-        className="course-section-row group flex items-baseline gap-3 rounded-lg px-2.5 py-2.5 hover:bg-[color:var(--dash-soft)]"
+        className="course-section-row group flex items-start gap-2.5 rounded-lg px-2 py-2.5 hover:bg-[color:var(--dash-soft)] sm:items-baseline sm:gap-3 sm:px-2.5"
       >
-        <span className="font-sans w-6 shrink-0 text-xs font-semibold tabular-nums text-[color:var(--dash-dim)]">
+        <span className="font-sans mt-0.5 w-6 shrink-0 text-xs font-semibold tabular-nums text-[color:var(--dash-dim)] sm:mt-0">
           {String(index + 1).padStart(2, "0")}
         </span>
         <span className="min-w-0 flex-1 border-b border-dotted border-[color:var(--dash-surface-border)] pb-1">
-          <span className="font-sans text-sm font-medium text-[color:var(--dash-text)] transition group-hover:text-[color:var(--dash-accent)]">
+          <span className="font-sans break-words text-sm font-medium leading-snug text-[color:var(--dash-text)] transition group-hover:text-[color:var(--dash-accent)]">
             {section.l2_name}
           </span>
         </span>
-        <span className="text-brand-caption shrink-0 text-[color:var(--dash-faint)]">
+        <span className="text-brand-caption mt-0.5 shrink-0 text-[color:var(--dash-faint)] sm:mt-0">
           {section.item_count}
         </span>
       </Link>

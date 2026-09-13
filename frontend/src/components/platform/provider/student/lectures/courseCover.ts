@@ -668,7 +668,11 @@ export function getCourseCoverSpec(courseId: string): CourseCoverSpec {
 
 /** Display title for book-cover typography (lecture heading above vial). */
 export function getCoverDisplayTitle(title: string): string {
-  return tidyCoverTitle(title);
+  return (
+    tidyCoverTitle(title)
+      // Keep numeric ranges on one line (e.g. 176-191 / 176–191)
+      .replace(/(\d)\s*[-–—]\s*(\d)/g, "$1\u2011$2")
+  );
 }
 
 /** All lecture covers use the HOLS vial photo. Kept for API compatibility. */

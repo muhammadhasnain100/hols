@@ -27,6 +27,9 @@ class Settings(BaseSettings):
     ses_region: str = "ap-southeast-2"
     ses_from: str = ""
 
+    # ---- Frontend (email CTAs, invite links) ----
+    frontend_url: str = "http://localhost:3000"
+
     # ---- Bedrock (Clinic Onboarding Agent) ----
     bedrock_region: str = "us-east-1"
     bedrock_model_id: str = ""

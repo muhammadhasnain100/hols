@@ -115,7 +115,7 @@ export function CoursePageLayout({
             </section>
           ) : null}
 
-          <div className={cn(!hideHero && "mt-4", "grid w-full min-w-0 max-w-full gap-4")}>{children}</div>
+          <div className={cn(!hideHero && "mt-4", "grid w-full min-w-0 max-w-full gap-3 sm:gap-4")}>{children}</div>
         </div>
       </PortalShell>
     </OpenCalculatorContext.Provider>

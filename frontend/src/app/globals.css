@@ -1432,7 +1432,9 @@ select:-webkit-autofill:focus {
 .hols-volume-panel {
   position: relative;
   z-index: 1;
-  padding-block: 0.25rem;
+  padding-block: 0;
+  width: 100%;
+  min-width: 0;
 }
 
 .hols-volume {
@@ -1460,7 +1462,6 @@ select:-webkit-autofill:focus {
   --hols-page-scroll-thumb: rgba(20, 38, 68, 0.3);
   --hols-page-scroll-track: rgba(237, 241, 232, 0.45);
   --hols-page-topic-filter: brightness(0.55) saturate(1.2);
-  --hols-volume-height: clamp(28rem, 72vw, 36rem);
   --hols-volume-open-duration: 1250ms;
   --hols-volume-open-ease: cubic-bezier(0.22, 1, 0.36, 1);
   --hols-volume-hover-duration: 420ms;
@@ -1468,9 +1469,12 @@ select:-webkit-autofill:focus {
   position: relative;
   isolation: isolate;
   width: 100%;
-  height: var(--hols-volume-height);
-  min-height: 28rem;
-  max-height: 36rem;
+  min-width: 0;
+  /* Mobile-first: scale with container width, keep a readable cover height */
+  aspect-ratio: 3 / 4;
+  height: auto;
+  min-height: 22rem;
+  max-height: min(34rem, 88vh);
   perspective: 1700px;
   transform-style: preserve-3d;
   transition: transform var(--hols-volume-open-duration) var(--hols-volume-open-ease);
@@ -1489,9 +1493,33 @@ select:-webkit-autofill:focus {
   transform: translateZ(6px) rotateY(3.5deg) rotateX(-1.25deg);
 }
 
+@media (min-width: 480px) {
+  .hols-volume {
+    aspect-ratio: 4 / 5;
+    min-height: 24rem;
+    max-height: min(36rem, 85vh);
+  }
+}
+
 @media (min-width: 640px) {
   .hols-volume {
-    --hols-volume-height: clamp(30rem, 42vw, 36rem);
+    aspect-ratio: 3 / 4;
+    min-height: 26rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .hols-volume {
+    aspect-ratio: auto;
+    height: clamp(28rem, 36vw, 36rem);
+    min-height: 28rem;
+    max-height: 36rem;
+  }
+}
+
+@media (min-width: 1280px) {
+  .hols-volume {
+    height: clamp(30rem, 34vw, 36rem);
     min-height: 30rem;
   }
 }
@@ -1808,6 +1836,7 @@ select:-webkit-autofill:focus {
   border: 0;
   background: transparent;
   cursor: pointer;
+  text-align: left; /* buttons default to center — keep cover copy left-aligned */
   transform-style: preserve-3d;
   transform: translateZ(2px);
   transform-origin: left center;
@@ -1954,11 +1983,17 @@ select:-webkit-autofill:focus {
   flex: 1;
   min-height: 0;
   height: 100%;
-  padding: 1.25rem 1.35rem 1.1rem;
+  padding: 1rem 1rem 1rem;
+}
+
+@media (min-width: 480px) {
+  .hols-volume .book-cover-content {
+    padding: 1.15rem 1.2rem 1.05rem;
+  }
 }
 
 @media (min-width: 640px) {
-  .book-cover-content {
+  .hols-volume .book-cover-content {
     padding: 1.55rem 1.75rem 1.25rem;
   }
 }
@@ -2558,9 +2593,9 @@ select:-webkit-autofill:focus {
 }
 
 .book-cover-content--photo-vial .book-cover-header {
-  gap: 0.45rem;
-  margin-bottom: 0.55rem;
-  max-width: min(11.75rem, 48%);
+  gap: 0.35rem;
+  margin-bottom: 0.35rem;
+  max-width: min(94%, 42rem);
 }
 
 .book-cover-content--photo-vial .book-cover-brand {
@@ -2585,61 +2620,71 @@ select:-webkit-autofill:focus {
 }
 
 .book-cover-content--photo-vial .book-cover-publisher {
-  font-size: 0.5rem;
-  letter-spacing: 0.24em;
+  display: none;
+}
+
+.book-cover-content--photo-vial .book-cover-title {
+  /* Title sits on the cover art — no glass capsule; stay on one line until the row is full */
+  box-sizing: border-box;
+  width: max-content;
+  max-width: min(94%, 42rem);
+  margin: 0.15rem 0 0;
+  padding: 0;
+  border: none;
+  border-radius: 0;
+  background: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  box-shadow: none;
+  font-size: clamp(1.15rem, 4.2vw, 1.7rem);
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  color: #0f172a;
+  text-align: left;
+  text-wrap: wrap;
+  overflow-wrap: normal;
+  word-break: normal;
+  hyphens: none;
+  -webkit-hyphens: none;
+  white-space: normal;
+  text-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.55),
+    0 2px 14px rgba(252, 252, 253, 0.45);
+  display: block;
+  align-self: flex-start;
+  overflow: visible;
+  -webkit-line-clamp: unset;
 }
 
 .book-cover-content--photo-vial .book-cover-volume-label {
   align-self: flex-start;
-}
-
-.book-cover-content--photo-vial .book-cover-title {
-  max-width: min(10.25rem, 44%);
-  margin-top: 0.15rem;
-  font-size: clamp(1.35rem, 4vw, 2rem);
-  font-weight: 700;
-  line-height: 1.06;
-  letter-spacing: -0.035em;
-  text-wrap: balance;
-  padding: 0.45rem 0.65rem;
-  border-radius: 0.85rem;
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(12px) saturate(150%);
-  -webkit-backdrop-filter: blur(12px) saturate(150%);
-  border: 1px solid rgba(255, 255, 255, 0.75);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.85),
-    0 6px 18px rgba(20, 28, 48, 0.08);
-  text-shadow: none;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 4;
-  overflow: hidden;
+  margin-top: 0.55rem;
 }
 
 .portal-shell[data-theme="dark"] .book-cover-content--photo-vial .book-cover-title {
-  color: #f5f7ff;
-  background: rgba(14, 18, 42, 0.58);
-  border-color: rgba(255, 255, 255, 0.12);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.08),
-    0 8px 18px rgba(0, 0, 0, 0.28);
-  text-shadow: 0 1px 10px rgba(5, 9, 28, 0.4);
+  color: #ffffff;
+  background: none;
+  border: none;
+  box-shadow: none;
+  text-shadow:
+    0 1px 0 rgba(5, 9, 28, 0.35),
+    0 2px 16px rgba(5, 9, 28, 0.55);
 }
 
 .book-cover-content--photo-vial .book-cover-rule {
   width: 2rem;
-  margin-top: 0.6rem;
+  margin-top: 0.7rem;
 }
 
 .book-cover-content--photo-vial .book-cover-footer {
   flex-direction: column;
   align-items: flex-start;
   gap: 0.18rem;
-  max-width: min(11.5rem, 48%);
+  max-width: min(12rem, 52%);
   margin-top: auto;
   padding-top: 0.45rem;
-  padding-right: 0;
+  padding-right: 5.5rem; /* clear Open volume chip */
   padding-bottom: 0.15rem;
   font-size: 0.5625rem;
   line-height: 1.35;
@@ -2655,9 +2700,9 @@ select:-webkit-autofill:focus {
   }
 
   .book-cover-content--photo-vial .book-cover-header {
-    gap: 0.55rem;
-    margin-bottom: 0.65rem;
-    max-width: min(12.25rem, 46%);
+    gap: 0.4rem;
+    margin-bottom: 0.4rem;
+    max-width: min(94%, 42rem);
   }
 
   .book-cover-content--photo-vial .book-cover-mark {
@@ -2674,15 +2719,21 @@ select:-webkit-autofill:focus {
   }
 
   .book-cover-content--photo-vial .book-cover-title {
-    max-width: min(10.5rem, 42%);
-    font-size: clamp(1.65rem, 3.1vw, 2.45rem);
-    line-height: 1.04;
-    letter-spacing: -0.04em;
+    width: max-content;
+    max-width: min(94%, 42rem);
+    font-size: clamp(1.3rem, 2.1vw, 1.85rem);
+    line-height: 1.18;
+    letter-spacing: -0.028em;
+    padding: 0;
+  }
+
+  .book-cover-content--photo-vial .book-cover-volume-label {
+    margin-top: 0.65rem;
   }
 
   .book-cover-content--photo-vial .book-cover-rule {
     width: 2.25rem;
-    margin-top: 0.7rem;
+    margin-top: 0.8rem;
   }
 
   .book-cover-content--photo-vial .book-cover-footer {
@@ -2789,21 +2840,31 @@ select:-webkit-autofill:focus {
 
 .book-open-hint {
   position: absolute;
-  right: 0.95rem;
-  bottom: 0.85rem;
+  right: 0.7rem;
+  bottom: 0.7rem;
   z-index: 4;
-  padding: 0.28rem 0.62rem;
+  padding: 0.28rem 0.55rem;
   border-radius: 999px;
   border: 1.5px solid #DDE466;
   background: #FCFBF4;
   box-shadow: 0 1px 3px rgba(20, 38, 68, 0.12);
-  font-size: 0.5625rem;
+  font-size: 0.5rem;
   font-weight: 700;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
   color: #142644;
   pointer-events: none;
   transition: opacity 0.25s ease, border-color 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+}
+
+@media (min-width: 640px) {
+  .book-open-hint {
+    right: 0.95rem;
+    bottom: 0.85rem;
+    padding: 0.28rem 0.62rem;
+    font-size: 0.5625rem;
+    letter-spacing: 0.14em;
+  }
 }
 
 .hols-volume:not(.is-open) .book-cover:hover .book-open-hint {
@@ -3392,6 +3453,50 @@ html[data-portal-theme="dark"] .hols-volume .book-interior-close:hover {
 .course-toc-row:hover::before,
 .course-toc-row[data-expanded="true"]::before {
   height: 62%;
+}
+
+@media (hover: none) {
+  .course-toc-row:hover {
+    transform: none;
+  }
+
+  .hols-volume:not(.is-open) .book-assembly:has(.book-cover:hover) {
+    transform: none;
+  }
+}
+
+/* Lecture overview stage — keep columns from overflowing the portal shell */
+.lecture-overview-stage {
+  width: 100%;
+  min-width: 0;
+}
+
+@media (min-width: 1024px) {
+  .lecture-overview-stage {
+    align-items: start;
+  }
+
+  .book-cover-content--photo-vial .book-cover-title {
+    width: max-content;
+    max-width: min(92%, 40rem);
+    font-size: clamp(1.35rem, 1.7vw, 1.9rem);
+  }
+
+  .book-cover-content--photo-vial .book-cover-header {
+    max-width: min(92%, 40rem);
+  }
+
+  .book-cover-content--photo-vial .book-cover-footer {
+    padding-right: 0;
+    max-width: min(12rem, 46%);
+  }
+}
+
+@media (min-width: 1280px) {
+  .book-cover-content--photo-vial .book-cover-title {
+    max-width: min(90%, 44rem);
+    font-size: clamp(1.4rem, 1.55vw, 1.95rem);
+  }
 }
 
 .course-toc-badge {
@@ -5693,21 +5798,25 @@ html.lenis main {
 }
 
 .lecture-cover-art-lecture-name {
-  max-width: 15.5rem;
-  font-size: clamp(1.15rem, 3.8vw, 1.45rem);
+  max-width: 16.5rem;
+  font-size: clamp(1.05rem, 3.4vw, 1.35rem);
   font-weight: 700;
-  line-height: 1.12;
-  letter-spacing: -0.035em;
+  line-height: 1.18;
+  letter-spacing: -0.03em;
   text-transform: none;
   color: #1a2140;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  overflow: hidden;
+  text-wrap: wrap;
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: none;
+  -webkit-hyphens: none;
+  white-space: normal;
+  display: block;
+  overflow: visible;
 }
 
 .lecture-cover-art-lecture-name--product {
-  max-width: 11.5rem;
+  max-width: 15rem;
 }
 
 .lecture-cover-art-title {
@@ -5741,10 +5850,7 @@ html.lenis main {
   transform: none;
 }
 
-.lecture-cover-art:not(.lecture-cover-art-panel) .lecture-cover-art-media .lecture-cover-product-vial-img {
-  filter: none;
-  /* tilt transform lives on .lecture-cover-product-vial-img itself */
-}
+/* Product vial tilt/defringe live on .lecture-cover-product-vial-img (inline filter + CSS transform) */
 
 .portal-shell[data-theme="dark"] .lecture-cover-art:not(.lecture-cover-art-panel) .lecture-cover-art-media .lecture-cover-vial-photo,
 .portal-shell[data-theme="dark"] .lecture-cover-art:not(.lecture-cover-art-panel) .lecture-cover-art-media .lecture-cover-labeled-vial-photo {
@@ -5755,12 +5861,11 @@ html.lenis main {
 /* Product vials stay crisp — no brightness softening in dark mode (tilt kept) */
 .portal-shell[data-theme="dark"] .lecture-cover-art--product-vial:not(.lecture-cover-art-panel)
   .lecture-cover-art-media
-  .lecture-cover-product-mode,
-.portal-shell[data-theme="dark"] .lecture-cover-art--product-vial:not(.lecture-cover-art-panel)
-  .lecture-cover-art-media
-  .lecture-cover-product-vial-img {
+  .lecture-cover-product-mode {
   filter: none;
 }
+
+/* Product vial defringe stays on the img via inline style (unique SVG filter id) */
 
 /* Light — luminous bloom wash */
 .lecture-cover-art:not(.lecture-cover-art-panel) .lecture-cover-art-media::before {
@@ -5905,17 +6010,21 @@ html.lenis main {
   z-index: 1;
   max-width: 100%;
   margin: 0;
-  font-size: clamp(1.05rem, 3.6vw, 1.35rem);
+  font-size: clamp(1rem, 3.2vw, 1.28rem);
   font-weight: 700;
-  line-height: 1.15;
-  letter-spacing: -0.03em;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
   text-transform: none;
   color: #1a2140;
   text-shadow: none;
-  display: -webkit-box;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 3;
-  overflow: hidden;
+  text-wrap: wrap;
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: none;
+  -webkit-hyphens: none;
+  white-space: normal;
+  display: block;
+  overflow: visible;
 }
 
 .portal-shell[data-theme="dark"] .lecture-cover-art-name-capsule .lecture-cover-art-lecture-name {
@@ -6090,7 +6199,7 @@ html.lenis main {
   height: 100%;
   object-fit: contain;
   object-position: var(--cover-photo-position, 62% 56%);
-  filter: none !important;
+  /* Defringe choke applied inline (url(#lecture-vial-defringe-*)) */
   transform: translate(var(--product-vial-x, 11%), var(--product-vial-y, 6%))
     rotate(var(--product-vial-rotate, 10deg)) scale(var(--product-vial-scale, 1.16));
   transform-origin: 50% 52%;
@@ -6508,16 +6617,20 @@ html.lenis main {
 .lecture-cover-art-card-text--custom-vial {
   box-sizing: border-box;
   width: auto;
-  max-width: min(78%, 13.5rem);
+  max-width: min(82%, 16rem);
   padding-right: 0.85rem;
 }
 
 .lecture-cover-art--custom-photo:not([data-cover-layout="book"]) .lecture-cover-art-card-text--custom-vial .lecture-cover-art-title {
   max-width: 100%;
-  font-size: clamp(1.05rem, 4.6vw, 1.5rem);
+  font-size: clamp(1.05rem, 4.2vw, 1.4rem);
+  line-height: 1.18;
+  text-wrap: wrap;
   overflow-wrap: break-word;
   word-break: normal;
   hyphens: none;
+  -webkit-hyphens: none;
+  white-space: normal;
   text-shadow:
     0 1px 0 rgba(255, 255, 255, 0.85),
     0 0 14px rgba(252, 252, 253, 0.75),

@@ -1,6 +1,6 @@
 "use client";
 
-import { type CSSProperties } from "react";
+import { type CSSProperties, useId } from "react";
 import { cn } from "@/lib/utils";
 
 const MODE_LIGHT = "/assets/lectures/mode/light.png";
@@ -29,12 +29,15 @@ export function CourseCoverProductVial({
   objectPosition = "62% 56%",
   className,
 }: CourseCoverProductVialProps) {
+  const reactId = useId().replace(/:/g, "");
+  const defringeId = `lecture-vial-defringe-${reactId}`;
   const vialStyle = {
     "--product-vial-rotate": `${rotate}deg`,
     "--product-vial-scale": String(scale),
     "--product-vial-x": "11%",
     "--product-vial-y": "6%",
     objectPosition,
+    filter: `url(#${defringeId})`,
   } as CSSProperties;
 
   return (
@@ -42,6 +45,24 @@ export function CourseCoverProductVial({
       className={cn("lecture-cover-product-vial relative h-full w-full overflow-hidden", className)}
       data-vial-src={vialSrc}
     >
+      {/* Erode cutout fringe so white/gray matte halos never read as a sticker outline */}
+      <svg className="pointer-events-none absolute h-0 w-0 overflow-hidden" aria-hidden>
+        <defs>
+          <filter
+            id={defringeId}
+            x="-5%"
+            y="-5%"
+            width="110%"
+            height="110%"
+            colorInterpolationFilters="sRGB"
+          >
+            <feMorphology in="SourceAlpha" operator="erode" radius="1.6" result="choke" />
+            <feGaussianBlur in="choke" stdDeviation="0.45" result="soft" />
+            <feComposite in="SourceGraphic" in2="soft" operator="in" />
+          </filter>
+        </defs>
+      </svg>
+
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
         src={MODE_LIGHT}

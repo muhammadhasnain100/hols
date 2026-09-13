@@ -130,19 +130,57 @@ span {
 @media only screen and (max-width: 600px) {
  .em_main_table {
   width: 100% !important;
+  max-width: 100% !important;
  }
  .em_hide {
   display: none !important;
  }
  .em_side_space {
-  padding-left: 20px !important;
-  padding-right: 20px !important;
+  padding-left: 16px !important;
+  padding-right: 16px !important;
  }
  .nopad {
   padding: 0 !important;
  }
  .em_pad {
   padding: 10px !important;
+ }
+ .em_headline {
+  font-size: 28px !important;
+  line-height: 34px !important;
+ }
+ .em_body_text {
+  font-size: 16px !important;
+  line-height: 24px !important;
+  padding-left: 8px !important;
+  padding-right: 8px !important;
+ }
+ .em_footer_text {
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+  font-size: 15px !important;
+  line-height: 24px !important;
+ }
+ .em_logo {
+  width: 170px !important;
+  height: auto !important;
+  max-width: 70% !important;
+ }
+ .em_btn_wrap {
+  width: 100% !important;
+  max-width: 100% !important;
+ }
+ .em_btn_td {
+  width: 100% !important;
+ }
+ .em_btn_link {
+  display: block !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+  padding: 14px 20px !important;
+  font-size: 15px !important;
+  line-height: 20px !important;
+  white-space: normal !important;
  }
  u + .em_body .glist {
   margin-left: 25px !important;
@@ -177,14 +215,14 @@ span {
             <td height="30"  style="line-height:1px;font-size:1px">&nbsp;</td>
            </tr>
            <tr>
-            <td align="left"><img alt="logo" src="https://mcusercontent.com/d46dba7e9b2634b2faf95f2e5/images/4033dc57-098e-0a41-aae4-3c98d547596a.png" width="217" height="40" style="display:block" /></td>
+            <td align="left"><img class="em_logo" alt="logo" src="https://mcusercontent.com/d46dba7e9b2634b2faf95f2e5/images/4033dc57-098e-0a41-aae4-3c98d547596a.png" width="217" height="40" style="display:block;max-width:100%;height:auto" /></td>
            </tr>
       
            <tr>
             <td height="30" style="line-height:1px;font-size:1px">&nbsp;</td>
            </tr>
            <tr>
-               <td  style="font-family:'Google Sans',Arial,sans-serif;font-size:36px;text-align:left;color:#ffffff;font-weight:500;line-height:41px">{{headline}} <br class="em_hide"><span style="color: #D8D65E">{{headline_accent}}</span></td>
+               <td class="em_headline" style="font-family:'Google Sans',Arial,sans-serif;font-size:36px;text-align:left;color:#ffffff;font-weight:500;line-height:41px">{{headline}} <br class="em_hide"><span style="color: #D8D65E">{{headline_accent}}</span></td>
            </tr>
               <tr>
             <td height="40" style="line-height:1px;font-size:1px">&nbsp;</td>
@@ -210,27 +248,35 @@ span {
                       <td height="20" style="line-height:1px;font-size:1px;">&nbsp;</td>
                   </tr>
                <tr>
-               <td class="nopad"style="font-family:'Google Sans',Arial,sans-serif;font-size:17px;text-align:center;color:#000000;font-weight:400;line-height:27px;padding-left: 25px;padding-right: 25px">{{body}}</td>
+               <td class="nopad em_body_text" style="font-family:'Google Sans',Arial,sans-serif;font-size:17px;text-align:center;color:#000000;font-weight:400;line-height:27px;padding-left: 25px;padding-right: 25px">{{body}}</td>
               </tr>
               <tr>
                <td height="28" style="line-height:1px;font-size:1px">&nbsp;</td>
               </tr>
               <tr>
-               <td>
-                <table width="188" border="0" cellspacing="0" cellpadding="0" align="center" >
+               <td align="center">
+                <!--[if mso]>
+                <v:roundrect xmlns:v="urn:schemas-microsoft-com:vml" xmlns:w="urn:schemas-microsoft-com:office:word" href="{{cta_url}}" style="height:48px;v-text-anchor:middle;width:260px;" arcsize="50%" stroke="f" fillcolor="#3554A5">
+                 <w:anchorlock/>
+                 <center style="color:#ffffff;font-family:Arial,sans-serif;font-size:16px;font-weight:600;">{{cta_label}}</center>
+                </v:roundrect>
+                <![endif]-->
+                <!--[if !mso]><!-- -->
+                <table class="em_btn_wrap" border="0" cellspacing="0" cellpadding="0" align="center" role="presentation" style="border-collapse:separate;mso-table-lspace:0pt;mso-table-rspace:0pt">
                  <tr>
-                  <td valign="middle" bgcolor="#3554A5" height="46" style="font-family:'Google Sans',Avenir,Arial,sans-serif;font-size:16px;font-weight:400;text-align:center;border-radius:40px;color:#ffffff">
-                   <a href="{{cta_url}}" target="_blank" style="text-decoration:none;color:#ffffff;display:block;line-height:46px"> {{cta_label}}</a>
+                  <td class="em_btn_td" align="center" valign="middle" bgcolor="#3554A5" style="background-color:#3554A5;border-radius:40px;text-align:center">
+                   <a class="em_btn_link" href="{{cta_url}}" target="_blank" rel="noopener noreferrer" style="font-family:'Google Sans',Avenir,Arial,sans-serif;font-size:16px;font-weight:600;line-height:20px;color:#ffffff;text-decoration:none;display:inline-block;padding:14px 28px;border-radius:40px;white-space:nowrap;mso-hide:all">{{cta_label}}</a>
                   </td>
                  </tr>
                 </table>
+                <!--<![endif]-->
                </td>
               </tr>
               <tr>
                <td height="30" style="line-height:1px;font-size:1px">&nbsp;</td>
               </tr>
               <tr>
-               <td class="nopad"style="font-family:'Google Sans',Arial,sans-serif;font-size:17px;text-align:center;color:#000000;font-weight:400;line-height:27px;padding-left: 25px;padding-right: 25px">{{body_secondary}}</td>
+               <td class="nopad em_body_text" style="font-family:'Google Sans',Arial,sans-serif;font-size:17px;text-align:center;color:#000000;font-weight:400;line-height:27px;padding-left: 25px;padding-right: 25px">{{body_secondary}}</td>
               </tr>
               <tr>
                <td height="30" style="line-height:1px;font-size:1px">&nbsp;</td>
@@ -249,7 +295,7 @@ span {
                   <td height="30" style="line-height:1px;font-size:1px;">&nbsp;</td>
               </tr>
                   <tr>
-                  <td class="nopad"style="font-family:'Google Sans',Arial,sans-serif;font-size:17px;text-align:center;color:#011A24;font-weight:400;line-height:27px;padding-left: 80px;padding-right: 80px">
+                  <td class="nopad em_footer_text" style="font-family:'Google Sans',Arial,sans-serif;font-size:17px;text-align:center;color:#011A24;font-weight:400;line-height:27px;padding-left: 80px;padding-right: 80px">
                    {{footer_note}} <br /><br />
                    <span style="font-weight:700;color: #132644">— The Hols  Team</span>
                   </td>
