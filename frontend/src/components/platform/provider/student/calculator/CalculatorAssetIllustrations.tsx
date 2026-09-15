@@ -5,6 +5,7 @@ import { useGSAP } from "@gsap/react";
 import {
   HOLS_BRAND,
   SYRINGE_IMAGE_SCALE,
+  SYRINGE_LAYOUT_ML,
   syringeDrawBaseHeightPx,
   syringeDrawImageScale,
 } from "@/components/platform/provider/student/calculator/calculatorAssets";
@@ -323,11 +324,16 @@ export function AssetSyringe({
   const narrowViewport = useCompactCalculatorScene();
   const useCompactScale = compact || narrowViewport;
   const rawScale = SYRINGE_IMAGE_SCALE[syringeMl] ?? 0.8;
-  // Draw/animation: shared helper so padding + rendered size stay in lockstep.
-  // Overview (tilted): slightly smaller on phones so the long needle stays in-card.
-  const scale = needleDown
+  const layoutScaleRaw = SYRINGE_IMAGE_SCALE[SYRINGE_LAYOUT_ML] ?? 0.98;
+  // Overview (horizontal) and draw (needleDown) share one size so measurement
+  // matches the reconstitution animation.
+  const matchDrawSize = needleDown || horizontal;
+  const scale = matchDrawSize
     ? syringeDrawImageScale(syringeMl, useCompactScale)
-    : rawScale * (useCompactScale ? 1.05 : 1.12);
+    : rawScale * 1.12;
+  const layoutScale = matchDrawSize
+    ? syringeDrawImageScale(SYRINGE_LAYOUT_ML, useCompactScale)
+    : layoutScaleRaw * 1.12;
 
   const clamped = Math.min(0.98, Math.max(0, showFill ? fillRatio : 0));
 
@@ -354,38 +360,46 @@ export function AssetSyringe({
   const showNeedle = part === "full" || part === "needle";
   const showBarrel = part === "full" || part === "barrel";
 
-  const baseHeight = horizontal
-    ? useCompactScale
-      ? 260
-      : 320
+  const baseHeight = matchDrawSize
+    ? syringeDrawBaseHeightPx(useCompactScale)
     : large
-      ? needleDown
-        ? syringeDrawBaseHeightPx(useCompactScale)
-        : 320
+      ? 320
       : useCompactScale
         ? 180
         : 280;
   const height = Math.round(baseHeight * scale);
+  const layoutHeight = Math.round(baseHeight * layoutScale);
   const viewTop = SYRINGE_ART.viewTop;
   // Always include the full cannula — overview used to clip at 380 and hide length.
   const viewBottom = SYRINGE_ART.viewBottom;
   const viewH = viewBottom - viewTop;
   const width = Math.round(height * (92 / viewH));
+  const layoutWidth = Math.round(layoutHeight * (92 / viewH));
   const needleTipY = SYRINGE_ART.tipY;
 
   /**
-   * Overview: classic −45° reference tilt (user syringe design).
-   * Draw (gsapDriven): park horizontal (−90°) until GSAP measures at 0° then
-   * restores horizontal for the intro — avoids a vertical flash before play.
+   * Overview: flat horizontal (−90°, needle right).
+   * Draw (gsapDriven): same horizontal park until GSAP measures at 0° then
+   * restores −90° for the intro.
    */
-  const rotate = horizontal ? -45 : needleDown && gsapDriven ? -90 : 0;
+  const rotate = horizontal || (needleDown && gsapDriven) ? -90 : 0;
 
   const rad = (Math.abs(rotate) * Math.PI) / 180;
   const boxW = Math.round(Math.abs(width * Math.cos(rad)) + Math.abs(height * Math.sin(rad)));
   const boxH = Math.round(Math.abs(width * Math.sin(rad)) + Math.abs(height * Math.cos(rad)));
+  const slotW = Math.round(
+    Math.abs(layoutWidth * Math.cos(rad)) + Math.abs(layoutHeight * Math.sin(rad)),
+  );
+  const slotH = Math.round(
+    Math.abs(layoutWidth * Math.sin(rad)) + Math.abs(layoutHeight * Math.cos(rad)),
+  );
 
   /** Tip as fraction of the SVG box (inside the rotator so it tracks GSAP rotation). */
   const tipTopPct = ((needleTipY - viewTop) / viewH) * 100;
+
+  // Overview: fixed slot (largest syringe). Draw: natural bounds for GSAP measure.
+  const frameW = horizontal ? slotW : Math.max(boxW, width);
+  const frameH = horizontal ? slotH : Math.max(boxH, height);
 
   const svg = (
     <svg
@@ -429,7 +443,7 @@ export function AssetSyringe({
           "relative flex max-w-full items-center justify-center",
           needleDown || gsapDriven ? "overflow-visible" : "overflow-hidden",
         )}
-        style={{ width: Math.max(boxW, width), height: Math.max(boxH, height), maxWidth: "100%" }}
+        style={{ width: frameW, height: frameH, maxWidth: "100%" }}
       >
         <div
           data-syringe-rotator

@@ -49,8 +49,8 @@ const vialSizeClass =
 const waterVialSizeClass =
   "w-[5rem] max-[390px]:w-[4.65rem] sm:w-[7.9rem] md:w-[12.15rem]";
 /**
- * Draw (animation) column + art widths — follow overview proportions so the
- * reconstitution scene matches the dose-selection preview on every breakpoint.
+ * Draw (animation) column + art widths — match overview so the reconstitution
+ * scene reads at the same scale as the selection preview on every breakpoint.
  */
 const drawColumnClass =
   "w-[5rem] max-[390px]:w-[4.65rem] sm:w-[7.9rem] md:w-[12.15rem]";
@@ -185,8 +185,8 @@ export function CalculatorReconScene({
   };
 
   const useLayeredDraw = layout === "draw" && showSyringe && drawSyringeLarge;
-  // Dynamic top padding: sized to the actual retracted-plunger reach for
-  // the *selected* syringe capacity. Larger syringes → taller plunger swing.
+  // Top padding is fixed to the largest syringe so the card height stays
+  // stable while the user tries different capacities on the syringe step.
   const drawScenePaddingTop = drawSyringeLarge
     ? `${syringeDrawScenePaddingPx(syringeMl, compact)}px`
     : undefined;
@@ -195,12 +195,15 @@ export function CalculatorReconScene({
     return (
       <div
         className={cn(
-          "mx-auto flex w-full max-w-[18rem] flex-col items-center gap-2 px-1 py-1.5 max-[390px]:max-w-[17rem] max-[390px]:gap-1.5 max-[390px]:py-1 sm:max-w-[24rem] sm:gap-5 sm:px-2 sm:py-3 md:max-w-lg md:gap-8 md:py-5",
+          // Syringe near top (pt); leftover space between syringe & vials;
+          // vials pinned to the bottom of the stage.
+          "mx-auto flex w-full max-w-[18rem] flex-col items-center px-2 pt-6 pb-4 max-[390px]:max-w-[17rem] max-[390px]:px-1.5 max-[390px]:pt-5 max-[390px]:pb-3.5 sm:max-w-[24rem] sm:px-2 sm:pt-7 sm:pb-5 md:max-w-lg md:pt-8 md:pb-6",
+          "min-h-[17rem] max-[390px]:min-h-[16rem] sm:min-h-[20rem] md:min-h-[24rem]",
           className,
         )}
       >
         {showSyringe ? (
-          <div className="flex w-full min-w-0 items-center justify-center px-1 sm:px-3">
+          <div className="flex w-full min-w-0 shrink-0 items-center justify-center px-1 sm:px-3">
             <AssetSyringe
               syringeMl={syringeMl}
               fillRatio={syringeFill}
@@ -216,7 +219,9 @@ export function CalculatorReconScene({
           </div>
         ) : null}
 
-        <div className="flex w-full min-w-0 items-end justify-center gap-3 max-[390px]:gap-2.5 sm:gap-6 md:gap-12">
+        <div className="min-h-6 w-full min-w-0 flex-1 max-[390px]:min-h-5 sm:min-h-7 md:min-h-8" aria-hidden />
+
+        <div className="flex w-full min-w-0 shrink-0 items-end justify-center gap-3 max-[390px]:gap-2.5 sm:gap-6 md:gap-12">
           <AssetVial
             label={compact ? "Bac water" : "Bacteriostatic water"}
             fillRatio={waterFill}

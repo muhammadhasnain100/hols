@@ -66,9 +66,13 @@ export function syringeDisplayWidthRem(
   return table[syringeMl] ?? (compact ? 8.25 : 20);
 }
 
+/** Largest capacity — used to reserve a fixed overview/draw layout slot. */
+export const SYRINGE_LAYOUT_ML: SyringeSizeMl = 3;
+
 /**
- * Draw-scene syringe scale — keep in sync with AssetSyringe `needleDown` branch.
- * Compact tracks overview size so the animation matches the selection preview.
+ * Shared syringe scale for overview (measurement) and draw (animation).
+ * Keep both call sites on this helper so the graphic never changes size
+ * between those steps.
  */
 export function syringeDrawImageScale(
   syringeMl: SyringeSizeMl,
@@ -76,7 +80,6 @@ export function syringeDrawImageScale(
 ): number {
   const rawScale = SYRINGE_IMAGE_SCALE[syringeMl] ?? 0.8;
   if (compact) {
-    // Same ballpark as overview on phones — clamp/hover fit keep it in-card.
     return Math.min(Math.max(rawScale * 0.92, 0.68), 0.92);
   }
   return Math.min(Math.max(rawScale, 0.78), 1.05);
@@ -88,14 +91,14 @@ export function syringeDrawBaseHeightPx(compact = false): number {
 }
 
 /**
- * Vertical padding above the vials — just enough for a vertical syringe with
- * tip at the stopper (hover uses that same band; no extra dead zone).
+ * Vertical padding above the vials — sized for the *largest* syringe so the
+ * animation card height does not jump when the user picks a different size.
  */
 export function syringeDrawScenePaddingPx(
-  syringeMl: SyringeSizeMl,
+  _syringeMl: SyringeSizeMl,
   compact = false,
 ): number {
-  const scale = syringeDrawImageScale(syringeMl, compact);
+  const scale = syringeDrawImageScale(SYRINGE_LAYOUT_ML, compact);
   const heightPx = syringeDrawBaseHeightPx(compact) * scale;
   // tipY 456 → thumbTop -142 in a viewBox from -146..466 → 598 / 612
   const tipToThumbPx = heightPx * (598 / 612);
