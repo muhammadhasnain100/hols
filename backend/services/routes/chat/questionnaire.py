@@ -281,22 +281,62 @@ def _conditions(answers: dict) -> List[str]:
     return list(raw)
 
 
+def _parse_age(answers: dict) -> Optional[int]:
+    age = answers.get("age")
+    try:
+        return int(age) if age is not None and str(age).strip() != "" else None
+    except (TypeError, ValueError):
+        return None
+
+
+PREGNANCY_MIN_AGE = 12
+PREGNANCY_MAX_AGE = 55
+CHILD_MAX_AGE = 12
+
+
+def is_pregnancy_applicable(answers: dict) -> bool:
+    sex = _norm(answers.get("sex"))
+    if sex == "male":
+        return False
+    age = _parse_age(answers)
+    if age is not None and (age < PREGNANCY_MIN_AGE or age >= PREGNANCY_MAX_AGE):
+        return False
+    return True
+
+
+def sanitize_intake_answers(answers: dict) -> dict:
+    """
+    Force pregnancy to N/A for male / young child / older patients,
+    clear allergy detail when not applicable, and drop Athlete for young children.
+    """
+    cleaned = dict(answers or {})
+    if not is_pregnancy_applicable(cleaned):
+        cleaned["pregnancy"] = "N/A"
+
+    if _norm(cleaned.get("peptide_allergy")) != "yes":
+        if cleaned.get("allergy_detail"):
+            cleaned["allergy_detail"] = ""
+
+    age = _parse_age(cleaned)
+    if age is not None and age < CHILD_MAX_AGE and str(cleaned.get("activity") or "") == "Athlete":
+        cleaned["activity"] = ""
+
+    return cleaned
+
+
 def evaluate_safety(answers: dict) -> dict:
     """
     Apply hard blocks and caution flags from Stage 1–2 + meds.
     Returns blocked_tags, blocked_peptides, hard_stops, cautions, flags.
     """
+    answers = sanitize_intake_answers(answers)
     blocked_tags: Set[str] = set()
     blocked_peptides: Set[str] = set()
     hard_stops: List[str] = []
     cautions: List[str] = []
     flags: List[str] = []
 
-    age = answers.get("age")
-    try:
-        age = int(age) if age is not None else None
-    except (TypeError, ValueError):
-        age = None
+    age = _parse_age(answers)
 
     if age is not None and age < 18:
         hard_stops.append("Patient under 18 — intake stopped. Peptide recommendations not provided for minors.")
@@ -515,3 +555,131 @@ def build_rag_query(evaluation: dict, answers: dict) -> str:
     if evaluation.get("safety", {}).get("cautions"):
         parts.append("Safety cautions: " + "; ".join(evaluation["safety"]["cautions"][:3]))
     return ". ".join(parts)
+
+
+CONFIDENCE_MODES = ("conservative", "balanced", "aggressive")
+
+
+def _confidence_sort_key(peptide: dict, confidence: str) -> float:
+    """Re-weight ranked peptides for the War Room confidence dial (no LLM)."""
+    base = float(peptide.get("score") or 0)
+    evidence = float(peptide.get("evidence_score") or _evidence_score(str(peptide.get("evidence") or "")))
+    goal_fit = float(peptide.get("goal_fit") or 0.7)
+    if confidence == "conservative":
+        return evidence * 0.65 + base * 0.35
+    if confidence == "aggressive":
+        return goal_fit * 0.55 + base * 0.45
+    return base
+
+
+def build_recommendation_board(
+    evaluation: dict,
+    *,
+    confidence: str = "balanced",
+    preferred: Optional[str] = None,
+) -> dict:
+    """
+    Deterministic War Room board JSON from evaluation.
+    No LLM required — safe for UI widgets, dial, and chips.
+    """
+    mode = confidence if confidence in CONFIDENCE_MODES else "balanced"
+    safety = evaluation.get("safety") or {}
+    hard_stops = list(safety.get("hard_stops") or [])
+    cautions = list(safety.get("cautions") or [])
+    flags = list(safety.get("flags") or [])
+
+    if safety.get("intake_blocked") or hard_stops:
+        safety_status = "blocked"
+    elif cautions:
+        safety_status = "caution"
+    else:
+        safety_status = "clear"
+
+    recs = [dict(p) for p in (evaluation.get("recommendations") or [])]
+    recs.sort(key=lambda p: _confidence_sort_key(p, mode), reverse=True)
+
+    preferred_name = (preferred or "").strip() or None
+    if preferred_name:
+        match = next((p for p in recs if p.get("name") == preferred_name), None)
+        if match:
+            recs = [match] + [p for p in recs if p.get("name") != preferred_name]
+
+    ranked = []
+    for index, peptide in enumerate(recs[:4], start=1):
+        ranked.append(
+            {
+                "rank": index,
+                "name": peptide.get("name", ""),
+                "evidence": peptide.get("evidence", ""),
+                "fit": peptide.get("best_when") or peptide.get("reasoning") or "",
+                "score": peptide.get("score"),
+                "tags": peptide.get("tags") or [],
+            }
+        )
+
+    top_name = ranked[0]["name"] if ranked else None
+    goal = evaluation.get("primary_goal") or "this case"
+    if safety_status == "blocked":
+        reply = "Intake safety blocks prevent a peptide shortlist for this case."
+    elif top_name and preferred_name == top_name:
+        reply = f"Preferred pick locked: {top_name}. Advising around safety and labs for this choice."
+    elif top_name:
+        reply = f"{top_name} ranks #1 for {goal} ({mode} confidence)."
+    else:
+        reply = f"No peptides available for {goal} with the current safety profile."
+
+    chips = ["Why #1?", "Compare top 2", "Safety flags", "Labs checklist", "Draft clinical note"]
+    if len(ranked) < 2:
+        chips = [c for c in chips if c != "Compare top 2"]
+    if not ranked:
+        chips = ["Safety flags", "Labs checklist"]
+
+    return {
+        "primary_goal": evaluation.get("primary_goal"),
+        "secondary_goal": evaluation.get("secondary_goal"),
+        "confidence": mode,
+        "preferred": preferred_name,
+        "ranked": ranked,
+        "labs": list(evaluation.get("labs") or []),
+        "stacks": list(evaluation.get("stacks") or []),
+        "safety": {
+            "status": safety_status,
+            "hard_stops": hard_stops,
+            "cautions": cautions,
+            "flags": flags,
+        },
+        "reply": reply,
+        "chips": chips,
+        "disclaimer": evaluation.get("disclaimer") or "",
+    }
+
+
+def format_board_receipt(
+    board: dict,
+    *,
+    changes: Optional[List[dict]] = None,
+) -> str:
+    """Short chat receipt when settings change — plain text, no JSON model."""
+    lines: List[str] = []
+    if changes:
+        for change in changes:
+            field = change.get("field", "setting")
+            old = change.get("from")
+            new = change.get("to")
+            if old is not None and new is not None:
+                lines.append(f"Updated: **{field}** `{old}` → `{new}`.")
+            else:
+                lines.append(f"Updated: **{field}** → `{new}`.")
+
+    reply = board.get("reply") or ""
+    if reply:
+        lines.append(reply)
+
+    ranked = board.get("ranked") or []
+    if ranked:
+        order = " · ".join(f"{p.get('rank')}. {p.get('name')}" for p in ranked[:3])
+        lines.append(f"Shortlist: {order}")
+
+    safety = (board.get("safety") or {}).get("status", "clear")
+    lines.append(f"Safety: {safety}")
+    return "\n\n".join(lines)

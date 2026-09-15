@@ -1,14 +1,14 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
-import { ChevronDown, ChevronUp, Icon } from "@/components/icons";
 import { CalculatorPageSkeleton } from "@/components/platform/provider/student/DashboardSkeletons";
 import { CalculatorPageLayout } from "@/components/platform/provider/student/calculator/CalculatorPageLayout";
 import { CalculatorVisual } from "@/components/platform/provider/student/calculator/CalculatorVisual";
 import { SyringeSizeOption } from "@/components/platform/provider/student/calculator/CalculatorAssetIllustrations";
 import { InjectionAnimation } from "@/components/platform/provider/student/calculator/InjectionAnimation";
+import { SidebarSvgIcon } from "@/components/platform/provider/sidebar-icons";
 import { gsap, registerGsap } from "@/lib/gsap";
 import { prefersReducedMotion } from "@/lib/motion";
 import {
@@ -22,30 +22,30 @@ import { cn } from "@/lib/utils";
 
 type Step = "syringe" | "peptide" | "water" | "dose" | "animating" | "result";
 
-const PROGRESS_STEPS: Array<{ id: Exclude<Step, "animating" | "result">; label: string }> = [
-  { id: "syringe", label: "Syringe" },
-  { id: "peptide", label: "Medication" },
-  { id: "water", label: "Water" },
-  { id: "dose", label: "Dose" },
+const PROGRESS_STEPS: Array<{
+  id: Exclude<Step, "animating" | "result">;
+  label: string;
+  description: string;
+}> = [
+  { id: "syringe", label: "Syringe", description: "Choose syringe size" },
+  { id: "peptide", label: "Medication", description: "Enter peptide amount" },
+  { id: "water", label: "Water", description: "Add diluent volume" },
+  { id: "dose", label: "Dose", description: "Set desired dose" },
 ];
 
 const amountFieldClass = cn(
-  "min-w-0 flex-1 appearance-none border-0 bg-transparent px-2.5 py-0 text-center text-sm font-medium text-[color:var(--dash-text)] outline-none [appearance:textfield] placeholder:text-[color:var(--dash-faint)]",
+  "calc-amount-field min-w-0 flex-1 appearance-none border-0 bg-transparent px-1.5 py-0 text-center text-sm font-medium text-[color:var(--dash-text)] outline-none ring-0 [appearance:textfield] placeholder:text-[color:var(--dash-faint)]",
   "[&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
+  "focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0",
 );
 
-/** Compact pill — avoid `.dashboard-field { width: 100% }` stretching the counter. */
 const amountControlClass = cn(
-  "flex h-8 w-[5.75rem] shrink-0 items-stretch overflow-hidden rounded-full border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] transition max-[390px]:h-8 max-[390px]:w-[5.5rem] sm:h-10 sm:w-[6.75rem]",
-  "focus-within:border-[color:rgba(221,228,102,0.55)] focus-within:bg-[color:var(--dash-surface)] focus-within:shadow-[0_0_0_4px_rgba(221,228,102,0.18)]",
-);
-
-const unitFieldClass = cn(
-  "dashboard-field dashboard-field-select !h-8 !w-[4.25rem] !max-w-none shrink-0 appearance-none !rounded-full bg-[length:0.6rem] bg-[right_0.6rem_center] bg-no-repeat !py-0 !pl-2.5 !pr-5 text-center text-[11px] font-medium max-[390px]:!w-[4rem] sm:!h-10 sm:!w-[5.5rem] sm:!pl-3.5 sm:!pr-7 sm:bg-[length:0.7rem] sm:bg-[right_0.8rem_center] sm:text-sm",
+  "calc-amount-control flex h-12 min-h-12 w-full max-w-[15rem] shrink-0 items-stretch overflow-hidden rounded-lg border border-[color:var(--dash-surface-border)] transition-[border-color]",
+  "hover:border-[#DDE466] focus-within:border-[#DDE466]",
 );
 
 const unitCapsuleClass =
-  "dashboard-pill-soft inline-flex h-8 min-w-[3rem] shrink-0 items-center justify-center rounded-full px-2 text-[11px] font-medium text-[color:var(--dash-muted)] sm:h-10 sm:min-w-[3.75rem] sm:px-3 sm:text-sm";
+  "calc-unit-capsule inline-flex h-12 min-h-12 min-w-[3.5rem] shrink-0 items-center justify-center rounded-lg border border-[color:var(--dash-surface-border)] px-3 text-sm font-medium leading-none text-[color:var(--dash-muted)]";
 
 /** Step size for the amount counter — matches typical vial / dose increments. */
 function amountStepForUnit(unit?: string): number {
@@ -70,10 +70,9 @@ function formatSteppedAmount(value: number, step: number): string {
 
 export function StudentPeptideCalculatorPage({
   embedded = false,
-  hideHero = false,
 }: {
   embedded?: boolean;
-  /** Hide the top hero when the parent page already provides one (course calculator). */
+  /** @deprecated Hero removed — kept optional for call-site compatibility. */
   hideHero?: boolean;
 } = {}) {
   const [ready, setReady] = useState(embedded);
@@ -231,81 +230,10 @@ export function StudentPeptideCalculatorPage({
     <CalculatorPageSkeleton />
   ) : (
     <>
-      {!hideHero ? (
-        <section className="dashboard-hero relative min-w-0 overflow-hidden rounded-2xl p-3 max-[390px]:p-2.5 sm:p-5 md:p-6">
-          <div className="flex min-w-0 flex-col gap-2.5 max-[390px]:gap-2 sm:gap-4 md:flex-row md:items-end md:justify-between md:gap-5">
-            <div className="min-w-0">
-              <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
-                Learning tools
-              </p>
-              <h2 className="font-sans mt-1 text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] max-[390px]:text-base sm:mt-2 sm:text-2xl md:text-[2.25rem] md:leading-none">
-                Peptide calculator
-              </h2>
-              <p className="text-brand-body mt-1 max-w-2xl text-xs text-[color:var(--dash-muted)] max-[390px]:leading-snug sm:mt-2 sm:text-base">
-                Step-by-step reconstitution and dosing helper for peptide preparations.
-              </p>
-            </div>
-
-            <div className="flex w-full shrink-0 gap-1.5 max-[390px]:gap-1 sm:w-auto sm:gap-2.5">
-              <span className="dashboard-pill-soft font-sans inline-flex min-h-8 flex-1 items-center justify-center rounded-full px-2.5 text-[11px] font-medium text-[color:var(--dash-text)] max-[390px]:min-h-7 max-[390px]:px-2 max-[390px]:text-[10px] sm:min-h-10 sm:flex-none sm:px-4 sm:text-sm">
-                {PROGRESS_STEPS[Math.min(progressIndex, PROGRESS_STEPS.length - 1)]?.label ?? "Syringe"}
-              </span>
-              <span className="font-sans inline-flex min-h-8 flex-1 items-center justify-center rounded-full bg-[#DDE466] px-2.5 text-[11px] font-medium text-[#152744] max-[390px]:min-h-7 max-[390px]:px-2 max-[390px]:text-[10px] sm:min-h-10 sm:flex-none sm:px-4 sm:text-sm">
-                Step {Math.min(progressIndex + 1, PROGRESS_STEPS.length)} / {PROGRESS_STEPS.length}
-              </span>
-            </div>
-          </div>
-        </section>
-      ) : (
-        <div className="flex w-full flex-wrap gap-2 sm:w-auto sm:gap-2.5">
-          <span className="dashboard-pill-soft font-sans inline-flex min-h-9 items-center justify-center rounded-full px-3 text-xs font-medium text-[color:var(--dash-text)] sm:min-h-10 sm:px-4 sm:text-sm">
-            {PROGRESS_STEPS[Math.min(progressIndex, PROGRESS_STEPS.length - 1)]?.label ?? "Syringe"}
-          </span>
-          <span className="font-sans inline-flex min-h-9 items-center justify-center rounded-full bg-[#DDE466] px-3 text-xs font-medium text-[#152744] sm:min-h-10 sm:px-4 sm:text-sm">
-            Step {Math.min(progressIndex + 1, PROGRESS_STEPS.length)} / {PROGRESS_STEPS.length}
-          </span>
-        </div>
-      )}
-
       {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
 
       <section className="dashboard-surface min-w-0 overflow-x-hidden rounded-2xl p-2.5 max-[390px]:p-2 sm:p-5 md:p-6">
-        <nav
-          aria-label="Calculator steps"
-          className="flex gap-0.5 overflow-x-auto overscroll-x-contain rounded-full bg-[color:var(--dash-soft)] p-0.5 [-ms-overflow-style:none] [scrollbar-width:none] max-[390px]:gap-px sm:gap-1.5 sm:p-1 [&::-webkit-scrollbar]:hidden"
-        >
-          {PROGRESS_STEPS.map((item, index) => {
-            const done = progressIndex > index || step === "result";
-            const active = progressIndex === index && step !== "animating" && step !== "result";
-            return (
-              <span
-                key={item.id}
-                className={cn(
-                  "font-sans inline-flex h-7 min-w-0 flex-1 items-center justify-center gap-0.5 rounded-full px-1 text-[9px] font-medium tracking-[0.005em] transition max-[390px]:h-6 max-[390px]:px-0.5 max-[390px]:text-[8px] sm:h-8 sm:gap-1.5 sm:px-3 sm:text-xs md:text-sm",
-                  done
-                    ? "bg-[#DDE466] text-[#152744] shadow-[0_1px_3px_rgba(21,39,68,0.12)]"
-                    : active
-                      ? "bg-[color:var(--dash-surface)] text-[color:var(--dash-text)] shadow-[0_1px_3px_rgba(21,39,68,0.08)]"
-                      : "text-[color:var(--dash-faint)]",
-                )}
-              >
-                <span
-                  className={cn(
-                    "flex h-3 w-3 shrink-0 items-center justify-center rounded-full text-[9px] font-semibold leading-none max-[390px]:h-2.5 max-[390px]:w-2.5 max-[390px]:text-[8px] sm:h-3.5 sm:w-3.5 sm:text-[10px]",
-                    done
-                      ? "bg-[#152744]/15"
-                      : active
-                        ? "bg-[color:var(--dash-soft)] text-[color:var(--dash-text)]"
-                        : "bg-[color:var(--dash-soft)]",
-                  )}
-                >
-                  {index + 1}
-                </span>
-                <span className="truncate">{item.label}</span>
-              </span>
-            );
-          })}
-        </nav>
+        <CalculatorStepper progressIndex={progressIndex} step={step} />
 
         <div
           ref={panelRef}
@@ -415,7 +343,7 @@ export function StudentPeptideCalculatorPage({
             ) : null}
 
             {step === "result" && result ? (
-              <div className="dashboard-glass-card flex h-full flex-col justify-center rounded-2xl p-3 text-center max-[390px]:p-2.5 sm:p-6 lg:text-left">
+              <div className="hols-auth-card calc-step-card flex h-full flex-col justify-center rounded-xl p-3 text-center max-[390px]:p-2.5 sm:p-6 lg:text-left">
                 <h2 className="font-sans text-base font-semibold leading-[1.15] tracking-[0.01em] text-[color:var(--dash-text)] max-[390px]:text-sm sm:text-xl">
                   Results
                 </h2>
@@ -444,7 +372,7 @@ export function StudentPeptideCalculatorPage({
                 <button
                   type="button"
                   onClick={restart}
-                  className="font-sans mt-4 inline-flex min-h-9 w-full items-center justify-center rounded-full bg-[#DDE466] px-5 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 max-[390px]:min-h-8 max-[390px]:text-xs sm:mt-6 sm:min-h-11 sm:w-auto sm:px-6"
+                  className="font-sans mt-4 inline-flex min-h-10 w-full items-center justify-center rounded-lg bg-[#DDE466] px-5 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 active:scale-[0.98] sm:mt-6 sm:w-auto sm:px-6"
                 >
                   Restart
                 </button>
@@ -485,6 +413,87 @@ export function StudentPeptideCalculatorPage({
   return <CalculatorPageLayout>{content}</CalculatorPageLayout>;
 }
 
+function CalculatorStepper({
+  progressIndex,
+  step,
+}: {
+  progressIndex: number;
+  step: Step;
+}) {
+  return (
+    <nav aria-label="Calculator steps" className="calc-stepper w-full min-w-0 px-0.5 sm:px-2">
+      <ol className="relative m-0 flex list-none items-start justify-between gap-0 p-0">
+        {PROGRESS_STEPS.map((item, index) => {
+          const done = progressIndex > index || step === "result";
+          const active =
+            progressIndex === index && step !== "animating" && step !== "result";
+          const pending = !done && !active;
+          const connectorDone = progressIndex > index || step === "result";
+
+          return (
+            <li
+              key={item.id}
+              className="relative flex min-w-0 flex-1 flex-col items-center text-center"
+            >
+              {index < PROGRESS_STEPS.length - 1 ? (
+                <span
+                  aria-hidden
+                  className={cn(
+                    "absolute left-[calc(50%+0.85rem)] right-[calc(-50%+0.85rem)] top-[0.7rem] h-[2px] sm:left-[calc(50%+1rem)] sm:right-[calc(-50%+1rem)] sm:top-[0.85rem]",
+                    connectorDone ? "bg-[#DDE466]" : "bg-[color:var(--dash-surface-border)]",
+                  )}
+                />
+              ) : null}
+
+              <span
+                className={cn(
+                  "relative z-[1] flex h-6 w-6 items-center justify-center rounded-full sm:h-7 sm:w-7",
+                  done && "bg-[#DDE466] text-[#152744]",
+                  active && "border-2 border-[#DDE466] bg-[color:var(--dash-surface,#fff)]",
+                  pending && "bg-[color:var(--dash-soft)]",
+                )}
+                aria-current={active ? "step" : undefined}
+              >
+                {done ? (
+                  <SidebarSvgIcon name="check" size={14} strokeWidth={2.6} className="text-[#152744]" />
+                ) : (
+                  <span
+                    className={cn(
+                      "h-2 w-2 rounded-full sm:h-2.5 sm:w-2.5",
+                      active ? "bg-[#DDE466]" : "bg-[color:var(--dash-dim)]",
+                    )}
+                  />
+                )}
+              </span>
+
+              <p
+                className={cn(
+                  "font-sans mt-2 max-w-[5.5rem] text-[11px] font-semibold leading-tight tracking-[0.01em] sm:mt-2.5 sm:max-w-[7rem] sm:text-sm",
+                  active
+                    ? "text-[color:var(--dash-accent,#6f7a1c)]"
+                    : "text-[color:var(--dash-text)]",
+                )}
+              >
+                {item.label}
+              </p>
+              <p
+                className={cn(
+                  "mt-0.5 max-w-[5.75rem] text-[10px] leading-snug sm:max-w-[8rem] sm:text-xs",
+                  active
+                    ? "text-[color:var(--dash-accent,#6f7a1c)]"
+                    : "text-[color:var(--dash-faint)]",
+                )}
+              >
+                {item.description}
+              </p>
+            </li>
+          );
+        })}
+      </ol>
+    </nav>
+  );
+}
+
 function StepPanel({
   eyebrow = "Enter amount",
   title,
@@ -499,7 +508,7 @@ function StepPanel({
   actions: React.ReactNode;
 }) {
   return (
-    <div className="dashboard-glass-card flex w-full flex-col rounded-2xl p-3 max-[390px]:p-2.5 sm:p-6">
+    <div className="hols-auth-card calc-step-card flex w-full flex-col rounded-xl p-3 max-[390px]:p-2.5 sm:p-6">
       <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-3 text-center max-[390px]:gap-2.5 sm:gap-5 lg:mx-0 lg:max-w-none lg:items-start lg:text-left">
         <div className="min-w-0 w-full">
           <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
@@ -508,7 +517,9 @@ function StepPanel({
           <h2 className="font-sans mt-1 text-sm font-semibold leading-[1.3] tracking-[0.01em] text-[color:var(--dash-text)] max-[390px]:text-[13px] sm:mt-1.5 sm:text-lg md:text-xl">
             {title}
           </h2>
-          <p className="text-brand-body mt-1 text-xs text-[color:var(--dash-muted)] max-[390px]:text-[11px] max-[390px]:leading-snug sm:mt-2 sm:text-sm">{hint}</p>
+          <p className="text-brand-body mt-1 text-xs text-[color:var(--dash-muted)] max-[390px]:text-[11px] max-[390px]:leading-snug sm:mt-2 sm:text-sm">
+            {hint}
+          </p>
         </div>
         <div className="w-full min-w-0">{children}</div>
         <div className="w-full border-t border-[color:var(--dash-surface-border)] pt-2.5 max-[390px]:pt-2 sm:pt-4">
@@ -536,17 +547,115 @@ function StepActions({
         type="button"
         onClick={onBack}
         disabled={backDisabled}
-        className="dashboard-pill-soft font-sans inline-flex min-h-9 flex-1 items-center justify-center rounded-full px-4 text-xs font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-40 max-[390px]:min-h-8 max-[390px]:px-3 sm:min-h-10 sm:flex-none sm:px-5 sm:text-sm"
+        className="dashboard-pill-soft font-sans inline-flex min-h-10 flex-1 items-center justify-center rounded-lg px-4 text-sm font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-40 sm:flex-none sm:px-5"
       >
         Back
       </button>
       <button
         type="button"
         onClick={onNext}
-        className="font-sans inline-flex min-h-9 flex-1 items-center justify-center rounded-full bg-[#DDE466] px-5 text-xs font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 max-[390px]:min-h-8 max-[390px]:px-4 sm:min-h-10 sm:flex-none sm:px-6 sm:text-sm"
+        className="font-sans inline-flex min-h-10 flex-1 items-center justify-center rounded-lg bg-[#DDE466] px-5 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 sm:flex-none sm:px-6"
       >
         {nextLabel}
       </button>
+    </div>
+  );
+}
+
+function CalcUnitSelect({
+  value,
+  units,
+  onChange,
+}: {
+  value: MassUnit;
+  units: MassUnit[];
+  onChange: (unit: MassUnit) => void;
+}) {
+  const listId = useId();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+
+    function onPointerDown(event: MouseEvent) {
+      if (rootRef.current?.contains(event.target as Node)) return;
+      setOpen(false);
+    }
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <div ref={rootRef} className="calc-unit-select relative shrink-0">
+      <button
+        type="button"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={listId}
+        aria-label="Unit"
+        onClick={() => setOpen((current) => !current)}
+        className={cn(
+          "calc-unit-trigger flex h-12 min-h-12 min-w-[5.75rem] items-center justify-between gap-2 rounded-lg border border-[color:var(--dash-surface-border)] px-3 pr-9 text-left text-sm font-medium leading-none transition-[border-color]",
+          "hover:border-[#DDE466] focus:border-[#DDE466] focus:outline-none",
+          open && "border-[#DDE466]",
+        )}
+      >
+        <span className="calc-unit-trigger-label block overflow-visible whitespace-nowrap text-[color:var(--dash-text)]">
+          {value}
+        </span>
+      </button>
+      <span
+        className="quiz-select-chevron pointer-events-none absolute inset-y-0 right-0 flex w-9 items-center justify-center"
+        aria-hidden
+      >
+        <SidebarSvgIcon
+          name={open ? "chevron-up" : "chevron-down"}
+          size={15}
+          strokeWidth={2.35}
+        />
+      </span>
+
+      {open ? (
+        <ul
+          id={listId}
+          role="listbox"
+          className="quiz-select-menu absolute left-0 right-0 top-[calc(100%+0.35rem)] z-30 min-w-full overflow-hidden rounded-lg p-1.5"
+        >
+          {units.map((option) => {
+            const isSelected = option === value;
+            return (
+              <li key={option} role="option" aria-selected={isSelected}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange(option);
+                    setOpen(false);
+                  }}
+                  className={cn(
+                    "quiz-select-option font-sans flex w-full items-center justify-between gap-2 rounded-md px-3 py-2.5 text-left text-sm leading-normal transition",
+                    isSelected ? "is-selected" : "",
+                  )}
+                >
+                  <span className="overflow-visible whitespace-nowrap">{option}</span>
+                  {isSelected ? (
+                    <SidebarSvgIcon name="check" size={13} strokeWidth={2.2} className="shrink-0" />
+                  ) : null}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
     </div>
   );
 }
@@ -568,64 +677,73 @@ function AmountRow({
 }) {
   const activeUnit = unitLabel ?? unit;
   const step = amountStepForUnit(activeUnit);
+  const numericValue = Number.parseFloat(value);
+  const hasPositiveValue = Number.isFinite(numericValue) && numericValue > 0;
+  const canDecrease = hasPositiveValue && numericValue > step;
 
   function nudge(delta: number) {
-    const current = Number.parseFloat(value);
-    const base = Number.isFinite(current) ? current : 0;
-    const next = Math.max(0, base + delta * step);
+    const base = hasPositiveValue ? numericValue : step;
+    const next = base + delta * step;
+    if (next < step) return;
     onValueChange(formatSteppedAmount(next, step));
   }
 
+  function handleChange(raw: string) {
+    if (raw === "") {
+      onValueChange("");
+      return;
+    }
+    // Allow in-progress typing (e.g. "0." / ".") but never commit a bare zero.
+    if (raw === "0" || raw === "0.0" || raw === "0.00") return;
+    const parsed = Number(raw);
+    if (!Number.isFinite(parsed) || parsed < 0) return;
+    if (parsed === 0) return;
+    onValueChange(raw);
+  }
+
   return (
-    <div className="flex w-full min-w-0 flex-wrap items-center justify-center gap-1.5 sm:flex-nowrap lg:justify-start">
+    <div className="flex w-full min-w-0 flex-wrap items-center justify-center gap-2 sm:flex-nowrap lg:justify-start">
       <div className={amountControlClass}>
+        <button
+          type="button"
+          aria-label={`Decrease by ${step}${activeUnit ? ` ${activeUnit}` : ""}`}
+          onClick={() => nudge(-1)}
+          disabled={!canDecrease}
+          className="calc-amount-btn calc-amount-btn--minus flex w-11 shrink-0 items-center justify-center transition hover:bg-[#DDE466]/25 hover:text-[#152744] active:bg-[#DDE466]/35 disabled:pointer-events-none disabled:opacity-35"
+        >
+          <SidebarSvgIcon name="minus" size={17} strokeWidth={2.35} />
+        </button>
         <input
           type="number"
-          min="0"
+          min={step}
           step={step}
           value={value}
           placeholder="—"
           autoComplete="off"
           inputMode="decimal"
-          onChange={(event) => onValueChange(event.target.value)}
+          onChange={(event) => handleChange(event.target.value)}
+          onBlur={() => {
+            if (!hasPositiveValue && value !== "") {
+              onValueChange(formatSteppedAmount(step, step));
+            }
+          }}
           className={amountFieldClass}
           aria-label="Amount"
         />
-        <div className="flex w-7 shrink-0 flex-col border-l border-[color:var(--dash-surface-border)] sm:w-8">
-          <button
-            type="button"
-            aria-label={`Increase by ${step}${activeUnit ? ` ${activeUnit}` : ""}`}
-            onClick={() => nudge(1)}
-            className="flex flex-1 items-center justify-center text-[color:var(--dash-muted)] transition hover:bg-[#DDE466]/15 hover:text-[color:var(--dash-accent)] active:bg-[#DDE466]/25"
-          >
-            <Icon icon={ChevronUp} size={13} strokeWidth={2} />
-          </button>
-          <button
-            type="button"
-            aria-label={`Decrease by ${step}${activeUnit ? ` ${activeUnit}` : ""}`}
-            onClick={() => nudge(-1)}
-            className="flex flex-1 items-center justify-center border-t border-[color:var(--dash-surface-border)] text-[color:var(--dash-muted)] transition hover:bg-[#DDE466]/15 hover:text-[color:var(--dash-accent)] active:bg-[#DDE466]/25"
-          >
-            <Icon icon={ChevronDown} size={13} strokeWidth={2} />
-          </button>
-        </div>
+        <button
+          type="button"
+          aria-label={`Increase by ${step}${activeUnit ? ` ${activeUnit}` : ""}`}
+          onClick={() => nudge(1)}
+          className="calc-amount-btn calc-amount-btn--plus flex w-11 shrink-0 items-center justify-center transition hover:bg-[#DDE466]/25 hover:text-[#152744] active:bg-[#DDE466]/35"
+        >
+          <SidebarSvgIcon name="plus" size={17} strokeWidth={2.35} />
+        </button>
       </div>
       {unitLabel ? (
         <span className={unitCapsuleClass}>{unitLabel}</span>
-      ) : (
-        <select
-          value={unit}
-          onChange={(event) => onUnitChange?.(event.target.value as MassUnit)}
-          className={unitFieldClass}
-          aria-label="Unit"
-        >
-          {units?.map((option) => (
-            <option key={option} value={option}>
-              {option}
-            </option>
-          ))}
-        </select>
-      )}
+      ) : units && unit && onUnitChange ? (
+        <CalcUnitSelect value={unit} units={units} onChange={onUnitChange} />
+      ) : null}
     </div>
   );
 }

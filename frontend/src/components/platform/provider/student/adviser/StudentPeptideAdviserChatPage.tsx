@@ -72,9 +72,12 @@ export function StudentPeptideAdviserChatPage({ patientId }: StudentPeptideAdvis
       current
         ? {
             ...current,
-            message_count: updated.message_count,
-            updated_at: updated.updated_at,
-            status: updated.status,
+            ...updated,
+            messages: updated.messages ?? current.messages,
+            messages_pagination:
+              updated.messages_pagination ?? current.messages_pagination,
+            recommendation_board:
+              updated.recommendation_board ?? current.recommendation_board,
           }
         : updated,
     );

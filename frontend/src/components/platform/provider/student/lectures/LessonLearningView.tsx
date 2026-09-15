@@ -2,11 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 import { LessonLearningSkeleton } from "@/components/platform/provider/student/DashboardSkeletons";
+import { SidebarSvgIcon } from "@/components/platform/provider/sidebar-icons";
 import type { LessonDetail } from "@/lib/integrate/provider/student/lectures";
 import {
   BookOpen,
-  ChevronLeft,
-  Focus,
   Highlighter,
   Icon,
   List,
@@ -15,7 +14,6 @@ import {
   PanelTop,
   PenLine,
   Sun,
-  Trash2,
   Undo2,
   ZoomIn,
   ZoomOut,
@@ -107,8 +105,8 @@ function clearHighlights(container: HTMLElement | null) {
 }
 
 const Icons = {
-  exit: <Icon icon={ChevronLeft} size={16} />,
-  focus: <Icon icon={Focus} size={16} />,
+  exit: <SidebarSvgIcon name="previous" size={16} />,
+  focus: <SidebarSvgIcon name="focus" size={16} />,
   center: <Icon icon={PanelTop} size={15} />,
   full: <Icon icon={Maximize2} size={15} />,
   light: <Icon icon={Sun} size={15} />,
@@ -122,7 +120,7 @@ const Icons = {
   highlight: <Icon icon={Highlighter} size={15} />,
   marker: <Icon icon={PenLine} size={15} />,
   undo: <Icon icon={Undo2} size={15} />,
-  clear: <Icon icon={Trash2} size={15} />,
+  clear: <SidebarSvgIcon name="cross" size={15} />,
   book: <Icon icon={BookOpen} size={15} />,
 };
 
@@ -395,7 +393,7 @@ export function LessonLearningView({
             <button
               type="button"
               onClick={onExit}
-              className="lesson-learning-exit font-sans inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-full px-3 text-sm font-medium transition sm:px-3.5"
+              className="lesson-learning-exit font-sans inline-flex min-h-9 shrink-0 items-center gap-1.5 rounded-lg px-3 text-sm font-medium transition sm:px-3.5"
             >
               {Icons.exit}
               <span className="sm:hidden">Back</span>
@@ -640,7 +638,7 @@ export function LearningModeToggle({
       disabled={disabled}
       aria-pressed={active}
       className={cn(
-        "font-sans inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-full px-4 text-sm font-medium tracking-[0.01em] transition",
+        "font-sans inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium tracking-[0.01em] transition",
         active
           ? "bg-[#DDE466] text-[#152744]"
           : "dashboard-pill-soft text-[color:var(--dash-text)] hover:brightness-[0.98]",

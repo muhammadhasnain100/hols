@@ -280,7 +280,7 @@ export function LoginForm({ className, initialMessage, onOtpStepChange }: LoginF
         <div className="grid gap-2">
           <span className={authLabelClass}>Account type</span>
           <div
-            className="grid grid-cols-3 gap-1 rounded-2xl border border-primary/10 bg-[#f7f9fc] p-1"
+            className="grid grid-cols-3 gap-1 overflow-hidden rounded-lg border border-primary/10 bg-[#f7f9fc] p-1"
             role="radiogroup"
             aria-label="Account type"
           >

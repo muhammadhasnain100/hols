@@ -24,6 +24,7 @@ from models.chat import (
     PatientMessagesResponse,
     SaveIntakeRequest,
     SendMessageRequest,
+    UpdateBoardRequest,
 )
 from config import settings
 from models.common import success_response
@@ -179,6 +180,23 @@ async def recommend_for_patient(
         user_id=current_user.user_id,
         patient_id=patient_id,
         top_k=top_k,
+    )
+    return success_response(PatientDetail(**result))
+
+
+@router.post("/patients/{patient_id}/board", response_model=PatientDetailResponse)
+@handle_route_errors("update recommendation board", log_prefix="Chat")
+async def update_patient_board(
+    patient_id: str,
+    req: UpdateBoardRequest,
+    current_user: StudentUser,
+) -> PatientDetailResponse:
+    result = await chat_service.update_board_for_patient(
+        user_id=current_user.user_id,
+        patient_id=patient_id,
+        confidence=req.confidence,
+        preferred=req.preferred,
+        clear_preferred=req.clear_preferred,
     )
     return success_response(PatientDetail(**result))
 

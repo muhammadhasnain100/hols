@@ -113,7 +113,7 @@ export function NavIcon({
   className?: string;
 }) {
   return (
-    <span className="portal-nav-icon flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-current transition-colors duration-200">
+    <span className="portal-nav-icon flex h-8 w-8 shrink-0 items-center justify-center rounded-md bg-transparent text-current transition-colors duration-200">
       <Icon icon={icon} size={size} className={className} />
     </span>
   );

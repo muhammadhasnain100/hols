@@ -1,23 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  Bell,
-  Check,
-  ChevronRight,
-  CircleAlert,
-  ClipboardList,
-  CreditCard,
-  Icon,
-  Mail,
-  MapPin,
-  Menu,
-  ShieldCheck,
-  Star,
-} from "@/components/icons";
+import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
+import { authFieldClass, authLabelClass } from "@/components/platform/auth/auth-styles";
 import { PortalShell } from "@/components/platform/provider/PortalShell";
+import { SidebarSvgIcon, type SidebarIconName } from "@/components/platform/provider/sidebar-icons";
 import { ProfilePageSkeleton } from "@/components/platform/provider/student/DashboardSkeletons";
 import { WelcomeChip } from "@/components/platform/provider/student/WelcomeChip";
 import { studentNav } from "@/components/platform/provider/student/studentNav";
@@ -224,7 +212,7 @@ function DashField({
 }) {
   return (
     <div className="grid min-w-0 gap-2">
-      <label htmlFor={id} className="dashboard-field-label">
+      <label htmlFor={id} className={authLabelClass}>
         {label}
       </label>
       <input
@@ -236,7 +224,7 @@ function DashField({
         placeholder={placeholder}
         autoComplete={autoComplete}
         required={required}
-        className="dashboard-field"
+        className={cn(authFieldClass, "profile-field px-4")}
       />
     </div>
   );
@@ -248,75 +236,161 @@ function DashSelect({
   value,
   onChange,
   disabled,
-  children,
+  options,
+  placeholder = "Select",
 }: {
   id: string;
   label: string;
   value: string;
   onChange: (value: string) => void;
   disabled?: boolean;
-  children: React.ReactNode;
+  options: Array<{ value: string; label: string }>;
+  placeholder?: string;
 }) {
+  const listId = useId();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+  const selected = options.find((option) => option.value === value);
+
+  useEffect(() => {
+    if (!open) return;
+
+    function onPointerDown(event: MouseEvent) {
+      if (rootRef.current?.contains(event.target as Node)) return;
+      setOpen(false);
+    }
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
   return (
     <div className="grid min-w-0 gap-2">
-      <label htmlFor={id} className="dashboard-field-label">
+      <label htmlFor={id} className={authLabelClass}>
         {label}
       </label>
-      <select
-        id={id}
-        value={value}
-        disabled={disabled}
-        onChange={(event) => onChange(event.target.value)}
-        className={cn("dashboard-field dashboard-field-select", disabled && "opacity-50")}
-      >
-        {children}
-      </select>
+      <div ref={rootRef} className="profile-select relative min-w-0">
+        <button
+          id={id}
+          type="button"
+          disabled={disabled}
+          aria-haspopup="listbox"
+          aria-expanded={open}
+          aria-controls={listId}
+          onClick={() => {
+            if (disabled) return;
+            setOpen((current) => !current);
+          }}
+          className={cn(
+            authFieldClass,
+            "profile-field flex h-12 min-h-12 w-full items-center justify-between gap-2 overflow-visible px-4 py-0 pr-11 text-left leading-none",
+            open && "border-[#DDE466]",
+            disabled && "cursor-not-allowed opacity-50",
+          )}
+        >
+          <span
+            className={cn(
+              "min-w-0 truncate",
+              selected ? "text-[color:var(--dash-text)]" : "text-[color:var(--dash-faint)]",
+            )}
+          >
+            {selected?.label ?? placeholder}
+          </span>
+        </button>
+        <span
+          className="quiz-select-chevron pointer-events-none absolute inset-y-0 right-0 flex w-11 items-center justify-center"
+          aria-hidden
+        >
+          <SidebarSvgIcon
+            name={open ? "chevron-up" : "chevron-down"}
+            size={15}
+            strokeWidth={2.35}
+          />
+        </span>
+
+        {open ? (
+          <ul
+            id={listId}
+            role="listbox"
+            className="quiz-select-menu absolute left-0 right-0 top-[calc(100%+0.35rem)] z-30 max-h-60 overflow-y-auto rounded-lg p-1.5"
+          >
+            {options.map((option) => {
+              const isSelected = option.value === value;
+              return (
+                <li key={`${option.value}-${option.label}`} role="option" aria-selected={isSelected}>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onChange(option.value);
+                      setOpen(false);
+                    }}
+                    className={cn(
+                      "quiz-select-option font-sans flex w-full items-center justify-between gap-2 rounded-md px-3 py-2.5 text-left text-sm leading-normal transition",
+                      isSelected ? "is-selected" : "",
+                    )}
+                  >
+                    <span className="min-w-0 break-words">{option.label}</span>
+                    {isSelected ? (
+                      <SidebarSvgIcon name="check" size={13} strokeWidth={2.2} className="shrink-0" />
+                    ) : null}
+                  </button>
+                </li>
+              );
+            })}
+          </ul>
+        ) : null}
+      </div>
     </div>
   );
 }
 
-const mailIcon = <Icon icon={Mail} size={16} />;
-
-const shieldIcon = <Icon icon={ShieldCheck} size={16} />;
-
-const pinIcon = <Icon icon={MapPin} size={16} />;
-
-const bellIcon = <Icon icon={Bell} size={16} />;
-
-const accountLinks = [
+const accountLinks: Array<{
+  label: string;
+  href: string;
+  category: string;
+  icon: SidebarIconName;
+}> = [
   {
     label: "Membership",
     href: "/student/payment",
     category: "Billing",
-    icon: <Icon icon={Star} size={16} />,
+    icon: "star",
   },
   {
     label: "Orders",
     href: "/student/payment/orders",
     category: "Billing",
-    icon: <Icon icon={ClipboardList} size={16} />,
+    icon: "orders",
   },
   {
     label: "Payment card",
     href: "/student/payment/card",
     category: "Billing",
-    icon: <Icon icon={CreditCard} size={16} />,
+    icon: "payment",
   },
-] as const;
+];
 
 function ProfileDetailRow({
   icon,
   label,
   value,
 }: {
-  icon: React.ReactNode;
+  icon: SidebarIconName;
   label: string;
   value: React.ReactNode;
 }) {
   return (
-    <div className="dashboard-row flex items-start gap-2.5 rounded-xl px-2.5 py-2.5 sm:gap-3 sm:px-3.5 sm:py-3">
-      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--dash-soft)] text-[color:var(--dash-muted)] sm:h-9 sm:w-9">
-        {icon}
+    <div className="dashboard-row flex items-start gap-2.5 rounded-lg px-2.5 py-2.5 sm:gap-3 sm:px-3.5 sm:py-3">
+      <span className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[color:var(--dash-soft)] text-[color:var(--dash-muted)] sm:h-9 sm:w-9">
+        <SidebarSvgIcon name={icon} size={16} strokeWidth={1.9} />
       </span>
       <div className="min-w-0 flex-1 overflow-hidden">
         <p className="text-brand-caption font-medium text-[color:var(--dash-faint)]">{label}</p>
@@ -337,23 +411,26 @@ function AccountLinkRow({
   label: string;
   href: string;
   category: string;
-  icon: React.ReactNode;
+  icon: SidebarIconName;
 }) {
   return (
     <Link
       href={href}
-      className="dashboard-row group flex min-h-12 items-center gap-2.5 rounded-xl px-2.5 py-2.5 transition sm:gap-3 sm:px-3 sm:py-3"
+      className="dashboard-row group flex min-h-12 items-center gap-2.5 rounded-lg px-2.5 py-2.5 transition sm:gap-3 sm:px-3 sm:py-3"
     >
-      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--dash-soft)] text-[color:var(--dash-muted)] transition group-hover:bg-[#DDE466]/15 group-hover:text-[color:var(--dash-accent)] sm:h-9 sm:w-9">
-        {icon}
+      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[color:var(--dash-soft)] text-[color:var(--dash-muted)] transition group-hover:bg-[#DDE466]/15 group-hover:text-[color:var(--dash-accent)] sm:h-9 sm:w-9">
+        <SidebarSvgIcon name={icon} size={16} strokeWidth={1.9} />
       </span>
       <span className="min-w-0 flex-1">
         <span className="text-brand-caption block text-[color:var(--dash-faint)]">{category}</span>
-        <span className="font-sans block truncate text-sm font-medium text-[color:var(--dash-text)]">{label}</span>
+        <span className="font-sans block truncate text-sm font-medium text-[color:var(--dash-text)]">
+          {label}
+        </span>
       </span>
-      <Icon
-        icon={ChevronRight}
+      <SidebarSvgIcon
+        name="next"
         size={16}
+        strokeWidth={2}
         className="shrink-0 text-[color:var(--dash-dim)] transition group-hover:translate-x-0.5 group-hover:text-[color:var(--dash-muted)]"
       />
     </Link>
@@ -363,16 +440,16 @@ function AccountLinkRow({
 function VerifiedBadge({ verified }: { verified?: boolean }) {
   if (verified) {
     return (
-      <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-emerald-600">
-        <Icon icon={Check} size={12} strokeWidth={2.2} />
+      <span className="inline-flex items-center gap-1.5 rounded-lg bg-emerald-500/15 px-2.5 py-1 text-xs font-medium text-emerald-600">
+        <SidebarSvgIcon name="check" size={12} strokeWidth={2.2} />
         Verified
       </span>
     );
   }
 
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-medium text-amber-600">
-      <Icon icon={CircleAlert} size={12} strokeWidth={2} />
+    <span className="inline-flex items-center gap-1.5 rounded-lg bg-amber-500/15 px-2.5 py-1 text-xs font-medium text-amber-600">
+      <SidebarSvgIcon name="alert" size={12} strokeWidth={2} />
       Not verified
     </span>
   );
@@ -533,30 +610,24 @@ export function StudentProfilePage() {
       brandBackdrop
       nav={studentNav}
     >
-      <div className="dashboard-screen profile-page min-w-0 overflow-x-hidden">
-        <header className="mb-3 flex items-center justify-between gap-2 sm:mb-5 sm:gap-4">
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            <button
-              type="button"
-              aria-label="Open sidebar"
-              onClick={openSidebar}
-              className="dashboard-icon-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full lg:hidden"
-            >
-              <Icon icon={Menu} size={18} />
-            </button>
-            <h1 className="font-sans truncate text-base font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl md:text-2xl">
-              {mode === "edit" ? (
-                <>
-                  <span className="sm:hidden">Edit</span>
-                  <span className="hidden sm:inline">Edit profile</span>
-                </>
-              ) : (
-                "Profile"
-              )}
-            </h1>
-          </div>
+      <div className="dashboard-screen lectures-page profile-page min-w-0 overflow-x-hidden">
+        <header className="mb-3 flex h-11 min-w-0 items-center gap-2.5 sm:mb-4 sm:h-12 sm:gap-3 md:mb-5 md:gap-4">
+          <button
+            type="button"
+            aria-label="Open sidebar"
+            onClick={openSidebar}
+            className="dashboard-icon-btn flex h-11 w-11 shrink-0 items-center justify-center rounded-lg lg:hidden sm:h-12 sm:w-12"
+          >
+            <SidebarSvgIcon name="menu" size={18} strokeWidth={2} />
+          </button>
 
-          <WelcomeChip />
+          <h1 className="font-sans shrink-0 text-3xl font-bold leading-none tracking-[0.01em] text-[color:var(--dash-text)]">
+            {mode === "edit" ? "Edit profile" : "Profile"}
+          </h1>
+
+          <div className="min-w-0 flex-1" aria-hidden />
+
+          <WelcomeChip className="lecture-header-welcome h-11 sm:h-12" />
         </header>
 
         <div className="grid w-full min-w-0 gap-3 sm:gap-4">
@@ -568,10 +639,10 @@ export function StudentProfilePage() {
           ) : mode === "read" ? (
             <div className="grid w-full min-w-0 items-start gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
               <div className="flex min-w-0 flex-col gap-3 sm:gap-4">
-                <section className="dashboard-hero relative overflow-hidden rounded-2xl p-3.5 sm:p-5 md:p-6">
+                <section className="hols-auth-card relative overflow-hidden rounded-xl p-3.5 sm:p-5 md:p-6">
                   <div className="flex flex-col gap-3.5 sm:gap-5 lg:flex-row lg:items-end lg:justify-between">
                     <div className="flex min-w-0 flex-col items-center gap-3 sm:flex-row sm:items-center sm:gap-5">
-                      <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-4 border-white/70 bg-white/40 font-sans text-sm font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:h-20 sm:w-20 sm:text-lg">
+                      <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] font-sans text-sm font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:h-20 sm:w-20 sm:text-lg">
                         {avatarSrc ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
@@ -589,7 +660,7 @@ export function StudentProfilePage() {
                           </span>
                           <span
                             className={cn(
-                              "inline-flex rounded-full px-2.5 py-0.5 text-brand-caption font-semibold sm:mb-0.5",
+                              "inline-flex rounded-lg px-2.5 py-0.5 text-brand-caption font-semibold sm:mb-0.5",
                               profile?.email_verified
                                 ? "bg-[#DDE466]/25 text-[color:var(--dash-accent)]"
                                 : "bg-[color:var(--dash-soft)] text-[color:var(--dash-faint)]",
@@ -612,14 +683,14 @@ export function StudentProfilePage() {
                     <button
                       type="button"
                       onClick={startEdit}
-                      className="font-sans inline-flex min-h-11 w-full items-center justify-center rounded-full bg-[#DDE466] px-5 text-sm font-medium text-[#152744] transition hover:brightness-105 sm:min-h-10 sm:w-auto lg:shrink-0"
+                      className="font-sans inline-flex min-h-10 w-full items-center justify-center rounded-lg bg-[#DDE466] px-5 text-sm font-medium text-[#152744] transition hover:brightness-105 active:scale-[0.98] sm:w-auto lg:shrink-0"
                     >
                       Edit profile
                     </button>
                   </div>
                 </section>
 
-                <section className="dashboard-surface rounded-2xl p-3.5 sm:p-5 md:p-6">
+                <section className="hols-auth-card rounded-xl p-3.5 sm:p-5 md:p-6">
                   <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
                     Account
                   </p>
@@ -627,23 +698,23 @@ export function StudentProfilePage() {
                     Account details
                   </h2>
                   <div className="mt-3 space-y-2 sm:mt-4 sm:space-y-2.5">
-                    <ProfileDetailRow icon={mailIcon} label="Email address" value={profile?.email} />
+                    <ProfileDetailRow icon="mail" label="Email address" value={profile?.email} />
                     <ProfileDetailRow
-                      icon={shieldIcon}
+                      icon="shield"
                       label="Email verification"
                       value={<VerifiedBadge verified={profile?.email_verified} />}
                     />
                     <ProfileDetailRow
-                      icon={pinIcon}
+                      icon="location"
                       label="Mailing address"
                       value={<span className="whitespace-pre-line">{formatAddress(profile?.address)}</span>}
                     />
                     <ProfileDetailRow
-                      icon={bellIcon}
+                      icon="bell"
                       label="Product updates"
                       value={
                         profile?.marketing_pref ? (
-                          <span className="inline-flex rounded-full bg-[#DDE466]/20 px-2.5 py-1 text-xs font-medium text-[color:var(--dash-accent)]">
+                          <span className="inline-flex rounded-lg bg-[#DDE466]/20 px-2.5 py-1 text-xs font-medium text-[color:var(--dash-accent)]">
                             Subscribed
                           </span>
                         ) : (
@@ -656,7 +727,7 @@ export function StudentProfilePage() {
               </div>
 
               <div className="flex min-w-0 flex-col gap-3 sm:gap-4">
-                <section className="dashboard-surface rounded-2xl p-3.5 sm:p-5 md:p-6">
+                <section className="hols-auth-card rounded-xl p-3.5 sm:p-5 md:p-6">
                   <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
                     Shortcuts
                   </p>
@@ -679,7 +750,7 @@ export function StudentProfilePage() {
             </div>
           ) : (
             <>
-              <section className="dashboard-hero relative overflow-hidden rounded-2xl p-3.5 sm:p-5 md:p-6">
+              <section className="hols-auth-card relative overflow-hidden rounded-xl p-3.5 sm:p-5 md:p-6">
                 <div className="flex flex-col gap-3.5 sm:gap-5 lg:flex-row lg:items-end lg:justify-between">
                   <div className="min-w-0">
                     <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
@@ -689,7 +760,7 @@ export function StudentProfilePage() {
                       <span className="font-sans text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl md:text-[2.25rem] md:leading-none">
                         Edit profile
                       </span>
-                      <span className="mb-0.5 inline-flex rounded-full bg-[#DDE466]/25 px-2.5 py-0.5 text-brand-caption font-semibold text-[color:var(--dash-accent)]">
+                      <span className="mb-0.5 inline-flex rounded-lg bg-[#DDE466]/25 px-2.5 py-0.5 text-brand-caption font-semibold text-[color:var(--dash-accent)]">
                         Editing
                       </span>
                     </div>
@@ -705,7 +776,7 @@ export function StudentProfilePage() {
                     <button
                       type="button"
                       onClick={cancelEdit}
-                      className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center rounded-full px-3 text-sm font-medium text-[color:var(--dash-text)] transition sm:px-5"
+                      className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center rounded-lg px-3 text-sm font-medium text-[color:var(--dash-text)] transition sm:px-5"
                     >
                       Cancel
                     </button>
@@ -713,7 +784,7 @@ export function StudentProfilePage() {
                       type="submit"
                       form="profile-edit-form"
                       disabled={saving || !hasChanges}
-                      className="font-sans inline-flex min-h-10 items-center justify-center rounded-full bg-[#DDE466] px-3 text-sm font-medium text-[#152744] transition hover:brightness-105 disabled:pointer-events-none disabled:opacity-60 sm:px-5"
+                      className="font-sans inline-flex min-h-10 items-center justify-center rounded-lg bg-[#DDE466] px-3 text-sm font-medium text-[#152744] transition hover:brightness-105 disabled:pointer-events-none disabled:opacity-60 sm:px-5"
                     >
                       {saving ? "Saving…" : "Save changes"}
                     </button>
@@ -723,7 +794,7 @@ export function StudentProfilePage() {
 
               <div className="grid w-full min-w-0 items-start gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
                 <div className="order-2 flex min-w-0 flex-col gap-3 sm:gap-4 lg:order-1">
-                  <section className="dashboard-surface rounded-2xl p-3.5 sm:p-5 md:p-6">
+                  <section className="hols-auth-card rounded-xl p-3.5 sm:p-5 md:p-6">
                     <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
                       Profile photo
                     </p>
@@ -732,7 +803,7 @@ export function StudentProfilePage() {
                     </h2>
 
                     <div className="mt-3 flex flex-col items-center gap-3 sm:mt-4 sm:flex-row sm:items-center sm:gap-4">
-                      <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] font-sans text-base font-bold text-[color:var(--dash-text)] sm:h-20 sm:w-20 sm:text-lg">
+                      <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] font-sans text-base font-bold text-[color:var(--dash-text)] sm:h-20 sm:w-20 sm:text-lg">
                         {avatarSrc ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
@@ -758,7 +829,7 @@ export function StudentProfilePage() {
                           <button
                             type="button"
                             onClick={() => fileInputRef.current?.click()}
-                            className="dashboard-pill-soft font-sans inline-flex min-h-11 w-full items-center justify-center rounded-full px-4 text-sm font-medium text-[color:var(--dash-text)] transition sm:min-h-10 sm:w-auto"
+                            className="dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center rounded-lg px-4 text-sm font-medium text-[color:var(--dash-text)] transition sm:w-auto"
                           >
                             Change photo
                           </button>
@@ -779,7 +850,7 @@ export function StudentProfilePage() {
                     </div>
                   </section>
 
-                  <section className="dashboard-surface hidden rounded-2xl p-4 sm:p-5 lg:block">
+                  <section className="hols-auth-card hidden rounded-xl p-4 sm:p-5 lg:block">
                     <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
                       Current
                     </p>
@@ -792,7 +863,7 @@ export function StudentProfilePage() {
                   </section>
                 </div>
 
-                <section className="dashboard-surface order-1 min-w-0 rounded-2xl p-3.5 sm:p-5 md:p-6 lg:order-2">
+                <section className="hols-auth-card order-1 min-w-0 rounded-xl p-3.5 sm:p-5 md:p-6 lg:order-2">
                   <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
                     Profile details
                   </p>
@@ -847,6 +918,7 @@ export function StudentProfilePage() {
                         id="state"
                         label="State"
                         value={location.stateSelect}
+                        placeholder="Select state"
                         onChange={(value) => {
                           setLocation({
                             stateSelect: value,
@@ -855,15 +927,15 @@ export function StudentProfilePage() {
                             cityManual: "",
                           });
                         }}
-                      >
-                        <option value="">Select state</option>
-                        {US_STATES.map((state) => (
-                          <option key={state.code} value={state.code}>
-                            {state.name}
-                          </option>
-                        ))}
-                        <option value={MANUAL_VALUE}>Other (manual)</option>
-                      </DashSelect>
+                        options={[
+                          { value: "", label: "Select state" },
+                          ...US_STATES.map((state) => ({
+                            value: state.code,
+                            label: state.name,
+                          })),
+                          { value: MANUAL_VALUE, label: "Other (manual)" },
+                        ]}
+                      />
 
                       {location.stateSelect === MANUAL_VALUE ? (
                         <DashField
@@ -879,6 +951,7 @@ export function StudentProfilePage() {
                           label="City"
                           value={location.citySelect}
                           disabled={!location.stateSelect}
+                          placeholder={location.stateSelect ? "Select city" : "Select state first"}
                           onChange={(value) => {
                             setLocation((prev) => ({
                               ...prev,
@@ -886,17 +959,18 @@ export function StudentProfilePage() {
                               cityManual: value === MANUAL_VALUE ? prev.cityManual : "",
                             }));
                           }}
-                        >
-                          <option value="">
-                            {location.stateSelect ? "Select city" : "Select state first"}
-                          </option>
-                          {usCities.map((city) => (
-                            <option key={city} value={city}>
-                              {city}
-                            </option>
-                          ))}
-                          <option value={MANUAL_VALUE}>Other (manual)</option>
-                        </DashSelect>
+                          options={[
+                            {
+                              value: "",
+                              label: location.stateSelect ? "Select city" : "Select state first",
+                            },
+                            ...usCities.map((city) => ({
+                              value: city,
+                              label: city,
+                            })),
+                            { value: MANUAL_VALUE, label: "Other (manual)" },
+                          ]}
+                        />
                       )}
                     </div>
 
@@ -928,19 +1002,19 @@ export function StudentProfilePage() {
                         autoComplete="postal-code"
                       />
                       <div className="grid min-w-0 gap-2">
-                        <label htmlFor="country" className="dashboard-field-label">
+                        <label htmlFor="country" className={authLabelClass}>
                           Country
                         </label>
                         <input
                           id="country"
                           value="United States"
                           disabled
-                          className="dashboard-field opacity-70"
+                          className={cn(authFieldClass, "profile-field px-4 opacity-70")}
                         />
                       </div>
                     </div>
 
-                    <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] px-3 py-3 sm:px-3.5">
+                    <label className="flex cursor-pointer items-start gap-3 rounded-lg border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] px-3 py-3 sm:px-3.5">
                       <input
                         type="checkbox"
                         checked={form.marketing_pref}
@@ -963,14 +1037,14 @@ export function StudentProfilePage() {
                       <button
                         type="button"
                         onClick={cancelEdit}
-                        className="dashboard-pill-soft font-sans inline-flex min-h-11 w-full items-center justify-center rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] transition sm:w-auto"
+                        className="dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center rounded-lg px-5 text-sm font-medium text-[color:var(--dash-text)] transition sm:w-auto"
                       >
                         Cancel
                       </button>
                       <button
                         type="submit"
                         disabled={saving || !hasChanges}
-                        className="font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full bg-[#DDE466] px-6 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 disabled:pointer-events-none disabled:opacity-60 sm:w-auto sm:min-w-[10rem]"
+                        className="font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-lg bg-[#DDE466] px-6 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 disabled:pointer-events-none disabled:opacity-60 sm:w-auto sm:min-w-[10rem]"
                       >
                         {saving ? "Saving…" : "Save changes"}
                       </button>

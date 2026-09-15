@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
+import { SidebarSvgIcon } from "@/components/platform/provider/sidebar-icons";
 import { AdviserPageLayout } from "@/components/platform/provider/student/adviser/AdviserPageLayout";
 import { CreatePatientDialog } from "@/components/platform/provider/student/adviser/CreatePatientDialog";
 import { IntakeOnboardingDialog } from "@/components/platform/provider/student/adviser/IntakeOnboardingDialog";
@@ -11,7 +12,6 @@ import { PatientListPanel } from "@/components/platform/provider/student/adviser
 import { AdviserHubPageSkeleton } from "@/components/platform/provider/student/DashboardSkeletons";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
-  ACTIVE_PATIENT_STORAGE_KEY,
   createPatient,
   getAdviserBootstrap,
   getCachedAdviserBootstrap,
@@ -20,12 +20,14 @@ import {
   listPatients,
   recommendPatient,
   savePatientIntake,
+  sanitizeIntakeAnswers,
   type ChatInfo,
   type IntakeAnswers,
   type PatientDetail,
   type PatientSummary,
   type QuestionnaireFlow,
 } from "@/lib/integrate/provider/student/chat";
+import { ACTIVE_PATIENT_STORAGE_KEY } from "@/lib/integrate/provider/student/chat/constants";
 
 function hasValue(value: unknown) {
   if (Array.isArray(value)) return value.length > 0;
@@ -36,7 +38,7 @@ function hasValue(value: unknown) {
 export function resolveStep(patient: PatientDetail): number {
   if (patient.recommendation || patient.evaluation) return 7;
 
-  const answers = patient.intake_answers || {};
+  const answers = sanitizeIntakeAnswers(patient.intake_answers || {});
   if (!answers.consent) return 0;
   if (
     !["age", "sex", "pregnancy", "height_cm", "weight_kg", "activity"].every((key) =>
@@ -236,7 +238,7 @@ export function StudentPeptideAdviserHubPage() {
     setIsSavingIntake(true);
     try {
       const updated = await savePatientIntake(activePatient.patient_id, {
-        answers: activePatient.intake_answers,
+        answers: sanitizeIntakeAnswers(activePatient.intake_answers || {}),
         display_name: activePatient.display_name,
       });
       setActivePatient(updated);
@@ -322,57 +324,37 @@ export function StudentPeptideAdviserHubPage() {
         <AdviserHubPageSkeleton />
       ) : (
         <>
-          <section className="dashboard-hero relative min-w-0 overflow-hidden rounded-2xl p-3.5 sm:p-5 md:p-6">
-            <div className="flex min-w-0 flex-col gap-3 sm:gap-4 md:flex-row md:items-end md:justify-between md:gap-5">
-              <div className="min-w-0">
-                <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
-                  Clinical advisor
-                </p>
-                <div className="mt-1.5 flex flex-wrap items-end gap-x-2 gap-y-1 sm:mt-2">
-                  <span className="font-sans text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl md:text-[2.25rem] md:leading-none">
-                    Peptide Advisor
-                  </span>
-                  <span
-                    className={
-                      info
-                        ? "mb-0.5 inline-flex rounded-full bg-[#DDE466]/25 px-2.5 py-0.5 text-brand-caption font-semibold text-[color:var(--dash-accent)]"
-                        : "mb-0.5 inline-flex rounded-full bg-[color:var(--dash-soft)] px-2.5 py-0.5 text-brand-caption font-semibold text-[color:var(--dash-faint)]"
-                    }
-                  >
-                    {info ? "Online" : "Connecting"}
-                  </span>
-                </div>
-                <p className="text-brand-body mt-1.5 max-w-2xl text-sm text-[color:var(--dash-muted)] sm:mt-2 sm:text-base">
-                  Create a patient to start structured intake. Drafts continue in onboarding;
-                  completed cases open directly in chat.
-                </p>
-              </div>
-
-              <div className="flex w-full shrink-0 flex-col gap-2 min-[420px]:flex-row sm:w-auto sm:flex-wrap sm:gap-2.5">
+          <div className="mb-0.5 flex flex-col gap-3 sm:mb-1 sm:flex-row sm:items-end sm:justify-between">
+            <div className="min-w-0">
+              <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+                Clinical cases
+              </p>
+              <h2 className="font-sans mt-1 text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg md:text-xl">
+                Patient workspace
+              </h2>
+            </div>
+            <div className="flex w-full shrink-0 flex-col gap-2 min-[420px]:flex-row sm:w-auto">
+              <button
+                type="button"
+                onClick={openCreateDialog}
+                disabled={isCreating}
+                className="font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-lg bg-[#DDE466] px-4 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 disabled:pointer-events-none disabled:opacity-60 min-[420px]:w-auto sm:px-5"
+              >
+                <SidebarSvgIcon name="plus" size={15} strokeWidth={2.2} />
+                {isCreating ? "Creating…" : "New patient"}
+              </button>
+              {activePatient && !activePatient.recommendation ? (
                 <button
                   type="button"
-                  onClick={openCreateDialog}
-                  disabled={isCreating}
-                  className="font-sans inline-flex min-h-10 w-full items-center justify-center rounded-full bg-[#DDE466] px-4 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60 min-[420px]:w-auto sm:px-5"
+                  onClick={() => setOnboardingOpen(true)}
+                  className="dashboard-pill-soft font-sans inline-flex min-h-10 w-full min-w-0 items-center justify-center gap-1.5 truncate rounded-lg px-4 text-sm font-medium text-[color:var(--dash-text)] transition min-[420px]:max-w-[16rem] min-[420px]:w-auto sm:max-w-none sm:px-5"
                 >
-                  {isCreating ? "Creating…" : "New patient"}
+                  <SidebarSvgIcon name="next" size={14} strokeWidth={2} />
+                  <span className="truncate">Continue · {activePatient.display_name}</span>
                 </button>
-                {activePatient && !activePatient.recommendation ? (
-                  <button
-                    type="button"
-                    onClick={() => setOnboardingOpen(true)}
-                    className="dashboard-pill-soft font-sans inline-flex min-h-10 w-full min-w-0 items-center justify-center truncate rounded-full px-4 text-sm font-medium text-[color:var(--dash-text)] transition min-[420px]:max-w-[16rem] min-[420px]:w-auto sm:max-w-none sm:px-5"
-                  >
-                    <span className="truncate">Continue · {activePatient.display_name}</span>
-                  </button>
-                ) : (
-                  <span className="dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center rounded-full px-4 text-sm font-medium text-[color:var(--dash-muted)] min-[420px]:w-auto sm:px-5">
-                    {patients.length} {patients.length === 1 ? "patient" : "patients"}
-                  </span>
-                )}
-              </div>
+              ) : null}
             </div>
-          </section>
+          </div>
 
           {actionError && !onboardingOpen ? <AuthAlert variant="error">{actionError}</AuthAlert> : null}
 
@@ -391,39 +373,60 @@ export function StudentPeptideAdviserHubPage() {
               }
             />
 
-            <aside className="dashboard-surface order-last min-w-0 rounded-2xl p-3.5 sm:p-5 lg:order-none">
+            <aside className="hols-auth-card order-last min-w-0 rounded-xl p-4 sm:p-5 lg:order-none">
               <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
                 System status
               </p>
-              <div className="mt-3 space-y-3 sm:mt-4">
-                <div className="flex items-center justify-between gap-2 text-brand-caption text-[color:var(--dash-muted)]">
-                  <span>Service</span>
-                  <span className="font-semibold text-[color:var(--dash-accent)]">
+              <div className="mt-4 space-y-2.5">
+                <div className="flex items-center justify-between gap-2 rounded-lg bg-[color:var(--dash-soft)] px-3 py-2.5">
+                  <span className="inline-flex items-center gap-2 text-brand-caption text-[color:var(--dash-muted)]">
+                    <SidebarSvgIcon name="adviser" size={14} strokeWidth={1.9} />
+                    Service
+                  </span>
+                  <span
+                    className={
+                      info
+                        ? "rounded-lg bg-[#DDE466]/25 px-2 py-0.5 text-brand-caption font-semibold text-[color:var(--dash-accent)]"
+                        : "text-brand-caption font-semibold text-[color:var(--dash-faint)]"
+                    }
+                  >
                     {info ? "Online" : "Connecting…"}
                   </span>
                 </div>
-                <div className="flex items-center justify-between gap-2 text-brand-caption text-[color:var(--dash-muted)]">
-                  <span>Knowledge base</span>
-                  <span className="text-[color:var(--dash-text)]">
+                <div className="flex items-center justify-between gap-2 rounded-lg bg-[color:var(--dash-soft)] px-3 py-2.5">
+                  <span className="inline-flex items-center gap-2 text-brand-caption text-[color:var(--dash-muted)]">
+                    <SidebarSvgIcon name="plans" size={14} strokeWidth={1.9} />
+                    Knowledge base
+                  </span>
+                  <span className="text-brand-caption font-semibold text-[color:var(--dash-text)]">
                     {vectors != null ? `${vectors.toLocaleString()} vectors` : "—"}
                   </span>
                 </div>
                 {info ? (
-                  <div className="flex items-center justify-between gap-2 text-brand-caption text-[color:var(--dash-muted)]">
-                    <span>Model</span>
-                    <span className="max-w-[55%] truncate text-right text-[color:var(--dash-text)]">
+                  <div className="flex items-center justify-between gap-2 rounded-lg bg-[color:var(--dash-soft)] px-3 py-2.5">
+                    <span className="inline-flex items-center gap-2 text-brand-caption text-[color:var(--dash-muted)]">
+                      <SidebarSvgIcon name="focus" size={14} strokeWidth={1.9} />
+                      Model
+                    </span>
+                    <span className="max-w-[55%] truncate text-right text-brand-caption font-semibold text-[color:var(--dash-text)]">
                       {info.chat_model}
                     </span>
                   </div>
                 ) : null}
+                <div className="flex items-center justify-between gap-2 rounded-lg bg-[color:var(--dash-soft)] px-3 py-2.5">
+                  <span className="inline-flex items-center gap-2 text-brand-caption text-[color:var(--dash-muted)]">
+                    <SidebarSvgIcon name="users" size={14} strokeWidth={1.9} />
+                    Patients
+                  </span>
+                  <span className="text-brand-caption font-semibold text-[color:var(--dash-text)]">
+                    {patients.length}
+                  </span>
+                </div>
               </div>
 
-              <div className="mt-4 rounded-xl bg-[color:var(--dash-soft)] px-3.5 py-3 sm:mt-5">
-                <p className="text-brand-caption text-[color:var(--dash-muted)]">
-                  Select a draft patient to resume onboarding, or open a completed case to continue
-                  in chat.
-                </p>
-              </div>
+              <p className="text-brand-caption mt-4 text-[color:var(--dash-muted)]">
+                Select a draft to resume onboarding, or open a completed case to continue in chat.
+              </p>
             </aside>
           </div>
         </>

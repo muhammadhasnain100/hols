@@ -240,6 +240,30 @@ export async function recommendPatient(patientId: string): Promise<PatientDetail
   return patient;
 }
 
+export async function updatePatientBoard(
+  patientId: string,
+  input: {
+    confidence?: "conservative" | "balanced" | "aggressive" | string;
+    preferred?: string | null;
+    clear_preferred?: boolean;
+  },
+): Promise<PatientDetail> {
+  const patient = await apiRequest<PatientDetail>(`/api/chat/patients/${patientId}/board`, {
+    method: "POST",
+    auth: true,
+    body: {
+      confidence: input.confidence,
+      preferred: input.preferred ?? undefined,
+      clear_preferred: input.clear_preferred ?? false,
+    },
+  });
+  const patientKey = patientCacheKey(patientId, true);
+  adviserMemoryCache.set(patientKey, patient);
+  writeSessionCache(patientKey, patient);
+  invalidateAdviserCache(patientId);
+  return patient;
+}
+
 export async function sendPatientMessage(
   patientId: string,
   question: string,

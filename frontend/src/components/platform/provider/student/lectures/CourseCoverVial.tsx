@@ -1,12 +1,13 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { memo, useCallback, useEffect, useState } from "react";
 import {
   type CourseCoverPhotos,
   getCourseCoverPhotos,
   MODE_PHOTO_DARK,
   MODE_PHOTO_LIGHT,
 } from "@/components/platform/provider/student/lectures/courseCover";
+import { preloadLectureCoverSrcs } from "@/components/platform/provider/student/lectures/lectureCoverCache";
 import { cn } from "@/lib/utils";
 
 const DEFAULT_VIAL_PHOTOS: CourseCoverPhotos = {
@@ -28,7 +29,7 @@ type CourseCoverVialProps = {
  * HOLS-branded product photo vial — theme-specific studio PNGs.
  * Sized by the parent stage; contain keeps silhouette coherent while stage/scale zoom in.
  */
-export function CourseCoverVial({
+function CourseCoverVialInner({
   objectPosition = "50% 50%",
   objectFit = "contain",
   opacity = 1,
@@ -45,6 +46,10 @@ export function CourseCoverVial({
   useEffect(() => {
     setActivePhotos(requestedPhotos);
   }, [requestedPhotos.dark, requestedPhotos.light]);
+
+  useEffect(() => {
+    preloadLectureCoverSrcs([activePhotos.light, activePhotos.dark]);
+  }, [activePhotos.dark, activePhotos.light]);
 
   const handlePhotoError = useCallback(() => {
     if (isCustom) {
@@ -63,6 +68,7 @@ export function CourseCoverVial({
         alt=""
         draggable={false}
         decoding="async"
+        loading="eager"
         onError={handlePhotoError}
         className={cn(
           "lecture-cover-vial-photo lecture-cover-vial-photo--light absolute inset-0 h-full w-full",
@@ -79,6 +85,7 @@ export function CourseCoverVial({
         alt=""
         draggable={false}
         decoding="async"
+        loading="eager"
         onError={handlePhotoError}
         className={cn(
           "lecture-cover-vial-photo lecture-cover-vial-photo--dark absolute inset-0 h-full w-full",
@@ -92,3 +99,5 @@ export function CourseCoverVial({
     </div>
   );
 }
+
+export const CourseCoverVial = memo(CourseCoverVialInner);

@@ -15,10 +15,24 @@ export {
   recommendPatient,
   savePatientIntake,
   sendPatientMessage,
+  updatePatientBoard,
 } from "@/lib/integrate/provider/student/chat/api";
 export { ACTIVE_PATIENT_STORAGE_KEY } from "@/lib/integrate/provider/student/chat/constants";
+export {
+  CHILD_MAX_AGE,
+  isPregnancyApplicable,
+  isSnapshotComplete,
+  normalizeSex,
+  parseIntakeAge,
+  pregnancyAutoValue,
+  PREGNANCY_MAX_AGE,
+  PREGNANCY_MIN_AGE,
+  sanitizeIntakeAnswers,
+  snapshotRequiredKeys,
+} from "@/lib/integrate/provider/student/chat/intakeDependencies";
 export type {
   AdviserBootstrapData,
+  BoardConfidence,
   ChatHealth,
   ChatInfo,
   ChatMessagesPagination,
@@ -32,5 +46,7 @@ export type {
   PatientSummary,
   QuestionnaireFlow,
   QuestionOption,
+  RecommendationBoard,
+  RecommendationBoardPeptide,
   StoredChatMessage,
 } from "@/lib/integrate/provider/student/chat/types";

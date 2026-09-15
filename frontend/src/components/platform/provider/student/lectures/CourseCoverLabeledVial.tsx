@@ -1,6 +1,8 @@
 "use client";
 
+import { memo, useEffect } from "react";
 import { coverPeptideName } from "@/components/platform/provider/student/lectures/courseCover";
+import { preloadLectureCoverSrcs } from "@/components/platform/provider/student/lectures/lectureCoverCache";
 import { cn } from "@/lib/utils";
 
 const TEMPLATE_LIGHT = "/assets/lectures/mode/light.png";
@@ -12,10 +14,14 @@ type CourseCoverLabeledVialProps = {
 };
 
 /** Premium HOLS vial template — peptide name rendered dynamically (no dose/measurement). */
-export function CourseCoverLabeledVial({ title, className }: CourseCoverLabeledVialProps) {
+function CourseCoverLabeledVialInner({ title, className }: CourseCoverLabeledVialProps) {
   const peptideName = coverPeptideName(title);
   const compact = peptideName.length > 18;
   const tiny = peptideName.length > 26;
+
+  useEffect(() => {
+    preloadLectureCoverSrcs([TEMPLATE_LIGHT, TEMPLATE_DARK]);
+  }, []);
 
   return (
     <div
@@ -28,6 +34,7 @@ export function CourseCoverLabeledVial({ title, className }: CourseCoverLabeledV
         alt=""
         draggable={false}
         decoding="async"
+        loading="eager"
         className="lecture-cover-labeled-vial-photo lecture-cover-labeled-vial-photo--light absolute inset-0 h-full w-full object-cover object-[center_42%]"
         aria-hidden
       />
@@ -37,6 +44,7 @@ export function CourseCoverLabeledVial({ title, className }: CourseCoverLabeledV
         alt=""
         draggable={false}
         decoding="async"
+        loading="eager"
         className="lecture-cover-labeled-vial-photo lecture-cover-labeled-vial-photo--dark absolute inset-0 h-full w-full object-cover object-[center_42%]"
         aria-hidden
       />
@@ -56,3 +64,5 @@ export function CourseCoverLabeledVial({ title, className }: CourseCoverLabeledV
     </div>
   );
 }
+
+export const CourseCoverLabeledVial = memo(CourseCoverLabeledVialInner);

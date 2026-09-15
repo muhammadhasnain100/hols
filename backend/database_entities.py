@@ -794,6 +794,7 @@ class AdviserPatient(BaseEntity):
     intake_answers: dict[str, Any] = Field(default_factory=dict)
     evaluation: Optional[dict[str, Any]] = None
     recommendation: Optional[str] = None
+    recommendation_board: Optional[dict[str, Any]] = None
     sources: list[dict[str, Any]] = Field(default_factory=list)
     primary_goal: Optional[str] = None
     message_count: int = 0
@@ -823,6 +824,7 @@ class AdviserPatient(BaseEntity):
                 "intake_answers": self.intake_answers,
                 "evaluation": self.evaluation,
                 "recommendation": self.recommendation,
+                "recommendation_board": self.recommendation_board,
                 "sources": self.sources,
                 "primary_goal": self.primary_goal,
                 "message_count": self.message_count,

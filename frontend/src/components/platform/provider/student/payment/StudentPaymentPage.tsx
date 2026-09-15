@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useCallback, useEffect, useState, type ReactNode } from "react";
-import { Calendar, Check, Clock, Icon, Star } from "@/components/icons";
+import { useCallback, useEffect, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
+import { SidebarSvgIcon, type SidebarIconName } from "@/components/platform/provider/sidebar-icons";
 import { MembershipPageSkeleton } from "@/components/platform/provider/student/DashboardSkeletons";
 import { PaymentPageLayout } from "@/components/platform/provider/student/payment/PaymentPageLayout";
 import { ApiRequestError } from "@/lib/integrate/client";
@@ -21,7 +21,6 @@ import {
   type PlanType,
 } from "@/lib/integrate/provider/student/payment/api";
 import {
-  formatDate,
   formatMoney,
   planLabels,
 } from "@/lib/integrate/provider/student/payment/types";
@@ -36,7 +35,7 @@ const PLAN_META: Record<
     badge?: string;
     favourite?: boolean;
     features: string[];
-    icon: ReactNode;
+    icon: SidebarIconName;
   }
 > = {
   monthly: {
@@ -47,7 +46,7 @@ const PLAN_META: Record<
       "AI adviser sessions",
       "30 days membership",
     ],
-    icon: <Icon icon={Calendar} size={24} strokeWidth={1.7} />,
+    icon: "clock",
   },
   biannual: {
     period: "billed every 6 months",
@@ -59,7 +58,7 @@ const PLAN_META: Record<
       "Cross-device progress sync",
       "182 days membership",
     ],
-    icon: <Icon icon={Star} size={24} strokeWidth={1.7} />,
+    icon: "star",
   },
   annual: {
     period: "billed yearly",
@@ -70,7 +69,7 @@ const PLAN_META: Record<
       "Certification pathway support",
       "365 days membership",
     ],
-    icon: <Icon icon={Clock} size={24} strokeWidth={1.7} />,
+    icon: "plans",
   },
 };
 
@@ -184,52 +183,7 @@ export function StudentPaymentPage() {
         <MembershipPageSkeleton />
       ) : (
         <>
-          <section className="dashboard-hero relative overflow-hidden rounded-2xl p-4 sm:p-5 md:p-6">
-            <div className="flex flex-col gap-4 sm:gap-5 lg:flex-row lg:items-end lg:justify-between">
-              <div className="min-w-0">
-                <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
-                  Current membership
-                </p>
-                <div className="mt-2 flex flex-wrap items-end gap-x-2 gap-y-1">
-                  <span className="font-sans text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl md:text-[2.25rem] md:leading-none">
-                    {membership ? planLabels[membership.plan_type] : "No plan"}
-                  </span>
-                  <span
-                    className={cn(
-                      "mb-0.5 inline-flex rounded-full px-2.5 py-0.5 text-brand-caption font-semibold capitalize",
-                      membership
-                        ? "bg-[#DDE466]/25 text-[color:var(--dash-accent)]"
-                        : "bg-[color:var(--dash-soft)] text-[color:var(--dash-faint)]",
-                    )}
-                  >
-                    {membership ? membership.status : "Inactive"}
-                  </span>
-                </div>
-                <p className="text-brand-body mt-2 text-[color:var(--dash-muted)]">
-                  {membership
-                    ? `Active until ${formatDate(membership.end_date)}`
-                    : "Choose a plan below to unlock lectures, tools, and adviser access."}
-                </p>
-              </div>
-
-              <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:gap-2.5">
-                <Link
-                  href="/student/payment/card"
-                  className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center rounded-full px-3 text-sm font-medium text-[color:var(--dash-text)] transition sm:px-5"
-                >
-                  {card ? `Card ···· ${card.card_last4}` : "Add card"}
-                </Link>
-                <Link
-                  href="/student/payment/orders"
-                  className="font-sans inline-flex min-h-10 items-center justify-center rounded-full bg-[#DDE466] px-3 text-sm font-medium text-[#152744] transition hover:brightness-105 sm:px-5"
-                >
-                  View orders
-                </Link>
-              </div>
-            </div>
-          </section>
-
-          <section className="mt-0.5 min-w-0 sm:mt-1">
+          <section className="min-w-0">
             <div className="mb-3 flex flex-col gap-1 sm:mb-4 sm:flex-row sm:items-end sm:justify-between">
               <div className="min-w-0">
                 <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
@@ -245,13 +199,13 @@ export function StudentPaymentPage() {
             </div>
 
             {!card ? (
-              <div className="mb-3 flex flex-col gap-3 rounded-2xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-surface)] px-4 py-3.5 sm:mb-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+              <div className="hols-auth-card mb-3 flex flex-col gap-3 rounded-xl px-4 py-3.5 sm:mb-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
                 <p className="text-brand-body text-[color:var(--dash-muted)]">
                   Add a payment card before selecting a plan.
                 </p>
                 <Link
                   href="/student/payment/card"
-                  className="font-sans inline-flex min-h-9 w-full items-center justify-center rounded-full bg-[#DDE466] px-4 text-sm font-medium text-[#152744] transition hover:brightness-105 sm:w-auto"
+                  className="font-sans inline-flex min-h-10 w-full items-center justify-center rounded-lg bg-[#DDE466] px-4 text-sm font-medium text-[#152744] transition hover:brightness-105 sm:w-auto"
                 >
                   Add card
                 </Link>
@@ -269,7 +223,7 @@ export function StudentPaymentPage() {
                   <article
                     key={plan.plan_type}
                     className={cn(
-                      "membership-plan-card relative flex min-w-0 flex-col rounded-[1.25rem] p-4 sm:rounded-[1.35rem] sm:p-5 md:p-6",
+                      "membership-plan-card relative flex min-w-0 flex-col rounded-xl p-4 sm:p-5 md:p-6",
                       favourite && "membership-plan-card--favourite",
                       current && "membership-plan-card--current",
                     )}
@@ -291,7 +245,7 @@ export function StudentPaymentPage() {
 
                     <div className="mt-1 flex items-start justify-between gap-3">
                       <div className="membership-plan-icon" aria-hidden>
-                        {meta.icon}
+                        <SidebarSvgIcon name={meta.icon} size={22} strokeWidth={1.85} />
                       </div>
                     </div>
 
@@ -314,7 +268,7 @@ export function StudentPaymentPage() {
                       {meta.features.map((feature) => (
                         <li key={feature} className="flex items-start gap-2.5">
                           <span className="membership-plan-check mt-0.5" aria-hidden>
-                            <Icon icon={Check} size={11} strokeWidth={2.6} />
+                            <SidebarSvgIcon name="check" size={12} strokeWidth={2.6} />
                           </span>
                           <span className="text-sm leading-snug text-[color:var(--dash-muted)]">
                             {feature}
@@ -328,7 +282,7 @@ export function StudentPaymentPage() {
                       disabled={purchasingPlan !== null || current || !card}
                       onClick={() => handlePurchase(plan.plan_type)}
                       className={cn(
-                        "font-sans mt-5 inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-semibold tracking-[0.01em] transition disabled:pointer-events-none disabled:opacity-55 sm:mt-6",
+                        "font-sans mt-5 inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg px-5 text-sm font-semibold tracking-[0.01em] transition disabled:pointer-events-none disabled:opacity-55 sm:mt-6",
                         current
                           ? "dashboard-pill-soft text-[color:var(--dash-text)]"
                           : favourite

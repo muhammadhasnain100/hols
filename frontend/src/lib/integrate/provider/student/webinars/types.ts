@@ -37,6 +37,8 @@ export type WebinarNotification = {
   currency: string;
   is_booked: boolean;
   body: string;
+  thumbnail_url?: string | null;
+  seats_remaining?: number | null;
 };
 
 export type WebinarCreatePayload = {

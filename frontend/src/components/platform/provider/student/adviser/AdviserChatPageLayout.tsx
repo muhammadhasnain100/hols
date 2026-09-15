@@ -19,9 +19,10 @@ export function AdviserChatPageLayout({
       title={patientName || "Patient"}
       showPageHeader={false}
       contentFlush
+      brandBackdrop
       nav={studentNav}
     >
-      <div className="adviser-chat-screen dashboard-screen relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
+      <div className="adviser-chat-screen dashboard-screen lectures-page relative flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
         <AdviserChatHeaderStrip patientName={patientName} />
         <div className="adviser-chat-body flex min-h-0 min-w-0 flex-1 flex-col">{children}</div>
       </div>

@@ -204,7 +204,7 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
             return (
               <p
                 key={index}
-                className="text-brand-body text-justify leading-[1.5] text-[color:var(--dash-muted)] [text-align-last:left]"
+                className="text-brand-body text-left leading-[1.5] text-[color:var(--dash-muted)] sm:text-justify sm:[text-align-last:left]"
               >
                 {renderInline(block.text)}
               </p>
@@ -216,7 +216,7 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
                 className="text-brand-body my-1 list-disc space-y-1.5 pl-5 leading-[1.5] text-[color:var(--dash-muted)] marker:text-[color:var(--dash-dim)]"
               >
                 {block.items.map((item, itemIndex) => (
-                  <li key={itemIndex} className="pl-0.5 text-justify [text-align-last:left]">
+                  <li key={itemIndex} className="pl-0.5 text-left sm:text-justify sm:[text-align-last:left]">
                     {renderInline(item)}
                   </li>
                 ))}
@@ -229,7 +229,7 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
                 className="text-brand-body my-1 list-decimal space-y-1.5 pl-5 leading-[1.5] text-[color:var(--dash-muted)] marker:font-medium marker:text-[color:var(--dash-faint)]"
               >
                 {block.items.map((item, itemIndex) => (
-                  <li key={itemIndex} className="pl-0.5 text-justify [text-align-last:left]">
+                  <li key={itemIndex} className="pl-0.5 text-left sm:text-justify sm:[text-align-last:left]">
                     {renderInline(item)}
                   </li>
                 ))}
@@ -239,7 +239,7 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
             return (
               <blockquote
                 key={index}
-                className="border-l-2 border-[color:var(--dash-surface-border)] pl-3 text-brand-body text-justify italic leading-[1.5] text-[color:var(--dash-faint)] [text-align-last:left]"
+                className="border-l-2 border-[color:var(--dash-surface-border)] pl-3 text-brand-body text-left italic leading-[1.5] text-[color:var(--dash-faint)] sm:text-justify sm:[text-align-last:left]"
               >
                 {renderInline(block.text)}
               </blockquote>

@@ -57,6 +57,22 @@ class SendMessageRequest(BaseModel):
     top_k: Optional[int] = Field(default=None, ge=1, le=20)
 
 
+class UpdateBoardRequest(BaseModel):
+    confidence: Optional[str] = Field(
+        default=None,
+        description="War Room dial: conservative | balanced | aggressive",
+    )
+    preferred: Optional[str] = Field(
+        default=None,
+        max_length=120,
+        description="Preferred peptide name to lock at rank #1",
+    )
+    clear_preferred: bool = Field(
+        default=False,
+        description="Clear locked preferred peptide",
+    )
+
+
 class PatientSummary(BaseModel):
     patient_id: str
     display_name: str
@@ -96,6 +112,7 @@ class PatientDetail(BaseModel):
     intake_answers: dict[str, Any] = Field(default_factory=dict)
     evaluation: Optional[dict[str, Any]] = None
     recommendation: Optional[str] = None
+    recommendation_board: Optional[dict[str, Any]] = None
     sources: List[dict[str, Any]] = Field(default_factory=list)
     primary_goal: Optional[str] = None
     message_count: int = 0

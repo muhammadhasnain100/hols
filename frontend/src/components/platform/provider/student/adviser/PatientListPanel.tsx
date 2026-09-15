@@ -1,6 +1,7 @@
 "use client";
 
 import type { PatientSummary } from "@/lib/integrate/provider/student/chat";
+import { SidebarSvgIcon } from "@/components/platform/provider/sidebar-icons";
 import { cn } from "@/lib/utils";
 
 type PatientListPanelProps = {
@@ -21,26 +22,40 @@ export function PatientListPanel({
   progressLabelFor,
 }: PatientListPanelProps) {
   return (
-    <aside className="dashboard-surface min-w-0 overflow-hidden rounded-2xl p-3.5 sm:p-5">
+    <aside className="hols-auth-card min-w-0 overflow-hidden rounded-xl p-4 sm:p-5">
       <div className="flex items-center justify-between gap-2">
-        <h2 className="font-sans truncate text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg">
-          Patients
-        </h2>
+        <div className="min-w-0">
+          <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+            Cases
+          </p>
+          <h2 className="font-sans mt-1 truncate text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg">
+            Patients
+          </h2>
+        </div>
         <button
           type="button"
           onClick={onCreate}
           disabled={isCreating}
-          className="font-sans inline-flex min-h-9 shrink-0 items-center justify-center rounded-full bg-[#DDE466] px-3.5 text-sm font-medium text-[#152744] transition hover:brightness-105 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-60 sm:px-4"
+          className="font-sans inline-flex min-h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg bg-[#DDE466] px-3.5 text-sm font-medium text-[#152744] transition hover:brightness-105 disabled:pointer-events-none disabled:opacity-60 sm:px-4"
         >
+          <SidebarSvgIcon name="plus" size={14} strokeWidth={2.2} />
           {isCreating ? "Creating…" : "New"}
         </button>
       </div>
 
-      <div className="mt-3 space-y-1">
+      <div className="mt-4 space-y-2">
         {patients.length === 0 ? (
-          <p className="text-brand-body rounded-xl bg-[color:var(--dash-soft)] px-3 py-4 text-center text-[color:var(--dash-faint)]">
-            No patients yet. Create one to start intake.
-          </p>
+          <div className="flex flex-col items-center justify-center rounded-lg bg-[color:var(--dash-soft)] px-4 py-8 text-center">
+            <span className="membership-plan-icon" aria-hidden>
+              <SidebarSvgIcon name="adviser" size={20} strokeWidth={1.85} />
+            </span>
+            <p className="font-sans mt-3 text-sm font-semibold text-[color:var(--dash-text)]">
+              No patients yet
+            </p>
+            <p className="text-brand-caption mt-1 max-w-[14rem] text-[color:var(--dash-faint)]">
+              Create a case to start structured intake.
+            </p>
+          </div>
         ) : (
           patients.map((patient) => {
             const active = activePatientId === patient.patient_id;
@@ -56,28 +71,41 @@ export function PatientListPanel({
                 type="button"
                 onClick={() => onSelect(patient.patient_id)}
                 className={cn(
-                  "dashboard-row w-full rounded-xl px-2.5 py-2.5 text-left transition sm:px-3 sm:py-3",
+                  "dashboard-row flex w-full items-start gap-3 rounded-lg px-2.5 py-2.5 text-left transition sm:px-3 sm:py-3",
                   active && "bg-[#DDE466]/15",
                 )}
               >
-                <div className="flex min-w-0 items-start justify-between gap-2 sm:gap-3">
-                  <div className="min-w-0 flex-1">
+                <span
+                  className={cn(
+                    "membership-plan-icon !h-9 !w-9 shrink-0",
+                    patient.has_recommendation && "!bg-[color:var(--dash-soft)] !border-[color:var(--dash-surface-border)]",
+                  )}
+                  aria-hidden
+                >
+                  <SidebarSvgIcon
+                    name={patient.has_recommendation ? "adviser" : "profile"}
+                    size={16}
+                    strokeWidth={1.9}
+                  />
+                </span>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-start justify-between gap-2">
                     <p className="font-sans truncate text-sm font-semibold text-[color:var(--dash-text)]">
                       {patient.display_name}
                     </p>
-                    <p className="text-brand-caption mt-0.5 line-clamp-2 text-[color:var(--dash-faint)] sm:truncate sm:line-clamp-none">
-                      {subtitle}
-                    </p>
+                    {!patient.has_recommendation ? (
+                      <span className="text-brand-caption shrink-0 rounded-lg bg-[#DDE466]/25 px-2 py-0.5 font-medium text-[#152744]">
+                        Draft
+                      </span>
+                    ) : (
+                      <span className="text-brand-caption shrink-0 rounded-lg bg-[color:var(--dash-soft)] px-2 py-0.5 font-medium text-[color:var(--dash-muted)]">
+                        Chat
+                      </span>
+                    )}
                   </div>
-                  {!patient.has_recommendation ? (
-                    <span className="text-brand-caption shrink-0 rounded-full bg-[#DDE466]/25 px-2 py-0.5 font-medium text-[#152744]">
-                      Draft
-                    </span>
-                  ) : (
-                    <span className="text-brand-caption shrink-0 rounded-full bg-[color:var(--dash-soft)] px-2 py-0.5 font-medium text-[color:var(--dash-muted)]">
-                      Chat
-                    </span>
-                  )}
+                  <p className="text-brand-caption mt-0.5 line-clamp-2 text-[color:var(--dash-faint)] sm:truncate sm:line-clamp-none">
+                    {subtitle}
+                  </p>
                 </div>
               </button>
             );

@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { Icon, Star } from "@/components/icons";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
+import { SidebarSvgIcon, type SidebarIconName } from "@/components/platform/provider/sidebar-icons";
 import {
   OrderListRowsSkeleton,
   OrdersPageSkeleton,
@@ -21,6 +20,12 @@ import {
   planLabels,
   type PlanType,
 } from "@/lib/integrate/provider/student/payment/types";
+
+const PLAN_ICONS: Record<PlanType, SidebarIconName> = {
+  monthly: "clock",
+  biannual: "star",
+  annual: "plans",
+};
 
 export function StudentOrdersPage() {
   // Keep SSR and first client paint identical — never read session cache during render.
@@ -97,190 +102,159 @@ export function StudentOrdersPage() {
         <OrdersPageSkeleton />
       ) : (
         <>
-      <section className="dashboard-hero relative overflow-hidden rounded-2xl p-4 sm:p-5 md:p-6">
-        <div className="flex flex-col gap-4 sm:gap-5 lg:flex-row lg:items-end lg:justify-between">
-          <div className="min-w-0">
-            <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
-              Order history
-            </p>
-            <div className="mt-2 flex flex-wrap items-end gap-x-2 gap-y-1">
-              <span className="font-sans text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl md:text-[2.25rem] md:leading-none">
-                {showPlaceholder ? "—" : total}
-              </span>
-              <span className="mb-0.5 text-brand-caption font-medium text-[color:var(--dash-faint)]">
-                {total === 1 ? "order" : "orders"}
-              </span>
-            </div>
-            <p className="text-brand-body mt-2 text-[color:var(--dash-muted)]">
-              {latest
-                ? `Latest · ${planLabels[latest.plan_type]} · ${formatMoney(latest.amount, latest.currency)}`
-                : "No purchases on this account yet."}
-            </p>
-          </div>
-
-          <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:gap-2.5">
-            <Link
-              href="/student/payment"
-              className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center rounded-full px-3 text-sm font-medium text-[color:var(--dash-text)] transition sm:px-5"
-            >
-              View plans
-            </Link>
-            <Link
-              href="/student/payment/card"
-              className="font-sans inline-flex min-h-10 items-center justify-center rounded-full bg-[#DDE466] px-3 text-sm font-medium text-[#152744] transition hover:brightness-105 sm:px-5"
-            >
-              Payment card
-            </Link>
-          </div>
-        </div>
-      </section>
-
-      <div className="grid w-full min-w-0 items-start gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
-        <section className="dashboard-surface order-2 min-w-0 rounded-2xl p-4 sm:p-5 lg:order-1">
-          <div className="flex items-center justify-between gap-2">
-            <h2 className="font-sans text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg">
-              Recent orders
-            </h2>
-            <span className="text-brand-caption shrink-0 font-medium text-[color:var(--dash-accent)]">
-              Page {page}
-            </span>
-          </div>
-
-          <div className="mt-4 space-y-2.5">
-            {loading ? (
-              <OrderListRowsSkeleton />
-            ) : orders.length === 0 ? (
-              <p className="text-brand-body py-6 text-center text-[color:var(--dash-faint)]">
-                No orders yet.
-              </p>
-            ) : (
-              orders.map((order) => (
-                <div
-                  key={order.order_id}
-                  className="dashboard-row flex items-center justify-between gap-2 rounded-xl px-2.5 py-2.5 sm:gap-3 sm:px-3.5 sm:py-3"
-                >
-                  <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
-                    <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#DDE466]/15 text-[color:var(--dash-accent)]">
-                      <Icon icon={Star} size={16} strokeWidth={1.9} />
-                    </span>
-                    <div className="min-w-0">
-                      <p className="font-sans truncate text-sm font-medium text-[color:var(--dash-text)]">
-                        {planLabels[order.plan_type]} plan
-                      </p>
-                      <p className="text-brand-caption truncate text-[color:var(--dash-faint)]">
-                        {formatDate(order.created_at)}
-                      </p>
-                    </div>
-                  </div>
-                  <span className="font-sans shrink-0 text-sm font-semibold text-[color:var(--dash-accent)]">
-                    {formatMoney(order.amount, order.currency)}
-                  </span>
-                </div>
-              ))
-            )}
-          </div>
-
-          <div className="mt-4 grid grid-cols-2 gap-2 sm:flex sm:items-center sm:justify-between">
-            <button
-              type="button"
-              disabled={page <= 1 || loading}
-              onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="dashboard-pill-soft font-sans inline-flex min-h-9 items-center justify-center rounded-full px-4 text-sm font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50"
-            >
-              Previous
-            </button>
-            <button
-              type="button"
-              disabled={!hasNext || loading}
-              onClick={() => setPage((p) => p + 1)}
-              className="dashboard-pill-soft font-sans inline-flex min-h-9 items-center justify-center rounded-full px-4 text-sm font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50"
-            >
-              Next
-            </button>
-          </div>
-        </section>
-
-        <section className="dashboard-surface order-1 min-w-0 rounded-2xl p-4 sm:p-5 lg:order-2">
-          <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-            Summary
-          </p>
-          <p className="font-sans mt-2 text-2xl font-bold tracking-[0.01em] text-[color:var(--dash-text)]">
-            {showPlaceholder ? "—" : total}
-          </p>
-          <p className="text-brand-body mt-1 text-[color:var(--dash-muted)]">
-            Total membership purchases
-          </p>
-
-          <div className="mt-4 grid grid-cols-2 gap-2.5 sm:gap-3">
-            <div className="rounded-xl bg-[color:var(--dash-soft)] px-3 py-3 sm:px-3.5">
-              <p className="text-brand-caption text-[color:var(--dash-faint)]">Page total</p>
-              <p className="font-sans mt-1 truncate text-sm font-semibold text-[color:var(--dash-text)]">
-                {showPlaceholder ? "—" : formatMoney(pageSpent, currency)}
-              </p>
-            </div>
-            <div className="rounded-xl bg-[color:var(--dash-soft)] px-3 py-3 sm:px-3.5">
-              <p className="text-brand-caption text-[color:var(--dash-faint)]">On this page</p>
-              <p className="font-sans mt-1 text-sm font-semibold text-[color:var(--dash-text)]">
-                {showPlaceholder ? "—" : orders.length}
-              </p>
-            </div>
-            <div className="rounded-xl bg-[color:var(--dash-soft)] px-3 py-3 sm:px-3.5">
-              <p className="text-brand-caption text-[color:var(--dash-faint)]">Completed</p>
-              <p className="font-sans mt-1 text-sm font-semibold text-[color:var(--dash-text)]">
-                {showPlaceholder ? "—" : completedCount}
-              </p>
-            </div>
-            <div className="rounded-xl bg-[color:var(--dash-soft)] px-3 py-3 sm:px-3.5">
-              <p className="text-brand-caption text-[color:var(--dash-faint)]">Top plan</p>
-              <p className="font-sans mt-1 truncate text-sm font-semibold text-[color:var(--dash-text)]">
-                {topPlan ? planLabels[topPlan[0]] : "—"}
-              </p>
-            </div>
-          </div>
-
-          {latest ? (
-            <div className="mt-4 border-t border-[color:var(--dash-surface-border)] pt-4">
-              <p className="text-brand-caption text-[color:var(--dash-faint)]">Latest order</p>
-              <p className="font-sans mt-1 text-sm font-medium text-[color:var(--dash-text)]">
-                {planLabels[latest.plan_type]} · {formatMoney(latest.amount, latest.currency)}
-              </p>
-              <p className="text-brand-caption mt-1 capitalize text-[color:var(--dash-muted)]">
-                Status · {latest.status}
-              </p>
-              <p className="text-brand-caption mt-0.5 text-[color:var(--dash-faint)]">
-                {formatDate(latest.created_at)}
-              </p>
-              <p className="text-brand-caption mt-2 break-all text-[color:var(--dash-faint)]">
-                Order ID · {latest.order_id}
-              </p>
-            </div>
-          ) : (
-            <div className="mt-4 border-t border-[color:var(--dash-surface-border)] pt-4">
-              <p className="text-brand-body text-[color:var(--dash-faint)]">
-                No order details to show yet.
-              </p>
-            </div>
-          )}
-
-          {(planCounts.monthly || planCounts.biannual || planCounts.annual) && (
-            <div className="mt-4 border-t border-[color:var(--dash-surface-border)] pt-4">
-              <p className="text-brand-caption text-[color:var(--dash-faint)]">Plans on this page</p>
-              <div className="mt-2 space-y-1.5">
-                {(Object.entries(planCounts) as [PlanType, number][]).map(([plan, count]) => (
-                  <div key={plan} className="flex items-center justify-between gap-2">
-                    <span className="text-brand-caption text-[color:var(--dash-muted)]">
-                      {planLabels[plan]}
-                    </span>
-                    <span className="font-sans text-sm font-semibold text-[color:var(--dash-text)]">
-                      {count}
-                    </span>
-                  </div>
-                ))}
+          <div className="grid w-full min-w-0 items-start gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
+            <section className="hols-auth-card order-2 min-w-0 rounded-xl p-4 sm:p-5 lg:order-1">
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="font-sans text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg">
+                  Recent orders
+                </h2>
+                <span className="text-brand-caption shrink-0 font-medium text-[color:var(--dash-accent)]">
+                  Page {page}
+                </span>
               </div>
-            </div>
-          )}
-        </section>
-      </div>
+
+              <div className="mt-4 space-y-2.5">
+                {loading ? (
+                  <OrderListRowsSkeleton />
+                ) : orders.length === 0 ? (
+                  <p className="text-brand-body py-6 text-center text-[color:var(--dash-faint)]">
+                    No orders yet.
+                  </p>
+                ) : (
+                  orders.map((order) => (
+                    <div
+                      key={order.order_id}
+                      className="dashboard-row flex items-center justify-between gap-2 rounded-xl px-2.5 py-2.5 sm:gap-3 sm:px-3.5 sm:py-3"
+                    >
+                      <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
+                        <span className="membership-plan-icon !h-9 !w-9 shrink-0" aria-hidden>
+                          <SidebarSvgIcon
+                            name={PLAN_ICONS[order.plan_type]}
+                            size={16}
+                            strokeWidth={1.9}
+                          />
+                        </span>
+                        <div className="min-w-0">
+                          <p className="font-sans truncate text-sm font-medium text-[color:var(--dash-text)]">
+                            {planLabels[order.plan_type]} plan
+                          </p>
+                          <p className="text-brand-caption truncate text-[color:var(--dash-faint)]">
+                            {formatDate(order.created_at)}
+                          </p>
+                        </div>
+                      </div>
+                      <span className="font-sans shrink-0 text-sm font-semibold text-[color:var(--dash-accent)]">
+                        {formatMoney(order.amount, order.currency)}
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-2 sm:flex sm:items-center sm:justify-between">
+                <button
+                  type="button"
+                  disabled={page <= 1 || loading}
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  className="dashboard-pill-soft font-sans inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg px-4 text-sm font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50"
+                >
+                  <SidebarSvgIcon name="previous" size={14} strokeWidth={2} />
+                  Previous
+                </button>
+                <button
+                  type="button"
+                  disabled={!hasNext || loading}
+                  onClick={() => setPage((p) => p + 1)}
+                  className="dashboard-pill-soft font-sans inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg px-4 text-sm font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50"
+                >
+                  Next
+                  <SidebarSvgIcon name="next" size={14} strokeWidth={2} />
+                </button>
+              </div>
+            </section>
+
+            <section className="hols-auth-card order-1 min-w-0 rounded-xl p-4 sm:p-5 lg:order-2">
+              <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+                Summary
+              </p>
+              <p className="font-sans mt-2 text-2xl font-bold tracking-[0.01em] text-[color:var(--dash-text)]">
+                {showPlaceholder ? "—" : total}
+              </p>
+              <p className="text-brand-body mt-1 text-[color:var(--dash-muted)]">
+                Total membership purchases
+              </p>
+
+              <div className="mt-4 grid grid-cols-2 gap-2.5 sm:gap-3">
+                <div className="rounded-lg bg-[color:var(--dash-soft)] px-3 py-3 sm:px-3.5">
+                  <p className="text-brand-caption text-[color:var(--dash-faint)]">Page total</p>
+                  <p className="font-sans mt-1 truncate text-sm font-semibold text-[color:var(--dash-text)]">
+                    {showPlaceholder ? "—" : formatMoney(pageSpent, currency)}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-[color:var(--dash-soft)] px-3 py-3 sm:px-3.5">
+                  <p className="text-brand-caption text-[color:var(--dash-faint)]">On this page</p>
+                  <p className="font-sans mt-1 text-sm font-semibold text-[color:var(--dash-text)]">
+                    {showPlaceholder ? "—" : orders.length}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-[color:var(--dash-soft)] px-3 py-3 sm:px-3.5">
+                  <p className="text-brand-caption text-[color:var(--dash-faint)]">Completed</p>
+                  <p className="font-sans mt-1 text-sm font-semibold text-[color:var(--dash-text)]">
+                    {showPlaceholder ? "—" : completedCount}
+                  </p>
+                </div>
+                <div className="rounded-lg bg-[color:var(--dash-soft)] px-3 py-3 sm:px-3.5">
+                  <p className="text-brand-caption text-[color:var(--dash-faint)]">Top plan</p>
+                  <p className="font-sans mt-1 truncate text-sm font-semibold text-[color:var(--dash-text)]">
+                    {topPlan ? planLabels[topPlan[0]] : "—"}
+                  </p>
+                </div>
+              </div>
+
+              {latest ? (
+                <div className="mt-4 border-t border-[color:var(--dash-surface-border)] pt-4">
+                  <p className="text-brand-caption text-[color:var(--dash-faint)]">Latest order</p>
+                  <p className="font-sans mt-1 text-sm font-medium text-[color:var(--dash-text)]">
+                    {planLabels[latest.plan_type]} · {formatMoney(latest.amount, latest.currency)}
+                  </p>
+                  <p className="text-brand-caption mt-1 capitalize text-[color:var(--dash-muted)]">
+                    Status · {latest.status}
+                  </p>
+                  <p className="text-brand-caption mt-0.5 text-[color:var(--dash-faint)]">
+                    {formatDate(latest.created_at)}
+                  </p>
+                  <p className="text-brand-caption mt-2 break-all text-[color:var(--dash-faint)]">
+                    Order ID · {latest.order_id}
+                  </p>
+                </div>
+              ) : (
+                <div className="mt-4 border-t border-[color:var(--dash-surface-border)] pt-4">
+                  <p className="text-brand-body text-[color:var(--dash-faint)]">
+                    No order details to show yet.
+                  </p>
+                </div>
+              )}
+
+              {(planCounts.monthly || planCounts.biannual || planCounts.annual) && (
+                <div className="mt-4 border-t border-[color:var(--dash-surface-border)] pt-4">
+                  <p className="text-brand-caption text-[color:var(--dash-faint)]">Plans on this page</p>
+                  <div className="mt-2 space-y-1.5">
+                    {(Object.entries(planCounts) as [PlanType, number][]).map(([plan, count]) => (
+                      <div key={plan} className="flex items-center justify-between gap-2">
+                        <span className="inline-flex items-center gap-2 text-brand-caption text-[color:var(--dash-muted)]">
+                          <SidebarSvgIcon name={PLAN_ICONS[plan]} size={14} strokeWidth={1.9} />
+                          {planLabels[plan]}
+                        </span>
+                        <span className="font-sans text-sm font-semibold text-[color:var(--dash-text)]">
+                          {count}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </section>
+          </div>
         </>
       )}
     </PaymentPageLayout>

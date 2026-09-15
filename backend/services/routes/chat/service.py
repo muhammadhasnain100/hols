@@ -6,12 +6,11 @@ import json
 import logging
 import threading
 import time
-from typing import List, Optional
+from typing import Any, List, Optional
 
 from fastapi import HTTPException
 from openai import OpenAI
 
-from config import settings
 from config import settings
 from models.chat import ChatMessage, FollowUpRequest, IntakeRequest, Source
 from services.routes.chat.chroma_client import get_chroma_client
@@ -19,69 +18,41 @@ from services.routes.chat.embed import build_embedding_function
 from services.routes.chat.memory import trim_chat_history
 from services.routes.chat.questionnaire import (
     build_rag_query,
+    build_recommendation_board,
     evaluate_intake,
+    format_board_receipt,
     get_flow_definition,
 )
 
 logger = logging.getLogger(__name__)
 
-INTAKE_SYSTEM = """You are Frontier BioMed's provider-facing Peptide Recommendation assistant.
+INTAKE_SYSTEM = """You are Frontier BioMed's Peptide Recommendation assistant for licensed providers.
 
-Address the provider as Dr. Sarah Mitchell when appropriate. The output is a formal Recommendation Card for their clinical records.
-
-You receive:
-1) Structured patient intake answers (snapshot, safety gate, goal branch, preferences)
-2) A deterministic evaluation (ranked peptides, safety flags, labs, stacks)
-3) Retrieved knowledge-base context for candidate peptides
-
-Produce a **Recommendation Card** in markdown with these sections (use ### headings):
-
-### Ranked shortlist
-2–4 peptides for the primary goal. For each: name, evidence tier, brief fit rationale,
-and which intake answers drove the suggestion (reasoning trace).
-
-### Suggested stack (if applicable)
-Only when evaluation includes stacks or secondary goal — name validated combos.
-
-### Safety flags
-List hard blocks, cautions, and monitoring notes from the evaluation (e.g. IGF-1 baseline,
-BP check for PT-141). Do not override non-overridable blocks.
-
-### Recommended baseline labs
-Bullet list from evaluation before initiation.
-
-### Regulatory note
-One sentence: recommendations support clinical judgment only; verify current 503A/status
-with Frontier BioMed before finalizing.
+Output a SHORT Recommendation Card in markdown. Hard limits:
+- Max ~180 words total
+- Use only these headings: ### Shortlist · ### Safety · ### Labs · ### Note
+- Shortlist: 2–4 peptides as bullets. Each bullet = **Name** — 1 short reason (≤18 words).
+- Safety: bullets only from evaluation hard_stops/cautions (skip empty).
+- Labs: ≤5 bullets from evaluation.
+- Note: one sentence regulatory reminder.
 
 RULES:
-- Never prescribe doses or instruct the provider to start therapy.
-- Honor blocked/excluded peptides — do not recommend them.
-- Prefer evaluation rankings; use KB context for mechanism, cautions, and evidence detail.
-- Be concise, professional, provider-facing tone.
-- End with italic disclaimer from evaluation.
+- Never prescribe doses or tell the provider to start therapy.
+- Never recommend blocked/excluded peptides.
+- Prefer evaluation rankings; KB only for brief mechanism/caution.
+- No long paragraphs, no tables, no filler.
 """
 
-FOLLOWUP_SYSTEM = """You are Frontier BioMed's provider-facing Peptide Adviser in a live consultation chat AFTER the Recommendation Card was delivered.
+FOLLOWUP_SYSTEM = """You are Frontier BioMed's Peptide Adviser in a live chat after the Recommendation Card.
 
-Address the registered practitioner as Dr. Sarah Mitchell, MD professionally.
-
-The licensed provider may ask clarifying questions about:
-- The ranked peptides, evidence, mechanisms, side effects, storage, handling
-- Safety flags, labs, stacks from the intake
-- "What if…" scenarios related to this patient's answers
-- Comparisons between suggested peptides
-
-You receive: patient intake answers, deterministic evaluation, the recommendation card already shown, retrieved knowledge-base context, and chat history.
-
-RULES:
-- Stay on this patient case and peptide/clinical-education topics only.
-- Be conversational and concise (WhatsApp-style) — short paragraphs, bullets when helpful.
-- Never prescribe doses or instruct the provider to start therapy.
-- Honor safety blocks from the evaluation — do not suggest blocked peptides.
-- Use markdown sparingly (bold, bullets). No huge headers.
-- If asked something outside scope, politely redirect to the patient case.
-- Brief clinical-judgment reminder only on substantive medical answers.
+Reply like a fast clinical SMS to the provider:
+- Max 80 words (aim 40–60)
+- 1–4 short bullets OR 2 short sentences — never both walls of text
+- Bold peptide names only; no ### headers
+- Stay on this patient case
+- Never prescribe doses / start therapy
+- Never suggest blocked peptides
+- Skip greetings, disclaimers, and restating the whole card unless asked
 """
 
 _state: dict = {}
@@ -112,6 +83,8 @@ def ensure_initialized() -> None:
         _state["llm"] = OpenAI(
             api_key=settings.openrouter_api_key,
             base_url=settings.openrouter_base_url,
+            timeout=45.0,
+            max_retries=1,
         )
 
         client = get_chroma_client()
@@ -129,6 +102,7 @@ def get_api_info() -> dict:
         "status": "ok",
         "collection": settings.chroma_collection,
         "chat_model": settings.chat_model,
+        "chat_model_followup": settings.chat_model_followup,
         "embed_model": settings.embed_model,
         "flow_version": "1.0",
     }
@@ -193,15 +167,19 @@ def followup_questionnaire(req: FollowUpRequest) -> dict:
     if not question:
         raise HTTPException(status_code=400, detail="Empty question.")
 
-    k = req.top_k or settings.top_k
-    rag_q = f"{question}. Patient goal: {req.evaluation.get('primary_goal', '')}. "
-    recs = req.evaluation.get("recommendations") or []
-    if recs:
-        rag_q += "Peptides: " + ", ".join(p.get("name", "") for p in recs[:4])
-
-    context, sources = _retrieve(rag_q, k)
-    if not context.strip():
-        context = "(No additional KB context retrieved.)"
+    # Skip RAG for ultra-short meta questions — evaluation context is enough.
+    needs_rag = _question_needs_rag(question)
+    sources: List[Source] = []
+    context = ""
+    if needs_rag:
+        k = min(req.top_k or settings.top_k, settings.top_k)
+        rag_q = f"{question}. Patient goal: {req.evaluation.get('primary_goal', '')}. "
+        recs = req.evaluation.get("recommendations") or []
+        if recs:
+            rag_q += "Peptides: " + ", ".join(p.get("name", "") for p in recs[:4])
+        context, sources = _retrieve(rag_q, k)
+        if not context.strip():
+            context = "(No additional KB context.)"
 
     try:
         answer = _generate_followup(
@@ -236,18 +214,81 @@ async def recommend_for_patient(
 
     req = IntakeRequest(answers=answers, top_k=top_k)
     result = recommend_questionnaire(req)
-    saved = await patient_service.save_patient_recommendation(
+    board = build_recommendation_board(result["evaluation"], confidence="balanced")
+    await patient_service.save_patient_recommendation(
         user_id=user_id,
         patient_id=patient_id,
         answers=answers,
         evaluation=result["evaluation"],
         recommendation=result["answer"],
         sources=result.get("sources") or [],
+        recommendation_board=board,
     )
     logger.info("Recommendation saved for patient %s user %s", patient_id, user_id)
     return await patient_service.build_patient_messages_response(
         user_id=user_id,
         patient_id=patient_id,
+    )
+
+
+async def update_board_for_patient(
+    *,
+    user_id: str,
+    patient_id: str,
+    confidence: Optional[str] = None,
+    preferred: Optional[str] = None,
+    clear_preferred: bool = False,
+) -> dict:
+    """Rebuild War Room board from stored evaluation (deterministic, no LLM)."""
+    from services.routes.chat import patient_service
+
+    patient_entity, _chat = await patient_service.get_patient_for_chat(user_id, patient_id)
+    evaluation = patient_entity.evaluation
+    if not evaluation:
+        raise HTTPException(status_code=400, detail="Generate a recommendation before updating the board.")
+
+    current = patient_entity.recommendation_board or {}
+    next_confidence = confidence or current.get("confidence") or "balanced"
+    next_preferred: Optional[str]
+    if clear_preferred:
+        next_preferred = None
+    elif preferred is not None and preferred.strip():
+        next_preferred = preferred.strip()
+    else:
+        next_preferred = current.get("preferred")
+
+    board = build_recommendation_board(
+        evaluation,
+        confidence=str(next_confidence),
+        preferred=next_preferred,
+    )
+
+    changes: list[dict] = []
+    prev_confidence = current.get("confidence") or "balanced"
+    if str(prev_confidence) != board["confidence"]:
+        changes.append(
+            {
+                "field": "Confidence",
+                "from": prev_confidence,
+                "to": board["confidence"],
+            }
+        )
+    prev_preferred = current.get("preferred")
+    if prev_preferred != board.get("preferred"):
+        changes.append(
+            {
+                "field": "Preferred peptide",
+                "from": prev_preferred or "none",
+                "to": board.get("preferred") or "none",
+            }
+        )
+
+    receipt = format_board_receipt(board, changes=changes or None)
+    return await patient_service.save_patient_board(
+        user_id=user_id,
+        patient_id=patient_id,
+        recommendation_board=board,
+        receipt=receipt,
     )
 
 
@@ -282,13 +323,7 @@ async def send_message_for_patient(
         top_k=top_k,
     )
 
-    await patient_service.append_patient_message(
-        user_id=user_id,
-        patient_id=patient_id,
-        role="user",
-        content=question,
-    )
-
+    # Generate first, then persist user+assistant in one Dynamo write (lower latency).
     llm_started = time.perf_counter()
     result = followup_questionnaire(req)
     logger.info(
@@ -297,11 +332,13 @@ async def send_message_for_patient(
         (time.perf_counter() - llm_started) * 1000,
     )
 
-    await patient_service.append_patient_message(
+    await patient_service.append_patient_messages(
         user_id=user_id,
         patient_id=patient_id,
-        role="assistant",
-        content=result["answer"],
+        entries=[
+            {"role": "user", "content": question, "kind": "message"},
+            {"role": "assistant", "content": result["answer"], "kind": "message"},
+        ],
     )
 
     response = await patient_service.build_patient_messages_response(
@@ -317,9 +354,123 @@ async def send_message_for_patient(
     return response
 
 
+def _question_needs_rag(question: str) -> bool:
+    q = question.lower()
+    # Ranking / board questions are answered from evaluation alone.
+    if any(token in q for token in ("why is", "why #", "rank #", "shortlist", "top peptide", "clinical note")):
+        return False
+    keywords = (
+        "mechanism",
+        "side effect",
+        "storage",
+        "handling",
+        "evidence",
+        "compare",
+        "vs ",
+        "versus",
+        "lab",
+        "safety",
+        "caution",
+        "monitor",
+        "how does",
+        "stack",
+        "contraindic",
+        "half-life",
+        "reconstitut",
+    )
+    return any(token in q for token in keywords)
+
+
+def _compact_answers(answers: dict) -> dict:
+    keys = (
+        "age",
+        "sex",
+        "pregnancy",
+        "height_cm",
+        "weight_kg",
+        "activity",
+        "cancer",
+        "mtc_men2",
+        "peptide_allergy",
+        "allergy_detail",
+        "conditions",
+        "medications",
+        "primary_goal",
+        "secondary_goal",
+        "injection_tolerance",
+        "complexity",
+        "timeline",
+    )
+    compact = {key: answers[key] for key in keys if key in answers and answers[key] not in ("", None, [])}
+    # Keep a few goal-branch fields if present
+    for key, value in answers.items():
+        if key.startswith(("a_", "b_", "c_", "d_", "e_", "f_", "g_", "h_")) and value not in ("", None, []):
+            compact[key] = value
+    return compact
+
+
+def _compact_peptide(peptide: dict) -> dict:
+    return {
+        "name": peptide.get("name"),
+        "evidence": peptide.get("evidence"),
+        "best_when": peptide.get("best_when"),
+        "score": peptide.get("score"),
+        "tags": peptide.get("tags"),
+    }
+
+
+def _compact_evaluation(evaluation: dict) -> dict:
+    safety = evaluation.get("safety") or {}
+    return {
+        "primary_goal": evaluation.get("primary_goal"),
+        "secondary_goal": evaluation.get("secondary_goal"),
+        "recommendations": [_compact_peptide(p) for p in (evaluation.get("recommendations") or [])[:4]],
+        "secondary_recommendations": [
+            _compact_peptide(p) for p in (evaluation.get("secondary_recommendations") or [])[:2]
+        ],
+        "stacks": evaluation.get("stacks") or [],
+        "labs": (evaluation.get("labs") or [])[:6],
+        "safety": {
+            "hard_stops": safety.get("hard_stops") or [],
+            "cautions": (safety.get("cautions") or [])[:6],
+            "flags": (safety.get("flags") or [])[:6],
+            "blocked_peptides": (safety.get("blocked_peptides") or [])[:12],
+            "bmi": safety.get("bmi"),
+        },
+        "disclaimer": evaluation.get("disclaimer"),
+    }
+
+
+def _truncate(text: str, limit: int) -> str:
+    text = (text or "").strip()
+    if len(text) <= limit:
+        return text
+    return text[: limit - 1].rstrip() + "…"
+
+
+def _chat_completion(
+    *,
+    model: str,
+    temperature: float,
+    max_tokens: int,
+    messages: List[dict],
+) -> str:
+    llm: OpenAI = _state["llm"]
+    resp = llm.chat.completions.create(
+        model=model,
+        temperature=temperature,
+        max_tokens=max_tokens,
+        messages=messages,
+        extra_body={
+            "provider": {"sort": "latency"},
+        },
+    )
+    return (resp.choices[0].message.content or "").strip()
+
+
 def _retrieve(query: str, k: int) -> tuple[str, List[Source]]:
     collection = _state["collection"]
-    res = collection.query(query_texts=[query], n_results=k)
+    res = collection.query(query_texts=[query], n_results=max(1, k))
 
     docs = res.get("documents", [[]])[0]
     metas = res.get("metadatas", [[]])[0]
@@ -328,38 +479,36 @@ def _retrieve(query: str, k: int) -> tuple[str, List[Source]]:
     sources: List[Source] = []
     for i, (doc, meta) in enumerate(zip(docs, metas), start=1):
         meta = meta or {}
-        context_parts.append(
-            f"[Source {i}] Course: {meta.get('course_name', '?')}\n{doc}"
-        )
+        clipped = _truncate(doc, 700)
+        context_parts.append(f"[S{i}] {meta.get('course_name', '?')}: {clipped}")
         sources.append(
             Source(
                 course_name=str(meta.get("course_name", "")),
                 l1_name=str(meta.get("l1_name", "")),
                 l2_name=str(meta.get("l2_name", "")),
                 lesson_id=str(meta.get("lesson_id", "")),
-                preview=doc[:200] + ("..." if len(doc) > 200 else ""),
+                preview=doc[:160] + ("..." if len(doc) > 160 else ""),
             )
         )
-    return "\n\n---\n\n".join(context_parts), sources
+    return "\n".join(context_parts), sources
 
 
 def _generate_intake_recommendation(answers: dict, evaluation: dict, context: str) -> str:
-    llm: OpenAI = _state["llm"]
     user_prompt = (
-        f"PATIENT INTAKE ANSWERS:\n{json.dumps(answers, indent=2)}\n\n"
-        f"DETERMINISTIC EVALUATION:\n{json.dumps(evaluation, indent=2)}\n\n"
-        f"KNOWLEDGE BASE CONTEXT:\n{context}\n\n"
-        "Generate the provider-facing Recommendation Card."
+        f"INTAKE:\n{json.dumps(_compact_answers(answers), separators=(',', ':'))}\n\n"
+        f"EVAL:\n{json.dumps(_compact_evaluation(evaluation), separators=(',', ':'))}\n\n"
+        f"KB:\n{_truncate(context, 2400)}\n\n"
+        "Write the short Recommendation Card now."
     )
-    resp = llm.chat.completions.create(
+    return _chat_completion(
         model=settings.chat_model,
-        temperature=0.2,
+        temperature=0.15,
+        max_tokens=settings.chat_max_tokens_intake,
         messages=[
             {"role": "system", "content": INTAKE_SYSTEM},
             {"role": "user", "content": user_prompt},
         ],
     )
-    return (resp.choices[0].message.content or "").strip()
 
 
 def _generate_followup(
@@ -370,28 +519,39 @@ def _generate_followup(
     question: str,
     context: str,
 ) -> str:
-    llm: OpenAI = _state["llm"]
-    context_block = (
-        f"PATIENT INTAKE:\n{json.dumps(answers, indent=2)}\n\n"
-        f"EVALUATION:\n{json.dumps(evaluation, indent=2)}\n\n"
-        f"RECOMMENDATION CARD:\n{recommendation}\n\n"
-        f"KNOWLEDGE BASE:\n{context}"
+    case_block = (
+        f"INTAKE:{json.dumps(_compact_answers(answers), separators=(',', ':'))}\n"
+        f"EVAL:{json.dumps(_compact_evaluation(evaluation), separators=(',', ':'))}\n"
+        f"CARD:{_truncate(recommendation, 1200)}\n"
+        f"KB:{_truncate(context, 1400) if context else '(none)'}"
     )
-    llm_messages: List[dict] = [
+    llm_messages: List[dict[str, Any]] = [
         {"role": "system", "content": FOLLOWUP_SYSTEM},
-        {"role": "user", "content": f"Case context (reference throughout):\n{context_block}"},
+        {"role": "user", "content": f"Case (ref only):\n{case_block}"},
         {
             "role": "assistant",
-            "content": "Understood. I'll help with follow-up questions about this patient's peptide recommendation.",
+            "content": "Ready — ask briefly.",
         },
     ]
-    for msg in history:
-        llm_messages.append({"role": msg.role, "content": msg.content})
-    llm_messages.append({"role": "user", "content": question})
+    # Keep only the last few turns for speed
+    recent = history[-6:] if history else []
+    for msg in recent:
+        content = msg.content
+        if msg.role == "assistant":
+            content = _truncate(content, 500)
+        else:
+            content = _truncate(content, 400)
+        llm_messages.append({"role": msg.role, "content": content})
+    llm_messages.append(
+        {
+            "role": "user",
+            "content": f"{question}\n\n(Reply ≤80 words. Bullets preferred.)",
+        }
+    )
 
-    resp = llm.chat.completions.create(
-        model=settings.chat_model,
-        temperature=0.3,
+    return _chat_completion(
+        model=settings.chat_model_followup,
+        temperature=0.2,
+        max_tokens=settings.chat_max_tokens_followup,
         messages=llm_messages,
     )
-    return (resp.choices[0].message.content or "").strip()

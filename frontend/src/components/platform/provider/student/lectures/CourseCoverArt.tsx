@@ -1,6 +1,6 @@
 "use client";
 
-import { type CSSProperties } from "react";
+import { type CSSProperties, memo, useEffect } from "react";
 import { CourseCoverLabeledVial } from "@/components/platform/provider/student/lectures/CourseCoverLabeledVial";
 import { CourseCoverProductVial } from "@/components/platform/provider/student/lectures/CourseCoverProductVial";
 import { CourseCoverVial } from "@/components/platform/provider/student/lectures/CourseCoverVial";
@@ -12,6 +12,10 @@ import {
   shiftCoverObjectPositionForPanel,
   tidyCoverTitle,
 } from "@/components/platform/provider/student/lectures/courseCover";
+import {
+  preloadLectureCoverSrcs,
+  preloadSharedLectureCoverAssets,
+} from "@/components/platform/provider/student/lectures/lectureCoverCache";
 import { cn } from "@/lib/utils";
 
 type CourseCoverArtProps = {
@@ -31,7 +35,7 @@ const LOGO_MARK_DARK = "/assets/logo/hols-logo-mark.png";
  * HOLS-branded lecture cover —
  * books use theme light/dark art; products use mode bg + transparent vial.
  */
-export function CourseCoverArt({
+function CourseCoverArtInner({
   courseId,
   title = "Lecture",
   variant = "card",
@@ -58,6 +62,19 @@ export function CourseCoverArt({
     variant === "panel" && isProductVialCover
       ? shiftCoverObjectPositionForPanel(coverObjectPosition)
       : coverObjectPosition;
+
+  useEffect(() => {
+    preloadSharedLectureCoverAssets();
+    preloadLectureCoverSrcs([
+      vialSrc,
+      coverPhotos.light,
+      coverPhotos.dark,
+      LOGO_MARK_DARK,
+      LOGO_MARK_LIGHT,
+      LOGO_WORDMARK_DARK,
+      LOGO_WORDMARK_LIGHT,
+    ]);
+  }, [vialSrc, coverPhotos.light, coverPhotos.dark]);
 
   return (
     <div
@@ -97,7 +114,6 @@ export function CourseCoverArt({
           ) : isProductVialCover && vialSrc ? (
             <CourseCoverProductVial
               vialSrc={vialSrc}
-              // ~80° from horizontal ≈ 10° clockwise lean (was reading closer to ~70°/20°)
               rotate={10}
               scale={variant === "panel" ? 1.1 : 1.16}
               objectPosition={variant === "panel" ? "72% 54%" : "62% 56%"}
@@ -107,7 +123,6 @@ export function CourseCoverArt({
             <CourseCoverLabeledVial title={title} className="lecture-cover-custom-photo" />
           )}
         </div>
-        {/* Soft overlays only for non-product covers — product vials stay sharp */}
         {variant !== "panel" && !isProductVialCover ? (
           <>
             <div className="lecture-cover-art-atmosphere absolute inset-0 z-[2]" aria-hidden />
@@ -127,6 +142,8 @@ export function CourseCoverArt({
               alt=""
               className="lecture-cover-mark lecture-cover-logo--theme-light h-4 w-4 object-contain opacity-80 sm:h-[1.1rem] sm:w-[1.1rem]"
               draggable={false}
+              decoding="async"
+              loading="eager"
             />
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -134,6 +151,8 @@ export function CourseCoverArt({
               alt=""
               className="lecture-cover-mark lecture-cover-logo--theme-dark h-4 w-4 object-contain opacity-85 sm:h-[1.1rem] sm:w-[1.1rem]"
               draggable={false}
+              decoding="async"
+              loading="eager"
             />
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -141,6 +160,8 @@ export function CourseCoverArt({
               alt=""
               className="lecture-cover-logo lecture-cover-logo--theme-light h-[0.85rem] w-auto object-contain object-left opacity-85 sm:h-[0.95rem]"
               draggable={false}
+              decoding="async"
+              loading="eager"
             />
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -148,6 +169,8 @@ export function CourseCoverArt({
               alt=""
               className="lecture-cover-logo lecture-cover-logo--theme-dark h-[0.85rem] w-auto object-contain object-left opacity-90 sm:h-[0.95rem]"
               draggable={false}
+              decoding="async"
+              loading="eager"
             />
           </div>
         </div>
@@ -155,3 +178,5 @@ export function CourseCoverArt({
     </div>
   );
 }
+
+export const CourseCoverArt = memo(CourseCoverArtInner);

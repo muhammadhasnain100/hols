@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ClipboardList, CreditCard, Icon, Star } from "@/components/icons";
+import { SidebarSvgIcon, type SidebarIconName } from "@/components/platform/provider/sidebar-icons";
 import { cn } from "@/lib/utils";
 
 type PaymentSubnavLink = {
@@ -10,7 +10,7 @@ type PaymentSubnavLink = {
   label: string;
   shortLabel: string;
   exact?: boolean;
-  icon: React.ReactNode;
+  icon: SidebarIconName;
 };
 
 const LINKS: readonly PaymentSubnavLink[] = [
@@ -19,19 +19,19 @@ const LINKS: readonly PaymentSubnavLink[] = [
     label: "Membership",
     shortLabel: "Plans",
     exact: true,
-    icon: <Icon icon={Star} size={16} />,
+    icon: "star",
   },
   {
     href: "/student/payment/orders",
     label: "Orders",
     shortLabel: "Orders",
-    icon: <Icon icon={ClipboardList} size={16} />,
+    icon: "orders",
   },
   {
     href: "/student/payment/card",
     label: "Payment card",
     shortLabel: "Card",
-    icon: <Icon icon={CreditCard} size={16} />,
+    icon: "payment",
   },
 ];
 
@@ -41,7 +41,7 @@ export function PaymentSubnav() {
   return (
     <nav
       aria-label="Payment sections"
-      className="-mx-1 flex gap-2 overflow-x-auto px-1 pb-1 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:overflow-visible sm:pb-0 [&::-webkit-scrollbar]:hidden"
+      className="flex max-w-full gap-1.5 overflow-x-auto overscroll-x-contain pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:gap-2.5 sm:overflow-visible [&::-webkit-scrollbar]:hidden"
     >
       {LINKS.map((link) => {
         const active = link.exact
@@ -53,21 +53,19 @@ export function PaymentSubnav() {
             key={link.href}
             href={link.href}
             className={cn(
-              "font-sans inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-full px-3.5 text-sm font-medium tracking-[0.01em] transition sm:gap-2 sm:px-4",
-              "flex-1 sm:flex-none",
+              "font-sans inline-flex min-h-9 shrink-0 flex-1 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-medium tracking-[0.01em] transition sm:min-h-10 sm:flex-none sm:gap-2 sm:px-4 sm:text-sm",
               active
                 ? "bg-[#DDE466] text-[#152744]"
-                : "dashboard-pill-soft text-[color:var(--dash-text)] hover:brightness-[0.98]",
+                : "border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] text-[color:var(--dash-text)] hover:border-[#DDE466]",
             )}
+            aria-current={active ? "page" : undefined}
           >
-            <span
-              className={cn(
-                "flex items-center justify-center",
-                active ? "text-[#152744]" : "text-[color:var(--dash-muted)]",
-              )}
-            >
-              {link.icon}
-            </span>
+            <SidebarSvgIcon
+              name={link.icon}
+              size={15}
+              strokeWidth={1.9}
+              className={active ? "text-[#152744]" : "text-[color:var(--dash-muted)]"}
+            />
             <span className="sm:hidden">{link.shortLabel}</span>
             <span className="hidden sm:inline">{link.label}</span>
           </Link>

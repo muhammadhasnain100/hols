@@ -1,6 +1,6 @@
 "use client";
 
-import { Icon, Menu, Settings } from "@/components/icons";
+import { Icon, Menu } from "@/components/icons";
 import { PortalShell } from "@/components/platform/provider/PortalShell";
 import { WelcomeChip } from "@/components/platform/provider/student/WelcomeChip";
 import { WebinarNotificationsBell } from "@/components/platform/provider/student/webinars/WebinarNotificationsBell";
@@ -24,33 +24,26 @@ export function DashboardPageLayout({ children }: DashboardPageLayoutProps) {
       brandBackdrop
       nav={studentNav}
     >
-      <div className="dashboard-screen">
-        <header className="mb-4 flex items-center justify-between gap-2 sm:mb-5 sm:gap-4">
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            <button
-              type="button"
-              aria-label="Open sidebar"
-              onClick={openSidebar}
-              className="dashboard-icon-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full lg:hidden"
-            >
-              <Icon icon={Menu} size={18} />
-            </button>
-            <h1 className="font-sans truncate text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl md:text-2xl">
-              Dashboard
-            </h1>
-          </div>
+      <div className="dashboard-screen lectures-page min-w-0 overflow-x-hidden">
+        <header className="mb-3 flex h-10 min-w-0 items-center gap-2 sm:mb-4 sm:h-12 sm:gap-3 md:mb-5 md:gap-4">
+          <button
+            type="button"
+            aria-label="Open sidebar"
+            onClick={openSidebar}
+            className="dashboard-icon-btn flex h-10 w-10 shrink-0 items-center justify-center rounded-lg lg:hidden sm:h-12 sm:w-12"
+          >
+            <Icon icon={Menu} size={18} />
+          </button>
+
+          <h1 className="font-sans min-w-0 truncate text-xl font-bold leading-none tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl md:text-3xl">
+            Dashboard
+          </h1>
+
+          <div className="min-w-0 flex-1" aria-hidden />
 
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5">
-            <button
-              type="button"
-              aria-label="Settings"
-              className="dashboard-icon-btn hidden h-9 w-9 items-center justify-center rounded-full sm:flex"
-            >
-              <Icon icon={Settings} size={16} />
-            </button>
-            <WebinarNotificationsBell />
-
-            <WelcomeChip />
+            <WebinarNotificationsBell buttonClassName="dashboard-icon-btn relative flex h-10 w-10 items-center justify-center rounded-lg sm:h-12 sm:w-12" />
+            <WelcomeChip className="lecture-header-welcome h-10 sm:h-12" />
           </div>
         </header>
 

@@ -9,36 +9,26 @@ export function SkeletonBlock({ className }: { className?: string }) {
 export function MembershipPageSkeleton() {
   return (
     <div className="grid w-full min-w-0 gap-3 sm:gap-4" aria-busy="true" aria-label="Loading membership">
-      <section className="dashboard-hero relative overflow-hidden rounded-2xl p-4 sm:p-5 md:p-6">
-        <SkeletonBlock className="h-3 w-36 rounded-full" />
-        <SkeletonBlock className="mt-3 h-8 w-44 rounded-full sm:h-10 sm:w-56" />
-        <SkeletonBlock className="mt-3 h-4 w-52 rounded-full" />
-        <div className="mt-5 flex flex-wrap gap-2">
-          <SkeletonBlock className="h-10 w-28 rounded-full" />
-          <SkeletonBlock className="h-10 w-28 rounded-full" />
-        </div>
-      </section>
-
       <div className="min-w-0">
-        <SkeletonBlock className="h-3 w-24 rounded-full" />
-        <SkeletonBlock className="mt-2 h-5 w-40 rounded-full" />
+        <SkeletonBlock className="h-3 w-24 rounded-lg" />
+        <SkeletonBlock className="mt-2 h-5 w-40 rounded-lg" />
         <div className="mt-4 grid w-full gap-3 sm:gap-4 md:grid-cols-2 xl:grid-cols-3">
           {Array.from({ length: 3 }, (_, index) => (
             <section
               key={index}
-              className="dashboard-surface flex min-h-[18rem] flex-col rounded-2xl p-4 sm:p-5"
+              className="membership-plan-card flex min-h-[18rem] flex-col rounded-xl p-4 sm:p-5"
             >
-              <SkeletonBlock className="h-6 w-20 rounded-full" />
-              <SkeletonBlock className="mt-4 h-12 w-12 rounded-2xl" />
-              <SkeletonBlock className="mt-4 h-6 w-28 rounded-full" />
-              <SkeletonBlock className="mt-2 h-8 w-24 rounded-full" />
+              <SkeletonBlock className="h-6 w-20 rounded-lg" />
+              <SkeletonBlock className="mt-4 h-11 w-11 rounded-lg" />
+              <SkeletonBlock className="mt-4 h-6 w-28 rounded-lg" />
+              <SkeletonBlock className="mt-2 h-8 w-24 rounded-lg" />
               <div className="mt-5 space-y-2.5">
-                <SkeletonBlock className="h-3 w-full rounded-full" />
-                <SkeletonBlock className="h-3 w-[90%] rounded-full" />
-                <SkeletonBlock className="h-3 w-[80%] rounded-full" />
-                <SkeletonBlock className="h-3 w-[70%] rounded-full" />
+                <SkeletonBlock className="h-3 w-full rounded-lg" />
+                <SkeletonBlock className="h-3 w-[90%] rounded-lg" />
+                <SkeletonBlock className="h-3 w-[80%] rounded-lg" />
+                <SkeletonBlock className="h-3 w-[70%] rounded-lg" />
               </div>
-              <SkeletonBlock className="mt-auto h-10 w-full rounded-full" />
+              <SkeletonBlock className="mt-auto h-11 w-full rounded-lg" />
             </section>
           ))}
         </div>
@@ -56,13 +46,13 @@ export function OrderListRowsSkeleton({ count = 5 }: { count?: number }) {
           className="flex items-center justify-between gap-3 rounded-xl px-2.5 py-2.5 sm:px-3.5 sm:py-3"
         >
           <div className="flex min-w-0 items-center gap-3">
-            <SkeletonBlock className="h-9 w-9 shrink-0 rounded-full" />
+            <SkeletonBlock className="h-9 w-9 shrink-0 rounded-lg" />
             <div className="min-w-0 space-y-2">
-              <SkeletonBlock className="h-3.5 w-28 rounded-full" />
-              <SkeletonBlock className="h-3 w-20 rounded-full" />
+              <SkeletonBlock className="h-3.5 w-28 rounded-lg" />
+              <SkeletonBlock className="h-3 w-20 rounded-lg" />
             </div>
           </div>
-          <SkeletonBlock className="h-4 w-14 rounded-full" />
+          <SkeletonBlock className="h-4 w-14 rounded-lg" />
         </div>
       ))}
     </div>
@@ -72,40 +62,30 @@ export function OrderListRowsSkeleton({ count = 5 }: { count?: number }) {
 export function OrdersPageSkeleton() {
   return (
     <div className="grid w-full min-w-0 gap-3 sm:gap-4" aria-busy="true" aria-label="Loading orders">
-      <section className="dashboard-hero relative overflow-hidden rounded-2xl p-4 sm:p-5 md:p-6">
-        <SkeletonBlock className="h-3 w-28 rounded-full" />
-        <SkeletonBlock className="mt-3 h-8 w-20 rounded-full sm:h-10" />
-        <SkeletonBlock className="mt-3 h-4 w-48 rounded-full" />
-        <div className="mt-5 flex flex-wrap gap-2">
-          <SkeletonBlock className="h-10 w-24 rounded-full" />
-          <SkeletonBlock className="h-10 w-28 rounded-full" />
-        </div>
-      </section>
-
       <div className="grid w-full min-w-0 items-start gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
-        <section className="dashboard-surface order-2 min-w-0 rounded-2xl p-4 sm:p-5 lg:order-1">
+        <section className="hols-auth-card order-2 min-w-0 rounded-xl p-4 sm:p-5 lg:order-1">
           <div className="flex items-center justify-between gap-2">
-            <SkeletonBlock className="h-5 w-32 rounded-full" />
-            <SkeletonBlock className="h-4 w-14 rounded-full" />
+            <SkeletonBlock className="h-5 w-32 rounded-lg" />
+            <SkeletonBlock className="h-4 w-14 rounded-lg" />
           </div>
           <div className="mt-4">
             <OrderListRowsSkeleton />
           </div>
           <div className="mt-4 grid grid-cols-2 gap-2">
-            <SkeletonBlock className="h-9 w-full rounded-full" />
-            <SkeletonBlock className="h-9 w-full rounded-full" />
+            <SkeletonBlock className="h-9 w-full rounded-lg" />
+            <SkeletonBlock className="h-9 w-full rounded-lg" />
           </div>
         </section>
 
-        <section className="dashboard-surface order-1 min-w-0 rounded-2xl p-4 sm:p-5 lg:order-2">
-          <SkeletonBlock className="h-3 w-20 rounded-full" />
-          <SkeletonBlock className="mt-3 h-8 w-16 rounded-full" />
-          <SkeletonBlock className="mt-2 h-4 w-40 rounded-full" />
+        <section className="hols-auth-card order-1 min-w-0 rounded-xl p-4 sm:p-5 lg:order-2">
+          <SkeletonBlock className="h-3 w-20 rounded-lg" />
+          <SkeletonBlock className="mt-3 h-8 w-16 rounded-lg" />
+          <SkeletonBlock className="mt-2 h-4 w-40 rounded-lg" />
           <div className="mt-4 grid grid-cols-2 gap-2.5 sm:gap-3">
             {Array.from({ length: 4 }, (_, index) => (
-              <div key={index} className="rounded-xl bg-[color:var(--dash-soft)] px-3 py-3 sm:px-3.5">
-                <SkeletonBlock className="h-3 w-16 rounded-full" />
-                <SkeletonBlock className="mt-2 h-4 w-12 rounded-full" />
+              <div key={index} className="rounded-lg bg-[color:var(--dash-soft)] px-3 py-3 sm:px-3.5">
+                <SkeletonBlock className="h-3 w-16 rounded-lg" />
+                <SkeletonBlock className="mt-2 h-4 w-12 rounded-lg" />
               </div>
             ))}
           </div>
@@ -118,60 +98,50 @@ export function OrdersPageSkeleton() {
 export function PaymentCardPageSkeleton() {
   return (
     <div className="grid w-full min-w-0 gap-3 sm:gap-4" aria-busy="true" aria-label="Loading payment card">
-      <section className="dashboard-hero relative overflow-hidden rounded-2xl p-4 sm:p-5 md:p-6">
-        <SkeletonBlock className="h-3 w-24 rounded-full" />
-        <SkeletonBlock className="mt-3 h-8 w-40 rounded-full sm:h-10 sm:w-48" />
-        <SkeletonBlock className="mt-3 h-4 w-56 rounded-full" />
-        <div className="mt-5 flex flex-wrap gap-2">
-          <SkeletonBlock className="h-10 w-24 rounded-full" />
-          <SkeletonBlock className="h-10 w-28 rounded-full" />
-        </div>
-      </section>
-
       <div className="grid w-full min-w-0 items-start gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
-        <section className="dashboard-surface order-2 min-h-[12rem] rounded-2xl p-4 sm:p-5 md:p-6 lg:order-1">
-          <SkeletonBlock className="h-3 w-24 rounded-full" />
-          <SkeletonBlock className="mt-8 h-7 w-48 rounded-full" />
+        <section className="hols-auth-card order-2 min-h-[12rem] rounded-xl p-4 sm:p-5 md:p-6 lg:order-1">
+          <SkeletonBlock className="h-3 w-24 rounded-lg" />
+          <SkeletonBlock className="mt-8 h-7 w-48 rounded-lg" />
           <div className="mt-6 flex justify-between gap-3">
             <div className="space-y-2">
-              <SkeletonBlock className="h-3 w-16 rounded-full" />
-              <SkeletonBlock className="h-4 w-28 rounded-full" />
+              <SkeletonBlock className="h-3 w-16 rounded-lg" />
+              <SkeletonBlock className="h-4 w-28 rounded-lg" />
             </div>
             <div className="space-y-2">
-              <SkeletonBlock className="h-3 w-14 rounded-full" />
-              <SkeletonBlock className="h-4 w-16 rounded-full" />
+              <SkeletonBlock className="h-3 w-14 rounded-lg" />
+              <SkeletonBlock className="h-4 w-16 rounded-lg" />
             </div>
           </div>
         </section>
 
-        <section className="dashboard-surface order-1 min-w-0 rounded-2xl p-4 sm:p-5 md:p-6 lg:order-2">
-          <SkeletonBlock className="h-3 w-24 rounded-full" />
-          <SkeletonBlock className="mt-2 h-5 w-44 rounded-full" />
-          <SkeletonBlock className="mt-2 h-4 w-56 rounded-full" />
+        <section className="hols-auth-card order-1 min-w-0 rounded-xl p-4 sm:p-5 md:p-6 lg:order-2">
+          <SkeletonBlock className="h-3 w-24 rounded-lg" />
+          <SkeletonBlock className="mt-2 h-5 w-44 rounded-lg" />
+          <SkeletonBlock className="mt-2 h-4 w-56 rounded-lg" />
           <div className="mt-5 space-y-3 sm:space-y-4">
             <div className="space-y-2">
-              <SkeletonBlock className="h-3 w-28 rounded-full" />
-              <SkeletonBlock className="h-11 w-full rounded-xl" />
+              <SkeletonBlock className="h-3 w-28 rounded-lg" />
+              <SkeletonBlock className="h-11 w-full rounded-lg" />
             </div>
             <div className="space-y-2">
-              <SkeletonBlock className="h-3 w-24 rounded-full" />
-              <SkeletonBlock className="h-11 w-full rounded-xl" />
+              <SkeletonBlock className="h-3 w-24 rounded-lg" />
+              <SkeletonBlock className="h-11 w-full rounded-lg" />
             </div>
             <div className="space-y-2">
-              <SkeletonBlock className="h-3 w-32 rounded-full" />
-              <SkeletonBlock className="h-11 w-full rounded-xl" />
+              <SkeletonBlock className="h-3 w-32 rounded-lg" />
+              <SkeletonBlock className="h-11 w-full rounded-lg" />
             </div>
             <div className="grid gap-3 sm:grid-cols-2">
               <div className="space-y-2">
-                <SkeletonBlock className="h-3 w-12 rounded-full" />
-                <SkeletonBlock className="h-11 w-full rounded-xl" />
+                <SkeletonBlock className="h-3 w-12 rounded-lg" />
+                <SkeletonBlock className="h-11 w-full rounded-lg" />
               </div>
               <div className="space-y-2">
-                <SkeletonBlock className="h-3 w-20 rounded-full" />
-                <SkeletonBlock className="h-11 w-full rounded-xl" />
+                <SkeletonBlock className="h-3 w-20 rounded-lg" />
+                <SkeletonBlock className="h-11 w-full rounded-lg" />
               </div>
             </div>
-            <SkeletonBlock className="h-11 w-36 rounded-full" />
+            <SkeletonBlock className="h-11 w-36 rounded-lg" />
           </div>
         </section>
       </div>
@@ -245,44 +215,44 @@ export function ProfilePageSkeleton() {
 export function AdviserHubPageSkeleton() {
   return (
     <div className="grid w-full min-w-0 gap-3 sm:gap-4" aria-busy="true" aria-label="Loading adviser">
-      <section className="dashboard-hero relative overflow-hidden rounded-2xl p-3.5 sm:p-5 md:p-6">
-        <SkeletonBlock className="h-3 w-28 rounded-full" />
-        <SkeletonBlock className="mt-2 h-8 w-48 rounded-full sm:h-10 sm:w-56" />
-        <SkeletonBlock className="mt-3 h-4 w-full max-w-md rounded-full" />
-        <div className="mt-4 flex flex-wrap gap-2">
-          <SkeletonBlock className="h-10 w-28 rounded-full" />
-          <SkeletonBlock className="h-10 w-24 rounded-full" />
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div className="min-w-0 space-y-2">
+          <SkeletonBlock className="h-3 w-28 rounded-lg" />
+          <SkeletonBlock className="h-6 w-48 rounded-lg" />
         </div>
-      </section>
+        <SkeletonBlock className="h-10 w-32 rounded-lg" />
+      </div>
 
       <div className="grid min-w-0 gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(14rem,0.8fr)]">
-        <aside className="dashboard-surface min-w-0 rounded-2xl p-3.5 sm:p-5">
+        <aside className="hols-auth-card min-w-0 rounded-xl p-4 sm:p-5">
           <div className="flex items-center justify-between gap-2">
-            <SkeletonBlock className="h-5 w-24 rounded-full" />
-            <SkeletonBlock className="h-9 w-16 rounded-full" />
+            <div className="space-y-2">
+              <SkeletonBlock className="h-3 w-16 rounded-lg" />
+              <SkeletonBlock className="h-5 w-24 rounded-lg" />
+            </div>
+            <SkeletonBlock className="h-9 w-16 rounded-lg" />
           </div>
-          <div className="mt-3 space-y-1">
+          <div className="mt-4 space-y-2">
             {Array.from({ length: 5 }, (_, index) => (
-              <div key={index} className="rounded-xl px-2.5 py-2.5 sm:px-3 sm:py-3">
-                <div className="flex items-start justify-between gap-3">
-                  <div className="min-w-0 flex-1 space-y-2">
-                    <SkeletonBlock className="h-3.5 w-32 rounded-full" />
-                    <SkeletonBlock className="h-3 w-40 rounded-full" />
-                  </div>
-                  <SkeletonBlock className="h-5 w-12 rounded-full" />
+              <div key={index} className="flex items-start gap-3 rounded-lg px-2.5 py-2.5 sm:px-3 sm:py-3">
+                <SkeletonBlock className="h-9 w-9 shrink-0 rounded-lg" />
+                <div className="min-w-0 flex-1 space-y-2">
+                  <SkeletonBlock className="h-3.5 w-32 rounded-lg" />
+                  <SkeletonBlock className="h-3 w-40 rounded-lg" />
                 </div>
+                <SkeletonBlock className="h-5 w-12 rounded-lg" />
               </div>
             ))}
           </div>
         </aside>
 
-        <aside className="dashboard-surface min-w-0 rounded-2xl p-3.5 sm:p-5">
-          <SkeletonBlock className="h-3 w-24 rounded-full" />
-          <div className="mt-4 space-y-3">
-            {Array.from({ length: 3 }, (_, index) => (
-              <div key={index} className="flex items-center justify-between gap-2">
-                <SkeletonBlock className="h-3 w-20 rounded-full" />
-                <SkeletonBlock className="h-3 w-16 rounded-full" />
+        <aside className="hols-auth-card min-w-0 rounded-xl p-4 sm:p-5">
+          <SkeletonBlock className="h-3 w-24 rounded-lg" />
+          <div className="mt-4 space-y-2.5">
+            {Array.from({ length: 4 }, (_, index) => (
+              <div key={index} className="flex items-center justify-between gap-2 rounded-lg bg-[color:var(--dash-soft)] px-3 py-2.5">
+                <SkeletonBlock className="h-3 w-24 rounded-lg" />
+                <SkeletonBlock className="h-3 w-16 rounded-lg" />
               </div>
             ))}
           </div>

@@ -1,9 +1,10 @@
 "use client";
 
-import { useEffect, useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
-import { Icon, Loader2, X } from "@/components/icons";
+import { authFieldClass } from "@/components/platform/auth/auth-styles";
+import { SidebarSvgIcon } from "@/components/platform/provider/sidebar-icons";
 import { Button } from "@/components/ui/Button";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
@@ -47,21 +48,158 @@ function DialogCloseButton({ onClick, label }: { onClick: () => void; label: str
     <button
       type="button"
       onClick={onClick}
-      className="dashboard-icon-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full"
+      className="quiz-dialog-close inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[color:var(--dash-text)] transition hover:bg-[#DDE466]/25 hover:text-[#152744]"
       aria-label={label}
     >
-      <Icon icon={X} size={16} strokeWidth={2} />
+      <SidebarSvgIcon name="cross" size={28} strokeWidth={2.2} />
     </button>
+  );
+}
+
+function QuizEyebrow({ children }: { children: React.ReactNode }) {
+  return (
+    <p className="text-brand-caption inline-flex items-center gap-1.5 font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+      <SidebarSvgIcon name="quiz" size={13} />
+      {children}
+    </p>
+  );
+}
+
+function QuizMatchSelect({
+  value,
+  disabled,
+  options,
+  onChange,
+}: {
+  value: string;
+  disabled: boolean;
+  options: string[];
+  onChange: (value: string) => void;
+}) {
+  const listId = useId();
+  const rootRef = useRef<HTMLDivElement>(null);
+  const [open, setOpen] = useState(false);
+
+  useEffect(() => {
+    if (!open) return;
+
+    function onPointerDown(event: MouseEvent) {
+      if (rootRef.current?.contains(event.target as Node)) return;
+      setOpen(false);
+    }
+
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") setOpen(false);
+    }
+
+    document.addEventListener("mousedown", onPointerDown);
+    document.addEventListener("keydown", onKeyDown);
+    return () => {
+      document.removeEventListener("mousedown", onPointerDown);
+      document.removeEventListener("keydown", onKeyDown);
+    };
+  }, [open]);
+
+  return (
+    <div ref={rootRef} className="quiz-match-select relative min-w-0">
+      <button
+        type="button"
+        disabled={disabled}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        aria-controls={listId}
+        onClick={() => {
+          if (disabled) return;
+          setOpen((current) => !current);
+        }}
+        className={cn(
+          authFieldClass,
+          "quiz-field-select flex h-11 min-h-11 w-full min-w-0 items-center justify-between gap-2 px-4 py-0 pr-11 text-left",
+          open && "border-[#DDE466]",
+          disabled && "cursor-not-allowed opacity-70",
+        )}
+      >
+        <span
+          className={cn(
+            "min-w-0 truncate",
+            value ? "text-[color:var(--dash-text)]" : "text-[color:var(--dash-faint)]",
+          )}
+        >
+          {value || "Select match"}
+        </span>
+      </button>
+      <span
+        className="quiz-select-chevron pointer-events-none absolute inset-y-0 right-0 flex w-11 items-center justify-center"
+        aria-hidden
+      >
+        <SidebarSvgIcon
+          name={open ? "chevron-up" : "chevron-down"}
+          size={16}
+          strokeWidth={2.35}
+        />
+      </span>
+
+      {open ? (
+        <ul
+          id={listId}
+          role="listbox"
+          className="quiz-select-menu absolute left-0 right-0 top-[calc(100%+0.35rem)] z-30 overflow-hidden rounded-lg p-1.5"
+        >
+          <li role="option" aria-selected={!value}>
+            <button
+              type="button"
+              onClick={() => {
+                onChange("");
+                setOpen(false);
+              }}
+              className={cn(
+                "quiz-select-option font-sans flex w-full items-center justify-between gap-2 rounded-md px-3 py-2.5 text-left text-sm transition",
+                !value
+                  ? "is-selected"
+                  : "text-[color:var(--dash-muted)]",
+              )}
+            >
+              <span>Select match</span>
+            </button>
+          </li>
+          {options.map((option) => {
+            const isSelected = option === value;
+            return (
+              <li key={option} role="option" aria-selected={isSelected}>
+                <button
+                  type="button"
+                  onClick={() => {
+                    onChange(option);
+                    setOpen(false);
+                  }}
+                  className={cn(
+                    "quiz-select-option font-sans flex w-full items-center justify-between gap-2 rounded-md px-3 py-2.5 text-left text-sm transition",
+                    isSelected ? "is-selected" : "text-[color:var(--dash-text)]",
+                  )}
+                >
+                  <span className="min-w-0 break-words">{option}</span>
+                  {isSelected ? (
+                    <SidebarSvgIcon name="check" size={14} strokeWidth={2.2} className="shrink-0" />
+                  ) : null}
+                </button>
+              </li>
+            );
+          })}
+        </ul>
+      ) : null}
+    </div>
   );
 }
 
 function QuizQuestion({
   variant,
+  index,
   value,
   disabled,
   onChange,
 }: {
   variant: LessonVariant;
+  index: number;
   value: unknown;
   disabled: boolean;
   onChange: (value: unknown) => void;
@@ -75,37 +213,50 @@ function QuizQuestion({
     : null;
 
   return (
-    <div className="rounded-2xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] p-3.5 sm:p-4">
-      <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-        {variant.variant_type.replaceAll("_", " ")}
-      </p>
-      <p className="text-brand-body mt-2 font-medium text-[color:var(--dash-text)]">{question}</p>
+    <div className="quiz-question-card rounded-xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] p-3.5 sm:p-4">
+      <div className="flex items-center gap-2">
+        <span className="inline-flex h-7 min-w-7 items-center justify-center rounded-lg bg-[#DDE466]/35 px-2 text-xs font-bold tabular-nums text-[#152744]">
+          {String(index + 1).padStart(2, "0")}
+        </span>
+        <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+          {variant.variant_type.replaceAll("_", " ")}
+        </p>
+      </div>
+      <p className="text-brand-body mt-2.5 font-medium text-[color:var(--dash-text)]">{question}</p>
 
       {options ? (
         <div className="mt-3 space-y-2">
-          {options.map((option) => (
-            <label
-              key={option}
-              className={cn(
-                "text-brand-body flex cursor-pointer items-center gap-2.5 rounded-xl border px-3 py-2.5 transition",
-                value === option
-                  ? "border-[#DDE466] bg-[#DDE466]/15 text-[color:var(--dash-text)]"
-                  : "border-[color:var(--dash-surface-border)] bg-[color:var(--dash-surface,#fff)] text-[color:var(--dash-muted)] hover:bg-[color:var(--dash-soft)]",
-                disabled && "cursor-not-allowed opacity-70",
-              )}
-            >
-              <input
-                type="radio"
-                name={variant.id}
-                value={option}
-                checked={value === option}
+          {options.map((option) => {
+            const isSelected = value === option;
+            return (
+              <button
+                key={option}
+                type="button"
                 disabled={disabled}
-                onChange={() => onChange(option)}
-                className="shrink-0"
-              />
-              <span className="min-w-0 break-words">{option}</span>
-            </label>
-          ))}
+                onClick={() => onChange(option)}
+                className={cn(
+                  "quiz-option-card text-brand-body flex w-full cursor-pointer items-center gap-2.5 rounded-lg border bg-white px-3 py-2.5 text-left shadow-none outline-none",
+                  isSelected
+                    ? "is-selected border-transparent text-[color:var(--sidebar-active-fg,#6f7a1c)]"
+                    : "border-primary/10 text-[color:var(--dash-muted)]",
+                  disabled && "cursor-not-allowed opacity-70",
+                )}
+              >
+                <span
+                  className={cn(
+                    "quiz-option-check flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition",
+                    isSelected
+                      ? "border-[color:var(--sidebar-active-fg,#6f7a1c)] text-[color:var(--sidebar-active-fg,#6f7a1c)]"
+                      : "border-primary/20 bg-white text-transparent",
+                  )}
+                  aria-hidden
+                >
+                  <SidebarSvgIcon name="check" size={12} strokeWidth={2.4} />
+                </span>
+                <span className="min-w-0 break-words">{option}</span>
+              </button>
+            );
+          })}
         </div>
       ) : null}
 
@@ -116,24 +267,17 @@ function QuizQuestion({
             return (
               <div key={left} className="grid gap-2 sm:grid-cols-[1fr_1fr] sm:items-center">
                 <span className="text-brand-body min-w-0 break-words text-[color:var(--dash-muted)]">{left}</span>
-                <select
+                <QuizMatchSelect
                   value={current[left] ?? ""}
                   disabled={disabled}
-                  onChange={(event) =>
+                  options={matchingOptions}
+                  onChange={(next) =>
                     onChange({
                       ...current,
-                      [left]: event.target.value,
+                      [left]: next,
                     })
                   }
-                  className="dashboard-field dashboard-field-select h-11 w-full min-w-0"
-                >
-                  <option value="">Select match</option>
-                  {matchingOptions.map((option) => (
-                    <option key={`${left}-${option}`} value={option}>
-                      {option}
-                    </option>
-                  ))}
-                </select>
+                />
               </div>
             );
           })}
@@ -147,7 +291,11 @@ function QuizQuestion({
           disabled={disabled}
           onChange={(event) => onChange(event.target.value)}
           placeholder="Type your answer"
-          className="dashboard-field mt-3 w-full"
+          className={cn(
+            authFieldClass,
+            "quiz-answer-field mt-3 px-4",
+            disabled && "cursor-not-allowed opacity-70",
+          )}
         />
       ) : null}
     </div>
@@ -174,6 +322,11 @@ export function LessonQuizOverlay({
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [leaveConfirmOpen, setLeaveConfirmOpen] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!open) return;
@@ -200,8 +353,10 @@ export function LessonQuizOverlay({
     if (!open || phase !== "countdown" || leaveConfirmOpen) return;
 
     if (secondsLeft <= 0) {
-      setPhase("quiz");
-      return;
+      const timer = window.setTimeout(() => {
+        setPhase("quiz");
+      }, 650);
+      return () => window.clearTimeout(timer);
     }
 
     const timer = window.setTimeout(() => {
@@ -237,6 +392,11 @@ export function LessonQuizOverlay({
   function confirmLeave() {
     setLeaveConfirmOpen(false);
     onClose();
+  }
+
+  function startCountdown() {
+    setSecondsLeft(PRESTART_SECONDS);
+    setPhase("countdown");
   }
 
   useEffect(() => {
@@ -296,13 +456,15 @@ export function LessonQuizOverlay({
     }
   }
 
-  if (!open || typeof document === "undefined") return null;
+  if (!open || !mounted) return null;
 
   const overlayClass =
-    "adviser-dialog-overlay fixed inset-0 z-[130] flex items-center justify-center bg-black/60 px-3 py-4 backdrop-blur-sm sm:px-4 sm:py-6 max-sm:items-end max-sm:px-0 max-sm:py-0";
+    "adviser-dialog-overlay quiz-dialog-overlay fixed inset-0 z-[130] flex items-center justify-center bg-black/60 px-3 py-4 backdrop-blur-sm sm:px-4 sm:py-6 max-sm:items-end max-sm:px-0 max-sm:py-0";
 
   const sheetPanelClass =
-    "adviser-dialog-panel relative z-10 flex w-full flex-col overflow-hidden rounded-2xl shadow-2xl max-sm:rounded-b-none max-sm:rounded-t-3xl max-sm:pb-[env(safe-area-inset-bottom)]";
+    "adviser-dialog-panel quiz-dialog-panel relative z-10 flex w-full flex-col overflow-hidden max-sm:rounded-b-none max-sm:rounded-t-3xl max-sm:pb-[env(safe-area-inset-bottom)]";
+
+  const countdownLabel = secondsLeft > 0 ? String(secondsLeft) : "Go!";
 
   return createPortal(
     <div className={overlayClass} role="presentation">
@@ -312,7 +474,6 @@ export function LessonQuizOverlay({
         className="absolute inset-0 z-0 cursor-default"
         onClick={requestLeave}
       />
-      {/* Block interaction with lesson content behind the quiz */}
       <div className="pointer-events-none absolute inset-0 z-0 bg-black/20" aria-hidden />
 
       {phase === "confirm" ? (
@@ -322,43 +483,45 @@ export function LessonQuizOverlay({
           aria-labelledby={confirmTitleId}
           className={cn(sheetPanelClass, "max-w-md")}
         >
-          <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-[color:var(--dash-dim)] sm:hidden" aria-hidden />
+          <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-lg bg-[color:var(--dash-dim)] sm:hidden" aria-hidden />
 
-          <div className="flex items-start justify-between gap-3 border-b border-[color:var(--dash-surface-border)] px-4 py-3.5 sm:gap-4 sm:px-5 sm:py-4 md:px-6">
-            <div className="min-w-0">
-              <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-                Lesson quiz
-              </p>
-              <h2
-                id={confirmTitleId}
-                className="font-sans mt-1 text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl"
-              >
-                Do you want to continue?
-              </h2>
-              <p className="text-brand-body mt-1 text-sm text-[color:var(--dash-muted)] sm:text-base">
-                Start the quiz for{" "}
-                <span className="font-medium text-[color:var(--dash-text)]">{lessonTitle}</span>.{" "}
-                {variants.length} question{variants.length === 1 ? "" : "s"} ·{" "}
-                <span className="font-medium text-[color:var(--dash-text)]">5 minutes</span> after
-                the countdown.
-              </p>
+          <div className="border-b border-[color:var(--dash-surface-border)] px-4 py-3.5 sm:px-5 sm:py-4 md:px-6">
+            <div className="flex min-h-11 items-center justify-between gap-3">
+              <QuizEyebrow>Lesson quiz</QuizEyebrow>
+              <DialogCloseButton onClick={onClose} label="Close quiz dialog" />
             </div>
-            <DialogCloseButton onClick={onClose} label="Close quiz dialog" />
+            <h2
+              id={confirmTitleId}
+              className="font-sans mt-2 text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl"
+            >
+              Do you want to continue?
+            </h2>
+            <p className="text-brand-body mt-1 text-sm text-[color:var(--dash-muted)] sm:text-base">
+              Start the quiz for{" "}
+              <span className="font-medium text-[color:var(--dash-text)]">{lessonTitle}</span>.{" "}
+              {variants.length} question{variants.length === 1 ? "" : "s"} ·{" "}
+              <span className="inline-flex items-center gap-1 font-medium text-[color:var(--dash-text)]">
+                <SidebarSvgIcon name="clock" size={14} strokeWidth={2} />
+                5 minutes
+              </span>{" "}
+              after the countdown.
+            </p>
           </div>
 
           <div className="flex flex-col-reverse gap-2 border-t border-[color:var(--dash-surface-border)] px-4 py-3.5 sm:flex-row sm:justify-end sm:gap-2.5 sm:px-5 sm:py-4 md:px-6">
             <button
               type="button"
               onClick={onClose}
-              className="dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] transition sm:w-auto"
+              className="dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-lg px-5 text-sm font-medium text-[color:var(--dash-text)] transition sm:w-auto"
             >
               Cancel
             </button>
             <button
               type="button"
-              onClick={() => setPhase("countdown")}
-              className="font-sans inline-flex min-h-10 w-full items-center justify-center rounded-full bg-[#DDE466] px-5 text-sm font-medium text-[#152744] transition hover:brightness-105 active:scale-[0.98] sm:w-auto"
+              onClick={startCountdown}
+              className="font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-lg bg-[#DDE466] px-5 text-sm font-medium text-[#152744] transition hover:brightness-105 active:scale-[0.98] sm:w-auto"
             >
+              <SidebarSvgIcon name="next" size={15} />
               Continue
             </button>
           </div>
@@ -372,25 +535,30 @@ export function LessonQuizOverlay({
           aria-label="Quiz countdown"
           className={cn(sheetPanelClass, "max-w-sm")}
         >
-          <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-[color:var(--dash-dim)] sm:hidden" aria-hidden />
+          <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-lg bg-[color:var(--dash-dim)] sm:hidden" aria-hidden />
 
-          <div className="flex items-start justify-between gap-3 border-b border-[color:var(--dash-surface-border)] px-4 py-3.5 sm:px-5 sm:py-4">
-            <div className="min-w-0">
-              <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-                Get ready
-              </p>
-              <h2 className="font-sans mt-1 text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)]">
-                Quiz starts in
-              </h2>
+          <div className="border-b border-[color:var(--dash-surface-border)] px-4 py-3.5 sm:px-5 sm:py-4">
+            <div className="flex min-h-11 items-center justify-between gap-3">
+              <QuizEyebrow>Get ready</QuizEyebrow>
+              <DialogCloseButton onClick={requestLeave} label="Cancel quiz countdown" />
             </div>
-            <DialogCloseButton onClick={requestLeave} label="Cancel quiz countdown" />
+            <h2 className="font-sans mt-2 text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)]">
+              Quiz starts in
+            </h2>
           </div>
 
           <div className="px-4 py-8 text-center sm:px-5 sm:py-10">
-            <p className="text-5xl font-bold tabular-nums text-[color:var(--dash-text)] sm:text-6xl">
-              {secondsLeft || "Go!"}
+            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-xl bg-[#DDE466]/25 text-[color:var(--dash-accent)]">
+              <SidebarSvgIcon name={secondsLeft > 0 ? "clock" : "focus"} size={24} strokeWidth={2} />
+            </div>
+            <p
+              className="font-sans text-6xl font-bold tabular-nums leading-none tracking-tight text-[color:var(--dash-text)] sm:text-7xl"
+              aria-live="polite"
+            >
+              {countdownLabel}
             </p>
-            <p className="text-brand-body mt-4 text-[color:var(--dash-muted)]">
+            <p className="text-brand-body mt-4 inline-flex items-center justify-center gap-1.5 text-[color:var(--dash-muted)]">
+              <SidebarSvgIcon name="focus" size={14} />
               Focus up — your lesson quiz is about to begin.
             </p>
           </div>
@@ -399,8 +567,9 @@ export function LessonQuizOverlay({
             <button
               type="button"
               onClick={requestLeave}
-              className="dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] transition sm:w-auto sm:mx-auto"
+              className="dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-lg px-5 text-sm font-medium text-[color:var(--dash-text)] transition sm:mx-auto sm:w-auto"
             >
+              <SidebarSvgIcon name="previous" size={15} />
               Back to lesson
             </button>
           </div>
@@ -417,38 +586,38 @@ export function LessonQuizOverlay({
             "max-h-[min(92svh,56rem)] max-w-3xl max-sm:h-[min(96svh,56rem)] max-sm:max-h-none",
           )}
         >
-          <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-[color:var(--dash-dim)] sm:hidden" aria-hidden />
+          <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-lg bg-[color:var(--dash-dim)] sm:hidden" aria-hidden />
 
-          <header className="flex shrink-0 items-start justify-between gap-3 border-b border-[color:var(--dash-surface-border)] px-4 py-3.5 sm:gap-4 sm:px-5 sm:py-4 md:px-6">
-            <div className="min-w-0 flex-1">
-              <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-                Lesson quiz
-              </p>
-              <h2
-                id={quizTitleId}
-                className="font-sans mt-1 truncate text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl"
-              >
-                {lessonTitle}
-              </h2>
-              <div className="mt-2.5 flex flex-wrap items-center gap-2">
-                <span
-                  className={cn(
-                    "text-brand-caption inline-flex rounded-full px-3 py-1 font-semibold tabular-nums",
-                    timedOut
-                      ? "bg-amber-500/15 text-amber-600"
-                      : quizSecondsLeft <= 60
-                        ? "bg-red-500/15 text-red-600"
-                        : "bg-[color:var(--dash-soft)] text-[color:var(--dash-text)]",
-                  )}
-                >
-                  {timedOut ? "Time up" : formatQuizTime(quizSecondsLeft)}
-                </span>
-                <span className="text-brand-caption text-[color:var(--dash-muted)]">
-                  {variants.length} question{variants.length === 1 ? "" : "s"}
-                </span>
-              </div>
+          <header className="shrink-0 border-b border-[color:var(--dash-surface-border)] px-4 py-3.5 sm:px-5 sm:py-4 md:px-6">
+            <div className="flex min-h-11 items-center justify-between gap-3">
+              <QuizEyebrow>Lesson quiz</QuizEyebrow>
+              <DialogCloseButton onClick={requestLeave} label="Leave quiz" />
             </div>
-            <DialogCloseButton onClick={requestLeave} label="Leave quiz" />
+            <h2
+              id={quizTitleId}
+              className="font-sans mt-2 truncate text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl"
+            >
+              {lessonTitle}
+            </h2>
+            <div className="mt-2.5 flex flex-wrap items-center gap-2">
+              <span
+                className={cn(
+                  "text-brand-caption inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 font-semibold tabular-nums",
+                  timedOut
+                    ? "bg-amber-500/15 text-amber-600"
+                    : quizSecondsLeft <= 60
+                      ? "bg-red-500/15 text-red-600"
+                      : "bg-[color:var(--dash-soft)] text-[color:var(--dash-text)]",
+                )}
+              >
+                <SidebarSvgIcon name="clock" size={14} strokeWidth={2} />
+                {timedOut ? "Time up" : formatQuizTime(quizSecondsLeft)}
+              </span>
+              <span className="text-brand-caption inline-flex items-center gap-1.5 text-[color:var(--dash-muted)]">
+                <SidebarSvgIcon name="quiz" size={13} />
+                {variants.length} question{variants.length === 1 ? "" : "s"}
+              </span>
+            </div>
           </header>
 
           <div className="min-h-0 flex-1 space-y-3 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 sm:py-5 md:px-6">
@@ -461,10 +630,11 @@ export function LessonQuizOverlay({
 
             {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
 
-            {variants.map((variant) => (
+            {variants.map((variant, index) => (
               <QuizQuestion
                 key={variant.id}
                 variant={variant}
+                index={index}
                 value={answers[variant.id]}
                 disabled={submitting || timedOut}
                 onChange={(value) =>
@@ -487,23 +657,27 @@ export function LessonQuizOverlay({
               <button
                 type="button"
                 onClick={requestLeave}
-                className="dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] transition sm:w-auto"
+                className="dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-lg px-5 text-sm font-medium text-[color:var(--dash-text)] transition sm:w-auto"
               >
+                <SidebarSvgIcon name="previous" size={15} />
                 Back to lesson
               </button>
               <button
                 type="button"
                 onClick={() => void handleSubmit()}
                 disabled={timedOut || !allAnswered || submitting}
-                className="font-sans inline-flex min-h-10 w-full items-center justify-center rounded-full bg-[#DDE466] px-5 text-sm font-medium text-[#152744] transition hover:brightness-105 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 sm:w-auto"
+                className="font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-lg bg-[#DDE466] px-5 text-sm font-medium text-[#152744] transition hover:brightness-105 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 sm:w-auto"
               >
                 {submitting ? (
                   <span className="inline-flex items-center gap-2">
-                    <Icon icon={Loader2} size={16} className="animate-spin" />
+                    <SidebarSvgIcon name="spinner" size={16} className="animate-spin" />
                     Submitting…
                   </span>
                 ) : (
-                  "Submit quiz"
+                  <>
+                    <SidebarSvgIcon name="check" size={15} />
+                    Submit quiz
+                  </>
                 )}
               </button>
             </div>
@@ -525,42 +699,41 @@ export function LessonQuizOverlay({
             aria-labelledby={leaveTitleId}
             className={cn(sheetPanelClass, "max-w-md")}
           >
-            <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-[color:var(--dash-dim)] sm:hidden" aria-hidden />
+            <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-lg bg-[color:var(--dash-dim)] sm:hidden" aria-hidden />
 
-            <div className="flex items-start justify-between gap-3 border-b border-[color:var(--dash-surface-border)] px-4 py-3.5 sm:gap-4 sm:px-5 sm:py-4 md:px-6">
-              <div className="min-w-0">
-                <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-                  Leave quiz
-                </p>
-                <h2
-                  id={leaveTitleId}
-                  className="font-sans mt-1 text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl"
-                >
-                  Do you want to cancel this quiz?
-                </h2>
-                <p className="text-brand-body mt-1 text-sm text-[color:var(--dash-muted)] sm:text-base">
-                  Your progress will not be saved. You can start the quiz again later from the lesson
-                  page.
-                </p>
+            <div className="border-b border-[color:var(--dash-surface-border)] px-4 py-3.5 sm:px-5 sm:py-4 md:px-6">
+              <div className="flex min-h-11 items-center justify-between gap-3">
+                <QuizEyebrow>Leave quiz</QuizEyebrow>
+                <DialogCloseButton
+                  onClick={() => setLeaveConfirmOpen(false)}
+                  label="Keep taking quiz"
+                />
               </div>
-              <DialogCloseButton
-                onClick={() => setLeaveConfirmOpen(false)}
-                label="Keep taking quiz"
-              />
+              <h2
+                id={leaveTitleId}
+                className="font-sans mt-2 text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl"
+              >
+                Do you want to cancel this quiz?
+              </h2>
+              <p className="text-brand-body mt-1 text-sm text-[color:var(--dash-muted)] sm:text-base">
+                Your progress will not be saved. You can start the quiz again later from the lesson
+                page.
+              </p>
             </div>
 
             <div className="flex flex-col-reverse gap-2 border-t border-[color:var(--dash-surface-border)] px-4 py-3.5 sm:flex-row sm:justify-end sm:gap-2.5 sm:px-5 sm:py-4 md:px-6">
               <button
                 type="button"
                 onClick={() => setLeaveConfirmOpen(false)}
-                className="dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] transition sm:w-auto"
+                className="dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-lg px-5 text-sm font-medium text-[color:var(--dash-text)] transition sm:w-auto"
               >
+                <SidebarSvgIcon name="previous" size={15} />
                 Keep taking quiz
               </button>
               <button
                 type="button"
                 onClick={confirmLeave}
-                className="font-sans inline-flex min-h-10 w-full items-center justify-center rounded-full bg-[#DDE466] px-5 text-sm font-medium text-[#152744] transition hover:brightness-105 active:scale-[0.98] sm:w-auto"
+                className="font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-lg bg-[#DDE466] px-5 text-sm font-medium text-[#152744] transition hover:brightness-105 active:scale-[0.98] sm:w-auto"
               >
                 Yes, cancel quiz
               </button>
@@ -584,7 +757,8 @@ export function LessonQuizResultCard({ result, courseId, onRetake }: LessonQuizR
     <section className="dashboard-surface rounded-2xl p-4 sm:p-5 md:p-6">
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+          <p className="text-brand-caption inline-flex items-center gap-1.5 font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+            <SidebarSvgIcon name="quiz" size={13} />
             Latest quiz result
           </p>
           <h3 className="font-sans mt-1 text-lg font-semibold tracking-[0.005em] text-[color:var(--dash-text)] md:text-xl">
@@ -596,10 +770,11 @@ export function LessonQuizResultCard({ result, courseId, onRetake }: LessonQuizR
         </div>
         <span
           className={cn(
-            "text-brand-caption inline-flex rounded-full px-3 py-1 font-semibold",
+            "text-brand-caption inline-flex items-center gap-1.5 rounded-lg px-3 py-1 font-semibold",
             result.passed ? "bg-emerald-500/15 text-emerald-600" : "bg-amber-500/15 text-amber-600",
           )}
         >
+          <SidebarSvgIcon name={result.passed ? "check" : "quiz"} size={13} />
           {result.passed ? "Passed" : "Needs review"}
         </span>
       </div>
@@ -609,22 +784,32 @@ export function LessonQuizResultCard({ result, courseId, onRetake }: LessonQuizR
           <div
             key={answer.variant_id}
             className={cn(
-              "text-brand-body rounded-xl px-3.5 py-3",
+              "text-brand-body flex items-start gap-2 rounded-xl px-3.5 py-3",
               answer.is_correct
                 ? "bg-emerald-500/10 text-[color:var(--dash-text)]"
                 : "bg-amber-500/10 text-[color:var(--dash-text)]",
             )}
           >
-            <span className="font-medium">{answer.question ?? "Question"}</span>
-            <span className="text-[color:var(--dash-faint)]">
-              {" "}
-              · {answer.is_correct ? "Correct" : "Incorrect"}
-            </span>
-            {!answer.is_correct ? (
-              <p className="mt-1 text-[color:var(--dash-faint)]">
-                Correct answer: {formatAnswer(answer.correct_answer)}
-              </p>
-            ) : null}
+            <SidebarSvgIcon
+              name={answer.is_correct ? "check" : "cross"}
+              size={14}
+              className={cn(
+                "mt-0.5 shrink-0",
+                answer.is_correct ? "text-emerald-600" : "text-amber-600",
+              )}
+            />
+            <div className="min-w-0">
+              <span className="font-medium">{answer.question ?? "Question"}</span>
+              <span className="text-[color:var(--dash-faint)]">
+                {" "}
+                · {answer.is_correct ? "Correct" : "Incorrect"}
+              </span>
+              {!answer.is_correct ? (
+                <p className="mt-1 text-[color:var(--dash-faint)]">
+                  Correct answer: {formatAnswer(answer.correct_answer)}
+                </p>
+              ) : null}
+            </div>
           </div>
         ))}
       </div>
@@ -636,8 +821,9 @@ export function LessonQuizResultCard({ result, courseId, onRetake }: LessonQuizR
         <button
           type="button"
           onClick={onRetake}
-          className="font-sans inline-flex min-h-10 w-full items-center justify-center rounded-full bg-[#DDE466] px-5 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 sm:w-auto"
+          className="font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-lg bg-[#DDE466] px-5 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 sm:w-auto"
         >
+          <SidebarSvgIcon name="quiz" size={15} />
           Take quiz again
         </button>
       </div>

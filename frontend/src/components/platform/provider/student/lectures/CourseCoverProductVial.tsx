@@ -1,6 +1,7 @@
 "use client";
 
-import { type CSSProperties, useId } from "react";
+import { type CSSProperties, memo, useEffect, useId } from "react";
+import { preloadLectureCoverSrcs } from "@/components/platform/provider/student/lectures/lectureCoverCache";
 import { cn } from "@/lib/utils";
 
 const MODE_LIGHT = "/assets/lectures/mode/light.png";
@@ -22,7 +23,7 @@ type CourseCoverProductVialProps = {
  * Theme mode background (light/dark) + full-quality transparent vial overlay.
  * Vial is staged with a gentle rightward product tilt for an editorial look.
  */
-export function CourseCoverProductVial({
+function CourseCoverProductVialInner({
   vialSrc,
   rotate = 10,
   scale = 1.16,
@@ -40,12 +41,15 @@ export function CourseCoverProductVial({
     filter: `url(#${defringeId})`,
   } as CSSProperties;
 
+  useEffect(() => {
+    preloadLectureCoverSrcs([MODE_LIGHT, MODE_DARK, vialSrc]);
+  }, [vialSrc]);
+
   return (
     <div
       className={cn("lecture-cover-product-vial relative h-full w-full overflow-hidden", className)}
       data-vial-src={vialSrc}
     >
-      {/* Erode cutout fringe so white/gray matte halos never read as a sticker outline */}
       <svg className="pointer-events-none absolute h-0 w-0 overflow-hidden" aria-hidden>
         <defs>
           <filter
@@ -69,6 +73,7 @@ export function CourseCoverProductVial({
         alt=""
         draggable={false}
         decoding="async"
+        loading="eager"
         className="lecture-cover-product-mode lecture-cover-product-mode--light absolute inset-0 h-full w-full object-cover object-center"
         aria-hidden
       />
@@ -78,12 +83,12 @@ export function CourseCoverProductVial({
         alt=""
         draggable={false}
         decoding="async"
+        loading="eager"
         className="lecture-cover-product-mode lecture-cover-product-mode--dark absolute inset-0 h-full w-full object-cover object-center"
         aria-hidden
       />
 
       <div className="lecture-cover-product-vial-stage absolute inset-0 z-[1]" aria-hidden>
-        {/* Soft ground shadow under the tilted vial (not a blur on the PNG) */}
         <span className="lecture-cover-product-vial-shadow" aria-hidden />
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
@@ -91,6 +96,7 @@ export function CourseCoverProductVial({
           alt=""
           draggable={false}
           decoding="async"
+          loading="eager"
           className="lecture-cover-product-vial-img"
           style={vialStyle}
           aria-hidden
@@ -99,3 +105,5 @@ export function CourseCoverProductVial({
     </div>
   );
 }
+
+export const CourseCoverProductVial = memo(CourseCoverProductVialInner);

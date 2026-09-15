@@ -36,7 +36,7 @@ export function StudentCourseCalculatorPage({ courseId }: StudentCourseCalculato
   return (
     <CoursePageLayout
       title={course ? `Calculator · ${course.title}` : "Calculator"}
-      description="Step-by-step reconstitution and dosing helper while you study this course."
+      description="Reconstitution and dosing helper while you study this course."
       courseId={courseId}
       courseNavActive="calculator"
       hideHero

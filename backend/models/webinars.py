@@ -91,6 +91,8 @@ class WebinarNotificationItem(BaseModel):
     currency: str = "USD"
     is_booked: bool = False
     body: str
+    thumbnail_url: Optional[str] = None
+    seats_remaining: Optional[int] = None
 
 
 class WebinarNotificationsData(BaseModel):

@@ -5,14 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import { LessonContentSkeleton } from "@/components/platform/provider/student/DashboardSkeletons";
-import {
-  ChevronLeft,
-  ChevronRight,
-  ChevronUp,
-  CircleHelp,
-  Clock,
-  Icon,
-} from "@/components/icons";
+import { SidebarSvgIcon } from "@/components/platform/provider/sidebar-icons";
 import {
   LessonQuizOverlay,
   LessonQuizResultCard,
@@ -99,8 +92,8 @@ export function LessonContentPanel({
       const tl = gsap.timeline({ defaults: { ease: "power3.out" } });
       tl.fromTo(
         pageRef.current,
-        { opacity: 0, x: 18, rotateY: -4 },
-        { opacity: 1, x: 0, rotateY: 0, duration: 0.45 },
+        { opacity: 0, y: 14 },
+        { opacity: 1, y: 0, duration: 0.4, clearProps: "transform" },
       );
       const reveals = pageRef.current.querySelectorAll("[data-reveal]");
       if (reveals.length) {
@@ -165,8 +158,8 @@ export function LessonContentPanel({
   }, [courseId, l1Name, nextLessonId, prevLessonId, quizOpen, router, topicId]);
 
   return (
-    <div className="course-book-open relative min-w-0">
-      <div className="course-book-open-spine pointer-events-none absolute inset-y-4 left-0 z-[1] hidden w-3 lg:block" aria-hidden />
+    <div className="course-book-open relative min-w-0 overflow-visible">
+      <div className="course-book-open-spine pointer-events-none absolute left-0 z-0 hidden w-3 lg:block" aria-hidden />
 
       <div className="sticky top-0 z-[3] mb-3">
         <div className="lesson-progress-track">
@@ -176,19 +169,19 @@ export function LessonContentPanel({
 
       <article
         ref={pageRef}
-        className="course-book-page relative min-w-0 overflow-hidden rounded-2xl"
+        className="course-book-page relative z-[2] min-w-0 overflow-hidden rounded-xl"
         style={{ transformOrigin: "left center" }}
       >
-        <div className="course-book-page-grain pointer-events-none absolute inset-0" aria-hidden />
+        <div className="course-book-page-grain pointer-events-none absolute inset-0 rounded-[inherit]" aria-hidden />
 
-        <header className="relative border-b border-[color:var(--dash-surface-border)] px-5 pb-5 pt-5 sm:px-7 sm:pt-6 md:px-8">
+        <header className="relative border-b border-[color:var(--dash-surface-border)] px-4 pb-4 pt-4 sm:px-7 sm:pb-5 sm:pt-6 md:px-8">
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0">
+            <div className="min-w-0 flex-1">
               <p className="text-brand-caption font-semibold uppercase tracking-[0.14em] text-[color:var(--dash-faint)]">
                 Lesson {lesson.order}
                 {currentIndex && total ? ` · Page ${currentIndex} of ${total}` : ""}
               </p>
-              <h2 className="font-sans mt-2 max-w-[52ch] text-balance text-left text-xl font-bold leading-[1.18] tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl md:text-3xl">
+              <h2 className="font-sans mt-2 max-w-[52ch] text-balance text-left text-lg font-bold leading-[1.2] tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl md:text-3xl">
                 {lesson.title}
               </h2>
               {(lesson.l1_name || lesson.l2_name) ? (
@@ -198,24 +191,24 @@ export function LessonContentPanel({
               ) : null}
               <div className="mt-3 flex flex-wrap items-center gap-2">
                 <span className="lesson-read-chip">
-                  <Icon icon={Clock} size={13} strokeWidth={2} />
+                  <SidebarSvgIcon name="clock" size={13} />
                   {readingMinutes} min read
                 </span>
                 {hasQuiz ? (
                   <span className="lesson-read-chip">
-                    <Icon icon={CircleHelp} size={13} strokeWidth={2} />
+                    <SidebarSvgIcon name="quiz" size={13} />
                     {lesson.variants.length} quiz question{lesson.variants.length === 1 ? "" : "s"}
                   </span>
                 ) : null}
               </div>
             </div>
-            <span className="course-book-page-mark flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[10px] font-bold uppercase tracking-[0.1em] text-[color:var(--dash-accent)]">
+            <span className="course-book-page-mark flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold uppercase tracking-[0.1em] text-[color:var(--dash-accent)]">
               HOLS
             </span>
           </div>
         </header>
 
-        <div className="relative px-5 py-5 sm:px-7 sm:py-6 md:px-8 md:py-7">
+        <div className="relative px-4 py-4 sm:px-7 sm:py-6 md:px-8 md:py-7">
           {detailLoading ? (
             <LessonContentSkeleton includeHeader={false} />
           ) : (
@@ -258,8 +251,9 @@ export function LessonContentPanel({
                   <button
                     type="button"
                     onClick={() => setQuizOpen(true)}
-                    className="font-sans mt-4 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full bg-[#DDE466] px-5 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105"
+                    className="font-sans mt-4 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg bg-[#DDE466] px-5 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105"
                   >
+                    <SidebarSvgIcon name="quiz" size={15} />
                     Take quiz
                   </button>
                 </section>
@@ -269,7 +263,7 @@ export function LessonContentPanel({
         </div>
 
         {(prevLessonId || nextLessonId) && (
-          <footer className="relative flex flex-col gap-3 border-t border-[color:var(--dash-surface-border)] px-5 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-7 md:px-8">
+          <footer className="relative flex flex-col gap-3 border-t border-[color:var(--dash-surface-border)] px-4 py-4 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:px-7 md:px-8">
             <div className="flex items-center gap-3">
               <p className="text-brand-caption text-[color:var(--dash-faint)]">
                 {currentIndex && total ? `Page ${currentIndex} / ${total}` : "Turn the page"}
@@ -294,9 +288,9 @@ export function LessonContentPanel({
                 <Link
                   href={lessonHref(courseId, prevLessonId, topicId, l1Name)}
                   onClick={() => scrollAppToTop()}
-                  className="lesson-prev-cta dashboard-pill-soft font-sans inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-full px-4 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition sm:flex-initial sm:px-5"
+                  className="lesson-prev-cta dashboard-pill-soft font-sans inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-lg px-4 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition sm:flex-initial sm:px-5"
                 >
-                  <Icon icon={ChevronLeft} size={15} strokeWidth={2} />
+                  <SidebarSvgIcon name="previous" size={16} />
                   <span className="sm:hidden">Prev</span>
                   <span className="hidden sm:inline">Previous page</span>
                 </Link>
@@ -305,11 +299,11 @@ export function LessonContentPanel({
                 <Link
                   href={lessonHref(courseId, nextLessonId, topicId, l1Name)}
                   onClick={() => scrollAppToTop()}
-                  className="lesson-next-cta font-sans inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-full bg-[#DDE466] px-4 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 sm:flex-initial sm:px-5"
+                  className="lesson-next-cta font-sans inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#DDE466] px-4 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 sm:flex-initial sm:px-5"
                 >
                   <span className="sm:hidden">Next</span>
                   <span className="hidden sm:inline">Next page</span>
-                  <Icon icon={ChevronRight} size={15} strokeWidth={2} />
+                  <SidebarSvgIcon name="next" size={16} />
                 </Link>
               ) : null}
             </div>
@@ -330,7 +324,7 @@ export function LessonContentPanel({
         data-visible={showTop ? "true" : "false"}
         aria-label="Back to top"
       >
-        <Icon icon={ChevronUp} size={18} strokeWidth={2.2} />
+        <SidebarSvgIcon name="up" size={18} />
       </button>
 
       <LessonQuizOverlay

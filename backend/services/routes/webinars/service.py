@@ -553,27 +553,27 @@ async def list_notifications(user_id: str) -> list[dict[str, Any]]:
     catalog = await list_webinars_student(user_id=user_id, page=1, limit=20)
     notifications: list[dict[str, Any]] = []
     for webinar in catalog["items"]:
-        starts = webinar.get("starts_at")
         booked = bool(webinar.get("is_booked"))
         title = webinar.get("title") or "Upcoming webinar"
         price = float(webinar.get("price") or 0)
+        currency = webinar.get("currency") or "USD"
         if booked:
-            body = f"You're booked · starts {starts}"
+            body = "You're booked — open to join or review details."
+        elif price <= 0:
+            body = "Free session — reserve your seat while spaces last."
         else:
-            body = (
-                f"Upcoming · {starts}"
-                if price <= 0
-                else f"Book a seat · {webinar.get('currency')} {price:.2f} · {starts}"
-            )
+            body = f"Book a seat · {currency} {price:.2f}."
         notifications.append(
             {
                 "webinar_id": webinar.get("webinar_id"),
                 "title": title,
-                "starts_at": starts,
+                "starts_at": webinar.get("starts_at"),
                 "price": price,
-                "currency": webinar.get("currency") or "USD",
+                "currency": currency,
                 "is_booked": booked,
                 "body": body,
+                "thumbnail_url": webinar.get("thumbnail_url"),
+                "seats_remaining": webinar.get("seats_remaining"),
             }
         )
     return notifications

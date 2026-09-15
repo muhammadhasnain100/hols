@@ -4,7 +4,10 @@ import Link from "next/link";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import { useGSAP } from "@gsap/react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
-import { ChevronDown, Icon, X } from "@/components/icons";
+import {
+  RomanChapterIcon,
+  SidebarSvgIcon,
+} from "@/components/platform/provider/sidebar-icons";
 import { CourseCoverArt } from "@/components/platform/provider/student/lectures/CourseCoverArt";
 import {
   getCoverDisplayTitle,
@@ -38,11 +41,6 @@ type StudentCoursePageProps = {
 type TopicGroup = TopicSummary & {
   sections: SectionSummary[];
 };
-
-function romanChapter(index: number) {
-  const numerals = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
-  return numerals[index] ?? String(index + 1).padStart(2, "0");
-}
 
 export function StudentCoursePage({ courseId }: StudentCoursePageProps) {
   const [loading, setLoading] = useState(true);
@@ -243,10 +241,13 @@ function HolsVolume({
                 <button
                   type="button"
                   className="book-interior-close"
-                  onClick={() => setIsOpen(false)}
+                  onClick={(event) => {
+                    event.stopPropagation();
+                    setIsOpen(false);
+                  }}
                   aria-label="Close volume"
                 >
-                  <Icon icon={X} size={16} strokeWidth={2} />
+                  <SidebarSvgIcon name="cross" size={34} strokeWidth={2.15} />
                 </button>
               </div>
 
@@ -428,7 +429,7 @@ function TableOfContents({
   return (
     <section
       data-book-toc
-      className="course-book-toc relative min-w-0 w-full overflow-hidden rounded-2xl p-3 sm:p-5 md:p-6"
+      className="course-book-toc relative min-w-0 w-full overflow-hidden rounded-xl p-3 sm:p-5 md:p-6"
     >
       <div className="course-book-toc-gutter pointer-events-none absolute inset-y-0 left-0 w-1.5" aria-hidden />
       <div className="flex flex-col gap-3 border-b border-[color:var(--dash-surface-border)] pb-4 pl-1 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-2 sm:pl-2">
@@ -445,7 +446,7 @@ function TableOfContents({
         </div>
         <Link
           href={`/student/lectures/${courseId}/lessons`}
-          className="font-sans inline-flex min-h-9 w-full shrink-0 items-center justify-center rounded-full bg-[#DDE466] px-4 text-sm font-medium text-[#152744] transition hover:brightness-105 sm:min-h-9 sm:w-auto"
+          className="font-sans inline-flex min-h-9 w-full shrink-0 items-center justify-center rounded-lg bg-[#DDE466] px-4 text-sm font-medium text-[#152744] transition hover:brightness-105 sm:min-h-9 sm:w-auto"
         >
           Start reading
         </Link>
@@ -525,8 +526,14 @@ function TopicChapter({
         )}
         aria-expanded={expanded}
       >
-        <span className="course-toc-badge font-sans mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#DDE466]/15 text-[11px] font-bold tracking-[0.02em] text-[color:var(--dash-accent)] sm:mt-0 sm:h-10 sm:w-10 sm:text-sm">
-          {romanChapter(index)}
+        <span
+          className={cn(
+            "course-toc-badge mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg sm:mt-0 sm:h-10 sm:w-10",
+            expanded && "is-active",
+          )}
+        >
+          <RomanChapterIcon index={index} size={18} aria-hidden />
+          <span className="sr-only">Chapter {index + 1}</span>
         </span>
         <span className="min-w-0 flex-1">
           <span className="font-sans block break-words text-sm font-semibold leading-snug tracking-[0.005em] text-[color:var(--dash-text)] transition group-hover:text-[color:var(--dash-accent)] sm:text-lg sm:leading-normal">
@@ -539,12 +546,14 @@ function TopicChapter({
         </span>
         <span
           className={cn(
-            "mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--dash-soft)] text-[color:var(--dash-muted)] transition duration-200 sm:mt-1",
-            expanded && "rotate-180 bg-[#DDE466]/25 text-[color:var(--dash-accent)]",
+            "course-toc-chevron mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition duration-200 sm:mt-0 sm:h-9 sm:w-9",
+            expanded
+              ? "bg-[#DDE466] text-[#152744] shadow-[0_4px_12px_rgba(221,228,102,0.35)]"
+              : "bg-[color:var(--dash-soft)] text-[color:var(--dash-muted)] group-hover:bg-[#DDE466]/25 group-hover:text-[color:var(--dash-text)]",
           )}
           aria-hidden
         >
-          <Icon icon={ChevronDown} size={14} strokeWidth={2} />
+          <SidebarSvgIcon name={expanded ? "chevron-up" : "chevron-down"} size={16} strokeWidth={2.25} />
         </span>
       </button>
 

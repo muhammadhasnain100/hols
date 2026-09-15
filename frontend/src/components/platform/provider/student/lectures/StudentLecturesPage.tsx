@@ -3,16 +3,20 @@
 import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
-import { ChevronLeft, ChevronRight, Icon } from "@/components/icons";
 import { useServerPortalTheme } from "@/components/platform/provider/PortalThemeProvider";
 import {
   getPortalThemeSnapshot,
   subscribePortalTheme,
 } from "@/components/platform/provider/portal-theme-store";
+import { SidebarSvgIcon } from "@/components/platform/provider/sidebar-icons";
 import { CourseCoverArt } from "@/components/platform/provider/student/lectures/CourseCoverArt";
-import { tidyCoverTitle } from "@/components/platform/provider/student/lectures/courseCover";
+import { tidyCoverTitle, resolveCourseCover } from "@/components/platform/provider/student/lectures/courseCover";
 import { filterVisibleLectureCourses } from "@/components/platform/provider/student/lectures/hiddenCourses";
 import { LecturesPageLayout } from "@/components/platform/provider/student/lectures/LecturesPageLayout";
+import {
+  preloadLectureCoverSrcs,
+  preloadSharedLectureCoverAssets,
+} from "@/components/platform/provider/student/lectures/lectureCoverCache";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
   listCourses,
@@ -88,6 +92,10 @@ export function StudentLecturesPage() {
   }, [page]);
 
   useEffect(() => {
+    preloadSharedLectureCoverAssets();
+  }, []);
+
+  useEffect(() => {
     if (!isSearching) return;
 
     let cancelled = false;
@@ -114,6 +122,16 @@ export function StudentLecturesPage() {
     return availableCourses.filter((course) => courseMatchesSearch(course, trimmedSearch));
   }, [allCourses, courses, isSearching, trimmedSearch]);
 
+  useEffect(() => {
+    if (visibleCourses.length === 0) return;
+    preloadLectureCoverSrcs(
+      visibleCourses.flatMap((course) => {
+        const cover = resolveCourseCover(course.course_id, course.title);
+        return [cover.vialSrc, cover.photos.light, cover.photos.dark];
+      }),
+    );
+  }, [visibleCourses]);
+
   return (
     <LecturesPageLayout searchQuery={searchQuery} onSearchQueryChange={setSearchQuery}>
       {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
@@ -137,7 +155,7 @@ export function StudentLecturesPage() {
           ))}
         </div>
       ) : visibleCourses.length === 0 ? (
-        <div className="dashboard-surface rounded-2xl p-8 text-center sm:p-10">
+        <div className="dashboard-surface rounded-xl p-8 text-center sm:p-10">
           <p className="text-brand-body text-[color:var(--dash-faint)]">
             {isSearching ? "No courses match your search." : "No courses available yet."}
           </p>
@@ -164,7 +182,7 @@ export function StudentLecturesPage() {
                 setPage((prev) => Math.max(1, prev - 1));
               }}
             >
-              <Icon icon={ChevronLeft} size={15} strokeWidth={2} />
+              <SidebarSvgIcon name="previous" size={16} />
               <span className="sm:hidden">Prev</span>
               <span className="hidden sm:inline">Previous page</span>
             </PagerButton>
@@ -178,7 +196,7 @@ export function StudentLecturesPage() {
             >
               <span className="sm:hidden">Next</span>
               <span className="hidden sm:inline">Next page</span>
-              <Icon icon={ChevronRight} size={15} strokeWidth={2} />
+              <SidebarSvgIcon name="next" size={16} />
             </PagerButton>
           </div>
         </div>
@@ -201,8 +219,8 @@ function PagerButton({
   // Match lesson reading page: Previous = soft pill, Next = lemon CTA
   const className =
     variant === "next"
-      ? "lesson-next-cta font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full bg-[#DDE466] px-4 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 disabled:pointer-events-none disabled:opacity-50 disabled:hover:brightness-100 sm:w-auto sm:px-5"
-      : "lesson-prev-cta dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-4 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50 sm:w-auto sm:px-5";
+      ? "lesson-next-cta font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-lg bg-[#DDE466] px-4 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 disabled:pointer-events-none disabled:opacity-50 disabled:hover:brightness-100 sm:w-auto sm:px-5"
+      : "lesson-prev-cta dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-lg px-4 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50 sm:w-auto sm:px-5";
 
   return (
     <button type="button" disabled={disabled} onClick={onClick} className={className}>
@@ -213,7 +231,7 @@ function PagerButton({
 
 function StatColumn({ label, value }: { label: string; value: number }) {
   return (
-    <div className="lecture-stat-column flex flex-col items-center justify-center gap-px py-1">
+    <div className="lecture-stat-column flex flex-col items-center justify-center gap-0.5 px-1 py-2">
       <span className="lecture-stat-value font-sans leading-none tracking-tight">{value}</span>
       <span className="lecture-stat-label font-medium uppercase">{label}</span>
     </div>
@@ -224,7 +242,7 @@ function CourseCardSkeleton({ index }: { index: number }) {
   return (
     <div
       style={{ animationDelay: `${Math.min(index, 7) * 45}ms` }}
-      className="lecture-course-card lecture-course-skeleton flex aspect-[3/4] w-full min-h-0 flex-col overflow-hidden rounded-[28px]"
+      className="lecture-course-card lecture-course-skeleton flex aspect-[3/4] w-full min-h-0 flex-col overflow-hidden rounded-xl"
       aria-hidden
     >
       <span className="lecture-skeleton-block mx-0 min-h-0 flex-[1.65] rounded-none" />
@@ -252,7 +270,7 @@ function CourseCard({ course, index }: { course: CourseSummary; index: number })
       style={{ animationDelay: `${Math.min(index, 11) * 45}ms` }}
       data-featured={featured ? "true" : undefined}
       className={cn(
-        "lecture-course-card group relative flex aspect-[3/4] w-full min-h-0 min-w-0 max-w-full flex-col overflow-hidden rounded-[28px]",
+        "lecture-course-card group relative flex aspect-[3/4] w-full min-h-0 min-w-0 max-w-full flex-col overflow-hidden rounded-xl",
       )}
     >
       <span className="lecture-course-card-shine pointer-events-none absolute inset-0 z-[3]" aria-hidden />
@@ -269,15 +287,14 @@ function CourseCard({ course, index }: { course: CourseSummary; index: number })
         <div className="lecture-course-stats">
           <StatColumn label="Topics" value={course.topic_count} />
           <StatColumn label="Sections" value={course.section_count} />
-          <StatColumn label="Lessons" value={course.lesson_count} />
+          <StatColumn label="Lectures" value={course.lesson_count} />
         </div>
 
-        <span className="lecture-course-card-cta font-sans mt-2.5 inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full bg-[#DDE466] px-5 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105">
+        <span className="lecture-course-card-cta font-sans mt-2.5 inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-[#DDE466] px-5 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105">
           Learn more
-          <Icon
-            icon={ChevronRight}
-            size={14}
-            strokeWidth={2.2}
+          <SidebarSvgIcon
+            name="next"
+            size={15}
             className="transition-transform duration-300 ease-out group-hover:translate-x-0.5"
           />
         </span>

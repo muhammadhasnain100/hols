@@ -1,9 +1,9 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
-import { CreditCard, Icon } from "@/components/icons";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
+import { authFieldClass, authLabelClass } from "@/components/platform/auth/auth-styles";
+import { SidebarSvgIcon } from "@/components/platform/provider/sidebar-icons";
 import { PaymentCardPageSkeleton } from "@/components/platform/provider/student/DashboardSkeletons";
 import { PaymentPageLayout } from "@/components/platform/provider/student/payment/PaymentPageLayout";
 import { ApiRequestError } from "@/lib/integrate/client";
@@ -50,7 +50,6 @@ function DashField({
   inputMode,
   maxLength,
   error,
-  pattern,
 }: {
   id: string;
   label: string;
@@ -62,11 +61,10 @@ function DashField({
   inputMode?: "text" | "numeric" | "tel" | "search" | "email" | "url" | "decimal" | "none";
   maxLength?: number;
   error?: string;
-  pattern?: string;
 }) {
   return (
-    <div className="grid gap-2">
-      <label htmlFor={id} className="dashboard-field-label">
+    <div className="grid min-w-0 gap-2">
+      <label htmlFor={id} className={authLabelClass}>
         {label}
       </label>
       <input
@@ -80,10 +78,13 @@ function DashField({
         required={required}
         inputMode={inputMode}
         maxLength={maxLength}
-        pattern={pattern}
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${id}-error` : undefined}
-        className={cn("dashboard-field", error && "border-[color:var(--dash-danger,#c45c5c)]")}
+        className={cn(
+          authFieldClass,
+          "payment-field px-4",
+          error && "border-[color:var(--dash-danger,#c45c5c)]",
+        )}
       />
       {error ? (
         <p id={`${id}-error`} className="text-brand-caption text-[color:var(--dash-danger,#b42318)]">
@@ -260,89 +261,20 @@ export function StudentCardPage() {
         <PaymentCardPageSkeleton />
       ) : (
         <>
-          <section className="dashboard-hero relative overflow-hidden rounded-2xl p-4 sm:p-5 md:p-6">
-            <div className="flex flex-col gap-4 sm:gap-5 lg:flex-row lg:items-end lg:justify-between">
-              <div className="min-w-0">
-                <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
-                  Billing card
-                </p>
-                <div className="mt-2 flex flex-wrap items-end gap-x-2 gap-y-1">
-                  <span className="font-sans text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl md:text-[2.25rem] md:leading-none">
-                    {card ? "Card on file" : "No card"}
-                  </span>
-                  <span
-                    className={cn(
-                      "mb-0.5 inline-flex rounded-full px-2.5 py-0.5 text-brand-caption font-semibold",
-                      card
-                        ? "bg-[#DDE466]/25 text-[color:var(--dash-accent)]"
-                        : "bg-[color:var(--dash-soft)] text-[color:var(--dash-faint)]",
-                    )}
-                  >
-                    {card ? "Ready" : "Required"}
-                  </span>
-                </div>
-                <p className="text-brand-body mt-2 text-[color:var(--dash-muted)]">
-                  {card
-                    ? `${card.card_number_masked} · Expires ${String(card.exp_month).padStart(2, "0")}/${card.exp_year}`
-                    : "Add a payment card before purchasing a membership plan."}
-                </p>
-                {error ? (
-                  <div className="mt-3 max-w-xl">
-                    <AuthAlert variant="error">{error}</AuthAlert>
-                  </div>
-                ) : null}
-                {success ? (
-                  <div className="mt-3 max-w-xl">
-                    <AuthAlert variant="success">{success}</AuthAlert>
-                  </div>
-                ) : null}
-              </div>
-
-              <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:gap-2.5">
-                <Link
-                  href="/student/payment"
-                  className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center rounded-full px-3 text-sm font-medium text-[color:var(--dash-text)] transition sm:px-5"
-                >
-                  View plans
-                </Link>
-                {!card ? (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowForm(true);
-                      setError(null);
-                      setSuccess(null);
-                    }}
-                    className="font-sans inline-flex min-h-10 items-center justify-center rounded-full bg-[#DDE466] px-3 text-sm font-medium text-[#152744] transition hover:brightness-105 sm:px-5"
-                  >
-                    Add card
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowForm(true);
-                      setError(null);
-                      setSuccess(null);
-                    }}
-                    className="font-sans inline-flex min-h-10 items-center justify-center rounded-full bg-[#DDE466] px-3 text-sm font-medium text-[#152744] transition hover:brightness-105 sm:px-5"
-                  >
-                    Update card
-                  </button>
-                )}
-              </div>
-            </div>
-          </section>
+          {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
+          {success ? <AuthAlert variant="success">{success}</AuthAlert> : null}
 
           <div className="grid w-full min-w-0 items-start gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
             <div className="order-2 flex min-w-0 flex-col gap-3 sm:gap-4 lg:order-1">
               {card ? (
-                <section className="dashboard-plan-card relative overflow-hidden rounded-2xl p-4 text-[#152744] sm:p-5 md:p-6">
+                <section className="dashboard-plan-card relative overflow-hidden rounded-xl p-4 text-[#152744] sm:p-5 md:p-6">
                   <div className="flex items-center justify-between gap-2">
                     <span className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[#152744]/70">
                       Saved card
                     </span>
-                    <Icon icon={CreditCard} size={28} strokeWidth={1.6} />
+                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#152744]/10 text-[#152744]">
+                      <SidebarSvgIcon name="payment" size={22} strokeWidth={1.75} />
+                    </span>
                   </div>
                   <p className="font-sans mt-6 text-lg font-bold tracking-[0.08em] sm:mt-8 sm:text-xl md:text-2xl">
                     {card.card_number_masked}
@@ -365,32 +297,47 @@ export function StudentCardPage() {
                       </p>
                     </div>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => void handleRemove()}
-                    disabled={removing}
-                    className="font-sans mt-5 inline-flex min-h-10 items-center justify-center rounded-full border border-[#152744]/25 px-4 text-sm font-medium text-[#152744] transition hover:bg-[#152744]/08 disabled:opacity-60"
-                  >
-                    {removing ? "Removing…" : "Remove card"}
-                  </button>
+                  <div className="mt-5 flex flex-wrap gap-2">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowForm(true);
+                        setError(null);
+                        setSuccess(null);
+                      }}
+                      className="font-sans inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg bg-[#152744] px-4 text-sm font-medium text-white transition hover:brightness-110"
+                    >
+                      <SidebarSvgIcon name="payment" size={14} strokeWidth={1.9} />
+                      Update card
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => void handleRemove()}
+                      disabled={removing}
+                      className="font-sans inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-[#152744]/25 px-4 text-sm font-medium text-[#152744] transition hover:bg-[#152744]/08 disabled:opacity-60"
+                    >
+                      <SidebarSvgIcon name="cross" size={14} strokeWidth={2} />
+                      {removing ? "Removing…" : "Remove card"}
+                    </button>
+                  </div>
                 </section>
               ) : (
-                <section className="dashboard-surface flex flex-col items-center justify-center rounded-2xl px-4 py-10 text-center sm:px-5 sm:py-12">
-                  <span className="flex h-12 w-12 items-center justify-center rounded-full bg-[#DDE466]/20 text-[color:var(--dash-accent)]">
-                    <Icon icon={CreditCard} size={22} strokeWidth={1.7} />
+                <section className="hols-auth-card flex flex-col items-center justify-center rounded-xl px-4 py-10 text-center sm:px-5 sm:py-12">
+                  <span className="membership-plan-icon" aria-hidden>
+                    <SidebarSvgIcon name="payment" size={22} strokeWidth={1.75} />
                   </span>
                   <p className="font-sans mt-3 text-sm font-semibold text-[color:var(--dash-text)]">
                     No card on file
                   </p>
                   <p className="text-brand-caption mt-1 max-w-[14rem] text-[color:var(--dash-faint)]">
-                    Use Add card to save a card for membership purchases.
+                    Add a card below to enable membership purchases.
                   </p>
                 </section>
               )}
             </div>
 
             {showForm ? (
-              <section className="dashboard-surface order-1 min-w-0 rounded-2xl p-4 sm:p-5 md:p-6 lg:order-2">
+              <section className="hols-auth-card order-1 min-w-0 rounded-xl p-4 sm:p-5 md:p-6 lg:order-2">
                 <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
                   Card details
                 </p>
@@ -437,7 +384,7 @@ export function StudentCardPage() {
                   />
 
                   <div className="grid gap-2">
-                    <span className="dashboard-field-label">Expiry (MM / YYYY)</span>
+                    <span className={authLabelClass}>Expiry (MM / YYYY)</span>
                     <div className="grid grid-cols-[minmax(0,5.5rem)_minmax(0,1fr)] gap-3">
                       <div className="grid gap-2">
                         <input
@@ -459,7 +406,8 @@ export function StudentCardPage() {
                             setFieldErrors((prev) => ({ ...prev, exp_month: undefined }));
                           }}
                           className={cn(
-                            "dashboard-field",
+                            authFieldClass,
+                            "payment-field px-4 text-center",
                             fieldErrors.exp_month && "border-[color:var(--dash-danger,#c45c5c)]",
                           )}
                           required
@@ -485,7 +433,8 @@ export function StudentCardPage() {
                             setFieldErrors((prev) => ({ ...prev, exp_year: undefined }));
                           }}
                           className={cn(
-                            "dashboard-field",
+                            authFieldClass,
+                            "payment-field px-4",
                             fieldErrors.exp_year && "border-[color:var(--dash-danger,#c45c5c)]",
                           )}
                           required
@@ -542,8 +491,9 @@ export function StudentCardPage() {
                     <button
                       type="submit"
                       disabled={saving}
-                      className="font-sans inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full bg-[#DDE466] px-6 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 disabled:pointer-events-none disabled:opacity-60 sm:min-w-[10rem]"
+                      className="font-sans inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg bg-[#DDE466] px-6 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 disabled:pointer-events-none disabled:opacity-60 sm:min-w-[10rem]"
                     >
+                      <SidebarSvgIcon name="check" size={15} strokeWidth={2.2} />
                       {saving ? "Saving…" : card ? "Save updated card" : "Add card"}
                     </button>
                     {card ? (
@@ -555,7 +505,7 @@ export function StudentCardPage() {
                           setFieldErrors({});
                           setError(null);
                         }}
-                        className="dashboard-pill-soft font-sans inline-flex min-h-11 items-center justify-center rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)]"
+                        className="dashboard-pill-soft font-sans inline-flex min-h-11 items-center justify-center rounded-lg px-5 text-sm font-medium text-[color:var(--dash-text)]"
                       >
                         Cancel
                       </button>
@@ -564,11 +514,16 @@ export function StudentCardPage() {
                 </form>
               </section>
             ) : (
-              <section className="dashboard-surface order-1 hidden min-w-0 rounded-2xl p-4 sm:p-5 md:p-6 lg:order-2 lg:block">
-                <p className="text-brand-body text-[color:var(--dash-muted)]">
-                  Your card is ready for membership purchases. Choose Update card to replace it, or
-                  Remove card on the left to delete it.
-                </p>
+              <section className="hols-auth-card order-1 hidden min-w-0 rounded-xl p-4 sm:p-5 md:p-6 lg:order-2 lg:block">
+                <div className="flex items-start gap-3">
+                  <span className="membership-plan-icon shrink-0" aria-hidden>
+                    <SidebarSvgIcon name="shield" size={20} strokeWidth={1.85} />
+                  </span>
+                  <p className="text-brand-body text-[color:var(--dash-muted)]">
+                    Your card is ready for membership purchases. Choose Update card to replace it, or
+                    Remove card on the left to delete it.
+                  </p>
+                </div>
               </section>
             )}
           </div>

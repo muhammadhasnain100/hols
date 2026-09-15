@@ -12,28 +12,14 @@ import {
 } from "react";
 import { HeroLogo } from "@/components/hero/HeroLogo";
 import {
-  BookOpen,
-  Calculator,
-  Calendar,
-  ChevronLeft,
   ChevronRight,
-  CreditCard,
   Icon,
-  LayoutDashboard,
-  Link2,
-  LogOut,
   Menu,
-  MessageSquare,
   Moon,
-  NavIcon,
-  Search,
-  Star,
   Sun,
-  User,
-  Users,
-  Wallet,
   X,
 } from "@/components/icons";
+import { PortalNavIcon, SidebarSvgIcon } from "@/components/platform/provider/sidebar-icons";
 import { stopPortalAuthRuntime } from "@/lib/integrate/auth/runtime";
 import { clearAuthSession } from "@/lib/integrate/auth/storage";
 import type { UserRole } from "@/lib/integrate/auth/types";
@@ -270,7 +256,7 @@ export function PortalShell({
         className={cn(
           "portal-nav-item group relative flex items-center transition-colors duration-200",
           portalNavItemClass,
-          opts?.inFlyout ? "h-10 gap-2.5 rounded-xl px-3" : compact ? "h-11 justify-center rounded-xl px-0" : "h-11 gap-3 rounded-xl px-3.5",
+          opts?.inFlyout ? "h-10 gap-2.5 rounded-lg px-3" : compact ? "h-11 justify-center rounded-lg px-0" : "h-11 gap-3 rounded-lg px-3.5",
           active && "is-active",
         )}
       >
@@ -282,7 +268,8 @@ export function PortalShell({
             size={14}
             strokeWidth={2}
             className={cn(
-              "ml-auto shrink-0 text-[color:var(--sidebar-text)] opacity-60 transition-transform",
+              "ml-auto shrink-0 opacity-60 transition-transform",
+              active ? "text-[color:var(--sidebar-active-fg)]" : "text-[color:var(--sidebar-text)]",
               expandedGroups.has(item.href) && "rotate-90",
             )}
           />
@@ -346,11 +333,11 @@ export function PortalShell({
                 title="Search"
                 onClick={() => setCollapsed(false)}
               >
-                <Icon icon={Search} size={16} strokeWidth={1.9} />
+                <SidebarSvgIcon name="search" size={18} />
               </button>
             ) : (
               <label className="portal-sidebar-search">
-                <Icon icon={Search} size={15} strokeWidth={1.9} className="shrink-0" />
+                <SidebarSvgIcon name="search" size={18} className="shrink-0" />
                 <input
                   type="search"
                   value={navQuery}
@@ -362,20 +349,6 @@ export function PortalShell({
               </label>
             )}
           </div>
-
-          <button
-            type="button"
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            onClick={() => setCollapsed((value) => !value)}
-            className="portal-sidebar-toggle absolute -right-3 top-1/2 z-50 hidden h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full lg:flex"
-          >
-            <Icon
-              icon={ChevronLeft}
-              size={14}
-              strokeWidth={2.5}
-              className={cn("transition-transform", collapsed && "rotate-180")}
-            />
-          </button>
 
           <nav className="flex-1 space-y-1.5 overflow-y-auto overflow-x-hidden overscroll-contain px-3 pb-3" aria-label="Portal navigation">
             {filteredNav.length === 0 ? (
@@ -404,7 +377,7 @@ export function PortalShell({
                       type="button"
                       onClick={() => toggleGroup(item.href)}
                       className={cn(
-                        "portal-nav-item group relative flex w-full items-center rounded-xl transition-colors duration-200",
+                        "portal-nav-item group relative flex w-full items-center rounded-lg transition-colors duration-200",
                         portalNavItemClass,
                         "h-11 gap-3 px-3.5",
                         active && "is-active",
@@ -417,7 +390,8 @@ export function PortalShell({
                         size={14}
                         strokeWidth={2}
                         className={cn(
-                          "ml-auto shrink-0 text-[color:var(--sidebar-text)] opacity-60 transition-transform",
+                          "ml-auto shrink-0 opacity-60 transition-transform",
+                          active ? "text-[color:var(--sidebar-active-fg)]" : "text-[color:var(--sidebar-text)]",
                           groupOpen && "rotate-90",
                         )}
                       />
@@ -457,19 +431,18 @@ export function PortalShell({
             })}
           </nav>
 
-          <div className="portal-sidebar-footer mx-3 mb-3 mt-auto shrink-0 space-y-2 rounded-2xl p-2 pt-2">
+          <div className="portal-sidebar-footer mx-3 mb-3 mt-auto shrink-0 space-y-1 px-0 pb-1 pt-3">
             <button
               type="button"
               onClick={handleLogout}
               aria-label="Log out"
-              title="Log out"
               className={cn(
                 "portal-sidebar-logout",
                 compact ? "justify-center px-2" : "justify-start",
               )}
             >
               <span className="portal-sidebar-logout-icon">
-                <Icon icon={LogOut} size={16} strokeWidth={1.9} />
+                <SidebarSvgIcon name="logout" size={18} />
               </span>
               {!compact ? <span>Log out</span> : null}
             </button>
@@ -480,11 +453,11 @@ export function PortalShell({
               aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
               title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
               className={cn(
-                "portal-sidebar-theme flex w-full items-center rounded-xl transition",
+                "portal-sidebar-theme flex w-full items-center rounded-lg transition",
                 compact ? "justify-center p-2" : "gap-3 px-2.5 py-2",
               )}
             >
-              <span className="portal-sidebar-theme-icon flex h-8 w-8 shrink-0 items-center justify-center rounded-lg">
+              <span className="portal-sidebar-theme-icon flex h-8 w-8 shrink-0 items-center justify-center rounded-md">
                 {theme === "dark" ? (
                   <Icon icon={Moon} size={16} strokeWidth={1.8} />
                 ) : (
@@ -582,16 +555,16 @@ export function PortalShell({
 }
 
 export const portalIcons = {
-  dashboard: <NavIcon icon={LayoutDashboard} />,
-  courses: <NavIcon icon={BookOpen} />,
-  webinars: <NavIcon icon={Calendar} />,
-  membership: <NavIcon icon={Star} />,
-  payment: <NavIcon icon={CreditCard} />,
-  profile: <NavIcon icon={User} />,
-  users: <NavIcon icon={Users} />,
-  plans: <NavIcon icon={Wallet} />,
-  referrals: <NavIcon icon={Link2} />,
-  earnings: <NavIcon icon={Wallet} />,
-  calculator: <NavIcon icon={Calculator} />,
-  adviser: <NavIcon icon={MessageSquare} />,
+  dashboard: <PortalNavIcon name="dashboard" />,
+  courses: <PortalNavIcon name="lectures" />,
+  webinars: <PortalNavIcon name="webinars" />,
+  membership: <PortalNavIcon name="plans" />,
+  payment: <PortalNavIcon name="payment" />,
+  profile: <PortalNavIcon name="profile" />,
+  users: <PortalNavIcon name="users" />,
+  plans: <PortalNavIcon name="plans" />,
+  referrals: <PortalNavIcon name="referrals" />,
+  earnings: <PortalNavIcon name="earnings" />,
+  calculator: <PortalNavIcon name="calculator" />,
+  adviser: <PortalNavIcon name="adviser" />,
 };

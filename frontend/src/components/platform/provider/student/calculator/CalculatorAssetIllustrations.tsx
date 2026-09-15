@@ -511,10 +511,10 @@ export function SyringeSizeOption({
       type="button"
       onClick={onSelect}
       className={cn(
-        "relative z-10 inline-flex h-7 min-w-[2.75rem] items-center justify-center rounded-full border px-1.5 text-[10px] font-medium tracking-[0.01em] transition duration-200 max-[390px]:h-7 max-[390px]:min-w-[2.55rem] max-[390px]:px-1 max-[390px]:text-[9px] sm:h-9 sm:min-w-[4.1rem] sm:px-3.5 sm:text-sm",
+        "calc-syringe-option relative z-10 inline-flex h-10 min-w-[3.5rem] items-center justify-center rounded-lg border px-2.5 text-xs font-medium leading-none tracking-[0.01em] transition duration-200 sm:h-11 sm:min-w-[4.5rem] sm:px-3.5 sm:text-sm",
         selected
-          ? "border-[#DDE466] bg-[#DDE466] text-[#152744] shadow-[0_2px_10px_rgba(221,228,102,0.3)]"
-          : "dashboard-pill-soft border-[color:var(--dash-surface-border)] text-[color:var(--dash-muted)] hover:text-[color:var(--dash-text)]",
+          ? "border-[#DDE466] bg-[#DDE466]/25 text-[color:var(--sidebar-active-fg,#6f7a1c)]"
+          : "border-[color:var(--dash-surface-border)] text-[color:var(--dash-muted)] hover:border-[#DDE466] hover:text-[color:var(--dash-text)]",
       )}
       aria-pressed={selected}
     >

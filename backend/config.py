@@ -55,7 +55,9 @@ class Settings(BaseSettings):
     # ---- AI Adviser / Chat ----
     openrouter_api_key: str = ""
     openrouter_base_url: str = "https://openrouter.ai/api/v1"
-    chat_model: str = "openai/gpt-5.5"
+    # Intake card: quality + speed. Follow-up: fastest interactive replies.
+    chat_model: str = "openai/gpt-4o-mini"
+    chat_model_followup: str = "openai/gpt-4o-mini"
     chroma_api_key: str = ""
     chroma_tenant: str = ""
     chroma_database: str = "ai_adviser"
@@ -63,9 +65,11 @@ class Settings(BaseSettings):
     chroma_ssl_verify: str = "true"
     embed_model: str = "perplexity/pplx-embed-v1-4b"
     embed_batch_size: int = 32
-    top_k: int = 8
-    chat_memory_max_tokens: int = 4000
+    top_k: int = 3
+    chat_memory_max_tokens: int = 1800
     chat_messages_page_size: int = 30
+    chat_max_tokens_intake: int = 650
+    chat_max_tokens_followup: int = 220
 
 
 @lru_cache

@@ -44,10 +44,10 @@ const OPTIONS: Array<{
 
 const optionClass = (isActive: boolean) =>
   cn(
-    "font-sans inline-flex min-h-9 shrink-0 items-center justify-center gap-1.5 rounded-full px-3 text-xs font-medium tracking-[0.01em] transition sm:min-h-10 sm:px-4 sm:text-sm",
+    "font-sans inline-flex min-h-9 shrink-0 items-center justify-center gap-1.5 rounded-lg px-3 text-xs font-medium tracking-[0.01em] transition sm:min-h-10 sm:px-4 sm:text-sm",
     isActive
       ? "bg-[#DDE466] text-[#152744]"
-      : "dashboard-pill-soft text-[color:var(--dash-text)] hover:brightness-[0.98]",
+      : "border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] text-[color:var(--dash-text)] hover:border-[#DDE466]",
   );
 
 export function CourseOptionNav({ courseId, active }: CourseOptionNavProps) {

@@ -64,8 +64,40 @@ export type IntakeEvaluation = {
     tags?: string[];
     score?: number;
   }>;
+  labs?: string[];
+  stacks?: string[];
   disclaimer?: string;
   [key: string]: unknown;
+};
+
+export type BoardConfidence = "conservative" | "balanced" | "aggressive";
+
+export type RecommendationBoardPeptide = {
+  rank: number;
+  name: string;
+  evidence?: string;
+  fit?: string;
+  score?: number | null;
+  tags?: string[];
+};
+
+export type RecommendationBoard = {
+  primary_goal?: string | null;
+  secondary_goal?: string | null;
+  confidence: BoardConfidence | string;
+  preferred?: string | null;
+  ranked: RecommendationBoardPeptide[];
+  labs: string[];
+  stacks: string[];
+  safety: {
+    status: "clear" | "caution" | "blocked" | string;
+    hard_stops?: string[];
+    cautions?: string[];
+    flags?: string[];
+  };
+  reply: string;
+  chips: string[];
+  disclaimer?: string;
 };
 
 export type PatientSummary = {
@@ -107,6 +139,7 @@ export type PatientDetail = {
   intake_answers: IntakeAnswers;
   evaluation?: IntakeEvaluation | null;
   recommendation?: string | null;
+  recommendation_board?: RecommendationBoard | null;
   sources?: Array<Record<string, string>>;
   primary_goal?: string | null;
   message_count?: number;
