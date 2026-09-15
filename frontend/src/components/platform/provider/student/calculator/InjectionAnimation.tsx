@@ -11,7 +11,9 @@
  * vial stopper parks the long barrel across both vials (the "bridge" bug).
  * Pivot-centering keeps the body over the active vial / travel lane.
  *
- * Rotation: 0° = native horizontal (needle right), 90° = needle straight down.
+ * SyringeArt is drawn needle-down natively:
+ *   Rotation 0°  = needle straight down (insert / draw)
+ *   Rotation −90° = needle right (horizontal travel)
  */
 
 import { memo, useEffect, useRef, useState } from "react";
@@ -30,15 +32,12 @@ import {
   measureStaticDrawTargets,
   svgAttrSetter,
   svgLayerTranslateYSetter,
-  svgLayersTranslateXSetter,
+  syringeFillOffsetY,
+  syringeLiquidLayout,
   vialLiquidOffsetY,
 } from "@/components/platform/provider/student/calculator/calculatorGeometry";
 import { bacWaterLiquidOffsetY } from "@/components/platform/provider/student/calculator/BacWaterVialArt";
 import { HEXARELIN_SRC } from "@/components/platform/provider/student/calculator/HexarelinVialArt";
-import {
-  hsyrLiquidLayout,
-  hsyrPlungerOffsetX,
-} from "@/components/platform/provider/student/calculator/HorizontalSyringeArt";
 import { gsap, registerGsap } from "@/lib/gsap";
 import type { MassUnit, SyringeSizeMl } from "@/lib/integrate/provider/student/calculator";
 import { prefersReducedMotion } from "@/lib/motion";
@@ -70,15 +69,16 @@ const STAGE = {
   fadeOut: 0.3,
 } as const;
 
-const ROT_H = 0;
-const ROT_V = 90;
+const ROT_H = -90;
+const ROT_V = 0;
 /** Desktop-tuned insert depth as a fraction of vial height (through the cap, not into the body). */
 const INSERT_FRAC = 0.12;
-const HOVER_FRAC = 0.09;
+/** Tip clearance above the stopper while hovering / traveling — only insert touches the vial. */
+const HOVER_FRAC = 0.26;
 const INSERT_MIN_PX = 5;
 const INSERT_MAX_PX = 32;
-const HOVER_MIN_PX = 7;
-const HOVER_MAX_PX = 22;
+const HOVER_MIN_PX = 32;
+const HOVER_MAX_PX = 72;
 
 type Pt = { x: number; y: number };
 
@@ -126,9 +126,9 @@ type Dom = {
   setWaterSurfaceY: ((v: number) => void) | null;
   setMedLiquidY: ((v: number) => void) | null;
   setMedSurfaceY: ((v: number) => void) | null;
-  setSyringeLiquidX: ((v: number) => void) | null;
-  setSyringeLiquidWidth: ((v: number) => void) | null;
-  setSyringePlungerX: ((v: number) => void) | null;
+  setSyringeLiquidY: ((v: number) => void) | null;
+  setSyringeLiquidHeight: ((v: number) => void) | null;
+  setSyringePlungerY: ((v: number) => void) | null;
   setWrapX: (v: number) => void;
   setWrapY: (v: number) => void;
 };
@@ -192,9 +192,13 @@ function queryDom(scene: HTMLElement, wrap: HTMLElement): Dom | null {
     setWaterSurfaceY: svgLayerTranslateYSetter(waterSurfaceMarker),
     setMedLiquidY: svgLayerTranslateYSetter(medLiquidLayer),
     setMedSurfaceY: svgLayerTranslateYSetter(medSurfaceMarker),
-    setSyringeLiquidX: svgAttrSetter(syringeLiquidFill, "x"),
-    setSyringeLiquidWidth: svgAttrSetter(syringeLiquidFill, "width"),
-    setSyringePlungerX: svgLayersTranslateXSetter(syringePlungerLayers),
+    setSyringeLiquidY: svgAttrSetter(syringeLiquidFill, "y"),
+    setSyringeLiquidHeight: svgAttrSetter(syringeLiquidFill, "height"),
+    setSyringePlungerY: svgLayerTranslateYSetter(
+      syringePlungerLayers && syringePlungerLayers.length > 0
+        ? syringePlungerLayers[0]
+        : null,
+    ),
     setWrapX: gsap.quickSetter(wrap, "x", "px") as (v: number) => void,
     setWrapY: gsap.quickSetter(wrap, "y", "px") as (v: number) => void,
   };
@@ -349,9 +353,19 @@ export function InjectionAnimation({
         const waterInsertDepth = Math.min(waterMotion.insert, maxInsertByNeedle, INSERT_MAX_PX);
         const medInsertDepth = Math.min(medMotion.insert, maxInsertByNeedle, INSERT_MAX_PX);
 
-        /** Hover / insert pivots — tip locked onto the vial stopper. */
+        // Keep tip clearly above the cap until the insert beat — at least ~1.15× needle.
+        const waterHoverGap = Math.min(
+          HOVER_MAX_PX,
+          Math.max(waterMotion.hover, needleLenPx * 1.15, HOVER_MIN_PX),
+        );
+        const medHoverGap = Math.min(
+          HOVER_MAX_PX,
+          Math.max(medMotion.hover, needleLenPx * 1.15, HOVER_MIN_PX),
+        );
+
+        /** Hover / insert pivots — tip locked onto the vial stopper only on insert. */
         const waterHover = pivotForTip(
-          { x: water.x, y: water.y - waterMotion.hover },
+          { x: water.x, y: water.y - waterHoverGap },
           tipRel,
           ROT_V,
         );
@@ -361,7 +375,7 @@ export function InjectionAnimation({
           ROT_V,
         );
         const medHover = pivotForTip(
-          { x: med.x, y: med.y - medMotion.hover },
+          { x: med.x, y: med.y - medHoverGap },
           tipRel,
           ROT_V,
         );
@@ -372,21 +386,18 @@ export function InjectionAnimation({
         );
 
         /**
-         * Horizontal travel lane — stay at the same pivot height as waterHover.
-         * Lifting higher than that pushes the retracted plunger outside the card
-         * (overflow clips it so the syringe looks "hidden behind" the card).
+         * Horizontal travel lane — lift above hover so the barrel never skims
+         * the caps while sliding between bottles.
          */
-        const travelY = waterHover.y;
+        const travelLift = Math.max(14, Math.min(36, tipDrop * 0.08));
+        const travelY = waterHover.y - travelLift;
         const waterFlat: Pt = { x: water.x, y: travelY };
         const medFlat: Pt = { x: med.x, y: travelY };
 
-        // Intro: horizontal, pivot above water (body sits over the bottle).
+        // Intro: horizontal, clearly above water (no contact until insert).
         const waterIntro: Pt = {
           x: water.x,
-          y: Math.max(
-            waterHover.y + tipDrop * 0.12,
-            water.y - Math.min(waterMotion.hover * 2.2, tipDrop * 0.22),
-          ),
+          y: travelY - Math.max(8, waterHoverGap * 0.2),
         };
 
         const drawMl = reconstitutionDrawVolumeMl(waterMl, syringeMl);
@@ -463,11 +474,11 @@ export function InjectionAnimation({
             dom.medLiquidLayer.setAttribute("opacity", proxy.medFill > 0.04 ? "1" : "0");
           }
 
-          const plungerX = hsyrPlungerOffsetX(proxy.syringeFill);
-          const liquid = hsyrLiquidLayout(proxy.syringeFill);
-          dom.setSyringePlungerX?.(plungerX);
-          dom.setSyringeLiquidX?.(liquid.x);
-          dom.setSyringeLiquidWidth?.(liquid.width);
+          const plungerY = syringeFillOffsetY(proxy.syringeFill);
+          const liquid = syringeLiquidLayout(proxy.syringeFill);
+          dom.setSyringePlungerY?.(plungerY);
+          dom.setSyringeLiquidY?.(liquid.y);
+          dom.setSyringeLiquidHeight?.(liquid.height);
           if (dom.syringeLiquidLayer) {
             const layer = dom.syringeLiquidLayer as HTMLElement & SVGElement;
             if (layer.style) layer.style.opacity = "";

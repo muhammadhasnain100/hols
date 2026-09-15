@@ -70,18 +70,22 @@ export function syringeDisplayWidthRem(
  * Vertical padding (px) needed above the vials in draw mode so the syringe's
  * fully-retracted plunger doesn't clip the top of the animation card.
  *
- * Derived from the syringe's rendered width — the retracted thumb pad sits
- * ~568 SVG-units above the needle tip, and SVG scale = widthPx / 520. Subtract
- * the vial-top-to-stopper offset (~22 px avg) and add breathing room that
- * scales with syringe size (same ratio on phone and desktop).
+ * Tuned for SyringeArt (needle-down): tip→thumb span ≈ 546 viewBox units over
+ * a ~558-tall viewBox. Rendered height follows the same scale as AssetSyringe.
  */
 export function syringeDrawScenePaddingPx(
   syringeMl: SyringeSizeMl,
   compact = false,
 ): number {
-  const widthRem = syringeDisplayWidthRem(syringeMl, compact);
-  const widthPx = widthRem * 16;
-  // Hover lifts the tip above the stopper; breath must cover that lift plus margin.
-  const breath = Math.ceil(widthPx * 0.14) + (compact ? 20 : 28);
-  return Math.ceil((568 * widthPx) / 520 - 22 + breath);
+  const rawScale = SYRINGE_IMAGE_SCALE[syringeMl] ?? 0.8;
+  const scale = Math.min(
+    Math.max(rawScale * (compact ? 0.92 : 1), compact ? 0.68 : 0.78),
+    compact ? 0.92 : 1.05,
+  );
+  const baseHeight = compact ? 280 : 340;
+  const heightPx = baseHeight * scale;
+  // tipY 404 → thumbTop -142 in a viewBox from -146..412
+  const tipToThumbPx = heightPx * (546 / 558);
+  const breath = Math.ceil(heightPx * 0.16) + (compact ? 28 : 40);
+  return Math.ceil(tipToThumbPx - 22 + breath);
 }

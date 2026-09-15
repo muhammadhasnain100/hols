@@ -254,7 +254,7 @@ export function CalculatorReconScene({
         // min-h: paddingTop + vial column + bottom pad. Compact syringe keeps
         // everything proportional; SE gets a shorter floor so the card fits.
         drawSyringeLarge
-          ? "min-h-[22rem] max-[390px]:min-h-[20.5rem] sm:min-h-[30rem] md:min-h-[38rem]"
+          ? "min-h-[28rem] max-[390px]:min-h-[25rem] sm:min-h-[36rem] md:min-h-[44rem]"
           : "min-h-[9rem] max-[390px]:min-h-[8.5rem] sm:min-h-[14rem] md:min-h-[16rem]",
         className,
       )}

@@ -30,6 +30,13 @@ const secondaryFont = Outfit({
 export const metadata: Metadata = {
   title: brand.name,
   description: brand.description,
+  icons: {
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/favicon.png", type: "image/png", sizes: "48x48" },
+    ],
+    apple: "/apple-icon.png",
+  },
 };
 
 export default async function RootLayout({

@@ -4,7 +4,6 @@ import { useId, useLayoutEffect, useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import {
   SYRINGE_IMAGE_SCALE,
-  syringeDisplayWidthRem,
   HOLS_BRAND,
 } from "@/components/platform/provider/student/calculator/calculatorAssets";
 import {
@@ -24,10 +23,6 @@ import {
   HexarelinVialArt,
 } from "@/components/platform/provider/student/calculator/HexarelinVialArt";
 import { SYRINGE_ART, SyringeArt } from "@/components/platform/provider/student/calculator/SyringeArt";
-import {
-  HSYR_GEOMETRY,
-  HorizontalSyringeArt,
-} from "@/components/platform/provider/student/calculator/HorizontalSyringeArt";
 import { useCompactCalculatorScene } from "@/components/platform/provider/student/calculator/useCompactCalculatorScene";
 import { gsap, registerGsap } from "@/lib/gsap";
 import type { MassUnit, SyringeSizeMl } from "@/lib/integrate/provider/student/calculator";
@@ -321,138 +316,18 @@ export function AssetSyringe({
 }: AssetSyringeProps) {
   const uid = useId().replace(/:/g, "");
   const narrowViewport = useCompactCalculatorScene();
-  const useCompactWidth = compact || narrowViewport;
+  const useCompactScale = compact || narrowViewport;
   const rawScale = SYRINGE_IMAGE_SCALE[syringeMl] ?? 0.8;
-  // Draw/animation: legible + fits horizontally in the scene when rotated.
-  const scale = needleDown ? Math.min(Math.max(rawScale * 0.85, 0.6), 0.78) : rawScale;
+  // Draw/animation: slightly smaller than overview so a full plunger stays in-card,
+  // but still large enough to read clearly against the vials.
+  const scale = needleDown
+    ? Math.min(
+        Math.max(rawScale * (useCompactScale ? 0.92 : 1), useCompactScale ? 0.68 : 0.78),
+        useCompactScale ? 0.92 : 1.05,
+      )
+    : rawScale * (useCompactScale ? 1.05 : 1.12);
 
   const clamped = Math.min(0.98, Math.max(0, showFill ? fillRatio : 0));
-
-  /* --------------------------------------------------------------------- */
-  /*  Overview mode → dedicated horizontal syringe SVG (natively drawn).    */
-  /* --------------------------------------------------------------------- */
-  if (horizontal) {
-    // Dramatic per-capacity spread so the syringe visibly grows as users pick
-    // larger sizes — compact widths keep phones from overflowing.
-    const overviewWidthRem = syringeDisplayWidthRem(syringeMl, useCompactWidth);
-    return (
-      <div className={cn("flex w-full flex-col items-center", className)}>
-        <div
-          className="relative w-full"
-          style={{
-            maxWidth: `min(${overviewWidthRem}rem, 100%)`,
-            aspectRatio: "520 / 120",
-          }}
-        >
-          <HorizontalSyringeArt
-            uid={uid}
-            fillRatio={showFill ? clamped : 0}
-            showLiquid={showFill && clamped > 0}
-            active={active}
-            className="absolute inset-0 h-full w-full"
-          />
-        </div>
-        {label ? (
-          <p
-            className={cn(
-              "max-w-[16rem] px-1 text-center font-medium text-[color:var(--dash-text)]",
-              large ? "mt-2 text-xs sm:mt-3 sm:text-sm" : "mt-2 text-[11px]",
-            )}
-          >
-            {label}
-          </p>
-        ) : null}
-      </div>
-    );
-  }
-
-  /* --------------------------------------------------------------------- */
-  /*  Draw / animation mode → horizontal syringe SVG in a rotator wrapper.  */
-  /*  Rotation default = +90° so the natively-horizontal syringe reads as   */
-  /*  needle-down. The InjectionAnimation timeline overrides this at will.  */
-  /* --------------------------------------------------------------------- */
-  if (large && needleDown) {
-    // Match the OVERVIEW syringe size so the animation reads at the exact
-    // same visual scale users just saw during dose selection.
-    const drawWidthRem = syringeDisplayWidthRem(syringeMl, useCompactWidth);
-    const drawWidthPx = drawWidthRem * 16;
-    const drawHeightPx = drawWidthPx * (HSYR_GEOMETRY.viewH / HSYR_GEOMETRY.viewW);
-    // Padded box big enough for any rotation PLUS the fully-retracted plunger
-    // thumb (extends ~plungerTravel past the left of the native SVG).
-    const plungerOverhangPx =
-      (HSYR_GEOMETRY.plungerTravel / HSYR_GEOMETRY.viewW) * drawWidthPx + 28;
-    const boxSide = drawWidthPx + plungerOverhangPx;
-
-    // The needle tip lives at (515, 60.2) inside the 520×120 viewBox.
-    // Convert to fraction of the SVG's rendered box (drawWidthPx × drawHeightPx):
-    const tipFracX = 515 / HSYR_GEOMETRY.viewW; // ~0.99
-    const tipFracY = 60.2 / HSYR_GEOMETRY.viewH; // 0.5017
-
-    return (
-      <div
-        className={cn("flex flex-col items-center overflow-visible", className)}
-        data-syringe-box="draw"
-      >
-        <div
-          className="relative max-w-full overflow-visible"
-          style={{ width: boxSide, height: boxSide }}
-        >
-          <div
-            data-syringe-rotator
-            className="absolute left-1/2 top-1/2 overflow-visible"
-            // GSAP owns `transform` during the draw animation — putting rotation
-            // in React style would snap the syringe on every parent re-render.
-            style={{
-              width: drawWidthPx,
-              height: drawHeightPx,
-              transformOrigin: "center center",
-              ...(gsapDriven
-                ? {}
-                : { transform: "translate(-50%, -50%) rotate(90deg)" }),
-            }}
-            ref={(node) => {
-              if (!node || !gsapDriven) return;
-              if (!node.style.transform) {
-                node.style.transform = "translate(-50%, -50%) rotate(0deg)";
-              }
-            }}
-          >
-            <HorizontalSyringeArt
-              uid={`${uid}-${part}`}
-              fillRatio={0}
-              showLiquid={part !== "needle"}
-              active={active && part !== "needle"}
-              gsapOwned={gsapDriven && part !== "needle"}
-              part={part}
-              className="absolute inset-0 h-full w-full overflow-visible"
-            />
-            {/* Tip marker only on the needle (or full) layer — used for alignment */}
-            {part !== "barrel" ? (
-              <span
-                data-needle-tip
-                className="pointer-events-none absolute h-px w-px"
-                style={{
-                  left: `${tipFracX * 100}%`,
-                  top: `${tipFracY * 100}%`,
-                }}
-                aria-hidden
-              />
-            ) : null}
-          </div>
-        </div>
-        {label ? (
-          <p
-            className={cn(
-              "max-w-[16rem] text-center font-medium text-[color:var(--dash-text)]",
-              "mt-3 text-sm",
-            )}
-          >
-            {label}
-          </p>
-        ) : null}
-      </div>
-    );
-  }
 
   /** Empty → plunger pushed in (thumb kept back by stem gap); full → plunger pulled out above barrel. */
   const plungerY = (1 - clamped) * SYRINGE_BARREL_TRAVEL;
@@ -465,7 +340,7 @@ export function AssetSyringe({
     ? `translate(0 ${SYRINGE_BARREL_TRAVEL})`
     : `translate(0 ${plungerY})`;
   const liquid = gsapDriven ? syringeLiquidLayout(0) : syringeLiquidLayout(clamped);
-  const showLiquid = showFill && (clamped > 0 || gsapDriven);
+  const showLiquid = showFill && (clamped > 0 || gsapDriven) && part !== "needle";
 
   /** Use SVG transform only — avoid stacking CSS + SVG transforms. */
   const plungerMotionStyle = { willChange: "transform" as const };
@@ -477,20 +352,38 @@ export function AssetSyringe({
   const showNeedle = part === "full" || part === "needle";
   const showBarrel = part === "full" || part === "barrel";
 
-  const baseHeight = horizontal ? 240 : large ? (needleDown ? 260 : 290) : compact ? 140 : 250;
+  const baseHeight = horizontal
+    ? useCompactScale
+      ? 260
+      : 320
+    : large
+      ? needleDown
+        ? useCompactScale
+          ? 280
+          : 340
+        : 320
+      : useCompactScale
+        ? 180
+        : 280;
   const height = Math.round(baseHeight * scale);
   const viewTop = SYRINGE_ART.viewTop;
-  const viewBottom = needleDown ? SYRINGE_ART.viewBottom : 380;
+  const viewBottom = needleDown || (!horizontal && large) ? SYRINGE_ART.viewBottom : 380;
   const viewH = viewBottom - viewTop;
   const width = Math.round(height * (92 / viewH));
   const needleTipY = needleDown ? SYRINGE_ART.tipY : 377;
 
-  /** Overview: lay syringe flat (needle right). Draw mode stays needle-down (0°). */
-  const rotate = horizontal ? -90 : 0;
+  /**
+   * Overview: classic −45° reference tilt (user syringe design).
+   * Draw: needle-down at 0°; GSAP rotates to −90° for horizontal travel.
+   */
+  const rotate = horizontal ? -45 : 0;
 
   const rad = (Math.abs(rotate) * Math.PI) / 180;
   const boxW = Math.round(Math.abs(width * Math.cos(rad)) + Math.abs(height * Math.sin(rad)));
   const boxH = Math.round(Math.abs(width * Math.sin(rad)) + Math.abs(height * Math.cos(rad)));
+
+  /** Tip as fraction of the SVG box (inside the rotator so it tracks GSAP rotation). */
+  const tipTopPct = ((needleTipY - viewTop) / viewH) * 100;
 
   const svg = (
     <svg
@@ -502,56 +395,67 @@ export function AssetSyringe({
       aria-hidden
     >
       <SyringeArt
-        uid={uid}
+        uid={`${uid}-${part}`}
         showNeedle={showNeedle}
         showBarrel={showBarrel}
         showLiquid={showLiquid}
-        active={active}
+        active={active && showBarrel}
         needleDown={needleDown}
         plungerTransform={plungerTransform}
         plungerMotionStyle={plungerMotionStyle}
         liquidLayerStyle={liquidLayerStyle}
         liquidLayerOpacity={liquidLayerOpacity}
         liquidFill={liquid}
-        gsapOwned={gsapDriven}
+        gsapOwned={gsapDriven && showBarrel}
       />
     </svg>
   );
 
-  /** HTML tip marker — reliable layout box for GSAP alignment (SVG circles can mis-measure). */
-  const tipTopPct = ((needleTipY - viewTop) / viewH) * 100;
-
   return (
-    <div className={cn("flex flex-col items-center", className)} data-syringe-box={needleDown ? "draw" : undefined}>
+    <div
+      className={cn("flex flex-col items-center overflow-visible", className)}
+      data-syringe-box={needleDown ? "draw" : undefined}
+    >
       <div
-        className="relative flex items-center justify-center"
-        style={{ width: boxW, height: boxH }}
+        className="relative flex max-w-full items-center justify-center overflow-visible"
+        style={{ width: Math.max(boxW, width), height: Math.max(boxH, height) }}
       >
         <div
           data-syringe-rotator
-          className="absolute left-1/2 top-1/2 flex items-center justify-center"
+          className="absolute left-1/2 top-1/2 flex items-center justify-center overflow-visible"
           style={{
-            transform: `translate(-50%, -50%) rotate(${rotate}deg)`,
+            width,
+            height,
             transformOrigin: "center center",
+            ...(gsapDriven
+              ? {}
+              : { transform: `translate(-50%, -50%) rotate(${rotate}deg)` }),
+          }}
+          ref={(node) => {
+            if (!node || !gsapDriven) return;
+            if (!node.style.transform) {
+              // Identity for measurement: needle-down (SyringeArt native pose).
+              node.style.transform = "translate(-50%, -50%) rotate(0deg)";
+            }
           }}
         >
           {svg}
+          {showNeedle ? (
+            <span
+              data-needle-tip
+              className="pointer-events-none absolute left-1/2 h-px w-px -translate-x-1/2 -translate-y-1/2"
+              style={{ top: `${tipTopPct}%` }}
+              aria-hidden
+            />
+          ) : null}
         </div>
-        {showNeedle && !horizontal ? (
-          <span
-            data-needle-tip
-            className="pointer-events-none absolute left-1/2 h-px w-px -translate-x-1/2 -translate-y-1/2"
-            style={{ top: `${tipTopPct}%` }}
-            aria-hidden
-          />
-        ) : null}
       </div>
 
       {label ? (
         <p
           className={cn(
-            "max-w-[12rem] text-center font-medium text-[color:var(--dash-text)]",
-            large ? "mt-3 text-sm" : "mt-2 text-[11px]",
+            "max-w-[16rem] px-1 text-center font-medium text-[color:var(--dash-text)]",
+            large ? "mt-2 text-xs sm:mt-3 sm:text-sm" : "mt-2 text-[11px]",
           )}
         >
           {label}
