@@ -367,16 +367,18 @@ export function AssetSyringe({
         : 280;
   const height = Math.round(baseHeight * scale);
   const viewTop = SYRINGE_ART.viewTop;
-  const viewBottom = needleDown || (!horizontal && large) ? SYRINGE_ART.viewBottom : 380;
+  // Always include the full cannula — overview used to clip at 380 and hide length.
+  const viewBottom = SYRINGE_ART.viewBottom;
   const viewH = viewBottom - viewTop;
   const width = Math.round(height * (92 / viewH));
-  const needleTipY = needleDown ? SYRINGE_ART.tipY : 377;
+  const needleTipY = SYRINGE_ART.tipY;
 
   /**
    * Overview: classic −45° reference tilt (user syringe design).
-   * Draw: needle-down at 0°; GSAP rotates to −90° for horizontal travel.
+   * Draw (gsapDriven): park horizontal (−90°) until GSAP measures at 0° then
+   * restores horizontal for the intro — avoids a vertical flash before play.
    */
-  const rotate = horizontal ? -45 : 0;
+  const rotate = horizontal ? -45 : needleDown && gsapDriven ? -90 : 0;
 
   const rad = (Math.abs(rotate) * Math.PI) / 180;
   const boxW = Math.round(Math.abs(width * Math.cos(rad)) + Math.abs(height * Math.sin(rad)));
@@ -427,6 +429,8 @@ export function AssetSyringe({
             width,
             height,
             transformOrigin: "center center",
+            // When GSAP owns the draw scene, do NOT put transform in React style —
+            // status re-renders would clobber the animated rotation. Seed via ref.
             ...(gsapDriven
               ? {}
               : { transform: `translate(-50%, -50%) rotate(${rotate}deg)` }),
@@ -434,8 +438,9 @@ export function AssetSyringe({
           ref={(node) => {
             if (!node || !gsapDriven) return;
             if (!node.style.transform) {
-              // Identity for measurement: needle-down (SyringeArt native pose).
-              node.style.transform = "translate(-50%, -50%) rotate(0deg)";
+              // Park horizontal (−90°) until InjectionAnimation measures at 0°
+              // then restores horizontal for the intro.
+              node.style.transform = `translate(-50%, -50%) rotate(${rotate}deg)`;
             }
           }}
         >

@@ -38,6 +38,7 @@ import {
 } from "@/components/platform/provider/student/calculator/calculatorGeometry";
 import { bacWaterLiquidOffsetY } from "@/components/platform/provider/student/calculator/BacWaterVialArt";
 import { HEXARELIN_SRC } from "@/components/platform/provider/student/calculator/HexarelinVialArt";
+import { SYRINGE_ART } from "@/components/platform/provider/student/calculator/SyringeArt";
 import { gsap, registerGsap } from "@/lib/gsap";
 import type { MassUnit, SyringeSizeMl } from "@/lib/integrate/provider/student/calculator";
 import { prefersReducedMotion } from "@/lib/motion";
@@ -52,7 +53,8 @@ type InjectionAnimationProps = {
 };
 
 const STAGE = {
-  intro: 0.55,
+  intro: 0.7,
+  holdHorizontal: 0.35,
   rotateDownWater: 0.7,
   insertWater: 0.35,
   draw: 1.1,
@@ -341,14 +343,15 @@ export function InjectionAnimation({
         const water = targets.waterStopper;
         const med = targets.medStopper;
 
-        // How far the tip sits below the pivot when needle-down.
+        // tipDrop ≈ pivot→tip when needle-down; scale needle length from art proportions.
         const tipDrop = Math.abs(rotateVec(tipRel, ROT_V).y) || Math.abs(tipRel.x);
+        const needleArtLen = SYRINGE_ART.tipY - SYRINGE_ART.hubY;
+        const tipArtDrop = SYRINGE_ART.tipY - (SYRINGE_ART.viewTop + SYRINGE_ART.viewBottom) / 2;
+        const needleLenPx = tipDrop * (needleArtLen / Math.max(1, tipArtDrop));
 
         const waterMotion = vialMotionOffsets(sceneEl, "water");
         const medMotion = vialMotionOffsets(sceneEl, "med");
-        // tipDrop ≈ half the rendered syringe length; needle ≈ 30% of tipDrop.
         // Cap insert at ~45% of needle so the hub never sinks into the bottle.
-        const needleLenPx = tipDrop * 0.3;
         const maxInsertByNeedle = Math.max(INSERT_MIN_PX, needleLenPx * 0.45);
         const waterInsertDepth = Math.min(waterMotion.insert, maxInsertByNeedle, INSERT_MAX_PX);
         const medInsertDepth = Math.min(medMotion.insert, maxInsertByNeedle, INSERT_MAX_PX);
@@ -394,10 +397,14 @@ export function InjectionAnimation({
         const waterFlat: Pt = { x: water.x, y: travelY };
         const medFlat: Pt = { x: med.x, y: travelY };
 
-        // Intro: horizontal, clearly above water (no contact until insert).
+        // Intro: enter horizontally above water, then sit before rotating down.
         const waterIntro: Pt = {
           x: water.x,
           y: travelY - Math.max(8, waterHoverGap * 0.2),
+        };
+        const waterEnter: Pt = {
+          x: water.x - Math.max(36, tipDrop * 0.12),
+          y: waterIntro.y - Math.max(18, tipDrop * 0.05),
         };
 
         const drawMl = reconstitutionDrawVolumeMl(waterMl, syringeMl);
@@ -410,8 +417,8 @@ export function InjectionAnimation({
         const endMed = medFillAfterReconstitution(waterMl, peptideAmount, peptideUnit);
 
         const proxy = {
-          pivotX: waterIntro.x,
-          pivotY: waterIntro.y,
+          pivotX: waterEnter.x,
+          pivotY: waterEnter.y,
           rotation: ROT_H,
           waterFill: startWater,
           waterOpacity: 1,
@@ -540,6 +547,7 @@ export function InjectionAnimation({
           return start;
         };
         const tIntro = mark(STAGE.intro);
+        const tHoldH = mark(STAGE.holdHorizontal);
         const tRotWater = mark(STAGE.rotateDownWater);
         const tInsWater = mark(STAGE.insertWater);
         const tDraw = mark(STAGE.draw);
@@ -576,6 +584,7 @@ export function InjectionAnimation({
 
         tl.call(say("Positioning syringe over bacteriostatic water…"), undefined, tIntro)
           .call(() => focus("water"), undefined, tIntro)
+          // Slide in while staying horizontal (needle right).
           .to(
             proxy,
             {
@@ -588,6 +597,19 @@ export function InjectionAnimation({
               onUpdate: updateFrame,
             },
             tIntro,
+          )
+          // Brief park so the horizontal pose reads before rotate-down.
+          .to(
+            proxy,
+            {
+              pivotX: waterIntro.x,
+              pivotY: waterIntro.y,
+              rotation: ROT_H,
+              duration: STAGE.holdHorizontal,
+              ease: "none",
+              onUpdate: updateFrame,
+            },
+            tHoldH,
           )
 
           // Rotate needle-down over water

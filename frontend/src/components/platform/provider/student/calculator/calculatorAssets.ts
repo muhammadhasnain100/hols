@@ -84,8 +84,8 @@ export function syringeDrawScenePaddingPx(
   );
   const baseHeight = compact ? 280 : 340;
   const heightPx = baseHeight * scale;
-  // tipY 404 → thumbTop -142 in a viewBox from -146..412
-  const tipToThumbPx = heightPx * (546 / 558);
+  // tipY 456 → thumbTop -142 in a viewBox from -146..466
+  const tipToThumbPx = heightPx * (598 / 612);
   const breath = Math.ceil(heightPx * 0.16) + (compact ? 28 : 40);
   return Math.ceil(tipToThumbPx - 22 + breath);
 }

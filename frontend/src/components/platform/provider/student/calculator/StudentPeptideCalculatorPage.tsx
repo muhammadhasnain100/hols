@@ -314,7 +314,7 @@ export function StudentPeptideCalculatorPage({
             isWideLayout
               // Mobile: amount card first, vial/syringe visual second.
               // Desktop (lg+): same DOM order → amount left, visual right (3fr : 5fr).
-              ? "grid min-w-0 gap-3 max-[390px]:gap-2.5 md:gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,5fr)] lg:items-stretch lg:gap-6"
+              ? "grid min-w-0 gap-3 max-[390px]:gap-2.5 md:gap-5 lg:grid-cols-[minmax(0,3fr)_minmax(0,5fr)] lg:items-start lg:gap-6"
               : "mx-auto w-full max-w-3xl",
           )}
         >
@@ -499,7 +499,7 @@ function StepPanel({
   actions: React.ReactNode;
 }) {
   return (
-    <div className="dashboard-glass-card flex h-full min-h-0 flex-col justify-center rounded-2xl p-3 max-[390px]:p-2.5 sm:min-h-[20rem] sm:p-6 md:min-h-[22rem] lg:min-h-full">
+    <div className="dashboard-glass-card flex w-full flex-col rounded-2xl p-3 max-[390px]:p-2.5 sm:p-6">
       <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-3 text-center max-[390px]:gap-2.5 sm:gap-5 lg:mx-0 lg:max-w-none lg:items-start lg:text-left">
         <div className="min-w-0 w-full">
           <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
@@ -511,7 +511,9 @@ function StepPanel({
           <p className="text-brand-body mt-1 text-xs text-[color:var(--dash-muted)] max-[390px]:text-[11px] max-[390px]:leading-snug sm:mt-2 sm:text-sm">{hint}</p>
         </div>
         <div className="w-full min-w-0">{children}</div>
-        <div className="w-full border-t border-[color:var(--dash-surface-border)] pt-2.5 max-[390px]:pt-2 sm:pt-4">{actions}</div>
+        <div className="w-full border-t border-[color:var(--dash-surface-border)] pt-2.5 max-[390px]:pt-2 sm:pt-4">
+          {actions}
+        </div>
       </div>
     </div>
   );
