@@ -67,25 +67,38 @@ export function syringeDisplayWidthRem(
 }
 
 /**
- * Vertical padding (px) needed above the vials in draw mode so the syringe's
- * fully-retracted plunger doesn't clip the top of the animation card.
- *
- * Tuned for SyringeArt (needle-down): tip→thumb span ≈ 546 viewBox units over
- * a ~558-tall viewBox. Rendered height follows the same scale as AssetSyringe.
+ * Draw-scene syringe scale — keep in sync with AssetSyringe `needleDown` branch.
+ * Compact tracks overview size so the animation matches the selection preview.
+ */
+export function syringeDrawImageScale(
+  syringeMl: SyringeSizeMl,
+  compact = false,
+): number {
+  const rawScale = SYRINGE_IMAGE_SCALE[syringeMl] ?? 0.8;
+  if (compact) {
+    // Same ballpark as overview on phones — clamp/hover fit keep it in-card.
+    return Math.min(Math.max(rawScale * 0.92, 0.68), 0.92);
+  }
+  return Math.min(Math.max(rawScale, 0.78), 1.05);
+}
+
+/** Rendered SVG height (px) for draw-mode AssetSyringe. */
+export function syringeDrawBaseHeightPx(compact = false): number {
+  return compact ? 260 : 340;
+}
+
+/**
+ * Vertical padding above the vials — just enough for a vertical syringe with
+ * tip at the stopper (hover uses that same band; no extra dead zone).
  */
 export function syringeDrawScenePaddingPx(
   syringeMl: SyringeSizeMl,
   compact = false,
 ): number {
-  const rawScale = SYRINGE_IMAGE_SCALE[syringeMl] ?? 0.8;
-  const scale = Math.min(
-    Math.max(rawScale * (compact ? 0.92 : 1), compact ? 0.68 : 0.78),
-    compact ? 0.92 : 1.05,
-  );
-  const baseHeight = compact ? 280 : 340;
-  const heightPx = baseHeight * scale;
-  // tipY 456 → thumbTop -142 in a viewBox from -146..466
+  const scale = syringeDrawImageScale(syringeMl, compact);
+  const heightPx = syringeDrawBaseHeightPx(compact) * scale;
+  // tipY 456 → thumbTop -142 in a viewBox from -146..466 → 598 / 612
   const tipToThumbPx = heightPx * (598 / 612);
-  const breath = Math.ceil(heightPx * 0.16) + (compact ? 28 : 40);
-  return Math.ceil(tipToThumbPx - 22 + breath);
+  const breath = compact ? 10 : 28;
+  return Math.ceil(tipToThumbPx * (compact ? 1.04 : 1.06) + breath);
 }

@@ -3,8 +3,10 @@
 import { useId, useLayoutEffect, useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import {
-  SYRINGE_IMAGE_SCALE,
   HOLS_BRAND,
+  SYRINGE_IMAGE_SCALE,
+  syringeDrawBaseHeightPx,
+  syringeDrawImageScale,
 } from "@/components/platform/provider/student/calculator/calculatorAssets";
 import {
   SYRINGE_BARREL_TRAVEL,
@@ -22,7 +24,10 @@ import {
   HexarelinPowderCake,
   HexarelinVialArt,
 } from "@/components/platform/provider/student/calculator/HexarelinVialArt";
-import { SYRINGE_ART, SyringeArt } from "@/components/platform/provider/student/calculator/SyringeArt";
+import {
+  SYRINGE_ART,
+  SyringeArt,
+} from "@/components/platform/provider/student/calculator/SyringeArt";
 import { useCompactCalculatorScene } from "@/components/platform/provider/student/calculator/useCompactCalculatorScene";
 import { gsap, registerGsap } from "@/lib/gsap";
 import type { MassUnit, SyringeSizeMl } from "@/lib/integrate/provider/student/calculator";
@@ -318,13 +323,10 @@ export function AssetSyringe({
   const narrowViewport = useCompactCalculatorScene();
   const useCompactScale = compact || narrowViewport;
   const rawScale = SYRINGE_IMAGE_SCALE[syringeMl] ?? 0.8;
-  // Draw/animation: slightly smaller than overview so a full plunger stays in-card,
-  // but still large enough to read clearly against the vials.
+  // Draw/animation: shared helper so padding + rendered size stay in lockstep.
+  // Overview (tilted): slightly smaller on phones so the long needle stays in-card.
   const scale = needleDown
-    ? Math.min(
-        Math.max(rawScale * (useCompactScale ? 0.92 : 1), useCompactScale ? 0.68 : 0.78),
-        useCompactScale ? 0.92 : 1.05,
-      )
+    ? syringeDrawImageScale(syringeMl, useCompactScale)
     : rawScale * (useCompactScale ? 1.05 : 1.12);
 
   const clamped = Math.min(0.98, Math.max(0, showFill ? fillRatio : 0));
@@ -358,9 +360,7 @@ export function AssetSyringe({
       : 320
     : large
       ? needleDown
-        ? useCompactScale
-          ? 280
-          : 340
+        ? syringeDrawBaseHeightPx(useCompactScale)
         : 320
       : useCompactScale
         ? 180
@@ -415,12 +415,21 @@ export function AssetSyringe({
 
   return (
     <div
-      className={cn("flex flex-col items-center overflow-visible", className)}
+      className={cn(
+        "flex max-w-full flex-col items-center",
+        // Overview: clip so the tilted long needle never spills the card.
+        // Draw: keep visible — scene card clips; local clip would cut the plunger.
+        needleDown || gsapDriven ? "overflow-visible" : "overflow-hidden",
+        className,
+      )}
       data-syringe-box={needleDown ? "draw" : undefined}
     >
       <div
-        className="relative flex max-w-full items-center justify-center overflow-visible"
-        style={{ width: Math.max(boxW, width), height: Math.max(boxH, height) }}
+        className={cn(
+          "relative flex max-w-full items-center justify-center",
+          needleDown || gsapDriven ? "overflow-visible" : "overflow-hidden",
+        )}
+        style={{ width: Math.max(boxW, width), height: Math.max(boxH, height), maxWidth: "100%" }}
       >
         <div
           data-syringe-rotator

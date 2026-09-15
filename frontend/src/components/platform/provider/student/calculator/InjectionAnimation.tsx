@@ -97,6 +97,39 @@ function pivotForTip(tip: Pt, tipRel: Pt, rotation: number): Pt {
   return { x: tip.x - r.x, y: tip.y - r.y };
 }
 
+/**
+ * Keep the syringe body inside the scene.
+ * tipDrop ≈ pivot→tip; when needle-down the thumb sits ~tipDrop above the pivot.
+ */
+function clampPivotInScene(
+  pivot: Pt,
+  tipDrop: number,
+  rotation: number,
+  sceneW: number,
+  sceneH: number,
+): Pt {
+  const horizontal = Math.abs(rotation - ROT_H) < 45;
+  const marginX = tipDrop * (horizontal ? 0.58 : 0.18);
+  // Vertical: full half-length above pivot + inset so the thumb never clips.
+  const marginTop = horizontal ? tipDrop * 0.22 : tipDrop + 14;
+  const marginBottom = tipDrop * (horizontal ? 0.22 : 0.1);
+  return {
+    x: Math.min(sceneW - marginX, Math.max(marginX, pivot.x)),
+    y: Math.min(sceneH - marginBottom, Math.max(marginTop, pivot.y)),
+  };
+}
+
+/** Cap hover so tipDrop*2 + hover still fits under the scene top. */
+function hoverGapThatFits(
+  stopperY: number,
+  tipDrop: number,
+  desired: number,
+  scenePad = 14,
+): number {
+  const maxFit = stopperY - tipDrop * 2 - scenePad;
+  return Math.max(6, Math.min(desired, maxFit));
+}
+
 /** Scale motion offsets with the rendered vial so phones match desktop proportions. */
 function vialMotionOffsets(scene: HTMLElement, which: "water" | "med") {
   const root = scene.querySelector(`[data-vial-root="${which}"]`);
@@ -356,15 +389,21 @@ export function InjectionAnimation({
         const waterInsertDepth = Math.min(waterMotion.insert, maxInsertByNeedle, INSERT_MAX_PX);
         const medInsertDepth = Math.min(medMotion.insert, maxInsertByNeedle, INSERT_MAX_PX);
 
-        // Keep tip clearly above the cap until the insert beat — at least ~1.15× needle.
-        const waterHoverGap = Math.min(
-          HOVER_MAX_PX,
-          Math.max(waterMotion.hover, needleLenPx * 1.15, HOVER_MIN_PX),
+        const sceneW = sceneRect.width;
+        const sceneH = sceneRect.height;
+        const narrowScene = sceneW < 420;
+
+        // Desired hover, then shrink on phones so the thumb never leaves the card.
+        const waterHoverDesired = Math.min(
+          narrowScene ? 44 : HOVER_MAX_PX,
+          Math.max(waterMotion.hover, needleLenPx * (narrowScene ? 0.85 : 1.15), narrowScene ? 18 : HOVER_MIN_PX),
         );
-        const medHoverGap = Math.min(
-          HOVER_MAX_PX,
-          Math.max(medMotion.hover, needleLenPx * 1.15, HOVER_MIN_PX),
+        const medHoverDesired = Math.min(
+          narrowScene ? 44 : HOVER_MAX_PX,
+          Math.max(medMotion.hover, needleLenPx * (narrowScene ? 0.85 : 1.15), narrowScene ? 18 : HOVER_MIN_PX),
         );
+        const waterHoverGap = hoverGapThatFits(water.y, tipDrop, waterHoverDesired);
+        const medHoverGap = hoverGapThatFits(med.y, tipDrop, medHoverDesired);
 
         /** Hover / insert pivots — tip locked onto the vial stopper only on insert. */
         const waterHover = pivotForTip(
@@ -392,20 +431,35 @@ export function InjectionAnimation({
          * Horizontal travel lane — lift above hover so the barrel never skims
          * the caps while sliding between bottles.
          */
-        const travelLift = Math.max(14, Math.min(36, tipDrop * 0.08));
-        const travelY = waterHover.y - travelLift;
-        const waterFlat: Pt = { x: water.x, y: travelY };
-        const medFlat: Pt = { x: med.x, y: travelY };
+        const travelLift = Math.max(
+          narrowScene ? 8 : 14,
+          Math.min(narrowScene ? 18 : 36, tipDrop * (narrowScene ? 0.05 : 0.08)),
+        );
+        let travelY = waterHover.y - travelLift;
+        // Keep horizontal lane below the top edge (plunger/thumb clearance).
+        travelY = Math.max(travelY, tipDrop * (narrowScene ? 0.42 : 0.32) + 10);
+
+        const clampH = (p: Pt) => clampPivotInScene(p, tipDrop, ROT_H, sceneW, sceneH);
+        const clampV = (p: Pt) => clampPivotInScene(p, tipDrop, ROT_V, sceneW, sceneH);
+
+        const waterFlat: Pt = clampH({ x: water.x, y: travelY });
+        const medFlat: Pt = clampH({ x: med.x, y: travelY });
 
         // Intro: enter horizontally above water, then sit before rotating down.
-        const waterIntro: Pt = {
+        const waterIntro: Pt = clampH({
           x: water.x,
-          y: travelY - Math.max(8, waterHoverGap * 0.2),
-        };
-        const waterEnter: Pt = {
-          x: water.x - Math.max(36, tipDrop * 0.12),
-          y: waterIntro.y - Math.max(18, tipDrop * 0.05),
-        };
+          y: travelY - Math.max(narrowScene ? 4 : 8, waterHoverGap * (narrowScene ? 0.08 : 0.2)),
+        });
+        const waterEnter: Pt = clampH({
+          x: water.x - Math.max(narrowScene ? 8 : 36, tipDrop * (narrowScene ? 0.04 : 0.12)),
+          y: waterIntro.y - Math.max(narrowScene ? 6 : 18, tipDrop * (narrowScene ? 0.02 : 0.05)),
+        });
+
+        // Re-clamp vertical hover/insert after travelY adjustment.
+        const waterHoverSafe = clampV(waterHover);
+        const waterInsertSafe = clampV(waterInsert);
+        const medHoverSafe = clampV(medHover);
+        const medInsertSafe = clampV(medInsert);
 
         const drawMl = reconstitutionDrawVolumeMl(waterMl, syringeMl);
         const startWater = waterFillFromVolume(waterMl);
@@ -617,8 +671,8 @@ export function InjectionAnimation({
           .to(
             proxy,
             {
-              pivotX: waterHover.x,
-              pivotY: waterHover.y,
+              pivotX: waterHoverSafe.x,
+              pivotY: waterHoverSafe.y,
               rotation: ROT_V,
               shadowOpacity: 0.35,
               duration: STAGE.rotateDownWater,
@@ -631,8 +685,8 @@ export function InjectionAnimation({
           .to(
             proxy,
             {
-              pivotX: waterInsert.x,
-              pivotY: waterInsert.y,
+              pivotX: waterInsertSafe.x,
+              pivotY: waterInsertSafe.y,
               shadowOpacity: 0.55,
               duration: STAGE.insertWater,
               ease: "power3.inOut",
@@ -660,8 +714,8 @@ export function InjectionAnimation({
           .to(
             proxy,
             {
-              pivotX: waterHover.x,
-              pivotY: waterHover.y,
+              pivotX: waterHoverSafe.x,
+              pivotY: waterHoverSafe.y,
               duration: STAGE.withdrawWater,
               ease: "power3.out",
               onUpdate: updateFrame,
@@ -705,8 +759,8 @@ export function InjectionAnimation({
           .to(
             proxy,
             {
-              pivotX: medHover.x,
-              pivotY: medHover.y,
+              pivotX: medHoverSafe.x,
+              pivotY: medHoverSafe.y,
               rotation: ROT_V,
               shadowOpacity: 0.35,
               duration: STAGE.rotateDownMed,
@@ -719,8 +773,8 @@ export function InjectionAnimation({
           .to(
             proxy,
             {
-              pivotX: medInsert.x,
-              pivotY: medInsert.y,
+              pivotX: medInsertSafe.x,
+              pivotY: medInsertSafe.y,
               shadowOpacity: 0.55,
               duration: STAGE.insertMed,
               ease: "power3.inOut",
@@ -826,8 +880,8 @@ export function InjectionAnimation({
           .to(
             proxy,
             {
-              pivotX: medHover.x,
-              pivotY: medHover.y - 16,
+              pivotX: medHoverSafe.x,
+              pivotY: medHoverSafe.y - 16,
               rotation: ROT_V,
               shadowOpacity: 0,
               duration: STAGE.withdrawMed,
@@ -886,7 +940,7 @@ export function InjectionAnimation({
 
       <div
         ref={stageRef}
-        className="dashboard-glass-card relative mx-auto w-full min-w-0 overflow-hidden rounded-2xl px-1 pb-2 pt-2 max-[390px]:rounded-xl max-[390px]:px-0.5 max-[390px]:pb-1.5 max-[390px]:pt-1.5 sm:px-10 sm:pb-5 sm:pt-5 md:px-12 md:pt-6"
+        className="dashboard-glass-card relative isolate mx-auto w-full min-w-0 overflow-hidden rounded-2xl px-1 pb-2 pt-2 max-[390px]:rounded-xl max-[390px]:px-0.5 max-[390px]:pb-1.5 max-[390px]:pt-1.5 sm:px-10 sm:pb-5 sm:pt-5 md:px-12 md:pt-6"
       >
         <DrawScene
           sceneRef={sceneRef}
