@@ -39,8 +39,9 @@ export const SYRINGE_ART = {
   interiorH: 200,
   hubY: 302,
   needleY: 332,
-  needleH: 70,
-  tipY: 404,
+  /** Cannula length — long enough to read clearly on overview + draw. */
+  needleH: 118,
+  tipY: 456,
   /**
    * Stem gap (viewBox units) kept between thumb pad bottom and finger flanges
    * when the plunger is fully depressed (empty). Keeps the thumb from looking
@@ -49,7 +50,7 @@ export const SYRINGE_ART = {
   thumbStemGap: 14,
   /** Room for thumb pad when plunger is fully pulled back. */
   viewTop: -146,
-  viewBottom: 412,
+  viewBottom: 466,
   /**
    * Thumb pad local Y (top/bottom). Offset "backwards" (more negative) by
    * thumbStemGap so even at max depression a short stem shows above the flanges.
@@ -67,7 +68,7 @@ export function SyringeArt({
   showBarrel = true,
   showLiquid = false,
   active = false,
-  needleDown = false,
+  needleDown: _needleDown = false,
   plungerTransform,
   plungerMotionStyle,
   liquidLayerStyle,
@@ -89,9 +90,10 @@ export function SyringeArt({
   const glowId = `syr-glow-${uid}`;
 
   const { cx, tipY } = SYRINGE_ART;
-  const needleShaftY = needleDown ? SYRINGE_ART.needleY : 330;
-  const needleShaftH = needleDown ? SYRINGE_ART.needleH : 42;
-  const tip = needleDown ? tipY : 377;
+  // Same cannula for overview (−45°) and draw (needle-down) — short tip looked stubby.
+  const needleShaftY = SYRINGE_ART.needleY;
+  const needleShaftH = SYRINGE_ART.needleH;
+  const tip = tipY;
 
   const liquidFillRef = useRef<SVGRectElement>(null);
   const liquidLayerRef = useRef<SVGGElement>(null);
@@ -205,26 +207,26 @@ export function SyringeArt({
             />
             <rect x="34" y="318" width="12" height="8" rx="1" fill={`url(#${hubGrad})`} />
 
-            {/* Steel cannula */}
+            {/* Steel cannula — slightly thicker + longer for draw readability */}
             <rect
-              x="37.5"
+              x="36.5"
               y={needleShaftY}
-              width="5"
+              width="7"
               height={needleShaftH}
-              rx="1"
+              rx="1.2"
               fill={`url(#${needleGrad})`}
             />
             <path
-              d={`M37.5 ${tip - 5} L42.5 ${tip - 5} L40 ${tip + 0.5} Z`}
+              d={`M36.5 ${tip - 7} L43.5 ${tip - 7} L40 ${tip + 0.5} Z`}
               fill="#64748b"
             />
             <line
               x1="40"
-              y1={tip - 7}
+              y1={tip - 9}
               x2="40"
               y2={tip - 1}
               stroke="#ffffff"
-              strokeWidth="0.5"
+              strokeWidth="0.65"
               opacity="0.4"
             />
           </g>

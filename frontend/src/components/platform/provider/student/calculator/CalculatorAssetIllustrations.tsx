@@ -3,8 +3,11 @@
 import { useId, useLayoutEffect, useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import {
-  SYRINGE_IMAGE_SCALE,
   HOLS_BRAND,
+  SYRINGE_IMAGE_SCALE,
+  SYRINGE_LAYOUT_ML,
+  syringeDrawBaseHeightPx,
+  syringeDrawImageScale,
 } from "@/components/platform/provider/student/calculator/calculatorAssets";
 import {
   SYRINGE_BARREL_TRAVEL,
@@ -22,7 +25,10 @@ import {
   HexarelinPowderCake,
   HexarelinVialArt,
 } from "@/components/platform/provider/student/calculator/HexarelinVialArt";
-import { SYRINGE_ART, SyringeArt } from "@/components/platform/provider/student/calculator/SyringeArt";
+import {
+  SYRINGE_ART,
+  SyringeArt,
+} from "@/components/platform/provider/student/calculator/SyringeArt";
 import { useCompactCalculatorScene } from "@/components/platform/provider/student/calculator/useCompactCalculatorScene";
 import { gsap, registerGsap } from "@/lib/gsap";
 import type { MassUnit, SyringeSizeMl } from "@/lib/integrate/provider/student/calculator";
@@ -318,14 +324,16 @@ export function AssetSyringe({
   const narrowViewport = useCompactCalculatorScene();
   const useCompactScale = compact || narrowViewport;
   const rawScale = SYRINGE_IMAGE_SCALE[syringeMl] ?? 0.8;
-  // Draw/animation: slightly smaller than overview so a full plunger stays in-card,
-  // but still large enough to read clearly against the vials.
-  const scale = needleDown
-    ? Math.min(
-        Math.max(rawScale * (useCompactScale ? 0.92 : 1), useCompactScale ? 0.68 : 0.78),
-        useCompactScale ? 0.92 : 1.05,
-      )
-    : rawScale * (useCompactScale ? 1.05 : 1.12);
+  const layoutScaleRaw = SYRINGE_IMAGE_SCALE[SYRINGE_LAYOUT_ML] ?? 0.98;
+  // Overview (horizontal) and draw (needleDown) share one size so measurement
+  // matches the reconstitution animation.
+  const matchDrawSize = needleDown || horizontal;
+  const scale = matchDrawSize
+    ? syringeDrawImageScale(syringeMl, useCompactScale)
+    : rawScale * 1.12;
+  const layoutScale = matchDrawSize
+    ? syringeDrawImageScale(SYRINGE_LAYOUT_ML, useCompactScale)
+    : layoutScaleRaw * 1.12;
 
   const clamped = Math.min(0.98, Math.max(0, showFill ? fillRatio : 0));
 
@@ -352,38 +360,46 @@ export function AssetSyringe({
   const showNeedle = part === "full" || part === "needle";
   const showBarrel = part === "full" || part === "barrel";
 
-  const baseHeight = horizontal
-    ? useCompactScale
-      ? 260
-      : 320
+  const baseHeight = matchDrawSize
+    ? syringeDrawBaseHeightPx(useCompactScale)
     : large
-      ? needleDown
-        ? useCompactScale
-          ? 280
-          : 340
-        : 320
+      ? 320
       : useCompactScale
         ? 180
         : 280;
   const height = Math.round(baseHeight * scale);
+  const layoutHeight = Math.round(baseHeight * layoutScale);
   const viewTop = SYRINGE_ART.viewTop;
-  const viewBottom = needleDown || (!horizontal && large) ? SYRINGE_ART.viewBottom : 380;
+  // Always include the full cannula — overview used to clip at 380 and hide length.
+  const viewBottom = SYRINGE_ART.viewBottom;
   const viewH = viewBottom - viewTop;
   const width = Math.round(height * (92 / viewH));
-  const needleTipY = needleDown ? SYRINGE_ART.tipY : 377;
+  const layoutWidth = Math.round(layoutHeight * (92 / viewH));
+  const needleTipY = SYRINGE_ART.tipY;
 
   /**
-   * Overview: classic −45° reference tilt (user syringe design).
-   * Draw: needle-down at 0°; GSAP rotates to −90° for horizontal travel.
+   * Overview: flat horizontal (−90°, needle right).
+   * Draw (gsapDriven): same horizontal park until GSAP measures at 0° then
+   * restores −90° for the intro.
    */
-  const rotate = horizontal ? -45 : 0;
+  const rotate = horizontal || (needleDown && gsapDriven) ? -90 : 0;
 
   const rad = (Math.abs(rotate) * Math.PI) / 180;
   const boxW = Math.round(Math.abs(width * Math.cos(rad)) + Math.abs(height * Math.sin(rad)));
   const boxH = Math.round(Math.abs(width * Math.sin(rad)) + Math.abs(height * Math.cos(rad)));
+  const slotW = Math.round(
+    Math.abs(layoutWidth * Math.cos(rad)) + Math.abs(layoutHeight * Math.sin(rad)),
+  );
+  const slotH = Math.round(
+    Math.abs(layoutWidth * Math.sin(rad)) + Math.abs(layoutHeight * Math.cos(rad)),
+  );
 
   /** Tip as fraction of the SVG box (inside the rotator so it tracks GSAP rotation). */
   const tipTopPct = ((needleTipY - viewTop) / viewH) * 100;
+
+  // Overview: fixed slot (largest syringe). Draw: natural bounds for GSAP measure.
+  const frameW = horizontal ? slotW : Math.max(boxW, width);
+  const frameH = horizontal ? slotH : Math.max(boxH, height);
 
   const svg = (
     <svg
@@ -413,12 +429,21 @@ export function AssetSyringe({
 
   return (
     <div
-      className={cn("flex flex-col items-center overflow-visible", className)}
+      className={cn(
+        "flex max-w-full flex-col items-center",
+        // Overview: clip so the tilted long needle never spills the card.
+        // Draw: keep visible — scene card clips; local clip would cut the plunger.
+        needleDown || gsapDriven ? "overflow-visible" : "overflow-hidden",
+        className,
+      )}
       data-syringe-box={needleDown ? "draw" : undefined}
     >
       <div
-        className="relative flex max-w-full items-center justify-center overflow-visible"
-        style={{ width: Math.max(boxW, width), height: Math.max(boxH, height) }}
+        className={cn(
+          "relative flex max-w-full items-center justify-center",
+          needleDown || gsapDriven ? "overflow-visible" : "overflow-hidden",
+        )}
+        style={{ width: frameW, height: frameH, maxWidth: "100%" }}
       >
         <div
           data-syringe-rotator
@@ -427,6 +452,8 @@ export function AssetSyringe({
             width,
             height,
             transformOrigin: "center center",
+            // When GSAP owns the draw scene, do NOT put transform in React style —
+            // status re-renders would clobber the animated rotation. Seed via ref.
             ...(gsapDriven
               ? {}
               : { transform: `translate(-50%, -50%) rotate(${rotate}deg)` }),
@@ -434,8 +461,9 @@ export function AssetSyringe({
           ref={(node) => {
             if (!node || !gsapDriven) return;
             if (!node.style.transform) {
-              // Identity for measurement: needle-down (SyringeArt native pose).
-              node.style.transform = "translate(-50%, -50%) rotate(0deg)";
+              // Park horizontal (−90°) until InjectionAnimation measures at 0°
+              // then restores horizontal for the intro.
+              node.style.transform = `translate(-50%, -50%) rotate(${rotate}deg)`;
             }
           }}
         >
