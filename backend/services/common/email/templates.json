@@ -23,6 +23,66 @@
     "notice": "Your verification code is {{otp_code}}. It expires in {{expiry_minutes}} minutes.",
     "footer_note": "If you have any questions, our support team is here to help."
   },
+  "plan_changed": {
+    "subject": "Your HOLS plan is now {{plan_name}}",
+    "preheader": "You switched from {{previous_plan_name}} to {{plan_name}}. Access is active through {{end_date}}.",
+    "headline": "Your membership",
+    "headline_accent": "plan has changed",
+    "body": "Your HOLS membership is now {{plan_name}}. This replaces {{previous_plan_name}} and your new term starts immediately.",
+    "body_secondary": "Review billing, renewal, and plan details anytime from Payments.",
+    "cta_label": "View membership",
+    "cta_path": "/student/payment",
+    "notice": "New plan: {{plan_name}} · Previous: {{previous_plan_name}} · Charged: {{amount}} · Active through {{end_date}} · Order {{order_id}}",
+    "footer_note": "If you did not request this change, contact support right away."
+  },
+  "plan_change_failed": {
+    "subject": "We could not update your HOLS plan",
+    "preheader": "Your switch from {{previous_plan_name}} to {{plan_name}} did not go through.",
+    "headline": "Your plan change",
+    "headline_accent": "could not be completed",
+    "body": "We could not switch your membership from {{previous_plan_name}} to {{plan_name}}. Your current plan is unchanged.",
+    "body_secondary": "Update your card if needed, then try the plan change again from Payments.",
+    "cta_label": "Try again",
+    "cta_path": "/student/payment",
+    "notice": "Attempted: {{previous_plan_name}} → {{plan_name}} · Amount: {{amount}} · Reason: {{failure_reason}} · {{attempted_at}}",
+    "footer_note": "If you have any questions, our support team is here to help."
+  },
+  "payment_success": {
+    "subject": "Payment received for your HOLS {{plan_name}} plan",
+    "preheader": "Your payment of {{amount}} for {{plan_name}} was successful. Order {{order_id}}.",
+    "headline": "Your payment",
+    "headline_accent": "was successful",
+    "body": "Thank you. We received your payment of {{amount}} for the {{plan_name}} plan. Your membership is active.",
+    "body_secondary": "A receipt is saved in your order history. You can manage your plan and card from Payments.",
+    "cta_label": "View order history",
+    "cta_path": "/student/profile/orders",
+    "notice": "Plan: {{plan_name}} · Amount: {{amount}} · Card ending {{card_last4}} · Paid {{payment_date}} · Active through {{end_date}} · Order {{order_id}}",
+    "footer_note": "If you have any questions, our support team is here to help."
+  },
+  "payment_failed": {
+    "subject": "Your HOLS payment could not be completed",
+    "preheader": "We could not charge {{amount}} for {{plan_name}}. {{failure_reason}}",
+    "headline": "Your payment",
+    "headline_accent": "did not go through",
+    "body": "We could not complete your payment of {{amount}} for the {{plan_name}} plan. No charge was applied and your access was not updated.",
+    "body_secondary": "Please check the card on file, then try again. If the card has expired, add a new one first.",
+    "cta_label": "Update payment card",
+    "cta_path": "/student/profile/card",
+    "notice": "Plan: {{plan_name}} · Amount: {{amount}} · Card ending {{card_last4}} · Reason: {{failure_reason}} · {{attempted_at}} · Reference {{order_id}}",
+    "footer_note": "If you have any questions, our support team is here to help."
+  },
+  "patient_recommendation_ready": {
+    "subject": "Peptide recommendation ready for {{patient_name}}",
+    "preheader": "{{top_peptide}} is the top recommendation for {{patient_name}} ({{primary_goal}}).",
+    "headline": "Recommendation ready",
+    "headline_accent": "for {{patient_name}}",
+    "body": "The Peptide Advisor has a recommendation board for {{patient_name}}. Open the case to review the shortlist, safety notes, and consultation chat.",
+    "body_secondary": "These recommendations support clinical decision-making. They are not prescriptions. Apply professional judgment before acting.",
+    "cta_label": "Open recommendation",
+    "cta_path": "/student/adviser",
+    "notice": "Patient: {{patient_name}} · Goal: {{primary_goal}} · Top pick: {{top_peptide}} · Safety: {{safety_status}}",
+    "footer_note": "If you have any questions, our support team is here to help."
+  },
   "affiliate_account_created": {
     "subject": "Your HOLS affiliate account",
     "preheader": "Your HOLS affiliate account is ready. Sign in with the credentials in this email.",
@@ -45,6 +105,42 @@
     "cta_label": "Create your account",
     "cta_path": "/signup",
     "notice": "{{invite_extra}}",
+    "footer_note": "If you have any questions, our support team is here to help."
+  },
+  "affiliate_commission_earned": {
+    "subject": "You earned {{commission_amount}} from a HOLS referral",
+    "preheader": "{{student_name}} purchased {{plan_name}}. Your commission is {{commission_amount}}.",
+    "headline": "New commission",
+    "headline_accent": "added to your earnings",
+    "body": "{{student_name}} completed a {{plan_name}} purchase. Your affiliate commission of {{commission_amount}} has been added to your pending payout.",
+    "body_secondary": "Track commissions, pending payout, and referral orders anytime in Earnings.",
+    "cta_label": "View earnings",
+    "cta_path": "/affiliate/earnings",
+    "notice": "Student: {{student_name}} · Plan: {{plan_name}} · Order: {{amount}} · Commission: {{commission_amount}} ({{margin_percent}}) · Order {{order_id}} · Pending payout: {{pending_payout}}",
+    "footer_note": "If you have any questions, our support team is here to help."
+  },
+  "affiliate_payout_success": {
+    "subject": "Your HOLS payout of {{payout_amount}} was sent",
+    "preheader": "Payout {{payout_id}} for {{payout_amount}} was completed on {{payout_date}}.",
+    "headline": "Your payout",
+    "headline_accent": "was sent",
+    "body": "We sent your affiliate payout of {{payout_amount}}. Funds should appear according to your payout method's processing time.",
+    "body_secondary": "You can review this transfer and remaining pending earnings in your affiliate Earnings page.",
+    "cta_label": "View payout details",
+    "cta_path": "/affiliate/earnings",
+    "notice": "Amount: {{payout_amount}} · Method: {{payout_method}} · Sent {{payout_date}} · Reference {{payout_id}} · Remaining pending: {{pending_payout}}",
+    "footer_note": "If you have any questions, our support team is here to help."
+  },
+  "affiliate_payout_failed": {
+    "subject": "Your HOLS payout could not be completed",
+    "preheader": "We could not send {{payout_amount}}. {{failure_reason}}",
+    "headline": "Your payout",
+    "headline_accent": "did not go through",
+    "body": "We could not complete your affiliate payout of {{payout_amount}}. The amount remains in your pending earnings.",
+    "body_secondary": "Please confirm your payout details, then try again or contact support if the issue continues.",
+    "cta_label": "Review earnings",
+    "cta_path": "/affiliate/earnings",
+    "notice": "Amount: {{payout_amount}} · Method: {{payout_method}} · Reason: {{failure_reason}} · {{attempted_at}} · Reference {{payout_id}}",
     "footer_note": "If you have any questions, our support team is here to help."
   }
 }

@@ -111,7 +111,7 @@ export function IntakeOnboardingDialog({
               </div>
               <div className="h-1.5 overflow-hidden rounded-full bg-[color:var(--dash-soft)]">
                 <div
-                  className="h-full rounded-full bg-[#DDE466] transition-[width] duration-300"
+                  className="h-full rounded-full bg-[color:var(--dash-navy)] transition-[width] duration-300"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
@@ -122,7 +122,7 @@ export function IntakeOnboardingDialog({
             type="button"
             disabled={busy}
             onClick={onClose}
-            className="adviser-onboarding-close inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[color:var(--dash-text)] transition hover:bg-[#DDE466]/28 hover:text-[#152744] disabled:pointer-events-none disabled:opacity-50 sm:h-12 sm:w-12"
+            className="adviser-onboarding-close inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50 sm:h-12 sm:w-12"
             aria-label="Close patient onboarding"
           >
             <SidebarSvgIcon name="cross" size={18} strokeWidth={2.15} className="sm:hidden" />
@@ -163,7 +163,7 @@ export function IntakeOnboardingDialog({
               </div>
               <div className="mb-2.5 h-1 overflow-hidden rounded-full bg-[color:var(--dash-surface)] sm:hidden">
                 <div
-                  className="h-full rounded-full bg-[#DDE466] transition-[width] duration-300"
+                  className="h-full rounded-full bg-[color:var(--dash-navy)] transition-[width] duration-300"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
@@ -220,7 +220,7 @@ export function IntakeOnboardingDialog({
                   </p>
                   <button
                     type="button"
-                    className="font-sans mt-4 inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-[#DDE466] px-5 text-sm font-medium text-[#152744] transition hover:brightness-105 sm:min-h-10 sm:w-auto"
+                    className="dashboard-navy-btn font-sans mt-4 inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium text-white sm:min-h-10 sm:w-auto"
                     onClick={onGenerate}
                   >
                     <SidebarSvgIcon name="adviser" size={15} strokeWidth={1.9} />

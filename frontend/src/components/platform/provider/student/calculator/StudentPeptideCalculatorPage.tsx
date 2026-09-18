@@ -40,8 +40,7 @@ const amountFieldClass = cn(
 );
 
 const amountControlClass = cn(
-  "calc-amount-control flex h-12 min-h-12 w-full max-w-[15rem] shrink-0 items-stretch overflow-hidden rounded-lg border border-[color:var(--dash-surface-border)] transition-[border-color]",
-  "hover:border-[#DDE466] focus-within:border-[#DDE466]",
+  "calc-amount-control hols-hover-border flex h-12 min-h-12 w-full max-w-[15rem] shrink-0 items-stretch overflow-hidden rounded-lg border border-[color:var(--dash-surface-border)] transition-[border-color]",
 );
 
 const unitCapsuleClass =
@@ -605,9 +604,7 @@ function CalcUnitSelect({
         aria-label="Unit"
         onClick={() => setOpen((current) => !current)}
         className={cn(
-          "calc-unit-trigger flex h-12 min-h-12 min-w-[5.75rem] items-center justify-between gap-2 rounded-lg border border-[color:var(--dash-surface-border)] px-3 pr-9 text-left text-sm font-medium leading-none transition-[border-color]",
-          "hover:border-[#DDE466] focus:border-[#DDE466] focus:outline-none",
-          open && "border-[#DDE466]",
+          "calc-unit-trigger hols-hover-border flex h-12 min-h-12 min-w-[5.75rem] items-center justify-between gap-2 rounded-lg border border-[color:var(--dash-surface-border)] px-3 pr-9 text-left text-sm font-medium leading-none transition-[border-color] focus:outline-none",
         )}
       >
         <span className="calc-unit-trigger-label block overflow-visible whitespace-nowrap text-[color:var(--dash-text)]">

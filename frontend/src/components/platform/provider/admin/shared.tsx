@@ -307,7 +307,7 @@ export function DirectorySearchBar({
   label?: string;
 }) {
   return (
-    <label className="relative mt-4 flex min-h-11 w-full items-center gap-2 rounded-full border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)]/55 px-3.5 sm:mt-5">
+    <label className="hols-hover-border relative mt-4 flex min-h-11 w-full items-center gap-2 rounded-full border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)]/55 px-3.5 transition-[border-color] sm:mt-5">
       <span className="shrink-0 text-[color:var(--dash-faint)]" aria-hidden>
         <Icon icon={Search} size={17} strokeWidth={1.9} />
       </span>

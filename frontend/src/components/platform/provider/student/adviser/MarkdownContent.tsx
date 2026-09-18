@@ -204,7 +204,7 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
             return (
               <p
                 key={index}
-                className="text-brand-body text-left leading-[1.5] text-[color:var(--dash-muted)] sm:text-justify sm:[text-align-last:left]"
+                className="text-brand-body text-left leading-[1.5] text-[color:var(--dash-text)]"
               >
                 {renderInline(block.text)}
               </p>
@@ -213,10 +213,10 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
             return (
               <ul
                 key={index}
-                className="text-brand-body my-1 list-disc space-y-1.5 pl-5 leading-[1.5] text-[color:var(--dash-muted)] marker:text-[color:var(--dash-dim)]"
+                className="text-brand-body my-1 list-disc space-y-1.5 pl-5 leading-[1.5] text-[color:var(--dash-text)] marker:text-[color:var(--dash-navy)]"
               >
                 {block.items.map((item, itemIndex) => (
-                  <li key={itemIndex} className="pl-0.5 text-left sm:text-justify sm:[text-align-last:left]">
+                  <li key={itemIndex} className="pl-0.5 text-left">
                     {renderInline(item)}
                   </li>
                 ))}
@@ -226,10 +226,10 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
             return (
               <ol
                 key={index}
-                className="text-brand-body my-1 list-decimal space-y-1.5 pl-5 leading-[1.5] text-[color:var(--dash-muted)] marker:font-medium marker:text-[color:var(--dash-faint)]"
+                className="text-brand-body my-1 list-decimal space-y-1.5 pl-5 leading-[1.5] text-[color:var(--dash-text)] marker:font-medium marker:text-[color:var(--dash-navy)]"
               >
                 {block.items.map((item, itemIndex) => (
-                  <li key={itemIndex} className="pl-0.5 text-left sm:text-justify sm:[text-align-last:left]">
+                  <li key={itemIndex} className="pl-0.5 text-left">
                     {renderInline(item)}
                   </li>
                 ))}
@@ -239,7 +239,7 @@ export function MarkdownContent({ content, className }: MarkdownContentProps) {
             return (
               <blockquote
                 key={index}
-                className="border-l-2 border-[color:var(--dash-surface-border)] pl-3 text-brand-body text-left italic leading-[1.5] text-[color:var(--dash-faint)] sm:text-justify sm:[text-align-last:left]"
+                className="border-l-2 border-[color:var(--dash-navy)] pl-3 text-brand-body text-left italic leading-[1.5] text-[color:var(--dash-muted)]"
               >
                 {renderInline(block.text)}
               </blockquote>

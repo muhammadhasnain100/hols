@@ -16,11 +16,11 @@ import {
   Icon,
   Menu,
   Moon,
-  Sun,
   X,
 } from "@/components/icons";
 import { PortalNavIcon, SidebarSvgIcon } from "@/components/platform/provider/sidebar-icons";
 import { stopPortalAuthRuntime } from "@/lib/integrate/auth/runtime";
+import { getLoginPath } from "@/lib/integrate/auth/routes";
 import { clearAuthSession } from "@/lib/integrate/auth/storage";
 import type { UserRole } from "@/lib/integrate/auth/types";
 import {
@@ -220,9 +220,9 @@ export function PortalShell({
   const handleLogout = useCallback(() => {
     stopPortalAuthRuntime();
     clearAuthSession();
-    router.push("/login");
+    router.push(getLoginPath(role));
     router.refresh();
-  }, [router]);
+  }, [role, router]);
 
   const closeMobile = useCallback(() => {
     if (typeof window !== "undefined" && window.innerWidth < 1024) {
@@ -256,7 +256,7 @@ export function PortalShell({
         className={cn(
           "portal-nav-item group relative flex items-center transition-colors duration-200",
           portalNavItemClass,
-          opts?.inFlyout ? "h-10 gap-2.5 rounded-lg px-3" : compact ? "h-11 justify-center rounded-lg px-0" : "h-11 gap-3 rounded-lg px-3.5",
+          opts?.inFlyout ? "h-10 gap-2.5 rounded-xl px-3" : compact ? "h-11 justify-center rounded-2xl px-0" : "h-12 gap-3 rounded-2xl px-3.5",
           active && "is-active",
         )}
       >
@@ -269,7 +269,7 @@ export function PortalShell({
             strokeWidth={2}
             className={cn(
               "ml-auto shrink-0 opacity-60 transition-transform",
-              active ? "text-[color:var(--sidebar-active-fg)]" : "text-[color:var(--sidebar-text)]",
+              active ? "text-[#142644]" : "text-[color:var(--sidebar-text)]",
               expandedGroups.has(item.href) && "rotate-90",
             )}
           />
@@ -321,7 +321,7 @@ export function PortalShell({
                 variant={theme === "dark" ? "light" : "dark"}
                 compact={compact}
                 linked={false}
-                className={cn(compact ? "h-7 w-7" : "h-7 max-w-[8.5rem]")}
+                className={cn(compact ? "h-8 w-8" : "h-10 w-auto max-w-[12rem]")}
               />
             </div>
 
@@ -336,7 +336,7 @@ export function PortalShell({
                 <SidebarSvgIcon name="search" size={18} />
               </button>
             ) : (
-              <label className="portal-sidebar-search">
+              <label className="portal-sidebar-search hols-hover-border">
                 <SidebarSvgIcon name="search" size={18} className="shrink-0" />
                 <input
                   type="search"
@@ -350,7 +350,7 @@ export function PortalShell({
             )}
           </div>
 
-          <nav className="flex-1 space-y-1.5 overflow-y-auto overflow-x-hidden overscroll-contain px-3 pb-3" aria-label="Portal navigation">
+          <nav className="flex-1 space-y-2 overflow-y-auto overflow-x-hidden overscroll-contain px-3 pb-3" aria-label="Portal navigation">
             {filteredNav.length === 0 ? (
               <p className="px-3 py-4 text-center text-brand-caption text-[color:var(--sidebar-muted)]">
                 No matches
@@ -377,9 +377,9 @@ export function PortalShell({
                       type="button"
                       onClick={() => toggleGroup(item.href)}
                       className={cn(
-                        "portal-nav-item group relative flex w-full items-center rounded-lg transition-colors duration-200",
+                        "portal-nav-item group relative flex w-full items-center rounded-2xl transition-colors duration-200",
                         portalNavItemClass,
-                        "h-11 gap-3 px-3.5",
+                        "h-12 gap-3 rounded-2xl px-3.5",
                         active && "is-active",
                       )}
                     >
@@ -391,7 +391,7 @@ export function PortalShell({
                         strokeWidth={2}
                         className={cn(
                           "ml-auto shrink-0 opacity-60 transition-transform",
-                          active ? "text-[color:var(--sidebar-active-fg)]" : "text-[color:var(--sidebar-text)]",
+                          active ? "text-[#142644]" : "text-[color:var(--sidebar-text)]",
                           groupOpen && "rotate-90",
                         )}
                       />
@@ -458,15 +458,11 @@ export function PortalShell({
               )}
             >
               <span className="portal-sidebar-theme-icon flex h-8 w-8 shrink-0 items-center justify-center rounded-md">
-                {theme === "dark" ? (
-                  <Icon icon={Moon} size={16} strokeWidth={1.8} />
-                ) : (
-                  <Icon icon={Sun} size={16} strokeWidth={1.8} />
-                )}
+                <Icon icon={Moon} size={16} strokeWidth={1.8} />
               </span>
               {!compact ? (
                 <>
-                  <span className="min-w-0 flex-1 text-left font-sans text-sm font-medium">
+                  <span className="font-sans min-w-0 flex-1 text-left text-sm font-medium tracking-[0.005em]">
                     Dark mode
                   </span>
                   <span

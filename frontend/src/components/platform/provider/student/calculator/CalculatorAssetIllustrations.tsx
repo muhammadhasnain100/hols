@@ -514,7 +514,7 @@ export function SyringeSizeOption({
         "calc-syringe-option relative z-10 inline-flex h-10 min-w-[3.5rem] items-center justify-center rounded-lg border px-2.5 text-xs font-medium leading-none tracking-[0.01em] transition duration-200 sm:h-11 sm:min-w-[4.5rem] sm:px-3.5 sm:text-sm",
         selected
           ? "border-[#DDE466] bg-[#DDE466]/25 text-[color:var(--sidebar-active-fg,#6f7a1c)]"
-          : "border-[color:var(--dash-surface-border)] text-[color:var(--dash-muted)] hover:border-[#DDE466] hover:text-[color:var(--dash-text)]",
+          : "border-[color:var(--dash-surface-border)] text-[color:var(--dash-muted)] hols-option-hover hover:text-[color:var(--dash-text)]",
       )}
       aria-pressed={selected}
     >

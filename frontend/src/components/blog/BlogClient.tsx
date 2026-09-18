@@ -46,7 +46,7 @@ export function NewsletterBlock() {
         <input
           type="email"
           placeholder="Your email"
-          className="flex-1 rounded-full border border-border/60 bg-white px-5 py-3 text-sm outline-none focus:border-primary-light"
+          className="hols-hover-border flex-1 rounded-full border border-border/60 bg-white px-5 py-3 text-sm outline-none"
           required
         />
         <Button type="submit" variant="primary">

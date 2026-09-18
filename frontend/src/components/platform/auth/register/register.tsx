@@ -341,7 +341,7 @@ export function RegisterForm({ className }: RegisterFormProps) {
             name="marketingPref"
             checked={marketingPref}
             onChange={(event) => setMarketingPref(event.target.checked)}
-            className="h-4 w-4 rounded border-border text-primary accent-[#DDE466] outline-none focus:ring-0 focus-visible:outline-none"
+            className="h-4 w-4 rounded border-2 border-primary/30 text-primary accent-[#142644] outline-none focus:ring-0 focus-visible:outline-none"
           />
           Email me product updates
         </label>

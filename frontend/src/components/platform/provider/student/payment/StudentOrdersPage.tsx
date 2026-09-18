@@ -7,7 +7,6 @@ import {
   OrderListRowsSkeleton,
   OrdersPageSkeleton,
 } from "@/components/platform/provider/student/DashboardSkeletons";
-import { PaymentPageLayout } from "@/components/platform/provider/student/payment/PaymentPageLayout";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
   getCachedOrders,
@@ -20,6 +19,7 @@ import {
   planLabels,
   type PlanType,
 } from "@/lib/integrate/provider/student/payment/types";
+import { scrollAppToTopSoon } from "@/lib/scroll-to-top";
 
 const PLAN_ICONS: Record<PlanType, SidebarIconName> = {
   monthly: "clock",
@@ -27,7 +27,7 @@ const PLAN_ICONS: Record<PlanType, SidebarIconName> = {
   annual: "plans",
 };
 
-export function StudentOrdersPage() {
+export function StudentOrdersPanel() {
   // Keep SSR and first client paint identical — never read session cache during render.
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -95,168 +95,157 @@ export function StudentOrdersPage() {
   const showPlaceholder = loading && orders.length === 0;
 
   return (
-    <PaymentPageLayout title="Orders">
-      {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
+    <section className="dashboard-glass-card min-w-0 rounded-2xl p-4 sm:p-5 md:p-6">
+      <div className="min-w-0">
+        <h2 className="font-sans text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg">
+          Orders
+        </h2>
+        <p className="text-brand-body mt-1 text-sm text-[color:var(--dash-muted)] sm:text-base">
+          Membership purchases on this account.
+        </p>
+      </div>
+
+      {error ? (
+        <div className="mt-4">
+          <AuthAlert variant="error">{error}</AuthAlert>
+        </div>
+      ) : null}
 
       {loading && orders.length === 0 ? (
-        <OrdersPageSkeleton />
+        <div className="mt-5">
+          <OrdersPageSkeleton />
+        </div>
       ) : (
         <>
-          <div className="grid w-full min-w-0 items-start gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.35fr)_minmax(0,1fr)]">
-            <section className="hols-auth-card order-2 min-w-0 rounded-xl p-4 sm:p-5 lg:order-1">
-              <div className="flex items-center justify-between gap-2">
-                <h2 className="font-sans text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg">
-                  Recent orders
-                </h2>
-                <span className="text-brand-caption shrink-0 font-medium text-[color:var(--dash-accent)]">
-                  Page {page}
-                </span>
-              </div>
-
-              <div className="mt-4 space-y-2.5">
-                {loading ? (
-                  <OrderListRowsSkeleton />
-                ) : orders.length === 0 ? (
-                  <p className="text-brand-body py-6 text-center text-[color:var(--dash-faint)]">
-                    No orders yet.
-                  </p>
-                ) : (
-                  orders.map((order) => (
-                    <div
-                      key={order.order_id}
-                      className="dashboard-row flex items-center justify-between gap-2 rounded-xl px-2.5 py-2.5 sm:gap-3 sm:px-3.5 sm:py-3"
-                    >
-                      <div className="flex min-w-0 items-center gap-2.5 sm:gap-3">
-                        <span className="membership-plan-icon !h-9 !w-9 shrink-0" aria-hidden>
-                          <SidebarSvgIcon
-                            name={PLAN_ICONS[order.plan_type]}
-                            size={16}
-                            strokeWidth={1.9}
-                          />
-                        </span>
-                        <div className="min-w-0">
-                          <p className="font-sans truncate text-sm font-medium text-[color:var(--dash-text)]">
-                            {planLabels[order.plan_type]} plan
-                          </p>
-                          <p className="text-brand-caption truncate text-[color:var(--dash-faint)]">
-                            {formatDate(order.created_at)}
-                          </p>
-                        </div>
-                      </div>
-                      <span className="font-sans shrink-0 text-sm font-semibold text-[color:var(--dash-accent)]">
-                        {formatMoney(order.amount, order.currency)}
-                      </span>
-                    </div>
-                  ))
-                )}
-              </div>
-
-              <div className="mt-4 grid grid-cols-2 gap-2 sm:flex sm:items-center sm:justify-between">
-                <button
-                  type="button"
-                  disabled={page <= 1 || loading}
-                  onClick={() => setPage((p) => Math.max(1, p - 1))}
-                  className="dashboard-pill-soft font-sans inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg px-4 text-sm font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50"
-                >
-                  <SidebarSvgIcon name="previous" size={14} strokeWidth={2} />
-                  Previous
-                </button>
-                <button
-                  type="button"
-                  disabled={!hasNext || loading}
-                  onClick={() => setPage((p) => p + 1)}
-                  className="dashboard-pill-soft font-sans inline-flex min-h-9 items-center justify-center gap-1.5 rounded-lg px-4 text-sm font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50"
-                >
-                  Next
-                  <SidebarSvgIcon name="next" size={14} strokeWidth={2} />
-                </button>
-              </div>
-            </section>
-
-            <section className="hols-auth-card order-1 min-w-0 rounded-xl p-4 sm:p-5 lg:order-2">
-              <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-                Summary
-              </p>
-              <p className="font-sans mt-2 text-2xl font-bold tracking-[0.01em] text-[color:var(--dash-text)]">
+          <div className="mt-5 grid grid-cols-2 gap-2.5 sm:gap-3">
+            <div className="rounded-xl bg-[color:var(--dash-soft)] px-3 py-3 sm:px-3.5">
+              <p className="text-brand-caption text-[color:var(--dash-faint)]">Total purchases</p>
+              <p className="font-sans mt-1 text-lg font-semibold text-[color:var(--dash-text)]">
                 {showPlaceholder ? "—" : total}
               </p>
-              <p className="text-brand-body mt-1 text-[color:var(--dash-muted)]">
-                Total membership purchases
+            </div>
+            <div className="rounded-xl bg-[color:var(--dash-soft)] px-3 py-3 sm:px-3.5">
+              <p className="text-brand-caption text-[color:var(--dash-faint)]">Page total</p>
+              <p className="font-sans mt-1 truncate text-lg font-semibold text-[color:var(--dash-text)]">
+                {showPlaceholder ? "—" : formatMoney(pageSpent, currency)}
               </p>
-
-              <div className="mt-4 grid grid-cols-2 gap-2.5 sm:gap-3">
-                <div className="rounded-lg bg-[color:var(--dash-soft)] px-3 py-3 sm:px-3.5">
-                  <p className="text-brand-caption text-[color:var(--dash-faint)]">Page total</p>
-                  <p className="font-sans mt-1 truncate text-sm font-semibold text-[color:var(--dash-text)]">
-                    {showPlaceholder ? "—" : formatMoney(pageSpent, currency)}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-[color:var(--dash-soft)] px-3 py-3 sm:px-3.5">
-                  <p className="text-brand-caption text-[color:var(--dash-faint)]">On this page</p>
-                  <p className="font-sans mt-1 text-sm font-semibold text-[color:var(--dash-text)]">
-                    {showPlaceholder ? "—" : orders.length}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-[color:var(--dash-soft)] px-3 py-3 sm:px-3.5">
-                  <p className="text-brand-caption text-[color:var(--dash-faint)]">Completed</p>
-                  <p className="font-sans mt-1 text-sm font-semibold text-[color:var(--dash-text)]">
-                    {showPlaceholder ? "—" : completedCount}
-                  </p>
-                </div>
-                <div className="rounded-lg bg-[color:var(--dash-soft)] px-3 py-3 sm:px-3.5">
-                  <p className="text-brand-caption text-[color:var(--dash-faint)]">Top plan</p>
-                  <p className="font-sans mt-1 truncate text-sm font-semibold text-[color:var(--dash-text)]">
-                    {topPlan ? planLabels[topPlan[0]] : "—"}
-                  </p>
-                </div>
-              </div>
-
-              {latest ? (
-                <div className="mt-4 border-t border-[color:var(--dash-surface-border)] pt-4">
-                  <p className="text-brand-caption text-[color:var(--dash-faint)]">Latest order</p>
-                  <p className="font-sans mt-1 text-sm font-medium text-[color:var(--dash-text)]">
-                    {planLabels[latest.plan_type]} · {formatMoney(latest.amount, latest.currency)}
-                  </p>
-                  <p className="text-brand-caption mt-1 capitalize text-[color:var(--dash-muted)]">
-                    Status · {latest.status}
-                  </p>
-                  <p className="text-brand-caption mt-0.5 text-[color:var(--dash-faint)]">
-                    {formatDate(latest.created_at)}
-                  </p>
-                  <p className="text-brand-caption mt-2 break-all text-[color:var(--dash-faint)]">
-                    Order ID · {latest.order_id}
-                  </p>
-                </div>
-              ) : (
-                <div className="mt-4 border-t border-[color:var(--dash-surface-border)] pt-4">
-                  <p className="text-brand-body text-[color:var(--dash-faint)]">
-                    No order details to show yet.
-                  </p>
-                </div>
-              )}
-
-              {(planCounts.monthly || planCounts.biannual || planCounts.annual) && (
-                <div className="mt-4 border-t border-[color:var(--dash-surface-border)] pt-4">
-                  <p className="text-brand-caption text-[color:var(--dash-faint)]">Plans on this page</p>
-                  <div className="mt-2 space-y-1.5">
-                    {(Object.entries(planCounts) as [PlanType, number][]).map(([plan, count]) => (
-                      <div key={plan} className="flex items-center justify-between gap-2">
-                        <span className="inline-flex items-center gap-2 text-brand-caption text-[color:var(--dash-muted)]">
-                          <SidebarSvgIcon name={PLAN_ICONS[plan]} size={14} strokeWidth={1.9} />
-                          {planLabels[plan]}
-                        </span>
-                        <span className="font-sans text-sm font-semibold text-[color:var(--dash-text)]">
-                          {count}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </section>
+            </div>
+            <div className="rounded-xl bg-[color:var(--dash-soft)] px-3 py-3 sm:px-3.5">
+              <p className="text-brand-caption text-[color:var(--dash-faint)]">Completed</p>
+              <p className="font-sans mt-1 text-lg font-semibold text-[color:var(--dash-text)]">
+                {showPlaceholder ? "—" : completedCount}
+              </p>
+            </div>
+            <div className="rounded-xl bg-[color:var(--dash-soft)] px-3 py-3 sm:px-3.5">
+              <p className="text-brand-caption text-[color:var(--dash-faint)]">Top plan</p>
+              <p className="font-sans mt-1 truncate text-lg font-semibold text-[color:var(--dash-text)]">
+                {topPlan ? planLabels[topPlan[0]] : "—"}
+              </p>
+            </div>
           </div>
+
+          <div className="mt-5 space-y-1">
+            {loading ? (
+              <OrderListRowsSkeleton />
+            ) : orders.length === 0 ? (
+              <p className="text-brand-body py-6 text-center text-[color:var(--dash-faint)]">
+                No orders yet.
+              </p>
+            ) : (
+              orders.map((order) => (
+                <div
+                  key={order.order_id}
+                  className="dashboard-row flex items-center justify-between gap-2 rounded-xl px-2.5 py-2.5 sm:gap-3 sm:px-3.5 sm:py-3"
+                >
+                  <div className="flex min-w-0 items-center gap-3">
+                    <span className="flex h-5 w-5 shrink-0 items-center justify-center text-[color:var(--dash-text)]">
+                      <SidebarSvgIcon
+                        name={PLAN_ICONS[order.plan_type]}
+                        size={16}
+                        strokeWidth={1.9}
+                      />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="font-sans truncate text-sm font-medium text-[color:var(--dash-text)]">
+                        {planLabels[order.plan_type]} plan
+                      </p>
+                      <p className="text-brand-caption truncate text-[color:var(--dash-faint)]">
+                        {formatDate(order.created_at)}
+                        {latest?.order_id === order.order_id ? " · Latest" : ""}
+                      </p>
+                    </div>
+                  </div>
+                  <span className="font-sans shrink-0 text-sm font-semibold text-[color:var(--dash-amount)]">
+                    {formatMoney(order.amount, order.currency)}
+                  </span>
+                </div>
+              ))
+            )}
+          </div>
+
+          {page > 1 || hasNext ? (
+            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
+              <p className="text-brand-caption text-center text-[color:var(--dash-faint)] sm:text-left">
+                Page {page}
+                {total > 0 ? ` · ${total} ${total === 1 ? "order" : "orders"}` : ""}
+              </p>
+              <div className="grid grid-cols-2 gap-2 sm:flex sm:gap-2">
+                <PagerButton
+                  variant="prev"
+                  disabled={page <= 1 || loading}
+                  onClick={() => {
+                    scrollAppToTopSoon();
+                    setPage((current) => Math.max(1, current - 1));
+                  }}
+                >
+                  <SidebarSvgIcon name="previous" size={16} />
+                  <span className="sm:hidden">Prev</span>
+                  <span className="hidden sm:inline">Previous page</span>
+                </PagerButton>
+                <PagerButton
+                  variant="next"
+                  disabled={!hasNext || loading}
+                  onClick={() => {
+                    scrollAppToTopSoon();
+                    setPage((current) => current + 1);
+                  }}
+                >
+                  <span className="sm:hidden">Next</span>
+                  <span className="hidden sm:inline">Next page</span>
+                  <SidebarSvgIcon name="next" size={16} />
+                </PagerButton>
+              </div>
+            </div>
+          ) : null}
         </>
       )}
-    </PaymentPageLayout>
+    </section>
   );
+}
+
+function PagerButton({
+  children,
+  disabled,
+  onClick,
+  variant,
+}: {
+  children: React.ReactNode;
+  disabled?: boolean;
+  onClick: () => void;
+  variant: "prev" | "next";
+}) {
+  const className =
+    variant === "next"
+      ? "lesson-next-cta dashboard-navy-btn font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white transition disabled:pointer-events-none disabled:opacity-50 disabled:hover:brightness-100 sm:w-auto"
+      : "lesson-prev-cta dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50 sm:w-auto";
+
+  return (
+    <button type="button" disabled={disabled} onClick={onClick} className={className}>
+      {children}
+    </button>
+  );
+}
+
+export function StudentOrdersPage() {
+  return <StudentOrdersPanel />;
 }

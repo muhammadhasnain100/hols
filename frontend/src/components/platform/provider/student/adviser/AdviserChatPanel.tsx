@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useId, useRef, useState } from "react";
 import {
-  ChevronDown,
   Icon,
   Copy,
   Rocket,
@@ -12,7 +11,7 @@ import {
   ThumbsUp,
 } from "@/components/icons";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
-import { RecommendationWarRoom } from "@/components/platform/provider/student/adviser/RecommendationWarRoom";
+import { AdviserBoardDrawer } from "@/components/platform/provider/student/adviser/AdviserBoardDrawer";
 import { MarkdownContent } from "@/components/platform/provider/student/adviser/MarkdownContent";
 import { SidebarSvgIcon } from "@/components/platform/provider/sidebar-icons";
 import { ChatMessagesSkeleton } from "@/components/platform/provider/student/DashboardSkeletons";
@@ -33,6 +32,9 @@ import { cn } from "@/lib/utils";
 type AdviserChatPanelProps = {
   patient: PatientDetail;
   onPatientChange?: (patient: PatientDetail) => void;
+  boardOpen?: boolean;
+  onBoardOpenChange?: (open: boolean) => void;
+  onBoardUpdated?: () => void;
 };
 
 type DisplayMessage = StoredChatMessage & {
@@ -110,7 +112,7 @@ function ConfidenceFieldToggle({
   }, [disabled, isUpdating]);
 
   return (
-    <div ref={rootRef} className="adviser-composer-confidence-menu relative shrink-0 self-center">
+    <div ref={rootRef} className="adviser-composer-confidence-menu relative shrink-0">
       <button
         type="button"
         disabled={disabled || isUpdating}
@@ -126,30 +128,14 @@ function ConfidenceFieldToggle({
           isUpdating && "is-updating",
         )}
       >
-        <span
-          className="adviser-composer-confidence-trigger-row"
-          style={{
-            display: "flex",
-            flexDirection: "row",
-            flexWrap: "nowrap",
-            alignItems: "center",
-            gap: "0.35rem",
-            whiteSpace: "nowrap",
-          }}
-        >
+        <span className="adviser-composer-confidence-trigger-row">
           <Icon
             icon={selected.icon}
             size={16}
             strokeWidth={2.1}
             className="adviser-composer-confidence-trigger-icon"
           />
-          <span className="adviser-composer-confidence-trigger-label">{selected.label}</span>
-          <Icon
-            icon={ChevronDown}
-            size={14}
-            strokeWidth={2.2}
-            className={cn("adviser-composer-confidence-chevron", open && "is-open")}
-          />
+          <span className="sr-only">{selected.label}</span>
         </span>
       </button>
 
@@ -259,13 +245,24 @@ function peptideActionQuestion(
     : `Clinical fit of ${peptide.name} — ≤3 short bullets.`;
 }
 
-export function AdviserChatPanel({ patient, onPatientChange }: AdviserChatPanelProps) {
+export function AdviserChatPanel({
+  patient,
+  onPatientChange,
+  boardOpen = false,
+  onBoardOpenChange,
+  onBoardUpdated,
+}: AdviserChatPanelProps) {
   const [input, setInput] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [isUpdatingBoard, setIsUpdatingBoard] = useState(false);
   const [board, setBoard] = useState<RecommendationBoard | null>(
     patient.recommendation_board ?? null,
+  );
+  const [talkingName, setTalkingName] = useState<string | null>(
+    patient.recommendation_board?.preferred ||
+      patient.recommendation_board?.ranked[0]?.name ||
+      null,
   );
   const [messages, setMessages] = useState<DisplayMessage[]>([]);
   const [pagination, setPagination] = useState<ChatMessagesPagination | null>(null);
@@ -279,6 +276,16 @@ export function AdviserChatPanel({ patient, onPatientChange }: AdviserChatPanelP
 
   useEffect(() => {
     setBoard(patient.recommendation_board ?? null);
+    const nextName =
+      patient.recommendation_board?.preferred ||
+      patient.recommendation_board?.ranked[0]?.name ||
+      null;
+    setTalkingName((current) => {
+      if (current && patient.recommendation_board?.ranked.some((item) => item.name === current)) {
+        return current;
+      }
+      return nextName;
+    });
   }, [patient.patient_id, patient.recommendation_board]);
 
   useEffect(() => {
@@ -334,9 +341,12 @@ export function AdviserChatPanel({ patient, onPatientChange }: AdviserChatPanelP
       if (updated.recommendation_board) {
         setBoard(updated.recommendation_board);
       }
+      if (updated.messages?.some((message) => message.kind === "board_update")) {
+        onBoardUpdated?.();
+      }
       onPatientChange?.(updated);
     },
-    [onPatientChange],
+    [onBoardUpdated, onPatientChange],
   );
 
   const loadOlderMessages = useCallback(async () => {
@@ -452,6 +462,7 @@ export function AdviserChatPanel({ patient, onPatientChange }: AdviserChatPanelP
       try {
         const updated = await updatePatientBoard(patient.patient_id, inputUpdate);
         applyPatientUpdate(updated);
+        onBoardUpdated?.();
       } catch (err) {
         setError(
           err instanceof ApiRequestError ? err.message : "Could not update recommendation board.",
@@ -460,7 +471,7 @@ export function AdviserChatPanel({ patient, onPatientChange }: AdviserChatPanelP
         setIsUpdatingBoard(false);
       }
     },
-    [applyPatientUpdate, isSending, isUpdatingBoard, patient.patient_id, patient.recommendation],
+    [applyPatientUpdate, isSending, isUpdatingBoard, onBoardUpdated, patient.patient_id, patient.recommendation],
   );
 
   /** Cap composer to ~3 lines of body text, then scroll. */
@@ -521,30 +532,19 @@ export function AdviserChatPanel({ patient, onPatientChange }: AdviserChatPanelP
   }, []);
 
   const busy = isSending || isUpdatingBoard;
+  const talkingPeptide =
+    board?.ranked.find((item) => item.name === talkingName) ?? board?.ranked[0] ?? null;
+  const currentPeptideName = talkingPeptide?.name;
+  const openBoard = () => onBoardOpenChange?.(true);
 
   return (
-    <div className="flex min-h-0 flex-1 flex-col overflow-hidden">
+    <div className="relative flex min-h-0 flex-1 flex-col overflow-hidden">
       <div
         ref={scrollContainerRef}
         className="adviser-chat-transcript min-h-0 flex-1 overflow-y-auto overscroll-contain px-2.5 sm:px-4 md:px-6 lg:px-8"
+        data-lenis-prevent
       >
         <div className="mx-auto flex w-full max-w-4xl flex-col gap-4 py-3 sm:gap-7 sm:py-5">
-          {board ? (
-            <RecommendationWarRoom
-              board={board}
-              disabled={busy}
-              isUpdating={isUpdatingBoard}
-              hideConfidenceDial
-              onConfidenceChange={(confidence) => void handleBoardUpdate({ confidence })}
-              onPrefer={(name) => void handleBoardUpdate({ preferred: name })}
-              onClearPreferred={() => void handleBoardUpdate({ clear_preferred: true })}
-              onChip={(chip) => void sendQuestion(chipToQuestion(chip, board))}
-              onAskAbout={(peptide, action) =>
-                void sendQuestion(peptideActionQuestion(peptide, action, board))
-              }
-            />
-          ) : null}
-
           {pagination?.has_older ? (
             <div className="flex justify-center">
               <button
@@ -568,15 +568,15 @@ export function AdviserChatPanel({ patient, onPatientChange }: AdviserChatPanelP
           {isLoadingMessages ? <ChatMessagesSkeleton /> : null}
 
           {!isLoadingMessages && messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center px-4 py-10 text-center sm:py-12">
-              <span className="membership-plan-icon !h-12 !w-12" aria-hidden>
-                <SidebarSvgIcon name="adviser" size={24} strokeWidth={1.75} />
+            <div className="adviser-chat-empty dashboard-glass-card flex flex-col items-center justify-center rounded-2xl px-5 py-10 text-center sm:py-12">
+              <span className="dashboard-tool-icon flex h-12 w-12 items-center justify-center rounded-full text-[color:var(--dash-text)]" aria-hidden>
+                <SidebarSvgIcon name="adviser" size={22} strokeWidth={1.75} />
               </span>
               <p className="font-sans mt-4 text-base font-semibold text-[color:var(--dash-text)]">
-                Explore the board, then ask
+                Ask about this case
               </p>
-              <p className="text-brand-caption mt-1.5 max-w-[20rem] text-[color:var(--dash-faint)]">
-                Use the War Room chips or ask anything about this patient case.
+              <p className="text-brand-caption mt-1.5 max-w-[20rem] text-[color:var(--dash-muted)]">
+                Open Board in the header to see the current peptide, then ask a question.
               </p>
             </div>
           ) : null}
@@ -586,7 +586,9 @@ export function AdviserChatPanel({ patient, onPatientChange }: AdviserChatPanelP
               key={message.message_id}
               message={message}
               copied={copiedId === message.message_id}
+              peptideName={currentPeptideName}
               onCopy={() => void copyMessage(message.message_id, message.content)}
+              onOpenBoard={openBoard}
             />
           ))}
 
@@ -599,58 +601,93 @@ export function AdviserChatPanel({ patient, onPatientChange }: AdviserChatPanelP
       </div>
 
       <footer className="adviser-chat-composer-bar shrink-0 px-2.5 pb-[max(0.65rem,env(safe-area-inset-bottom))] pt-2 sm:px-4 sm:pb-4 sm:pt-3 md:px-6 lg:px-8">
-        <form
-          className="adviser-chat-composer mx-auto flex w-full max-w-3xl items-end gap-1.5 overflow-visible rounded-xl px-1.5 py-1.5 sm:items-center sm:gap-2 sm:px-3 sm:py-2.5"
-          onSubmit={(event) => {
-            event.preventDefault();
-            void sendMessage();
-          }}
-        >
-          {board ? (
-            <ConfidenceFieldToggle
-              value={(board.confidence as BoardConfidence) || "balanced"}
-              disabled={busy || !patient.recommendation}
-              isUpdating={isUpdatingBoard}
-              onChange={(confidence) => void handleBoardUpdate({ confidence })}
-            />
+        <div className="mx-auto w-full max-w-4xl">
+          {talkingPeptide ? (
+            <button
+              type="button"
+              onClick={openBoard}
+              className="adviser-talking-chip"
+              aria-label={`Talking about ${talkingPeptide.name}. Open board.`}
+            >
+              <span className="adviser-board-rank">#{talkingPeptide.rank}</span>
+              <SidebarSvgIcon name="adviser" size={14} strokeWidth={1.9} />
+              <span className="min-w-0 truncate text-xs font-semibold tracking-[0.01em]">
+                {talkingPeptide.name}
+              </span>
+            </button>
           ) : null}
-
-          <div className="adviser-chat-composer-field min-w-0 flex-1 self-center">
-            <textarea
-              ref={composerRef}
-              value={input}
-              onChange={handleComposerInput}
-              onKeyDown={handleComposerKeyDown}
-              disabled={busy}
-              rows={1}
-              placeholder="Ask about this case…"
-              spellCheck={false}
-              className="adviser-chat-composer-input auth-field text-brand-body min-h-[44px] w-full resize-none border-0 bg-transparent px-1 py-2.5 leading-6 text-[color:var(--dash-text)] shadow-none outline-none ring-0 placeholder:text-[color:var(--dash-faint)] focus:border-0 focus:shadow-none focus:outline-none focus:ring-0 disabled:opacity-60 sm:px-2"
-              aria-describedby="adviser-composer-hint"
-            />
-          </div>
-          <span id="adviser-composer-hint" className="sr-only">
-            Press Enter to send. Press Ctrl+Enter for a new line. Click the confidence control to open Conservative, Balanced, or Aggressive options.
-          </span>
-          <button
-            type="submit"
-            disabled={busy || !input.trim()}
-            aria-label="Send message"
-            className={cn(
-              "mb-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition self-center",
-              input.trim() && !busy
-                ? "bg-[#DDE466] text-[#152744] hover:brightness-105"
-                : "adviser-chat-composer-send-idle",
-            )}
+          <form
+            className="adviser-chat-composer dashboard-glass-card flex w-full items-end gap-1.5 overflow-visible rounded-2xl px-1.5 py-1.5 sm:items-center sm:gap-2 sm:px-3 sm:py-2"
+            onSubmit={(event) => {
+              event.preventDefault();
+              void sendMessage();
+            }}
           >
-            {isSending ? (
-              <SidebarSvgIcon name="spinner" size={16} strokeWidth={2.4} className="animate-spin" />
-            ) : (
-              <SidebarSvgIcon name="send" size={17} />
-            )}
-          </button>
-        </form>
+            {board ? (
+              <ConfidenceFieldToggle
+                value={(board.confidence as BoardConfidence) || "balanced"}
+                disabled={busy || !patient.recommendation}
+                isUpdating={isUpdatingBoard}
+                onChange={(confidence) => void handleBoardUpdate({ confidence })}
+              />
+            ) : null}
+
+            <div className="adviser-chat-composer-field min-w-0 flex-1">
+              <textarea
+                ref={composerRef}
+                value={input}
+                onChange={handleComposerInput}
+                onKeyDown={handleComposerKeyDown}
+                disabled={busy}
+                rows={1}
+                placeholder="Ask about this case…"
+                spellCheck={false}
+                className="adviser-chat-composer-input text-brand-body min-h-[44px] w-full resize-none border-0 bg-transparent px-1 py-2.5 leading-6 text-[color:var(--dash-text)] shadow-none outline-none ring-0 placeholder:text-[color:var(--dash-faint)] focus:border-0 focus:shadow-none focus:outline-none focus:ring-0 disabled:opacity-60 sm:px-2"
+                aria-describedby="adviser-composer-hint"
+              />
+            </div>
+            <span id="adviser-composer-hint" className="sr-only">
+              Press Enter to send. Press Ctrl+Enter for a new line. Click the confidence control to open Conservative, Balanced, or Aggressive options.
+            </span>
+            <button
+              type="submit"
+              disabled={busy || !input.trim()}
+              aria-label="Send message"
+              className={cn(
+                "flex h-10 w-10 shrink-0 items-center justify-center rounded-full self-end transition sm:h-11 sm:w-11 sm:self-center",
+                input.trim() && !busy
+                  ? "dashboard-navy-btn"
+                  : "adviser-chat-composer-send-idle",
+              )}
+            >
+              {isSending ? (
+                <SidebarSvgIcon name="spinner" size={16} strokeWidth={2.4} className="animate-spin" />
+              ) : (
+                <SidebarSvgIcon name="send" size={17} />
+              )}
+            </button>
+          </form>
+        </div>
       </footer>
+
+      {board && boardOpen ? (
+        <AdviserBoardDrawer
+          board={board}
+          disabled={busy}
+          isUpdating={isUpdatingBoard}
+          onClose={() => onBoardOpenChange?.(false)}
+          onConfidenceChange={(confidence) => void handleBoardUpdate({ confidence })}
+          onPrefer={(name) => void handleBoardUpdate({ preferred: name })}
+          onClearPreferred={() => void handleBoardUpdate({ clear_preferred: true })}
+          onChip={(chip) => void sendQuestion(chipToQuestion(chip, board))}
+          onAskAbout={(peptide, action) => {
+            setTalkingName(peptide.name);
+            void sendQuestion(peptideActionQuestion(peptide, action, board));
+          }}
+          selectedName={talkingName}
+          onSelectPeptide={setTalkingName}
+        />
+      ) : null}
     </div>
   );
 }
@@ -658,11 +695,15 @@ export function AdviserChatPanel({ patient, onPatientChange }: AdviserChatPanelP
 function ChatMessageRow({
   message,
   copied,
+  peptideName,
   onCopy,
+  onOpenBoard,
 }: {
   message: DisplayMessage;
   copied: boolean;
+  peptideName?: string;
   onCopy: () => void;
+  onOpenBoard: () => void;
 }) {
   const isUser = message.role === "user";
 
@@ -671,33 +712,48 @@ function ChatMessageRow({
       <div className="flex justify-end pl-4 sm:pl-16">
         <div
           className={cn(
-            "max-w-[min(100%,20rem)] rounded-xl bg-[color:var(--dash-soft)] px-3 py-2.5 text-[color:var(--dash-text)] sm:max-w-[min(100%,28rem)] sm:px-4",
+            "adviser-chat-user max-w-[min(100%,20rem)] rounded-2xl px-3.5 py-2.5 sm:max-w-[min(100%,28rem)] sm:px-4",
             message.pending && "opacity-80",
           )}
         >
-          <p className="text-brand-body whitespace-pre-wrap break-words leading-[1.5]">{message.content}</p>
+          <p className="text-brand-body whitespace-pre-wrap break-words leading-[1.5] text-inherit">
+            {message.content}
+          </p>
         </div>
       </div>
     );
   }
 
-  return (
-    <div className="adviser-chat-ai w-full min-w-0">
-      {message.kind === "board_update" ? (
-        <p className="text-brand-caption mb-1 font-medium uppercase tracking-[0.06em] text-[color:var(--dash-faint)]">
+  if (message.kind === "board_update") {
+    return (
+      <div className="flex justify-center py-1">
+        <button
+          type="button"
+          onClick={onOpenBoard}
+          className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center gap-2 rounded-full px-4 text-sm font-medium text-[color:var(--dash-text)]"
+        >
+          <span className="h-2 w-2 rounded-full bg-[#dde466]" aria-hidden />
           Board updated
-        </p>
-      ) : null}
+          {peptideName ? (
+            <span className="max-w-[10rem] truncate text-[color:var(--dash-muted)]">· {peptideName}</span>
+          ) : null}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="adviser-chat-ai dashboard-glass-card w-full min-w-0 rounded-2xl px-4 py-3.5 sm:px-5 sm:py-4">
       {message.pending ? (
         <div
-          className="adviser-chat-typing inline-flex items-center gap-2 rounded-xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] px-3.5 py-2.5 text-[color:var(--dash-muted)]"
+          className="adviser-chat-typing inline-flex items-center gap-2 text-[color:var(--dash-muted)]"
           aria-live="polite"
           aria-label="Assistant is typing"
         >
           <span className="flex gap-1">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[color:var(--dash-accent)]" />
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[color:var(--dash-accent)] [animation-delay:120ms]" />
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[color:var(--dash-accent)] [animation-delay:240ms]" />
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#dde466]" />
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#dde466] [animation-delay:120ms]" />
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-[#dde466] [animation-delay:240ms]" />
           </span>
           <span className="text-brand-caption">Replying…</span>
         </div>
@@ -742,7 +798,7 @@ function MessageActionButton({
       aria-label={label}
       title={label}
       onClick={onClick}
-      className="flex h-10 w-10 items-center justify-center rounded-lg text-[color:var(--dash-faint)] transition-colors hover:bg-[color:var(--dash-soft)] hover:text-[color:var(--dash-text)] active:scale-[0.96] sm:h-8 sm:w-8"
+      className="flex h-10 w-10 items-center justify-center rounded-full text-[color:var(--dash-faint)] transition-colors hover:bg-[color:var(--dash-soft)] hover:text-[color:var(--dash-text)] active:scale-[0.96]"
     >
       {children}
     </button>

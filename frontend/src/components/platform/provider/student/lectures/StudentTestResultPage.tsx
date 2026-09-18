@@ -32,6 +32,13 @@ function lessonHref(courseId: string, lessonId: string) {
   return `/student/lectures/${courseId}/lessons/${lessonId}`;
 }
 
+function formatWhen(value?: string) {
+  if (!value) return "";
+  const date = new Date(value);
+  if (!Number.isFinite(date.getTime())) return "";
+  return date.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+}
+
 export function StudentTestResultPage({ courseId }: StudentTestResultPageProps) {
   const [course, setCourse] = useState<CourseSummary | null>(null);
   const [results, setResults] = useState<CourseTestResultsData | null>(null);
@@ -85,6 +92,10 @@ export function StudentTestResultPage({ courseId }: StudentTestResultPageProps) 
   const summary = results?.summary;
   const loading = loadingCourse || (loadingResults && !results);
   const averageScore = summary?.average_score ?? 0;
+  const lessonsQuizzed = summary?.lessons_quizzed ?? 0;
+  const totalLessons = summary?.total_lessons ?? course?.lesson_count ?? 0;
+  const passedCount = summary?.passed_count ?? 0;
+  const progress = totalLessons > 0 ? Math.min(100, Math.round((lessonsQuizzed / totalLessons) * 100)) : 0;
 
   return (
     <CoursePageLayout
@@ -101,41 +112,62 @@ export function StudentTestResultPage({ courseId }: StudentTestResultPageProps) 
       {loading ? (
         <TestResultsPageSkeleton />
       ) : (
-        <div className="grid w-full min-w-0 items-start gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
+        <div className="grid w-full min-w-0 items-start gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(18rem,0.85fr)]">
           <div className="flex min-w-0 flex-col gap-3 sm:gap-4">
-            <section className="dashboard-surface min-w-0 rounded-xl p-3.5 sm:p-5 md:p-6">
-              <p className="text-brand-caption inline-flex items-center gap-1.5 font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-                <SidebarSvgIcon name="quiz" size={13} />
+            <section className="dashboard-glass-card min-w-0 overflow-hidden rounded-2xl p-4 sm:p-5 md:p-6">
+              <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
                 Quiz progress
               </p>
-              <div className="mt-2 flex flex-wrap items-end gap-2">
-                <span className="font-sans text-2xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] md:text-[2.25rem] md:leading-none">
+              {course?.title ? (
+                <h2
+                  title={course.title}
+                  className="font-sans mt-2 text-left text-xl font-bold leading-snug tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl"
+                >
+                  {course.title}
+                </h2>
+              ) : null}
+
+              <div className="mt-3 flex flex-wrap items-end gap-2">
+                <span className="font-sans text-3xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] md:text-[2.25rem] md:leading-none">
                   {averageScore}%
                 </span>
-                <span className="mb-0.5 text-brand-caption font-medium text-[color:var(--dash-faint)] sm:mb-1">
+                <span className="mb-1 text-brand-caption font-medium text-[color:var(--dash-faint)]">
                   average score
                 </span>
               </div>
-              <p className="text-brand-body mt-2 inline-flex flex-wrap items-center gap-x-2 gap-y-1 text-sm text-[color:var(--dash-muted)] sm:text-base">
-                <span className="inline-flex items-center gap-1.5">
-                  <SidebarSvgIcon name="lectures" size={14} />
-                  {summary?.lessons_quizzed ?? 0} of{" "}
-                  {summary?.total_lessons ?? course?.lesson_count ?? 0} lessons quizzed
-                </span>
-                {summary?.passed_count != null ? (
-                  <span className="inline-flex items-center gap-1.5">
-                    <SidebarSvgIcon name="check" size={14} />
-                    {summary.passed_count} passed
-                  </span>
-                ) : null}
-              </p>
 
-              <div className="mt-4 flex flex-col gap-2 sm:mt-5 sm:flex-row sm:flex-wrap sm:gap-2.5">
+              <div className="mt-4">
+                <div
+                  className="h-2 overflow-hidden rounded-full bg-[color:var(--dash-soft)]"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={100}
+                  aria-valuenow={progress}
+                  aria-label={`${progress}% of lessons quizzed`}
+                >
+                  <div
+                    className="h-full rounded-full bg-[color:var(--dash-navy)]"
+                    style={{ width: `${Math.min(100, Math.max(progress ? 4 : 0, progress))}%` }}
+                  />
+                </div>
+                <p className="text-brand-caption mt-2 text-[color:var(--dash-muted)]">
+                  {lessonsQuizzed} of {totalLessons} lessons quizzed
+                  {passedCount ? ` · ${passedCount} passed` : ""}
+                </p>
+              </div>
+
+              <div className="mt-4 grid grid-cols-2 gap-2.5 sm:gap-3">
+                <MetricTile label="Quizzed" value={`${lessonsQuizzed}/${totalLessons}`} />
+                <MetricTile label="Average" value={`${averageScore}%`} />
+                <MetricTile label="Passed" value={String(passedCount)} />
+                <MetricTile label="Lessons" value={String(course?.lesson_count ?? 0)} />
+              </div>
+
+              <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-2.5">
                 <Link
                   href={`/student/lectures/${courseId}/lessons`}
-                  className="font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-lg bg-[#DDE466] px-5 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 sm:w-auto"
+                  className="dashboard-navy-btn font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white sm:w-auto"
                 >
-                  <SidebarSvgIcon name="lectures" size={15} />
                   Continue lessons
                   <SidebarSvgIcon name="next" size={15} />
                 </Link>
@@ -143,14 +175,18 @@ export function StudentTestResultPage({ courseId }: StudentTestResultPageProps) 
               </div>
             </section>
 
-            <section className="dashboard-surface min-w-0 rounded-xl p-3.5 sm:p-5 md:p-6">
-              <div className="flex min-w-0 flex-wrap items-center justify-between gap-2 sm:gap-3">
-                <h2 className="font-sans inline-flex items-center gap-2 text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg">
-                  <SidebarSvgIcon name="quiz" size={18} />
-                  Saved quiz attempts
-                </h2>
+            <section className="dashboard-glass-card min-w-0 overflow-hidden rounded-2xl p-4 sm:p-5 md:p-6">
+              <div className="flex min-w-0 flex-wrap items-end justify-between gap-2">
+                <div className="min-w-0">
+                  <h2 className="font-sans text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg">
+                    Saved attempts
+                  </h2>
+                  <p className="text-brand-caption mt-1 text-[color:var(--dash-muted)]">
+                    Open a lesson to review the quiz.
+                  </p>
+                </div>
                 {pagination ? (
-                  <span className="text-brand-caption font-medium text-[color:var(--dash-accent)]">
+                  <span className="text-brand-caption font-medium tabular-nums text-[color:var(--dash-faint)]">
                     {pagination.total} result{pagination.total === 1 ? "" : "s"}
                   </span>
                 ) : null}
@@ -160,59 +196,50 @@ export function StudentTestResultPage({ courseId }: StudentTestResultPageProps) 
                 <TestResultRowsSkeleton />
               ) : results?.items.length ? (
                 <>
-                  <div className="mt-3 space-y-2 sm:mt-4 sm:space-y-2.5">
-                    {results.items.map((item) => (
-                      <Link
-                        key={item.lesson_id}
-                        href={lessonHref(courseId, item.lesson_id)}
-                        className="dashboard-row group flex min-w-0 items-start justify-between gap-2 rounded-xl px-3 py-2.5 transition sm:items-center sm:gap-3 sm:px-3.5 sm:py-3"
-                      >
-                        <div className="flex min-w-0 items-start gap-2.5 sm:items-center sm:gap-3">
-                          <span
-                            className={cn(
-                              "mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-xs font-semibold sm:mt-0",
-                              item.passed
-                                ? "bg-emerald-500/15 text-emerald-600"
-                                : "bg-amber-500/15 text-amber-600",
-                            )}
-                          >
-                            {item.score_percent}%
-                          </span>
-                          <div className="min-w-0">
-                            <p className="font-sans line-clamp-2 text-sm font-medium text-[color:var(--dash-text)] sm:truncate">
-                              {item.lesson_title}
-                            </p>
-                            <p className="text-brand-caption mt-0.5 text-[color:var(--dash-faint)]">
-                              Lesson {item.lesson_order} · {item.correct_count}/{item.total_questions}{" "}
-                              correct
-                            </p>
+                  <div className="mt-4 space-y-1">
+                    {results.items.map((item) => {
+                      const when = formatWhen(item.updated_at);
+                      return (
+                        <Link
+                          key={item.lesson_id}
+                          href={lessonHref(courseId, item.lesson_id)}
+                          className="dashboard-row hols-option-hover flex min-w-0 items-center justify-between gap-3 rounded-xl px-2.5 py-2.5 sm:px-3.5 sm:py-3"
+                        >
+                          <div className="flex min-w-0 items-center gap-3">
+                            <span className="dashboard-tool-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-xs font-semibold tabular-nums text-[color:var(--dash-text)]">
+                              {item.score_percent}%
+                            </span>
+                            <div className="min-w-0">
+                              <p
+                                title={item.lesson_title}
+                                className="font-sans truncate text-sm font-medium text-[color:var(--dash-text)]"
+                              >
+                                {item.lesson_title}
+                              </p>
+                              <p className="text-brand-caption mt-0.5 truncate text-[color:var(--dash-faint)]">
+                                Lesson {item.lesson_order} · {item.correct_count}/{item.total_questions}{" "}
+                                correct{when ? ` · ${when}` : ""}
+                              </p>
+                            </div>
                           </div>
-                        </div>
 
-                        <span className="flex shrink-0 items-center gap-1.5 sm:gap-2">
-                          <span
-                            className={cn(
-                              "text-brand-caption inline-flex items-center gap-1 rounded-lg px-2 py-1 font-semibold sm:px-2.5",
-                              item.passed
-                                ? "bg-emerald-500/15 text-emerald-600"
-                                : "bg-amber-500/15 text-amber-600",
-                            )}
-                          >
-                            <SidebarSvgIcon name={item.passed ? "check" : "quiz"} size={12} />
-                            {item.passed ? "Passed" : "Review"}
+                          <span className="flex shrink-0 items-center gap-2">
+                            <span className="dashboard-pill-soft text-brand-caption inline-flex items-center rounded-full px-2.5 py-1 font-semibold text-[color:var(--dash-text)]">
+                              {item.passed ? "Passed" : "Review"}
+                            </span>
+                            <SidebarSvgIcon
+                              name="next"
+                              size={15}
+                              className="hidden text-[color:var(--dash-dim)] sm:block"
+                            />
                           </span>
-                          <SidebarSvgIcon
-                            name="next"
-                            size={15}
-                            className="text-[color:var(--dash-dim)] transition group-hover:translate-x-0.5 group-hover:text-[color:var(--dash-muted)]"
-                          />
-                        </span>
-                      </Link>
-                    ))}
+                        </Link>
+                      );
+                    })}
                   </div>
 
                   {pagination && pagination.total_pages > 1 ? (
-                    <div className="mt-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                       <p className="text-brand-caption text-center text-[color:var(--dash-faint)] sm:text-left">
                         Page {pagination.page} of {pagination.total_pages}
                       </p>
@@ -240,137 +267,92 @@ export function StudentTestResultPage({ courseId }: StudentTestResultPageProps) 
                   ) : null}
                 </>
               ) : (
-                <div className="mt-4 flex flex-col items-center gap-3 px-1 py-8 text-center">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#DDE466]/15 text-[color:var(--dash-accent)]">
-                    <SidebarSvgIcon name="quiz" size={20} />
+                <div className="mt-6 flex flex-col items-center px-2 py-8 text-center sm:py-10">
+                  <span className="dashboard-tool-icon flex h-14 w-14 items-center justify-center rounded-full text-[color:var(--dash-text)]">
+                    <SidebarSvgIcon name="quiz" size={22} strokeWidth={1.85} />
                   </span>
-                  <p className="text-brand-body text-sm text-[color:var(--dash-faint)] sm:text-base">
-                    No quiz results yet. Complete a lesson quiz and your score will appear here.
+                  <p className="font-sans mt-4 text-base font-semibold text-[color:var(--dash-text)] sm:text-lg">
+                    No quiz results yet
+                  </p>
+                  <p className="text-brand-body mt-1.5 max-w-sm text-[color:var(--dash-muted)]">
+                    Complete a lesson quiz and your score will show up here.
                   </p>
                   <Link
                     href={`/student/lectures/${courseId}/lessons`}
-                    className="font-sans inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg bg-[#DDE466] px-5 text-sm font-medium text-[#152744] transition hover:brightness-105"
+                    className="dashboard-navy-btn font-sans mt-5 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white"
                   >
-                    <SidebarSvgIcon name="lectures" size={15} />
                     Start a lesson
+                    <SidebarSvgIcon name="next" size={15} />
                   </Link>
                 </div>
               )}
             </section>
           </div>
 
-          <div className="flex min-w-0 flex-col gap-3 sm:gap-4 lg:sticky lg:top-4">
-            <section className="dashboard-surface min-w-0 rounded-xl p-3.5 sm:p-5">
-              <p className="text-brand-caption inline-flex items-center gap-1.5 font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-                <SidebarSvgIcon name="check" size={13} />
-                Summary
-              </p>
-              <div className="mt-3 grid grid-cols-1 gap-2 sm:mt-4 sm:gap-3">
-                <SummaryRow
-                  icon="quiz"
-                  label="Lessons quizzed"
-                  value={`${summary?.lessons_quizzed ?? 0} / ${summary?.total_lessons ?? course?.lesson_count ?? 0}`}
-                />
-                <SummaryRow icon="clock" label="Average score" value={`${averageScore}%`} />
-                <SummaryRow
-                  icon="check"
-                  label="Passed quizzes"
-                  value={String(summary?.passed_count ?? 0)}
-                />
-                <SummaryRow
-                  icon="lectures"
-                  label="Course lessons"
-                  value={String(course?.lesson_count ?? 0)}
-                />
-              </div>
-            </section>
+          <aside className="dashboard-glass-card h-fit min-w-0 rounded-2xl p-4 sm:p-5 md:p-6 lg:sticky lg:top-4">
+            <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+              Next steps
+            </p>
 
-            <section className="dashboard-surface min-w-0 rounded-xl p-3.5 sm:p-5">
-              <p className="text-brand-caption inline-flex items-center gap-1.5 font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-                <SidebarSvgIcon name="focus" size={13} />
-                Quick actions
-              </p>
-              <div className="mt-3 space-y-1">
-                <QuickLink
-                  href={`/student/lectures/${courseId}/lessons`}
-                  icon="lectures"
-                  label="Open lessons"
-                  hint="Practice more quizzes"
-                />
-                <QuickLink
-                  href={`/student/lectures/${courseId}`}
-                  icon="roman"
-                  label="Course overview"
-                  hint="Topics and sections"
-                />
-                <QuickLink
-                  href={`/student/lectures/${courseId}/calculator`}
-                  icon="calculator"
-                  label="Open calculator"
-                  hint="Dose tools for this course"
-                />
-              </div>
-            </section>
-          </div>
+            <div className="mt-4 space-y-2.5">
+              <StatRow icon="quiz" label="Lessons quizzed" value={`${lessonsQuizzed} / ${totalLessons}`} />
+              <StatRow icon="clock" label="Average score" value={`${averageScore}%`} />
+              <StatRow icon="check" label="Passed quizzes" value={String(passedCount)} />
+            </div>
+
+            <div className="my-5 h-px bg-[color:var(--dash-surface-border)]" />
+
+            <div className="flex flex-col gap-2">
+              <Link
+                href={`/student/lectures/${courseId}/lessons`}
+                className="dashboard-navy-btn font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-4 text-sm font-medium tracking-[0.01em] text-white"
+              >
+                Open lessons
+                <SidebarSvgIcon name="next" size={14} />
+              </Link>
+              <Link
+                href={`/student/lectures/${courseId}`}
+                className="dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-4 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)]"
+              >
+                Course overview
+              </Link>
+              <OpenCalculatorButton fullWidth />
+            </div>
+          </aside>
         </div>
       )}
     </CoursePageLayout>
   );
 }
 
-function SummaryRow({
-  icon,
-  label,
-  value,
-}: {
-  icon: "quiz" | "clock" | "check" | "lectures";
-  label: string;
-  value: string;
-}) {
+function MetricTile({ label, value }: { label: string; value: string }) {
   return (
-    <div className="dashboard-row flex min-w-0 items-center justify-between gap-3 rounded-xl px-3 py-2.5">
-      <span className="text-brand-body inline-flex min-w-0 items-center gap-2 text-sm text-[color:var(--dash-muted)] sm:text-base">
-        <SidebarSvgIcon name={icon} size={15} className="shrink-0 text-[color:var(--dash-accent)]" />
-        {label}
-      </span>
-      <span className="font-sans shrink-0 text-sm font-semibold text-[color:var(--dash-text)]">
-        {value}
-      </span>
+    <div className="rounded-xl bg-[color:var(--dash-soft)] px-3 py-3 sm:px-3.5">
+      <p className="text-brand-caption text-[color:var(--dash-faint)]">{label}</p>
+      <p className="font-sans mt-1 truncate text-lg font-semibold text-[color:var(--dash-text)]">{value}</p>
     </div>
   );
 }
 
-function QuickLink({
-  href,
+function StatRow({
   icon,
   label,
-  hint,
+  value,
 }: {
-  href: string;
-  icon: "lectures" | "roman" | "calculator";
+  icon: "quiz" | "clock" | "check";
   label: string;
-  hint: string;
+  value: string;
 }) {
   return (
-    <Link
-      href={href}
-      className="dashboard-row group flex min-w-0 items-center gap-3 rounded-xl px-3 py-3 transition"
-    >
-      <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#DDE466]/15 text-[color:var(--dash-accent)]">
-        <SidebarSvgIcon name={icon} size={16} />
+    <div className="flex items-center gap-3 rounded-2xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] px-3.5 py-3">
+      <span className="dashboard-tool-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[color:var(--dash-text)]">
+        <SidebarSvgIcon name={icon} size={15} strokeWidth={1.9} />
       </span>
-      <span className="min-w-0 flex-1">
-        <span className="font-sans block text-sm font-medium text-[color:var(--dash-text)]">
-          {label}
-        </span>
-        <span className="text-brand-caption block text-[color:var(--dash-faint)]">{hint}</span>
-      </span>
-      <SidebarSvgIcon
-        name="next"
-        size={16}
-        className="shrink-0 text-[color:var(--dash-dim)] transition group-hover:translate-x-0.5 group-hover:text-[color:var(--dash-muted)]"
-      />
-    </Link>
+      <div className="min-w-0 flex-1">
+        <p className="text-brand-caption text-[color:var(--dash-faint)]">{label}</p>
+        <p className="font-sans truncate text-sm font-semibold text-[color:var(--dash-text)]">{value}</p>
+      </div>
+    </div>
   );
 }
 
@@ -385,29 +367,27 @@ function PagerButton({
   onClick: () => void;
   variant: "prev" | "next";
 }) {
+  const className =
+    variant === "next"
+      ? "lesson-next-cta dashboard-navy-btn font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white transition disabled:pointer-events-none disabled:opacity-50 disabled:hover:brightness-100 sm:w-auto"
+      : "lesson-prev-cta dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50 sm:w-auto";
+
   return (
-    <button
-      type="button"
-      disabled={disabled}
-      onClick={onClick}
-      className={cn(
-        "font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-lg px-4 text-sm font-medium tracking-[0.01em] transition sm:w-auto sm:px-5",
-        variant === "next"
-          ? "bg-[#DDE466] text-[#152744] hover:brightness-105 disabled:pointer-events-none disabled:opacity-50 disabled:hover:brightness-100"
-          : "dashboard-pill-soft text-[color:var(--dash-text)] disabled:pointer-events-none disabled:opacity-50",
-      )}
-    >
+    <button type="button" disabled={disabled} onClick={onClick} className={className}>
       {children}
     </button>
   );
 }
 
-function OpenCalculatorButton() {
+function OpenCalculatorButton({ fullWidth = false }: { fullWidth?: boolean }) {
   const { calculatorHref } = useOpenCourseCalculator();
   return (
     <Link
       href={calculatorHref}
-      className="dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-lg px-5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition sm:w-auto"
+      className={cn(
+        "dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)]",
+        fullWidth ? "w-full" : "w-full sm:w-auto",
+      )}
     >
       <SidebarSvgIcon name="calculator" size={15} />
       Open calculator

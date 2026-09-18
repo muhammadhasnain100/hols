@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useId, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { authFieldClass, authLabelClass } from "@/components/platform/auth/auth-styles";
 import { SidebarSvgIcon } from "@/components/platform/provider/sidebar-icons";
@@ -10,13 +10,17 @@ import type {
   QuestionnaireFlow,
 } from "@/lib/integrate/provider/student/chat";
 import {
+  AGE_MAX,
+  AGE_MIN,
   CHILD_MAX_AGE,
+  heightRangeForAge,
   isPregnancyApplicable,
-  normalizeSex,
+  isSnapshotMetricsValid,
+  METRIC_MAX_DIGITS,
   parseIntakeAge,
-  PREGNANCY_MAX_AGE,
-  PREGNANCY_MIN_AGE,
   sanitizeIntakeAnswers,
+  validateSnapshotMetrics,
+  weightRangeForAge,
 } from "@/lib/integrate/provider/student/chat/intakeDependencies";
 import { cn } from "@/lib/utils";
 
@@ -31,7 +35,7 @@ export const INTAKE_STAGES = [
   "Recommendation",
 ] as const;
 
-const CARD_SELECT_LIMIT = 10;
+const SAFETY_FLAG_IDS = new Set(["cancer", "mtc_men2", "peptide_allergy"]);
 
 type IntakeWizardProps = {
   flow: QuestionnaireFlow;
@@ -53,13 +57,17 @@ function normalizeOptions(options: FlowQuestion["options"]): IntakeOption[] {
   );
 }
 
+function goalTitle(option: IntakeOption) {
+  return option.label.replace(/^[A-H]\.\s*/, "");
+}
+
 function OptionCheck({ checked }: { checked: boolean }) {
   return (
     <span
       className={cn(
         "quiz-option-check flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition",
         checked
-          ? "border-[#DDE466] bg-[#DDE466] text-[#152744]"
+          ? "border-[color:var(--dash-navy)] bg-[color:var(--dash-navy)] text-white"
           : "border-[color:var(--dash-dim)] bg-transparent text-transparent",
       )}
       aria-hidden
@@ -68,6 +76,14 @@ function OptionCheck({ checked }: { checked: boolean }) {
     </span>
   );
 }
+
+const choiceCardClass = (checked: boolean) =>
+  cn(
+    "quiz-option-card adviser-option-card adviser-choice-card text-brand-body flex min-h-12 min-w-0 items-center gap-3 rounded-xl border px-3.5 py-3 text-left transition active:scale-[0.99]",
+    checked
+      ? "is-selected"
+      : "border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] text-[color:var(--dash-muted)] hols-option-hover",
+  );
 
 /** Tap-to-select cards — primary interaction for short option lists. */
 function IntakeChoiceGroup({
@@ -116,12 +132,7 @@ function IntakeChoiceGroup({
               type="button"
               aria-pressed={checked}
               onClick={() => onChange(option.value)}
-              className={cn(
-                "quiz-option-card adviser-option-card adviser-choice-card text-brand-body flex min-h-12 min-w-0 items-center gap-3 rounded-lg border px-3.5 py-3 text-left transition active:scale-[0.99]",
-                checked
-                  ? "is-selected border-[#DDE466] bg-[#DDE466]/18 text-[color:var(--dash-text)] shadow-[inset_0_0_0_1px_rgba(221,228,102,0.55)]"
-                  : "border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] text-[color:var(--dash-muted)] hover:border-[#DDE466]/55",
-              )}
+              className={choiceCardClass(checked)}
             >
               <OptionCheck checked={checked} />
               <span
@@ -140,11 +151,45 @@ function IntakeChoiceGroup({
   );
 }
 
+function FieldLabel({
+  htmlFor,
+  required,
+  children,
+}: {
+  htmlFor?: string;
+  required?: boolean;
+  children: React.ReactNode;
+}) {
+  const content = (
+    <>
+      <span>{children}</span>
+      {required ? <span className="whitespace-nowrap"> *</span> : null}
+    </>
+  );
+  const className = cn(authLabelClass, "inline-flex min-w-0 flex-wrap items-baseline");
+  if (htmlFor) {
+    return (
+      <label htmlFor={htmlFor} className={className}>
+        {content}
+      </label>
+    );
+  }
+  return <span className={className}>{content}</span>;
+}
+
+function clipIntegerInput(raw: string, maxDigits: number, maxValue?: number) {
+  let next = raw.replace(/\D/g, "").slice(0, maxDigits);
+  if (maxValue != null && next !== "" && Number(next) > maxValue) {
+    next = String(maxValue);
+  }
+  return next;
+}
+
 function IntakeSelect({
   id,
   label,
   required,
-  value,
+  value = "",
   onChange,
   options,
   placeholder = "Select an option",
@@ -152,232 +197,34 @@ function IntakeSelect({
   id: string;
   label: string;
   required?: boolean;
-  value: string;
+  value?: string;
   onChange: (value: string) => void;
   options: IntakeOption[];
   placeholder?: string;
 }) {
-  const listId = useId();
-  const filterId = useId();
-  const rootRef = useRef<HTMLDivElement>(null);
-  const filterRef = useRef<HTMLInputElement>(null);
-  const [open, setOpen] = useState(false);
-  const [openUpward, setOpenUpward] = useState(false);
-  const [filter, setFilter] = useState("");
-  const [activeIndex, setActiveIndex] = useState(0);
-  const selected = options.find((option) => option.value === value);
-  const showFilter = options.length > 4;
-
-  const filteredOptions = useMemo(() => {
-    const query = filter.trim().toLowerCase();
-    if (!query) return options;
-    return options.filter(
-      (option) =>
-        option.label.toLowerCase().includes(query) ||
-        option.value.toLowerCase().includes(query),
-    );
-  }, [filter, options]);
-
-  const selectOption = (next: string) => {
-    onChange(next);
-    setOpen(false);
-    setFilter("");
-    setActiveIndex(0);
-  };
-
-  useEffect(() => {
-    if (!open) return;
-
-    function onPointerDown(event: MouseEvent) {
-      if (rootRef.current?.contains(event.target as Node)) return;
-      setOpen(false);
-      setFilter("");
-    }
-
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") {
-        setOpen(false);
-        setFilter("");
-      }
-    }
-
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open]);
-
-  useEffect(() => {
-    if (!open) return;
-    const selectedIndex = filteredOptions.findIndex((option) => option.value === value);
-    setActiveIndex(selectedIndex >= 0 ? selectedIndex : 0);
-    if (showFilter) {
-      requestAnimationFrame(() => filterRef.current?.focus());
-    }
-  }, [open]); // eslint-disable-line react-hooks/exhaustive-deps
-
-  useEffect(() => {
-    setActiveIndex(0);
-  }, [filter]);
-
-  const handleFilterKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === "ArrowDown") {
-      event.preventDefault();
-      setActiveIndex((current) =>
-        filteredOptions.length === 0 ? 0 : Math.min(current + 1, filteredOptions.length - 1),
-      );
-      return;
-    }
-    if (event.key === "ArrowUp") {
-      event.preventDefault();
-      setActiveIndex((current) => Math.max(current - 1, 0));
-      return;
-    }
-    if (event.key === "Enter") {
-      event.preventDefault();
-      const option = filteredOptions[activeIndex] ?? filteredOptions[0];
-      if (option) selectOption(option.value);
-    }
-  };
+  const hasEmptyOption = options.some((option) => option.value === "");
+  const selectOptions = hasEmptyOption
+    ? options
+    : [{ value: "", label: placeholder }, ...options];
 
   return (
     <div className="adviser-intake-field grid min-w-0 gap-2">
-      <label htmlFor={id} className={authLabelClass}>
+      <label htmlFor={id} className="dashboard-field-label">
         {label}
-        {required ? " *" : ""}
+        {required ? <span className="whitespace-nowrap"> *</span> : null}
       </label>
-      <div ref={rootRef} className="adviser-select relative min-w-0">
-        <button
-          id={id}
-          type="button"
-          aria-haspopup="listbox"
-          aria-expanded={open}
-          aria-controls={listId}
-          onClick={() =>
-            setOpen((current) => {
-              const next = !current;
-              if (!next) {
-                setFilter("");
-                setOpenUpward(false);
-                return next;
-              }
-              const rect = rootRef.current?.getBoundingClientRect();
-              const spaceBelow = rect ? window.innerHeight - rect.bottom : 0;
-              const spaceAbove = rect?.top ?? 0;
-              setOpenUpward(spaceBelow < 220 && spaceAbove > spaceBelow);
-              return next;
-            })
-          }
-          className={cn(
-            authFieldClass,
-            "adviser-field flex h-12 min-h-12 w-full items-center gap-2 overflow-visible px-4 py-0 pr-11 text-left leading-none",
-            open && "border-[#DDE466]",
-          )}
-        >
-          <span
-            className={cn(
-              "min-w-0 flex-1 truncate",
-              selected ? "text-[color:var(--dash-text)]" : "text-[color:var(--dash-faint)]",
-            )}
-          >
-            {selected?.label ?? placeholder}
-          </span>
-          {selected ? (
-            <span
-              className="adviser-select-trigger-check flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#DDE466] text-[#152744]"
-              aria-hidden
-            >
-              <SidebarSvgIcon name="check" size={11} strokeWidth={2.8} />
-            </span>
-          ) : null}
-        </button>
-        <span
-          className="quiz-select-chevron pointer-events-none absolute inset-y-0 right-0 flex w-11 items-center justify-center"
-          aria-hidden
-        >
-          <SidebarSvgIcon
-            name={open ? "chevron-up" : "chevron-down"}
-            size={15}
-            strokeWidth={2.35}
-          />
-        </span>
-
-        {open ? (
-          <div
-            className={cn(
-              "quiz-select-menu absolute left-0 right-0 z-40 overflow-hidden rounded-lg",
-              openUpward
-                ? "bottom-[calc(100%+0.35rem)] top-auto"
-                : "top-[calc(100%+0.35rem)]",
-            )}
-          >
-            {showFilter ? (
-              <div className="adviser-select-filter border-b border-[color:var(--dash-surface-border)] p-1.5">
-                <label htmlFor={filterId} className="sr-only">
-                  Filter options
-                </label>
-                <div className="relative">
-                  <span className="pointer-events-none absolute inset-y-0 left-0 flex w-9 items-center justify-center text-[color:var(--dash-faint)]">
-                    <SidebarSvgIcon name="search" size={14} strokeWidth={2.2} />
-                  </span>
-                  <input
-                    ref={filterRef}
-                    id={filterId}
-                    type="text"
-                    value={filter}
-                    onChange={(event) => setFilter(event.target.value)}
-                    onKeyDown={handleFilterKeyDown}
-                    placeholder="Filter options…"
-                    className={cn(
-                      authFieldClass,
-                      "adviser-field h-10 min-h-10 w-full rounded-md py-0 pl-9 pr-3 text-sm leading-none",
-                    )}
-                    autoComplete="off"
-                    spellCheck={false}
-                  />
-                </div>
-              </div>
-            ) : null}
-            <ul
-              id={listId}
-              role="listbox"
-              className="max-h-[min(13rem,40vh)] overflow-y-auto p-1.5 sm:max-h-52"
-            >
-              {filteredOptions.length === 0 ? (
-                <li className="px-3 py-2.5 text-sm text-[color:var(--dash-faint)]">No matching options</li>
-              ) : (
-                filteredOptions.map((option, index) => {
-                  const isSelected = option.value === value;
-                  const isActive = index === activeIndex;
-                  return (
-                    <li
-                      key={`${option.value}-${option.label}`}
-                      role="option"
-                      aria-selected={isSelected}
-                    >
-                      <button
-                        type="button"
-                        onMouseEnter={() => setActiveIndex(index)}
-                        onClick={() => selectOption(option.value)}
-                        className={cn(
-                          "quiz-select-option adviser-select-option font-sans flex w-full items-center justify-between gap-2 rounded-md px-3 py-2.5 text-left text-sm leading-normal transition",
-                          isSelected && "is-selected",
-                          isActive && "is-active",
-                        )}
-                      >
-                        <span className="min-w-0 break-words">{option.label}</span>
-                        <OptionCheck checked={isSelected} />
-                      </button>
-                    </li>
-                  );
-                })
-              )}
-            </ul>
-          </div>
-        ) : null}
-      </div>
+      <select
+        id={id}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="dashboard-field dashboard-field-select"
+      >
+        {selectOptions.map((option) => (
+          <option key={`${option.value}-${option.label}`} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }
@@ -387,66 +234,41 @@ function IntakeNumberField({
   required,
   value,
   onChange,
-  min,
-  max,
-  step = 1,
+  maxDigits = METRIC_MAX_DIGITS,
+  maxValue,
+  hint,
+  error,
 }: {
   label: string;
   required?: boolean;
   value: string;
   onChange: (value: string) => void;
-  min?: number;
-  max?: number;
-  step?: number;
+  maxDigits?: number;
+  maxValue?: number;
+  hint?: string;
+  error?: string;
 }) {
-  const numeric = value === "" ? NaN : Number(value);
-
-  const bump = (direction: 1 | -1) => {
-    const base = Number.isFinite(numeric) ? numeric : min ?? 0;
-    let next = base + direction * step;
-    if (typeof min === "number") next = Math.max(min, next);
-    if (typeof max === "number") next = Math.min(max, next);
-    onChange(String(next));
-  };
-
   return (
-    <div className="adviser-intake-field grid min-w-0 self-start gap-2">
-      <span className={authLabelClass}>
-        {label}
-        {required ? " *" : ""}
-      </span>
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          aria-label={`Decrease ${label}`}
-          onClick={() => bump(-1)}
-          className="dashboard-pill-soft flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-[color:var(--dash-text)] transition hover:bg-[#DDE466]/25"
-        >
-          <SidebarSvgIcon name="minus" size={16} strokeWidth={2.2} />
-        </button>
-        <input
-          type="text"
-          inputMode="decimal"
-          value={value}
-          onChange={(event) => {
-            const next = event.target.value.replace(/[^\d.]/g, "");
-            onChange(next);
-          }}
-          className={cn(
-            authFieldClass,
-            "adviser-field adviser-number-field h-12 min-h-12 flex-1 px-4 text-center text-base font-semibold tabular-nums",
-          )}
-        />
-        <button
-          type="button"
-          aria-label={`Increase ${label}`}
-          onClick={() => bump(1)}
-          className="dashboard-pill-soft flex h-12 w-12 shrink-0 items-center justify-center rounded-lg text-[color:var(--dash-text)] transition hover:bg-[#DDE466]/25"
-        >
-          <SidebarSvgIcon name="plus" size={16} strokeWidth={2.2} />
-        </button>
-      </div>
-    </div>
+    <label className="adviser-intake-field grid min-w-0 self-start gap-2">
+      <FieldLabel required={required}>{label}</FieldLabel>
+      <input
+        type="text"
+        inputMode="numeric"
+        value={value}
+        onChange={(event) => onChange(clipIntegerInput(event.target.value, maxDigits, maxValue))}
+        className={cn(
+          authFieldClass,
+          "adviser-field adviser-number-field h-12 min-h-12 px-4",
+          error && "border-[color:var(--dash-navy)]",
+        )}
+        aria-invalid={Boolean(error)}
+      />
+      {error ? (
+        <p className="text-brand-caption text-[color:var(--dash-navy)]">{error}</p>
+      ) : hint ? (
+        <p className="text-brand-caption text-[color:var(--dash-faint)]">{hint}</p>
+      ) : null}
+    </label>
   );
 }
 
@@ -475,7 +297,6 @@ export function IntakeWizard({
   bare = false,
 }: IntakeWizardProps) {
   const [validationError, setValidationError] = useState<string | null>(null);
-  const [conditionFilter, setConditionFilter] = useState("");
 
   const branchQuestions = useMemo(() => {
     const goal = String(answers.primary_goal ?? "");
@@ -486,7 +307,10 @@ export function IntakeWizard({
 
   const updateAnswer = (id: string, value: unknown) => {
     setValidationError(null);
-    const draft = { ...answers, [id]: value };
+    const draft: IntakeAnswers = { ...answers, [id]: value };
+    if (id === "primary_goal" && value && draft.secondary_goal === value) {
+      draft.secondary_goal = "";
+    }
     onAnswersChange(sanitizeIntakeAnswers(draft, answers));
   };
 
@@ -503,21 +327,25 @@ export function IntakeWizard({
 
   const pregnancyApplies = isPregnancyApplicable(answers.sex, answers.age);
   const ageYears = parseIntakeAge(answers.age);
+  const metricErrors = validateSnapshotMetrics(answers);
+  const heightRange = heightRangeForAge(ageYears);
+  const weightRange = weightRangeForAge(ageYears);
 
-  const pregnancyAutoReason = (() => {
-    if (normalizeSex(answers.sex) === "male") return " for male patients.";
-    if (ageYears != null && ageYears < PREGNANCY_MIN_AGE) return " for young children.";
-    if (ageYears != null && ageYears >= PREGNANCY_MAX_AGE) return " for this age group.";
-    return ".";
-  })();
+  const metricFieldError = (key: keyof typeof metricErrors) => {
+    const filled = answers[key] !== "" && answers[key] != null;
+    if (filled && metricErrors[key]) return metricErrors[key];
+    if (validationError && step === 1 && metricErrors[key]) return metricErrors[key];
+    return undefined;
+  };
 
   const validateStep = () => {
     if (step === 0) return answers.consent === true;
     if (step === 1) {
       const sanitized = sanitizeIntakeAnswers(answers);
-      return ["age", "sex", "pregnancy", "height_cm", "weight_kg", "activity"].every(
+      const filled = ["age", "sex", "pregnancy", "height_cm", "weight_kg", "activity"].every(
         (key) => sanitized[key] !== "" && sanitized[key] != null,
       );
+      return filled && isSnapshotMetricsValid(sanitized);
     }
     if (step === 2) {
       const required = ["cancer", "mtc_men2", "peptide_allergy", "medications"].every(
@@ -572,9 +400,9 @@ export function IntakeWizard({
 
   const validationMessageForStep = () => {
     if (step === 0) return "Please confirm consent before continuing.";
-    if (step === 1) return "Please fill in every patient snapshot field before continuing.";
-    if (step === 2) return "Please complete all safety gate answers before continuing.";
-    if (step === 3) return "Please select a primary goal before continuing.";
+    if (step === 1) return "Please enter a valid age, height, and weight, and complete the other snapshot fields.";
+    if (step === 2) return "Please complete the safety questions, conditions, and medications before continuing.";
+    if (step === 3) return "Please choose a primary goal before continuing.";
     if (step === 6) return "Please complete all preference fields before continuing.";
     return "Please complete all required fields before continuing.";
   };
@@ -605,24 +433,11 @@ export function IntakeWizard({
 
   useEffect(() => {
     setValidationError(null);
-    setConditionFilter("");
   }, [step]);
 
   const renderQuestion = (question: FlowQuestion) => {
     if (question.id === "pregnancy" && !pregnancyApplies) {
-      return (
-        <div
-          key={question.id}
-          className="adviser-intake-field rounded-lg border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] px-3.5 py-3"
-        >
-          <p className={authLabelClass}>{question.text}</p>
-          <p className="text-brand-body mt-1.5 text-[color:var(--dash-muted)]">
-            Automatically set to{" "}
-            <span className="font-semibold text-[color:var(--dash-text)]">N/A</span>
-            {pregnancyAutoReason}
-          </p>
-        </div>
-      );
+      return null;
     }
 
     if (question.show_if) {
@@ -630,6 +445,10 @@ export function IntakeWizard({
         ([key, expected]) => answers[key] === expected,
       );
       if (!visible) return null;
+    }
+
+    if (question.id === "secondary_goal" && !answers.primary_goal) {
+      return null;
     }
 
     const value = answers[question.id];
@@ -642,74 +461,50 @@ export function IntakeWizard({
 
     if (question.type === "select") {
       const isGoal = question.id === "primary_goal" || question.id === "secondary_goal";
-      if (options.length > 0 && options.length <= CARD_SELECT_LIMIT) {
-        return (
-          <IntakeChoiceGroup
-            key={question.id}
-            label={question.text}
-            required={Boolean(question.required)}
-            value={String(value ?? "")}
-            onChange={(next) => updateAnswer(question.id, next)}
-            options={options}
-            layout={isGoal ? "stack" : "auto"}
-            hint={
-              isGoal && question.id === "primary_goal"
-                ? "Tap a goal to select — this unlocks the clinical deep dive."
-                : undefined
-            }
-          />
-        );
-      }
+      const selectOptions = isGoal
+        ? options
+            .filter((option) => !option.value || option.value !== String(answers.primary_goal ?? "") || question.id === "primary_goal")
+            .map((option) =>
+              option.value ? { value: option.value, label: goalTitle(option) } : { value: "", label: "None" },
+            )
+        : options;
 
       return (
         <IntakeSelect
           key={question.id}
           id={`intake-${question.id}`}
-          label={question.text}
+          label={question.id === "secondary_goal" ? "Secondary goal" : question.text}
           required={Boolean(question.required)}
           value={String(value ?? "")}
           onChange={(next) => updateAnswer(question.id, next)}
-          options={options}
+          options={selectOptions}
+          placeholder={
+            question.id === "sex"
+              ? "Select sex"
+              : question.id === "activity"
+                ? "Select activity level"
+                : question.id === "primary_goal"
+                  ? "Select a primary goal"
+                  : question.id === "secondary_goal"
+                    ? "Optional — none selected"
+                    : "Select an option"
+          }
         />
       );
     }
 
     if (question.type === "multiselect") {
       const selected = Array.isArray(value) ? (value as string[]) : [];
-      const query = conditionFilter.trim().toLowerCase();
-      const visibleOptions =
-        question.id === "conditions" && query
-          ? options.filter((option) => option.label.toLowerCase().includes(query))
-          : options;
+      const visibleOptions = options;
 
       return (
         <fieldset key={question.id} className="adviser-intake-field min-w-0 space-y-2.5">
           <legend className={authLabelClass}>
-            {question.text}
-            {required}
+            <FieldLabel required={Boolean(question.required)}>{question.text}</FieldLabel>
           </legend>
           <p className="text-brand-caption -mt-1 text-[color:var(--dash-faint)]">
             Tap all that apply. Choosing “None” clears other selections.
           </p>
-          {question.id === "conditions" ? (
-            <div className="relative">
-              <span className="pointer-events-none absolute inset-y-0 left-0 flex w-10 items-center justify-center text-[color:var(--dash-faint)]">
-                <SidebarSvgIcon name="search" size={15} strokeWidth={2.2} />
-              </span>
-              <input
-                type="text"
-                value={conditionFilter}
-                onChange={(event) => setConditionFilter(event.target.value)}
-                placeholder="Filter conditions…"
-                className={cn(
-                  authFieldClass,
-                  "adviser-field h-11 min-h-11 w-full rounded-lg py-0 pl-10 pr-3 text-sm leading-none",
-                )}
-                autoComplete="off"
-                spellCheck={false}
-              />
-            </div>
-          ) : null}
           <div className="grid min-w-0 gap-2 sm:grid-cols-2">
             {visibleOptions.map((option) => {
               const checked = selected.includes(option.value);
@@ -719,12 +514,7 @@ export function IntakeWizard({
                   type="button"
                   aria-pressed={checked}
                   onClick={() => updateAnswer(question.id, toggleMultiselect(selected, option.value))}
-                  className={cn(
-                    "quiz-option-card adviser-option-card adviser-choice-card text-brand-body flex min-h-12 min-w-0 items-center gap-2.5 rounded-lg border px-3 py-2.5 text-left transition active:scale-[0.99]",
-                    checked
-                      ? "is-selected border-[#DDE466] bg-[#DDE466]/18 text-[color:var(--dash-text)]"
-                      : "border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] text-[color:var(--dash-muted)] hover:border-[#DDE466]/55",
-                  )}
+                  className={cn(choiceCardClass(checked), "gap-2.5 px-3 py-2.5")}
                 >
                   <OptionCheck checked={checked} />
                   <span className="min-w-0 break-words leading-snug">{option.label}</span>
@@ -733,7 +523,7 @@ export function IntakeWizard({
             })}
           </div>
           {visibleOptions.length === 0 ? (
-            <p className="text-brand-caption text-[color:var(--dash-faint)]">No matching conditions</p>
+            <p className="text-brand-caption text-[color:var(--dash-faint)]">No matching options</p>
           ) : null}
         </fieldset>
       );
@@ -746,11 +536,20 @@ export function IntakeWizard({
             {question.text}
             {required}
           </span>
+          {question.id === "medications" ? (
+            <p className="text-brand-caption -mt-0.5 text-[color:var(--dash-faint)]">
+              Write None if the patient is not taking anything.
+            </p>
+          ) : null}
           <textarea
             value={String(value ?? "")}
             onChange={(event) => updateAnswer(question.id, event.target.value)}
             rows={3}
-            placeholder="Type a short note…"
+            placeholder={
+              question.id === "medications"
+                ? "e.g. metformin, vitamin D — or None"
+                : "Type a short note…"
+            }
             className={cn(authFieldClass, "adviser-field min-h-[5.5rem] resize-y px-4")}
           />
         </label>
@@ -758,6 +557,9 @@ export function IntakeWizard({
     }
 
     if (question.type === "number") {
+      const isAge = question.id === "age";
+      const isHeight = question.id === "height_cm";
+      const isWeight = question.id === "weight_kg";
       return (
         <IntakeNumberField
           key={question.id}
@@ -765,9 +567,34 @@ export function IntakeWizard({
           required={Boolean(question.required)}
           value={value === undefined || value === null ? "" : String(value)}
           onChange={(next) => updateAnswer(question.id, next)}
-          min={question.min}
-          max={question.max}
-          step={question.id === "age" ? 1 : question.id.includes("pain") ? 1 : 1}
+          maxDigits={isAge || isHeight || isWeight ? METRIC_MAX_DIGITS : 4}
+          maxValue={
+            isAge
+              ? AGE_MAX
+              : isHeight
+                ? heightRange.max
+                : isWeight
+                  ? weightRange.max
+                  : question.max
+          }
+          hint={
+            isAge
+              ? `${AGE_MIN}–${AGE_MAX} years`
+              : isHeight
+                ? `Typical for this age: ${heightRange.min}–${heightRange.max} cm`
+                : isWeight
+                  ? `Typical for this age: ${weightRange.min}–${weightRange.max} kg`
+                  : undefined
+          }
+          error={
+            isAge
+              ? metricFieldError("age")
+              : isHeight
+                ? metricFieldError("height_cm")
+                : isWeight
+                  ? metricFieldError("weight_kg")
+                  : undefined
+          }
         />
       );
     }
@@ -781,9 +608,17 @@ export function IntakeWizard({
         <input
           type="text"
           value={String(value ?? "")}
-          placeholder={question.placeholder ?? "Type your answer…"}
+          placeholder={
+            question.id === "allergy_detail"
+              ? "e.g. BPC-157, bacteriostatic water"
+              : (question.placeholder ?? "Type your answer…")
+          }
           onChange={(event) => updateAnswer(question.id, event.target.value)}
-          className={cn(authFieldClass, "adviser-field h-12 min-h-12 px-4")}
+          className={cn(
+            authFieldClass,
+            "adviser-field h-12 min-h-12 px-4",
+            question.id === "allergy_detail" && "sm:max-w-md",
+          )}
         />
       </label>
     );
@@ -810,7 +645,7 @@ export function IntakeWizard({
             <p className="font-sans text-sm font-semibold tabular-nums text-[color:var(--dash-text)]">
               {stepProgress.done}/{stepProgress.total}
               {isStepValid ? (
-                <span className="ml-2 inline-flex items-center gap-1 text-[#6f7a1c]">
+              <span className="ml-2 inline-flex items-center gap-1 text-[color:var(--dash-navy)]">
                   <SidebarSvgIcon name="check" size={12} strokeWidth={2.6} />
                   Ready
                 </span>
@@ -832,7 +667,7 @@ export function IntakeWizard({
               <button
                 type="button"
                 onClick={handleConsentContinue}
-                className="font-sans flex min-h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#DDE466] px-5 text-sm font-semibold text-[#152744] transition hover:brightness-105 active:scale-[0.99]"
+                className="dashboard-navy-btn font-sans flex min-h-12 w-full items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold text-white"
               >
                 <SidebarSvgIcon name="check" size={16} strokeWidth={2.4} />
                 {flow.consent.confirm_label}
@@ -845,7 +680,7 @@ export function IntakeWizard({
           <StageBlock
             badge="Stage 2"
             title={snapshotStage.title}
-            description="Tap choices and use + / − for numbers — takes under a minute."
+            description="Enter age, height, and weight. Use the menus for sex and activity."
           >
             <div className="space-y-5">
               {snapshotNumberQuestions.length > 0 ? (
@@ -865,11 +700,26 @@ export function IntakeWizard({
         {step === 2 && safetyStage ? (
           <StageBlock
             badge="Stage 3 · Safety gate"
-            title={safetyStage.title}
-            description={safetyStage.description ?? "Answer each safety question with a tap."}
+            title="Safety gate"
+            description="Flag anything that would rule out peptides, then note conditions and medications."
           >
-            <div className="grid items-start gap-5">
-              {safetyStage.questions?.map((question) => renderQuestion(question))}
+            <div className="space-y-6">
+              <div className="space-y-4">
+                <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+                  Red flags
+                </p>
+                {(safetyStage.questions ?? [])
+                  .filter((question) => SAFETY_FLAG_IDS.has(question.id) || question.id === "allergy_detail")
+                  .map((question) => renderQuestion(question))}
+              </div>
+              <div className="space-y-4">
+                <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+                  History
+                </p>
+                {(safetyStage.questions ?? [])
+                  .filter((question) => question.id === "conditions" || question.id === "medications")
+                  .map((question) => renderQuestion(question))}
+              </div>
             </div>
           </StageBlock>
         ) : null}
@@ -877,11 +727,16 @@ export function IntakeWizard({
         {step === 3 && goalStage ? (
           <StageBlock
             badge="Stage 4"
-            title={goalStage.title}
-            description="Choose the main therapeutic goal — optional secondary goal can refine stacks."
+            title="Goal selection"
+            description="Pick the main goal. A second goal is optional and can refine a stack."
           >
             <div className="grid items-start gap-5">
               {goalStage.questions?.map((question) => renderQuestion(question))}
+              {answers.primary_goal && branchLabel ? (
+                <p className="text-brand-caption text-[color:var(--dash-muted)]">
+                  Next: a short deep dive for {branchLabel.toLowerCase()}.
+                </p>
+              ) : null}
             </div>
           </StageBlock>
         ) : null}
@@ -934,7 +789,7 @@ export function IntakeWizard({
           <button
             type="button"
             onClick={handleBack}
-            className="dashboard-pill-soft font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg px-5 text-sm font-medium text-[color:var(--dash-text)] transition sm:w-auto"
+            className="dashboard-pill-soft font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] sm:w-auto"
           >
             <SidebarSvgIcon name="previous" size={14} strokeWidth={2.2} />
             Back
@@ -953,7 +808,7 @@ export function IntakeWizard({
               type="button"
               onClick={handleNext}
               disabled={!isStepValid}
-              className="font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-[#DDE466] px-5 text-sm font-semibold text-[#152744] transition hover:brightness-105 disabled:cursor-not-allowed disabled:opacity-45 sm:w-auto"
+              className="dashboard-navy-btn font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-45 sm:w-auto"
             >
               {step === 6 ? (
                 <>
@@ -1025,12 +880,12 @@ export function IntakeStageList({
             orientation === "vertical"
               ? "text-brand-caption flex h-5 w-5 shrink-0 items-center justify-center rounded-md font-semibold"
               : "flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold leading-none",
-            active && "bg-[#DDE466] text-[#152744]",
+            active && "bg-[color:var(--dash-navy)] text-white",
             !active &&
               done &&
               (orientation === "vertical"
-                ? "border border-[#DDE466]/50 text-[color:var(--dash-accent)]"
-                : "bg-[#DDE466]/40 text-[#152744]"),
+                ? "border border-[color:var(--dash-surface-border)] text-[color:var(--dash-text)]"
+                : "bg-[color:var(--dash-soft)] text-[color:var(--dash-text)]"),
             !active &&
               !done &&
               (orientation === "vertical"
@@ -1065,10 +920,10 @@ export function IntakeStageList({
       orientation !== "vertical" && "min-h-9 shrink-0 px-2 py-1.5 text-xs",
       orientation === "horizontal" && "h-8 shrink-0 rounded-full px-2.5",
       orientation === "wrap" && "shrink-0",
-      active && "bg-[#DDE466]/25 font-semibold text-[color:var(--dash-text)] ring-1 ring-[#DDE466]/55",
+      active && "bg-[color:var(--dash-soft)] font-semibold text-[color:var(--dash-text)] ring-1 ring-[color:var(--dash-surface-border)]",
       !active && done && "bg-[color:var(--dash-soft)] text-[color:var(--dash-muted)]",
       !active && !done && "bg-[color:var(--dash-soft)] text-[color:var(--dash-faint)]",
-      canJump && "cursor-pointer hover:bg-[#DDE466]/18",
+      canJump && "cursor-pointer hover:bg-[color:var(--dash-soft)]",
       !canJump && orientation === "vertical" && !active && !done && "opacity-70",
     );
 

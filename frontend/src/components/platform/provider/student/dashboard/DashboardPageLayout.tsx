@@ -25,29 +25,31 @@ export function DashboardPageLayout({ children }: DashboardPageLayoutProps) {
       nav={studentNav}
     >
       <div className="dashboard-screen lectures-page min-w-0 overflow-x-hidden">
-        <header className="mb-3 flex h-10 min-w-0 items-center gap-2 sm:mb-4 sm:h-12 sm:gap-3 md:mb-5 md:gap-4">
+        <header className="mb-4 flex h-10 min-w-0 items-center gap-2 sm:mb-5 sm:h-12 sm:gap-3 md:gap-4">
           <button
             type="button"
             aria-label="Open sidebar"
             onClick={openSidebar}
-            className="dashboard-icon-btn flex h-10 w-10 shrink-0 items-center justify-center rounded-lg lg:hidden sm:h-12 sm:w-12"
+            className="dashboard-icon-btn flex h-10 w-10 shrink-0 items-center justify-center rounded-full lg:hidden sm:h-12 sm:w-12"
           >
             <Icon icon={Menu} size={18} />
           </button>
 
-          <h1 className="font-sans min-w-0 truncate text-xl font-bold leading-none tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl md:text-3xl">
+          <h1 className="font-sans min-w-0 truncate text-xl font-bold leading-none tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl">
             Dashboard
           </h1>
 
           <div className="min-w-0 flex-1" aria-hidden />
 
           <div className="flex shrink-0 items-center gap-1.5 sm:gap-2.5">
-            <WebinarNotificationsBell buttonClassName="dashboard-icon-btn relative flex h-10 w-10 items-center justify-center rounded-lg sm:h-12 sm:w-12" />
-            <WelcomeChip className="lecture-header-welcome h-10 sm:h-12" />
+            <WebinarNotificationsBell buttonClassName="dashboard-notify-btn relative flex h-10 w-10 items-center justify-center rounded-full sm:h-12 sm:w-12" />
+            <WelcomeChip tone="navy" className="lecture-header-welcome h-10 sm:h-12" />
           </div>
         </header>
 
-        <div className="grid w-full min-w-0 gap-3 sm:gap-4 xl:grid-cols-[1.9fr_1fr]">{children}</div>
+        <div className="grid w-full min-w-0 gap-3 sm:gap-4 xl:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
+          {children}
+        </div>
       </div>
     </PortalShell>
   );

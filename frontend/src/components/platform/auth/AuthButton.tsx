@@ -25,11 +25,11 @@ export function AuthButton({
       disabled={disabled}
       onClick={onClick}
       className={cn(
-        "font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg px-6 text-sm font-medium tracking-[0.01em] transition",
+        "font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-6 text-sm font-medium tracking-[0.01em] transition",
         "disabled:pointer-events-none disabled:opacity-60",
         variant === "primary"
-          ? "bg-[#DDE466] text-[#152744] hover:brightness-105"
-          : "border border-primary/10 bg-white text-[#152744] hover:bg-[#f7f9fc]",
+          ? "dashboard-navy-btn bg-[#142644] text-white hover:brightness-110"
+          : "border-2 border-[#142644]/15 bg-[color:var(--dash-soft,#fff)] text-[#152744] hover:border-[#142644] hover:bg-[color:var(--dash-surface,#f7f9fc)]",
         className,
       )}
     >

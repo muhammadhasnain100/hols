@@ -3,10 +3,8 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useMemo } from "react";
-import { Icon, Menu } from "@/components/icons";
+import { ArrowLeft, Icon, Menu } from "@/components/icons";
 import { PortalShell } from "@/components/platform/provider/PortalShell";
-import { SidebarSvgIcon } from "@/components/platform/provider/sidebar-icons";
-import { WelcomeChip } from "@/components/platform/provider/student/WelcomeChip";
 import {
   CourseOptionNav,
   type CourseOption,
@@ -75,44 +73,43 @@ export function CoursePageLayout({
 
   return (
     <OpenCalculatorContext.Provider value={calculatorApi}>
-      <PortalShell role="student" title={title} showPageHeader={false} brandBackdrop nav={studentNav}>
+      <PortalShell
+        role="student"
+        title={title}
+        showPageHeader={false}
+        contentFlush
+        brandBackdrop
+        nav={studentNav}
+      >
         <div className="dashboard-screen lectures-page min-w-0 overflow-x-hidden">
           <header className="mb-3 flex h-10 min-w-0 items-center gap-2 sm:mb-4 sm:h-12 sm:gap-3 md:mb-5 md:gap-4">
             <button
               type="button"
               aria-label="Open sidebar"
               onClick={openSidebar}
-              className="dashboard-icon-btn flex h-10 w-10 shrink-0 items-center justify-center rounded-lg lg:hidden sm:h-12 sm:w-12"
+              className="dashboard-icon-btn flex h-10 w-10 shrink-0 items-center justify-center rounded-full lg:hidden sm:h-12 sm:w-12"
             >
               <Icon icon={Menu} size={18} />
             </button>
 
-            <h1 className="font-sans min-w-0 truncate text-xl font-bold leading-none tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl md:text-3xl">
+            {backHref ? (
+              <Link
+                href={backHref}
+                aria-label={backLabel ?? "Back"}
+                className="dashboard-navy-btn flex h-10 w-10 shrink-0 items-center justify-center rounded-full no-underline sm:h-12 sm:w-12"
+              >
+                <Icon icon={ArrowLeft} size={18} strokeWidth={2.4} />
+              </Link>
+            ) : null}
+
+            <h1 className="font-sans min-w-0 truncate text-xl font-bold leading-none tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl">
               Lectures
             </h1>
-
-            <div className="min-w-0 flex-1" aria-hidden />
-
-            <WelcomeChip className="lecture-header-welcome h-10 sm:h-12" />
           </header>
 
-          {(backHref && backLabel) || (courseId && courseNavActive) ? (
-            <div className="mb-3 flex min-w-0 flex-col gap-2 sm:mb-4 sm:flex-row sm:flex-wrap sm:items-center sm:gap-2.5">
-              {backHref && backLabel ? (
-                <Link
-                  href={backHref}
-                  className="dashboard-pill-soft font-sans inline-flex min-h-9 w-fit shrink-0 items-center gap-1.5 rounded-lg px-3 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-muted)] transition hover:text-[color:var(--dash-text)] sm:min-h-10 sm:px-4"
-                >
-                  <SidebarSvgIcon name="previous" size={16} />
-                  {backLabel}
-                </Link>
-              ) : null}
-
-              {courseId && courseNavActive ? (
-                <div className="min-w-0 flex-1 overflow-hidden">
-                  <CourseOptionNav courseId={courseId} active={courseNavActive} />
-                </div>
-              ) : null}
+          {courseId && courseNavActive ? (
+            <div className="mb-3 min-w-0 sm:mb-4">
+              <CourseOptionNav courseId={courseId} active={courseNavActive} />
             </div>
           ) : null}
 

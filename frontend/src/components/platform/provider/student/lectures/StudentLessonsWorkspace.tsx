@@ -48,6 +48,51 @@ function buildLessonsHref(courseId: string, lessonId: string, topicId?: string, 
   return `/student/lectures/${courseId}/lessons/${lessonId}${query ? `?${query}` : ""}`;
 }
 
+function LessonIndexRow({
+  lesson,
+  index,
+  selected,
+  onSelect,
+}: {
+  lesson: LessonDetail;
+  index: number;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={cn(
+        "lesson-index-row flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left",
+        selected ? "bg-[color:var(--dash-soft)]" : "hols-option-hover",
+      )}
+      aria-current={selected ? "true" : undefined}
+    >
+      <span
+        className={cn(
+          "lesson-index-badge mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-semibold tabular-nums",
+          selected
+            ? "dashboard-navy-btn text-white"
+            : "dashboard-tool-icon text-[color:var(--dash-text)]",
+        )}
+      >
+        {selected ? <SidebarSvgIcon name="check" size={13} /> : index + 1}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="font-sans line-clamp-2 text-sm font-medium leading-snug text-[color:var(--dash-text)]">
+          {lesson.title}
+        </span>
+        {lesson.l2_name ? (
+          <span className="text-brand-caption mt-0.5 block line-clamp-1 text-[color:var(--dash-faint)]">
+            {lesson.l2_name}
+          </span>
+        ) : null}
+      </span>
+    </button>
+  );
+}
+
 export function StudentLessonsWorkspace({
   courseId,
   topicId,
@@ -246,14 +291,14 @@ export function StudentLessonsWorkspace({
         hideHero
       >
         {(topicId || l1Name) && (
-          <div className="course-book-filter mb-4 flex flex-wrap items-center justify-between gap-3 rounded-xl px-4 py-3">
+          <div className="dashboard-glass-card course-book-filter mb-1 flex flex-wrap items-center justify-between gap-3 rounded-2xl px-4 py-3">
             <p className="text-brand-body text-[color:var(--dash-muted)]">
               Reading{" "}
               <span className="font-medium text-[color:var(--dash-text)]">{filterLabel}</span>
             </p>
             <Link
               href={`/student/lectures/${courseId}/lessons`}
-              className="dashboard-pill-soft font-sans inline-flex min-h-9 items-center gap-1.5 rounded-lg px-4 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-muted)] transition hover:text-[color:var(--dash-text)]"
+              className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center gap-1.5 rounded-full px-4 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)]"
             >
               <SidebarSvgIcon name="lectures" size={15} />
               Show full volume
@@ -266,12 +311,12 @@ export function StudentLessonsWorkspace({
         {loading ? (
           <LessonsWorkspaceSkeleton />
         ) : filteredLessons.length === 0 ? (
-          <div className="course-book-page rounded-xl p-10 text-center">
+          <div className="dashboard-glass-card course-book-page rounded-2xl p-10 text-center">
             <p className="text-brand-body text-[color:var(--dash-faint)]">No lessons found.</p>
             {(topicId || l1Name) && (
               <Link
                 href={`/student/lectures/${courseId}/lessons`}
-                className="dashboard-pill-soft font-sans mt-4 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg px-5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition"
+                className="dashboard-navy-btn font-sans mt-4 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white"
               >
                 <SidebarSvgIcon name="lectures" size={15} />
                 View all lessons
@@ -282,7 +327,7 @@ export function StudentLessonsWorkspace({
           <div ref={stageRef} className="grid gap-3 sm:gap-4 lg:grid-cols-[minmax(220px,280px)_minmax(0,1fr)] lg:items-start">
             {/* Mobile: compact sticky index control above reading content */}
             <div className="order-1 lg:hidden">
-              <div className="course-book-index overflow-hidden rounded-xl">
+              <div className="dashboard-glass-card course-book-index overflow-hidden rounded-2xl">
                 <button
                   type="button"
                   onClick={() => setMobileIndexOpen((open) => !open)}
@@ -290,7 +335,7 @@ export function StudentLessonsWorkspace({
                   aria-expanded={mobileIndexOpen}
                   aria-controls="lesson-mobile-index"
                 >
-                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#DDE466]/15 text-[color:var(--dash-accent)]">
+                  <span className="dashboard-tool-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[color:var(--dash-text)]">
                     <SidebarSvgIcon name="lectures" size={16} />
                   </span>
                   <span className="min-w-0 flex-1">
@@ -324,49 +369,15 @@ export function StudentLessonsWorkspace({
                       />
                     </div>
                     <div className="max-h-[min(50vh,20rem)] space-y-1 overflow-y-auto overscroll-contain px-2.5 pb-3 [scrollbar-width:thin]">
-                      {filteredLessons.map((lesson, index) => {
-                        const selected = lesson.lesson_id === activeLessonId;
-                        return (
-                          <button
-                            key={lesson.lesson_id}
-                            type="button"
-                            onClick={() => selectLesson(lesson.lesson_id)}
-                            className={cn(
-                              "lesson-index-row group flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left",
-                              selected
-                                ? "bg-[color:var(--dash-soft)] shadow-[inset_3px_0_0_0_#DDE466]"
-                                : "hover:bg-[color:var(--dash-soft)]",
-                            )}
-                            aria-current={selected ? "true" : undefined}
-                          >
-                            <span
-                              className={cn(
-                                "lesson-index-badge mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-semibold tabular-nums",
-                                selected
-                                  ? "bg-[#DDE466] text-[#152744]"
-                                  : "bg-[#DDE466]/15 text-[color:var(--dash-accent)]",
-                              )}
-                            >
-                              {selected ? <SidebarSvgIcon name="check" size={13} /> : index + 1}
-                            </span>
-                            <span className="min-w-0 flex-1">
-                              <span
-                                className={cn(
-                                  "font-sans line-clamp-2 text-sm font-medium leading-snug text-[color:var(--dash-text)]",
-                                  selected && "text-[color:var(--dash-accent)]",
-                                )}
-                              >
-                                {lesson.title}
-                              </span>
-                              {lesson.l2_name ? (
-                                <span className="text-brand-caption mt-0.5 block line-clamp-1 text-[color:var(--dash-faint)]">
-                                  {lesson.l2_name}
-                                </span>
-                              ) : null}
-                            </span>
-                          </button>
-                        );
-                      })}
+                      {filteredLessons.map((lesson, index) => (
+                        <LessonIndexRow
+                          key={lesson.lesson_id}
+                          lesson={lesson}
+                          index={index}
+                          selected={lesson.lesson_id === activeLessonId}
+                          onSelect={() => selectLesson(lesson.lesson_id)}
+                        />
+                      ))}
                     </div>
                   </div>
                 ) : null}
@@ -375,12 +386,11 @@ export function StudentLessonsWorkspace({
 
             <aside
               data-book-index
-              className="course-book-index relative order-3 hidden flex-col overflow-hidden rounded-xl lg:order-1 lg:sticky lg:top-4 lg:flex lg:max-h-[calc(100dvh-2rem)]"
+              className="dashboard-glass-card course-book-index relative order-3 hidden flex-col overflow-hidden rounded-2xl lg:order-1 lg:sticky lg:top-4 lg:flex lg:max-h-[calc(100dvh-2rem)]"
             >
-              <div className="course-book-index-spine pointer-events-none absolute inset-y-0 left-0 w-2.5" aria-hidden />
-              <div className="relative flex shrink-0 flex-col gap-3 border-b border-[color:var(--dash-surface-border)] px-4 py-4 pl-5 sm:px-5 sm:pl-6">
+              <div className="relative flex shrink-0 flex-col gap-3 border-b border-[color:var(--dash-surface-border)] px-4 py-4 sm:px-5">
                 <div>
-                  <p className="text-brand-caption font-semibold uppercase tracking-[0.14em] text-[color:var(--dash-faint)]">
+                  <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
                     Index
                   </p>
                   <h2 className="font-sans mt-1 text-lg font-semibold tracking-[0.005em] text-[color:var(--dash-text)]">
@@ -398,50 +408,16 @@ export function StudentLessonsWorkspace({
                 />
               </div>
 
-              <div className="relative min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain p-3 pl-4 [scrollbar-width:thin] sm:pl-5">
-                {filteredLessons.map((lesson, index) => {
-                  const selected = lesson.lesson_id === activeLessonId;
-                  return (
-                    <button
-                      key={lesson.lesson_id}
-                      type="button"
-                      onClick={() => selectLesson(lesson.lesson_id)}
-                      className={cn(
-                        "lesson-index-row group flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left",
-                        selected
-                          ? "bg-[color:var(--dash-soft)] shadow-[inset_3px_0_0_0_#DDE466]"
-                          : "hover:bg-[color:var(--dash-soft)]",
-                      )}
-                      aria-current={selected ? "true" : undefined}
-                    >
-                      <span
-                        className={cn(
-                          "lesson-index-badge mt-0.5 flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-xs font-semibold tabular-nums",
-                          selected
-                            ? "bg-[#DDE466] text-[#152744]"
-                            : "bg-[#DDE466]/15 text-[color:var(--dash-accent)]",
-                        )}
-                      >
-                        {selected ? <SidebarSvgIcon name="check" size={13} /> : index + 1}
-                      </span>
-                      <span className="min-w-0 flex-1">
-                        <span
-                          className={cn(
-                            "font-sans line-clamp-2 text-sm font-medium leading-snug text-[color:var(--dash-text)]",
-                            selected && "text-[color:var(--dash-accent)]",
-                          )}
-                        >
-                          {lesson.title}
-                        </span>
-                        {lesson.l2_name ? (
-                          <span className="text-brand-caption mt-0.5 block line-clamp-1 text-[color:var(--dash-faint)]">
-                            {lesson.l2_name}
-                          </span>
-                        ) : null}
-                      </span>
-                    </button>
-                  );
-                })}
+              <div className="relative min-h-0 flex-1 space-y-1 overflow-y-auto overscroll-contain p-3 [scrollbar-width:thin]">
+                {filteredLessons.map((lesson, index) => (
+                  <LessonIndexRow
+                    key={lesson.lesson_id}
+                    lesson={lesson}
+                    index={index}
+                    selected={lesson.lesson_id === activeLessonId}
+                    onSelect={() => selectLesson(lesson.lesson_id)}
+                  />
+                ))}
               </div>
             </aside>
 
@@ -459,7 +435,7 @@ export function StudentLessonsWorkspace({
                   l1Name={l1Name}
                 />
               ) : (
-                <div className="course-book-page rounded-xl p-6 text-center sm:p-10">
+                <div className="dashboard-glass-card course-book-page rounded-2xl p-6 text-center sm:p-10">
                   <p className="text-brand-body text-[color:var(--dash-faint)]">
                     Select a page from the index to begin reading.
                   </p>

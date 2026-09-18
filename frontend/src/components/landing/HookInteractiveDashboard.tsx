@@ -599,11 +599,12 @@ export function HookInteractiveDashboard({
                         max={20}
                         value={vialMg}
                         onChange={(event) => setVialMg(Math.max(1, Number(event.target.value) || 1))}
-                        className="mt-1 w-full rounded-md border bg-transparent px-2 py-1 font-sans text-[10px] outline-none transition-[border-color] duration-150 focus:border-[#DDE466]/70"
+                        className="hols-hover-border mt-1 w-full rounded-md border bg-transparent px-2 py-1 font-sans text-[10px] outline-none transition-[border-color] duration-150"
                         style={{
                           borderColor: t.softBorder,
                           color: t.text,
                           colorScheme: darkMode ? "dark" : "light",
+                          ["--hols-field-hover-border" as string]: darkMode ? "#dde466" : "#142644",
                         }}
                       />
                     </label>
@@ -618,11 +619,12 @@ export function HookInteractiveDashboard({
                         step={0.5}
                         value={waterMl}
                         onChange={(event) => setWaterMl(Math.max(0.5, Number(event.target.value) || 0.5))}
-                        className="mt-1 w-full rounded-md border bg-transparent px-2 py-1 font-sans text-[10px] outline-none transition-[border-color] duration-150 focus:border-[#DDE466]/70"
+                        className="hols-hover-border mt-1 w-full rounded-md border bg-transparent px-2 py-1 font-sans text-[10px] outline-none transition-[border-color] duration-150"
                         style={{
                           borderColor: t.softBorder,
                           color: t.text,
                           colorScheme: darkMode ? "dark" : "light",
+                          ["--hols-field-hover-border" as string]: darkMode ? "#dde466" : "#142644",
                         }}
                       />
                     </label>

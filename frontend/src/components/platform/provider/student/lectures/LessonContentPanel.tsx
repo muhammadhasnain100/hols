@@ -169,42 +169,43 @@ export function LessonContentPanel({
 
       <article
         ref={pageRef}
-        className="course-book-page relative z-[2] min-w-0 overflow-hidden rounded-xl"
+        className="course-book-page relative z-[2] min-w-0 overflow-hidden rounded-2xl"
         style={{ transformOrigin: "left center" }}
       >
         <div className="course-book-page-grain pointer-events-none absolute inset-0 rounded-[inherit]" aria-hidden />
 
         <header className="relative border-b border-[color:var(--dash-surface-border)] px-4 pb-4 pt-4 sm:px-7 sm:pb-5 sm:pt-6 md:px-8">
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0 flex-1">
-              <p className="text-brand-caption font-semibold uppercase tracking-[0.14em] text-[color:var(--dash-faint)]">
-                Lesson {lesson.order}
-                {currentIndex && total ? ` · Page ${currentIndex} of ${total}` : ""}
-              </p>
-              <h2 className="font-sans mt-2 max-w-[52ch] text-balance text-left text-lg font-bold leading-[1.2] tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl md:text-3xl">
-                {lesson.title}
-              </h2>
-              {(lesson.l1_name || lesson.l2_name) ? (
-                <p className="text-brand-body mt-2 text-[color:var(--dash-muted)]">
-                  {[lesson.l1_name, lesson.l2_name].filter(Boolean).join(" · ")}
-                </p>
-              ) : null}
-              <div className="mt-3 flex flex-wrap items-center gap-2">
-                <span className="lesson-read-chip">
-                  <SidebarSvgIcon name="clock" size={13} />
-                  {readingMinutes} min read
-                </span>
-                {hasQuiz ? (
-                  <span className="lesson-read-chip">
-                    <SidebarSvgIcon name="quiz" size={13} />
-                    {lesson.variants.length} quiz question{lesson.variants.length === 1 ? "" : "s"}
-                  </span>
-                ) : null}
-              </div>
-            </div>
-            <span className="course-book-page-mark flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold uppercase tracking-[0.1em] text-[color:var(--dash-accent)]">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-brand-caption min-w-0 font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+              Lesson {lesson.order}
+              {currentIndex && total ? ` · Page ${currentIndex} of ${total}` : ""}
+            </p>
+            <span className="dashboard-tool-icon flex h-9 w-9 shrink-0 items-center justify-center rounded-lg text-[10px] font-bold uppercase tracking-[0.1em] text-[color:var(--dash-text)]">
               HOLS
             </span>
+          </div>
+          <h2
+            title={lesson.title}
+            className="font-sans mt-2 w-full text-left text-lg font-bold leading-snug tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl md:text-2xl"
+          >
+            {lesson.title}
+          </h2>
+          {(lesson.l1_name || lesson.l2_name) ? (
+            <p className="text-brand-body mt-2 text-[color:var(--dash-muted)]">
+              {[lesson.l1_name, lesson.l2_name].filter(Boolean).join(" · ")}
+            </p>
+          ) : null}
+          <div className="mt-3 flex flex-wrap items-center gap-2">
+            <span className="lesson-read-chip">
+              <SidebarSvgIcon name="clock" size={13} />
+              {readingMinutes} min read
+            </span>
+            {hasQuiz ? (
+              <span className="lesson-read-chip">
+                <SidebarSvgIcon name="quiz" size={13} />
+                {lesson.variants.length} quiz question{lesson.variants.length === 1 ? "" : "s"}
+              </span>
+            ) : null}
           </div>
         </header>
 
@@ -236,8 +237,8 @@ export function LessonContentPanel({
                   />
                 </div>
               ) : hasQuiz ? (
-                <section data-reveal className="course-book-quiz-band rounded-xl px-4 py-4 sm:px-5 sm:py-5">
-                  <p className="text-brand-caption font-semibold uppercase tracking-[0.1em] text-[color:var(--dash-faint)]">
+                <section data-reveal className="dashboard-glass-card course-book-quiz-band rounded-2xl px-4 py-4 sm:px-5 sm:py-5">
+                  <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
                     Practice quiz
                   </p>
                   <h3 className="font-sans mt-1 text-lg font-semibold tracking-[0.005em] text-[color:var(--dash-text)]">
@@ -251,7 +252,7 @@ export function LessonContentPanel({
                   <button
                     type="button"
                     onClick={() => setQuizOpen(true)}
-                    className="font-sans mt-4 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg bg-[#DDE466] px-5 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105"
+                    className="dashboard-navy-btn font-sans mt-4 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white"
                   >
                     <SidebarSvgIcon name="quiz" size={15} />
                     Take quiz
@@ -275,7 +276,7 @@ export function LessonContentPanel({
                       key={dot}
                       className={
                         dot + 1 === currentIndex
-                          ? "h-1.5 w-4 rounded-full bg-[#DDE466]"
+                          ? "h-1.5 w-4 rounded-full bg-[color:var(--dash-navy)]"
                           : "h-1.5 w-1.5 rounded-full bg-[color:var(--dash-surface-border)]"
                       }
                     />
@@ -288,7 +289,7 @@ export function LessonContentPanel({
                 <Link
                   href={lessonHref(courseId, prevLessonId, topicId, l1Name)}
                   onClick={() => scrollAppToTop()}
-                  className="lesson-prev-cta dashboard-pill-soft font-sans inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-lg px-4 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition sm:flex-initial sm:px-5"
+                  className="lesson-prev-cta dashboard-pill-soft font-sans inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition sm:flex-initial"
                 >
                   <SidebarSvgIcon name="previous" size={16} />
                   <span className="sm:hidden">Prev</span>
@@ -299,7 +300,7 @@ export function LessonContentPanel({
                 <Link
                   href={lessonHref(courseId, nextLessonId, topicId, l1Name)}
                   onClick={() => scrollAppToTop()}
-                  className="lesson-next-cta font-sans inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#DDE466] px-4 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 sm:flex-initial sm:px-5"
+                  className="lesson-next-cta dashboard-navy-btn font-sans inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white transition sm:flex-initial"
                 >
                   <span className="sm:hidden">Next</span>
                   <span className="hidden sm:inline">Next page</span>
@@ -320,7 +321,7 @@ export function LessonContentPanel({
           }
           window.scrollTo({ top: 0, behavior: "smooth" });
         }}
-        className="lesson-to-top"
+        className="lesson-to-top dashboard-navy-btn"
         data-visible={showTop ? "true" : "false"}
         aria-label="Back to top"
       >

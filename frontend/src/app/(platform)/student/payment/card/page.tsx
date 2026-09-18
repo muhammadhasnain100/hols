@@ -1,10 +1,5 @@
-import { PortalGate } from "@/components/platform/provider/PortalGate";
-import { StudentCardPage } from "@/components/platform/provider/student/payment/StudentCardPage";
+import { redirect } from "next/navigation";
 
 export default function StudentCardRoute() {
-  return (
-    <PortalGate role="student">
-      <StudentCardPage />
-    </PortalGate>
-  );
+  redirect("/student/profile/card");
 }

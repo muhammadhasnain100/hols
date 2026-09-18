@@ -12,19 +12,27 @@ type WelcomeChipProps = {
   className?: string;
   /** Shown before hydration and when the stored user has no name. */
   fallbackName?: string;
+  /** Navy capsule used on the dashboard header. */
+  tone?: "glass" | "navy";
 };
 
 /** Hydration-safe welcome chip — initials first, then stored photo/name after mount. */
-export function WelcomeChip({ className, fallbackName = "Student" }: WelcomeChipProps) {
+export function WelcomeChip({
+  className,
+  fallbackName = "Student",
+  tone = "glass",
+}: WelcomeChipProps) {
   const { user, ready } = useStoredUser();
   const name = ready ? displayNameFromUser(user, fallbackName) : fallbackName;
   const photo = ready ? avatarSrcFromUser(user) : undefined;
   const initials = initialsFor(name);
+  const navy = tone === "navy";
 
   return (
     <span
       className={cn(
         "dashboard-welcome-chip flex shrink-0 items-center gap-2 rounded-full py-1 pl-1 pr-1.5 sm:gap-2.5 sm:pr-3.5",
+        navy && "dashboard-welcome-chip-navy border-transparent bg-[#142644]",
         className,
       )}
     >
@@ -37,8 +45,20 @@ export function WelcomeChip({ className, fallbackName = "Student" }: WelcomeChip
         )}
       </span>
       <span className="hidden max-w-[9rem] flex-col leading-tight sm:flex md:max-w-[12rem]">
-        <span className="text-[11px] font-medium text-[color:var(--dash-muted)]">Welcome back,</span>
-        <span className="font-sans truncate text-sm font-semibold text-[color:var(--dash-text)]">
+        <span
+          className={cn(
+            "text-brand-caption font-medium tracking-[0.005em]",
+            navy ? "text-white/70" : "text-[color:var(--dash-muted)]",
+          )}
+        >
+          Welcome back,
+        </span>
+        <span
+          className={cn(
+            "font-sans truncate text-sm font-semibold tracking-[0.005em]",
+            navy ? "text-white" : "text-[color:var(--dash-text)]",
+          )}
+        >
           {name}
         </span>
       </span>

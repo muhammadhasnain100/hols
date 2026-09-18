@@ -14,7 +14,6 @@ import {
   authIconButtonClass,
   authLabelClass,
   authLinkClass,
-  authRoleButtonClass,
 } from "@/components/platform/auth/auth-styles";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
@@ -28,12 +27,6 @@ import { getPortalPath } from "@/lib/integrate/auth/routes";
 import { saveAuthSession } from "@/lib/integrate/auth/storage";
 import { cn } from "@/lib/utils";
 
-const roles: { value: UserRole; label: string }[] = [
-  { value: "student", label: "Student" },
-  { value: "admin", label: "Admin" },
-  { value: "affiliate", label: "Affiliate" },
-];
-
 const RESEND_COOLDOWN_SEC = 30;
 
 function formatCountdown(totalSeconds: number) {
@@ -44,16 +37,21 @@ function formatCountdown(totalSeconds: number) {
 
 type LoginFormProps = {
   className?: string;
+  role?: UserRole;
   initialMessage?: string;
   onOtpStepChange?: (active: boolean) => void;
 };
 
-export function LoginForm({ className, initialMessage, onOtpStepChange }: LoginFormProps) {
+export function LoginForm({
+  className,
+  role = "student",
+  initialMessage,
+  onOtpStepChange,
+}: LoginFormProps) {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState<UserRole>("student");
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(initialMessage ?? null);
   const [loading, setLoading] = useState(false);
@@ -277,36 +275,6 @@ export function LoginForm({ className, initialMessage, onOtpStepChange }: LoginF
         {info ? <AuthAlert variant="success">{info}</AuthAlert> : null}
         {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
 
-        <div className="grid gap-2">
-          <span className={authLabelClass}>Account type</span>
-          <div
-            className="grid grid-cols-3 gap-1 overflow-hidden rounded-lg border border-primary/10 bg-[#f7f9fc] p-1"
-            role="radiogroup"
-            aria-label="Account type"
-          >
-            {roles.map((option) => {
-              const selected = role === option.value;
-              return (
-                <button
-                  key={option.value}
-                  type="button"
-                  role="radio"
-                  aria-checked={selected}
-                  onClick={() => setRole(option.value)}
-                  className={cn(
-                    authRoleButtonClass,
-                    selected
-                      ? "bg-primary text-white shadow-sm"
-                      : "text-primary/55 hover:bg-white/80 hover:text-primary",
-                  )}
-                >
-                  {option.label}
-                </button>
-              );
-            })}
-          </div>
-        </div>
-
         <AuthField
           id="login-email"
           label="Email address"
@@ -337,12 +305,14 @@ export function LoginForm({ className, initialMessage, onOtpStepChange }: LoginF
         {loading ? "Signing in…" : "Log in"}
       </AuthButton>
 
-      <p className={cn("mt-6", authFooterTextClass)}>
-        No account?{" "}
-        <Link href="/register" className={authLinkClass}>
-          Sign up
-        </Link>
-      </p>
+      {role === "student" ? (
+        <p className={cn("mt-6", authFooterTextClass)}>
+          No account?{" "}
+          <Link href="/register" className={authLinkClass}>
+            Sign up
+          </Link>
+        </p>
+      ) : null}
     </form>
   );
 }

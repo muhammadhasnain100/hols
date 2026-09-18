@@ -19,7 +19,7 @@ import type {
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:8000";
 /** Bump when lecture payload shape changes so stale session caches are ignored. */
-const LECTURE_CACHE_VERSION = "v2";
+const LECTURE_CACHE_VERSION = "v3";
 
 export type {
   CourseBundleData,

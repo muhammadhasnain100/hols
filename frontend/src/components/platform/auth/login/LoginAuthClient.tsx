@@ -3,25 +3,55 @@
 import { useState } from "react";
 import { AuthShell } from "@/components/platform/auth/AuthShell";
 import { LoginForm } from "@/components/platform/auth/login/login";
+import type { UserRole } from "@/lib/integrate/auth";
 
 type LoginAuthClientProps = {
+  role?: UserRole;
   initialMessage?: string;
 };
 
-export function LoginAuthClient({ initialMessage }: LoginAuthClientProps) {
+const loginCopy: Record<
+  UserRole,
+  { eyebrow: string; title: string; subtitle?: string }
+> = {
+  student: {
+    eyebrow: "Sign in",
+    title: "Welcome back",
+  },
+  admin: {
+    eyebrow: "Admin portal",
+    title: "Admin sign in",
+    subtitle: "Sign in with your HOLS admin credentials.",
+  },
+  affiliate: {
+    eyebrow: "Affiliate portal",
+    title: "Affiliate sign in",
+    subtitle: "Sign in with your HOLS affiliate credentials.",
+  },
+};
+
+export function LoginAuthClient({
+  role = "student",
+  initialMessage,
+}: LoginAuthClientProps) {
   const [otpStep, setOtpStep] = useState(false);
+  const copy = loginCopy[role];
 
   return (
     <AuthShell
-      eyebrow={otpStep ? "Verification" : "Sign in"}
-      title={otpStep ? "Enter your code" : "Welcome back"}
+      eyebrow={otpStep ? "Verification" : copy.eyebrow}
+      title={otpStep ? "Enter your code" : copy.title}
       subtitle={
         otpStep
           ? "We sent a 6-digit verification code to your email."
-          : undefined
+          : copy.subtitle
       }
     >
-      <LoginForm initialMessage={initialMessage} onOtpStepChange={setOtpStep} />
+      <LoginForm
+        role={role}
+        initialMessage={initialMessage}
+        onOtpStepChange={setOtpStep}
+      />
     </AuthShell>
   );
 }

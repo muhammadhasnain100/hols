@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useEffect, useState } from "react";
 import { useSpreadHover } from "@/hooks/useSpreadHover";
 import {
   buttonHoverSpread,
@@ -8,6 +9,7 @@ import {
   type ButtonVariant,
   buttonSizes,
 } from "@/lib/button-styles";
+import { PORTAL_THEME_CHANGE_EVENT } from "@/components/platform/provider/portal-theme";
 import { cn } from "@/lib/utils";
 
 type ButtonProps = {
@@ -21,6 +23,12 @@ type ButtonProps = {
   onClick?: () => void;
 };
 
+function readGlassRestColor() {
+  if (typeof document === "undefined") return "#142644";
+  const shell = document.querySelector(".portal-shell");
+  return shell?.getAttribute("data-theme") === "dark" ? "#f4f7fb" : "#142644";
+}
+
 export function Button({
   href,
   variant = "primary",
@@ -32,11 +40,24 @@ export function Button({
   onClick,
 }: ButtonProps) {
   const spread = buttonHoverSpread[variant];
+  const [glassRest, setGlassRest] = useState("#142644");
+
+  useEffect(() => {
+    if (variant !== "glass") return;
+    const sync = () => setGlassRest(readGlassRestColor());
+    sync();
+    window.addEventListener(PORTAL_THEME_CHANGE_EVENT, sync);
+    return () => window.removeEventListener(PORTAL_THEME_CHANGE_EVENT, sync);
+  }, [variant]);
+
+  const defaultColor = variant === "glass" ? glassRest : spread.textDefault;
+  const hoverColor = variant === "glass" ? "#142644" : spread.textHover;
+
   const { containerRef, fillRef, labelRef, onMouseEnter, onMouseLeave } =
     useSpreadHover({
       fillColor: spread.fill,
-      defaultColor: spread.textDefault,
-      hoverColor: spread.textHover,
+      defaultColor,
+      hoverColor,
     });
 
   const classes = getButtonClassName(

@@ -71,7 +71,7 @@ export function CreatePatientDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="adviser-dialog-panel relative z-10 flex w-full max-w-md flex-col overflow-hidden rounded-xl max-sm:max-h-[min(90svh,28rem)] max-sm:rounded-b-none max-sm:rounded-t-2xl max-sm:pb-[env(safe-area-inset-bottom)]"
+        className="adviser-dialog-panel relative z-10 flex w-full max-w-md flex-col overflow-hidden rounded-2xl max-sm:max-h-[min(90svh,28rem)] max-sm:rounded-b-none max-sm:rounded-t-3xl max-sm:pb-[env(safe-area-inset-bottom)]"
         onSubmit={(event) => {
           event.preventDefault();
           const trimmed = name.trim();
@@ -134,14 +134,14 @@ export function CreatePatientDialog({
             type="button"
             disabled={isSubmitting}
             onClick={onClose}
-            className="dashboard-pill-soft font-sans inline-flex min-h-11 w-full items-center justify-center rounded-lg px-5 text-sm font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50 sm:min-h-10 sm:w-auto"
+            className="dashboard-pill-soft font-sans inline-flex min-h-11 w-full items-center justify-center rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] disabled:pointer-events-none disabled:opacity-50 sm:min-h-10 sm:w-auto"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={!canSubmit}
-            className="font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-[#DDE466] px-5 text-sm font-medium text-[#152744] transition hover:brightness-105 disabled:pointer-events-none disabled:opacity-50 sm:min-h-10 sm:w-auto"
+            className="dashboard-navy-btn font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium text-white disabled:pointer-events-none disabled:opacity-50 sm:min-h-10 sm:w-auto"
           >
             {isSubmitting ? (
               <>

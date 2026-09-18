@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { startPortalAuthRuntime, stopPortalAuthRuntime } from "@/lib/integrate/auth/runtime";
-import { getPortalPath } from "@/lib/integrate/auth/routes";
+import { getLoginPath, getPortalPath } from "@/lib/integrate/auth/routes";
 import { getStoredUser } from "@/lib/integrate/auth/storage";
 import type { UserRole } from "@/lib/integrate/auth/types";
 
@@ -22,7 +22,7 @@ export function PortalGate({ role, children }: PortalGateProps) {
     if (!user) {
       stopPortalAuthRuntime();
       setBlocked(true);
-      router.replace("/login");
+      router.replace(getLoginPath(role));
       return undefined;
     }
 
@@ -41,12 +41,12 @@ export function PortalGate({ role, children }: PortalGateProps) {
     function handleAuthLogout() {
       stopPortalAuthRuntime();
       setBlocked(true);
-      router.replace("/login");
+      router.replace(getLoginPath(role));
     }
 
     window.addEventListener("hols-auth-logout", handleAuthLogout);
     return () => window.removeEventListener("hols-auth-logout", handleAuthLogout);
-  }, [router]);
+  }, [role, router]);
 
   if (blocked) return null;
 

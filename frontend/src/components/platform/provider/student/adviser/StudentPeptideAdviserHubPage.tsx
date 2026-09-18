@@ -15,13 +15,12 @@ import {
   createPatient,
   getAdviserBootstrap,
   getCachedAdviserBootstrap,
-  getChatHealth,
   getPatient,
   listPatients,
   recommendPatient,
   savePatientIntake,
   sanitizeIntakeAnswers,
-  type ChatInfo,
+  isSnapshotComplete,
   type IntakeAnswers,
   type PatientDetail,
   type PatientSummary,
@@ -40,11 +39,7 @@ export function resolveStep(patient: PatientDetail): number {
 
   const answers = sanitizeIntakeAnswers(patient.intake_answers || {});
   if (!answers.consent) return 0;
-  if (
-    !["age", "sex", "pregnancy", "height_cm", "weight_kg", "activity"].every((key) =>
-      hasValue(answers[key]),
-    )
-  ) {
+  if (!isSnapshotComplete(answers)) {
     return 1;
   }
   if (
@@ -92,8 +87,6 @@ function chatRouteForPatient(patientId: string) {
 export function StudentPeptideAdviserHubPage() {
   const router = useRouter();
   const [flow, setFlow] = useState<QuestionnaireFlow | null>(null);
-  const [info, setInfo] = useState<ChatInfo | null>(null);
-  const [vectors, setVectors] = useState<number | null>(null);
   const [patients, setPatients] = useState<PatientSummary[]>([]);
   const [activePatient, setActivePatient] = useState<PatientDetail | null>(null);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -135,7 +128,6 @@ export function StudentPeptideAdviserHubPage() {
         const storedPatientId = window.sessionStorage.getItem(ACTIVE_PATIENT_STORAGE_KEY);
         const cached = getCachedAdviserBootstrap(storedPatientId ?? undefined);
         if (cached && !cancelled) {
-          setInfo(cached.info);
           setFlow(cached.flow);
           setPatients(cached.patients);
           setLoading(false);
@@ -147,7 +139,6 @@ export function StudentPeptideAdviserHubPage() {
         const payload = await getAdviserBootstrap(storedPatientId ?? undefined);
         if (cancelled) return;
 
-        setInfo(payload.info);
         setFlow(payload.flow);
         setPatients(payload.patients);
 
@@ -170,12 +161,6 @@ export function StudentPeptideAdviserHubPage() {
     }
 
     void bootstrap();
-
-    void getChatHealth()
-      .then((health) => {
-        if (!cancelled) setVectors(health.vectors);
-      })
-      .catch(() => undefined);
 
     return () => {
       cancelled = true;
@@ -324,111 +309,47 @@ export function StudentPeptideAdviserHubPage() {
         <AdviserHubPageSkeleton />
       ) : (
         <>
-          <div className="mb-0.5 flex flex-col gap-3 sm:mb-1 sm:flex-row sm:items-end sm:justify-between">
-            <div className="min-w-0">
-              <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-                Clinical cases
-              </p>
-              <h2 className="font-sans mt-1 text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg md:text-xl">
-                Patient workspace
-              </h2>
-            </div>
-            <div className="flex w-full shrink-0 flex-col gap-2 min-[420px]:flex-row sm:w-auto">
-              <button
-                type="button"
-                onClick={openCreateDialog}
-                disabled={isCreating}
-                className="font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-lg bg-[#DDE466] px-4 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 disabled:pointer-events-none disabled:opacity-60 min-[420px]:w-auto sm:px-5"
-              >
-                <SidebarSvgIcon name="plus" size={15} strokeWidth={2.2} />
-                {isCreating ? "Creating…" : "New patient"}
-              </button>
-              {activePatient && !activePatient.recommendation ? (
+          {actionError && !onboardingOpen ? <AuthAlert variant="error">{actionError}</AuthAlert> : null}
+
+          <PatientListPanel
+            patients={patients}
+            activePatientId={activePatient?.patient_id ?? null}
+            onSelect={(patientId) => void selectPatient(patientId)}
+            onCreate={openCreateDialog}
+            isCreating={isCreating}
+            progressLabelFor={(patient) =>
+              progressLabel(
+                patient,
+                activePatient?.patient_id === patient.patient_id ? step : undefined,
+              )
+            }
+            headerExtra={
+              activePatient && !activePatient.recommendation ? (
                 <button
                   type="button"
                   onClick={() => setOnboardingOpen(true)}
-                  className="dashboard-pill-soft font-sans inline-flex min-h-10 w-full min-w-0 items-center justify-center gap-1.5 truncate rounded-lg px-4 text-sm font-medium text-[color:var(--dash-text)] transition min-[420px]:max-w-[16rem] min-[420px]:w-auto sm:max-w-none sm:px-5"
+                  className="dashboard-row flex w-full items-center gap-3 rounded-2xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] px-3.5 py-3 text-left sm:px-4"
                 >
-                  <SidebarSvgIcon name="next" size={14} strokeWidth={2} />
-                  <span className="truncate">Continue · {activePatient.display_name}</span>
+                  <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color:var(--dash-navy)] text-white">
+                    <SidebarSvgIcon name="next" size={16} />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="font-sans block text-sm font-semibold text-[color:var(--dash-text)]">
+                      Resume intake
+                    </span>
+                    <span className="text-brand-caption mt-0.5 block truncate text-[color:var(--dash-muted)]">
+                      {activePatient.display_name} · pick up where you left off
+                    </span>
+                  </span>
+                  <SidebarSvgIcon
+                    name="next"
+                    size={16}
+                    className="shrink-0 text-[color:var(--dash-dim)]"
+                  />
                 </button>
-              ) : null}
-            </div>
-          </div>
-
-          {actionError && !onboardingOpen ? <AuthAlert variant="error">{actionError}</AuthAlert> : null}
-
-          <div className="grid min-w-0 gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(14rem,0.8fr)]">
-            <PatientListPanel
-              patients={patients}
-              activePatientId={activePatient?.patient_id ?? null}
-              onSelect={(patientId) => void selectPatient(patientId)}
-              onCreate={openCreateDialog}
-              isCreating={isCreating}
-              progressLabelFor={(patient) =>
-                progressLabel(
-                  patient,
-                  activePatient?.patient_id === patient.patient_id ? step : undefined,
-                )
-              }
-            />
-
-            <aside className="hols-auth-card order-last min-w-0 rounded-xl p-4 sm:p-5 lg:order-none">
-              <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-                System status
-              </p>
-              <div className="mt-4 space-y-2.5">
-                <div className="flex items-center justify-between gap-2 rounded-lg bg-[color:var(--dash-soft)] px-3 py-2.5">
-                  <span className="inline-flex items-center gap-2 text-brand-caption text-[color:var(--dash-muted)]">
-                    <SidebarSvgIcon name="adviser" size={14} strokeWidth={1.9} />
-                    Service
-                  </span>
-                  <span
-                    className={
-                      info
-                        ? "rounded-lg bg-[#DDE466]/25 px-2 py-0.5 text-brand-caption font-semibold text-[color:var(--dash-accent)]"
-                        : "text-brand-caption font-semibold text-[color:var(--dash-faint)]"
-                    }
-                  >
-                    {info ? "Online" : "Connecting…"}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between gap-2 rounded-lg bg-[color:var(--dash-soft)] px-3 py-2.5">
-                  <span className="inline-flex items-center gap-2 text-brand-caption text-[color:var(--dash-muted)]">
-                    <SidebarSvgIcon name="plans" size={14} strokeWidth={1.9} />
-                    Knowledge base
-                  </span>
-                  <span className="text-brand-caption font-semibold text-[color:var(--dash-text)]">
-                    {vectors != null ? `${vectors.toLocaleString()} vectors` : "—"}
-                  </span>
-                </div>
-                {info ? (
-                  <div className="flex items-center justify-between gap-2 rounded-lg bg-[color:var(--dash-soft)] px-3 py-2.5">
-                    <span className="inline-flex items-center gap-2 text-brand-caption text-[color:var(--dash-muted)]">
-                      <SidebarSvgIcon name="focus" size={14} strokeWidth={1.9} />
-                      Model
-                    </span>
-                    <span className="max-w-[55%] truncate text-right text-brand-caption font-semibold text-[color:var(--dash-text)]">
-                      {info.chat_model}
-                    </span>
-                  </div>
-                ) : null}
-                <div className="flex items-center justify-between gap-2 rounded-lg bg-[color:var(--dash-soft)] px-3 py-2.5">
-                  <span className="inline-flex items-center gap-2 text-brand-caption text-[color:var(--dash-muted)]">
-                    <SidebarSvgIcon name="users" size={14} strokeWidth={1.9} />
-                    Patients
-                  </span>
-                  <span className="text-brand-caption font-semibold text-[color:var(--dash-text)]">
-                    {patients.length}
-                  </span>
-                </div>
-              </div>
-
-              <p className="text-brand-caption mt-4 text-[color:var(--dash-muted)]">
-                Select a draft to resume onboarding, or open a completed case to continue in chat.
-              </p>
-            </aside>
-          </div>
+              ) : null
+            }
+          />
         </>
       )}
     </AdviserPageLayout>

@@ -33,6 +33,8 @@ const linkColumns: Array<{ title: string; links: FooterItem[] }> = [
       { label: "Who it's for", href: "/#who-its-for" },
       { label: "Get Started", href: "/register" },
       { label: "Log in", href: "/login" },
+      { label: "Admin login", href: "/login/admin" },
+      { label: "Affiliate login", href: "/login/affiliate" },
     ],
   },
   {
@@ -154,7 +156,7 @@ function NewsletterSignup() {
       ) : (
         <form
           onSubmit={onSubmit}
-          className="mt-4 flex w-full flex-col gap-2.5 xl:flex-row xl:items-center"
+          className="footer-newsletter mt-4 flex w-full flex-col gap-2.5"
         >
           <label className="sr-only" htmlFor="footer-newsletter-email">
             Email address
@@ -169,16 +171,14 @@ function NewsletterSignup() {
             onChange={(event) => setEmail(event.target.value)}
             placeholder="Your Email Address"
             className={cn(
-              "min-h-11 w-full min-w-0 flex-1 rounded-full border border-primary/15 bg-white px-4",
-              "font-sans text-sm text-primary placeholder:text-primary/40",
-              "outline-none transition-[border-color,box-shadow] duration-200",
-              "focus:border-accent/60 focus:shadow-[0_0_0_3px_rgba(221,228,102,0.22)]",
+              "dashboard-field hols-hover-border min-h-11 w-full",
+              "outline-none",
             )}
           />
           <HeroButton
             type="submit"
             variant="primary"
-            className="w-full shrink-0 focus-visible:outline-accent/40 xl:w-auto"
+            className="w-full shrink-0 focus-visible:outline-accent/40"
           >
             Subscribe
           </HeroButton>

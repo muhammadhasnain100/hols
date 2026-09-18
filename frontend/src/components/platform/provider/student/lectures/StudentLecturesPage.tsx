@@ -216,11 +216,10 @@ function PagerButton({
   onClick: () => void;
   variant: "prev" | "next";
 }) {
-  // Match lesson reading page: Previous = soft pill, Next = lemon CTA
   const className =
     variant === "next"
-      ? "lesson-next-cta font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-lg bg-[#DDE466] px-4 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 disabled:pointer-events-none disabled:opacity-50 disabled:hover:brightness-100 sm:w-auto sm:px-5"
-      : "lesson-prev-cta dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-lg px-4 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50 sm:w-auto sm:px-5";
+      ? "lesson-next-cta dashboard-navy-btn font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white transition disabled:pointer-events-none disabled:opacity-50 disabled:hover:brightness-100 sm:w-auto"
+      : "lesson-prev-cta dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50 sm:w-auto";
 
   return (
     <button type="button" disabled={disabled} onClick={onClick} className={className}>
@@ -242,24 +241,24 @@ function CourseCardSkeleton({ index }: { index: number }) {
   return (
     <div
       style={{ animationDelay: `${Math.min(index, 7) * 45}ms` }}
-      className="lecture-course-card lecture-course-skeleton flex aspect-[3/4] w-full min-h-0 flex-col overflow-hidden rounded-xl"
+      className="lecture-course-card lecture-course-skeleton flex h-full w-full min-h-0 flex-col overflow-hidden rounded-2xl"
       aria-hidden
     >
-      <span className="lecture-skeleton-block mx-0 min-h-0 flex-[1.65] rounded-none" />
+      <span className="lecture-skeleton-block mx-0 aspect-[5/4] w-full shrink-0 rounded-none" />
       <div className="lecture-course-card-glass flex shrink-0 flex-col px-4 pt-3 pb-4">
+        <span className="lecture-skeleton-block lecture-course-card-title block w-3/4 rounded" />
         <div className="lecture-course-stats grid grid-cols-3 overflow-hidden">
           <span className="lecture-skeleton-block h-7 w-full rounded-none" />
           <span className="lecture-skeleton-block h-7 w-full rounded-none" />
           <span className="lecture-skeleton-block h-7 w-full rounded-none" />
         </div>
-        <span className="lecture-skeleton-block mt-2.5 block h-11 w-full rounded-full" />
+        <span className="lecture-skeleton-block mt-2.5 block h-10 w-full rounded-full" />
       </div>
     </div>
   );
 }
 
 function CourseCard({ course, index }: { course: CourseSummary; index: number }) {
-  const featured = index === 0;
   // Keep theme subscription so dark/light card chrome stays in sync.
   const serverTheme = useServerPortalTheme();
   useSyncExternalStore(subscribePortalTheme, getPortalThemeSnapshot, () => serverTheme);
@@ -268,16 +267,14 @@ function CourseCard({ course, index }: { course: CourseSummary; index: number })
     <Link
       href={`/student/lectures/${course.course_id}`}
       style={{ animationDelay: `${Math.min(index, 11) * 45}ms` }}
-      data-featured={featured ? "true" : undefined}
       className={cn(
-        "lecture-course-card group relative flex aspect-[3/4] w-full min-h-0 min-w-0 max-w-full flex-col overflow-hidden rounded-xl",
+        "lecture-course-card group relative flex h-full w-full min-h-0 min-w-0 max-w-full flex-col overflow-hidden rounded-2xl",
       )}
     >
-      <span className="lecture-course-card-shine pointer-events-none absolute inset-0 z-[3]" aria-hidden />
-      <span className="lecture-course-card-sweep pointer-events-none absolute inset-0 z-[3]" aria-hidden />
-      <span className="lecture-course-card-spotlight pointer-events-none absolute inset-0 z-[3]" aria-hidden />
-
-      <div className="lecture-course-card-media relative z-[1] min-h-0 flex-[1.65] overflow-hidden">
+      <div className="lecture-course-card-media relative z-[1] aspect-[5/4] w-full shrink-0 overflow-hidden">
+        <span className="lecture-course-card-shine pointer-events-none absolute inset-0 z-[3]" aria-hidden />
+        <span className="lecture-course-card-sweep pointer-events-none absolute inset-0 z-[3]" aria-hidden />
+        <span className="lecture-course-card-spotlight pointer-events-none absolute inset-0 z-[3]" aria-hidden />
         <CourseCoverArt courseId={course.course_id} title={course.title} variant="card" />
       </div>
 
@@ -290,7 +287,7 @@ function CourseCard({ course, index }: { course: CourseSummary; index: number })
           <StatColumn label="Lectures" value={course.lesson_count} />
         </div>
 
-        <span className="lecture-course-card-cta font-sans mt-2.5 inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-lg bg-[#DDE466] px-5 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105">
+        <span className="dashboard-navy-btn lecture-course-card-cta font-sans mt-2.5 inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white">
           Learn more
           <SidebarSvgIcon
             name="next"

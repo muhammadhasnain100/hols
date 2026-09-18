@@ -2,10 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
-import { authFieldClass, authLabelClass } from "@/components/platform/auth/auth-styles";
 import { SidebarSvgIcon } from "@/components/platform/provider/sidebar-icons";
 import { PaymentCardPageSkeleton } from "@/components/platform/provider/student/DashboardSkeletons";
-import { PaymentPageLayout } from "@/components/platform/provider/student/payment/PaymentPageLayout";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
   addCard,
@@ -64,7 +62,7 @@ function DashField({
 }) {
   return (
     <div className="grid min-w-0 gap-2">
-      <label htmlFor={id} className={authLabelClass}>
+      <label htmlFor={id} className="dashboard-field-label">
         {label}
       </label>
       <input
@@ -81,8 +79,7 @@ function DashField({
         aria-invalid={Boolean(error)}
         aria-describedby={error ? `${id}-error` : undefined}
         className={cn(
-          authFieldClass,
-          "payment-field px-4",
+          "dashboard-field",
           error && "border-[color:var(--dash-danger,#c45c5c)]",
         )}
       />
@@ -142,7 +139,7 @@ function validateForm(form: CardFormState): FieldErrors {
   return errors;
 }
 
-export function StudentCardPage() {
+export function StudentCardPanel() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [removing, setRemoving] = useState(false);
@@ -256,279 +253,271 @@ export function StudentCardPage() {
   }
 
   return (
-    <PaymentPageLayout title="Payment card">
+    <section className="dashboard-glass-card min-w-0 rounded-2xl p-4 sm:p-5 md:p-6">
+      <h2 className="font-sans text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg">
+        Payment card
+      </h2>
+      <p className="text-brand-body mt-1 text-sm text-[color:var(--dash-muted)] sm:text-base">
+        One card per account. Required to purchase membership.
+      </p>
+
       {loading ? (
-        <PaymentCardPageSkeleton />
+        <div className="mt-5">
+          <PaymentCardPageSkeleton />
+        </div>
       ) : (
         <>
-          {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
-          {success ? <AuthAlert variant="success">{success}</AuthAlert> : null}
-
-          <div className="grid w-full min-w-0 items-start gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
-            <div className="order-2 flex min-w-0 flex-col gap-3 sm:gap-4 lg:order-1">
-              {card ? (
-                <section className="dashboard-plan-card relative overflow-hidden rounded-xl p-4 text-[#152744] sm:p-5 md:p-6">
-                  <div className="flex items-center justify-between gap-2">
-                    <span className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[#152744]/70">
-                      Saved card
-                    </span>
-                    <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-[#152744]/10 text-[#152744]">
-                      <SidebarSvgIcon name="payment" size={22} strokeWidth={1.75} />
-                    </span>
-                  </div>
-                  <p className="font-sans mt-6 text-lg font-bold tracking-[0.08em] sm:mt-8 sm:text-xl md:text-2xl">
-                    {card.card_number_masked}
-                  </p>
-                  <div className="mt-4 flex items-end justify-between gap-3 sm:mt-5">
-                    <div className="min-w-0">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#152744]/55">
-                        Cardholder
-                      </p>
-                      <p className="font-sans mt-0.5 truncate text-sm font-semibold">
-                        {card.card_holder_name || "—"}
-                      </p>
-                    </div>
-                    <div className="shrink-0 text-right">
-                      <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#152744]/55">
-                        Expires
-                      </p>
-                      <p className="font-sans mt-0.5 text-sm font-semibold">
-                        {String(card.exp_month).padStart(2, "0")}/{card.exp_year}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="mt-5 flex flex-wrap gap-2">
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowForm(true);
-                        setError(null);
-                        setSuccess(null);
-                      }}
-                      className="font-sans inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg bg-[#152744] px-4 text-sm font-medium text-white transition hover:brightness-110"
-                    >
-                      <SidebarSvgIcon name="payment" size={14} strokeWidth={1.9} />
-                      Update card
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => void handleRemove()}
-                      disabled={removing}
-                      className="font-sans inline-flex min-h-10 items-center justify-center gap-1.5 rounded-lg border border-[#152744]/25 px-4 text-sm font-medium text-[#152744] transition hover:bg-[#152744]/08 disabled:opacity-60"
-                    >
-                      <SidebarSvgIcon name="cross" size={14} strokeWidth={2} />
-                      {removing ? "Removing…" : "Remove card"}
-                    </button>
-                  </div>
-                </section>
-              ) : (
-                <section className="hols-auth-card flex flex-col items-center justify-center rounded-xl px-4 py-10 text-center sm:px-5 sm:py-12">
-                  <span className="membership-plan-icon" aria-hidden>
-                    <SidebarSvgIcon name="payment" size={22} strokeWidth={1.75} />
-                  </span>
-                  <p className="font-sans mt-3 text-sm font-semibold text-[color:var(--dash-text)]">
-                    No card on file
-                  </p>
-                  <p className="text-brand-caption mt-1 max-w-[14rem] text-[color:var(--dash-faint)]">
-                    Add a card below to enable membership purchases.
-                  </p>
-                </section>
-              )}
+          {error ? (
+            <div className="mt-4">
+              <AuthAlert variant="error">{error}</AuthAlert>
             </div>
+          ) : null}
+          {success ? (
+            <div className="mt-4">
+              <AuthAlert variant="success">{success}</AuthAlert>
+            </div>
+          ) : null}
 
-            {showForm ? (
-              <section className="hols-auth-card order-1 min-w-0 rounded-xl p-4 sm:p-5 md:p-6 lg:order-2">
-                <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-                  Card details
-                </p>
-                <h2 className="font-sans mt-1 text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg md:text-xl">
-                  {card ? "Update payment card" : "Add payment card"}
-                </h2>
-                <p className="text-brand-body mt-1 text-[color:var(--dash-muted)]">
-                  One card per account. Required to purchase membership.
-                </p>
-
-                <form className="mt-4 grid gap-3 sm:mt-5 sm:gap-4" onSubmit={handleSubmit} noValidate>
-                  <DashField
-                    id="card_holder_name"
-                    label="Cardholder name"
-                    value={form.card_holder_name}
-                    onChange={(value) => {
-                      setForm((prev) => ({
-                        ...prev,
-                        card_holder_name: value.slice(0, CARDHOLDER_MAX),
-                      }));
-                      setFieldErrors((prev) => ({ ...prev, card_holder_name: undefined }));
-                    }}
-                    placeholder="Name on card"
-                    autoComplete="cc-name"
-                    maxLength={CARDHOLDER_MAX}
-                    error={fieldErrors.card_holder_name}
-                  />
-                  <DashField
-                    id="card_number"
-                    label="Card number"
-                    value={form.card_number}
-                    onChange={(value) => {
-                      setForm((prev) => ({
-                        ...prev,
-                        card_number: value.replace(/[^\d\s]/g, "").slice(0, 23),
-                      }));
-                      setFieldErrors((prev) => ({ ...prev, card_number: undefined }));
-                    }}
-                    placeholder="1234 5678 9012 3456"
-                    autoComplete="cc-number"
-                    inputMode="numeric"
-                    required
-                    error={fieldErrors.card_number}
-                  />
-
-                  <div className="grid gap-2">
-                    <span className={authLabelClass}>Expiry (MM / YYYY)</span>
-                    <div className="grid grid-cols-[minmax(0,5.5rem)_minmax(0,1fr)] gap-3">
-                      <div className="grid gap-2">
-                        <input
-                          id="exp_month"
-                          name="exp_month"
-                          type="text"
-                          inputMode="numeric"
-                          autoComplete="cc-exp-month"
-                          placeholder="MM"
-                          maxLength={2}
-                          value={form.exp_month}
-                          aria-invalid={Boolean(fieldErrors.exp_month)}
-                          aria-describedby={fieldErrors.exp_month ? "exp_month-error" : undefined}
-                          onChange={(event) => {
-                            setForm((prev) => ({
-                              ...prev,
-                              exp_month: event.target.value.replace(/\D/g, "").slice(0, 2),
-                            }));
-                            setFieldErrors((prev) => ({ ...prev, exp_month: undefined }));
-                          }}
-                          className={cn(
-                            authFieldClass,
-                            "payment-field px-4 text-center",
-                            fieldErrors.exp_month && "border-[color:var(--dash-danger,#c45c5c)]",
-                          )}
-                          required
-                        />
-                      </div>
-                      <div className="grid gap-2">
-                        <input
-                          id="exp_year"
-                          name="exp_year"
-                          type="text"
-                          inputMode="numeric"
-                          autoComplete="cc-exp-year"
-                          placeholder="YYYY"
-                          maxLength={4}
-                          value={form.exp_year}
-                          aria-invalid={Boolean(fieldErrors.exp_year)}
-                          aria-describedby={fieldErrors.exp_year ? "exp_year-error" : undefined}
-                          onChange={(event) => {
-                            setForm((prev) => ({
-                              ...prev,
-                              exp_year: event.target.value.replace(/\D/g, "").slice(0, 4),
-                            }));
-                            setFieldErrors((prev) => ({ ...prev, exp_year: undefined }));
-                          }}
-                          className={cn(
-                            authFieldClass,
-                            "payment-field px-4",
-                            fieldErrors.exp_year && "border-[color:var(--dash-danger,#c45c5c)]",
-                          )}
-                          required
-                        />
-                      </div>
-                    </div>
-                    {fieldErrors.exp_month || fieldErrors.exp_year ? (
-                      <p
-                        id={fieldErrors.exp_month ? "exp_month-error" : "exp_year-error"}
-                        className="text-brand-caption text-[color:var(--dash-danger,#b42318)]"
-                      >
-                        {fieldErrors.exp_month || fieldErrors.exp_year}
-                      </p>
-                    ) : null}
-                  </div>
-
-                  <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
-                    <DashField
-                      id="cvc"
-                      label="CVC"
-                      value={form.cvc}
-                      onChange={(value) => {
-                        setForm((prev) => ({
-                          ...prev,
-                          cvc: value.replace(/\D/g, "").slice(0, 4),
-                        }));
-                        setFieldErrors((prev) => ({ ...prev, cvc: undefined }));
-                      }}
-                      placeholder="123"
-                      inputMode="numeric"
-                      maxLength={4}
-                      required
-                      error={fieldErrors.cvc}
-                    />
-                    <DashField
-                      id="pin"
-                      label="PIN (optional)"
-                      value={form.pin}
-                      onChange={(value) => {
-                        setForm((prev) => ({
-                          ...prev,
-                          pin: value.replace(/\D/g, "").slice(0, 6),
-                        }));
-                        setFieldErrors((prev) => ({ ...prev, pin: undefined }));
-                      }}
-                      placeholder="4–6 digits"
-                      inputMode="numeric"
-                      maxLength={6}
-                      error={fieldErrors.pin}
-                    />
-                  </div>
-
-                  <div className="mt-1 flex flex-wrap gap-2">
-                    <button
-                      type="submit"
-                      disabled={saving}
-                      className="font-sans inline-flex min-h-11 items-center justify-center gap-1.5 rounded-lg bg-[#DDE466] px-6 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 disabled:pointer-events-none disabled:opacity-60 sm:min-w-[10rem]"
-                    >
-                      <SidebarSvgIcon name="check" size={15} strokeWidth={2.2} />
-                      {saving ? "Saving…" : card ? "Save updated card" : "Add card"}
-                    </button>
-                    {card ? (
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setShowForm(false);
-                          setForm(emptyCardForm);
-                          setFieldErrors({});
-                          setError(null);
-                        }}
-                        className="dashboard-pill-soft font-sans inline-flex min-h-11 items-center justify-center rounded-lg px-5 text-sm font-medium text-[color:var(--dash-text)]"
-                      >
-                        Cancel
-                      </button>
-                    ) : null}
-                  </div>
-                </form>
-              </section>
-            ) : (
-              <section className="hols-auth-card order-1 hidden min-w-0 rounded-xl p-4 sm:p-5 md:p-6 lg:order-2 lg:block">
-                <div className="flex items-start gap-3">
-                  <span className="membership-plan-icon shrink-0" aria-hidden>
-                    <SidebarSvgIcon name="shield" size={20} strokeWidth={1.85} />
-                  </span>
-                  <p className="text-brand-body text-[color:var(--dash-muted)]">
-                    Your card is ready for membership purchases. Choose Update card to replace it, or
-                    Remove card on the left to delete it.
+          {card ? (
+            <div className="dashboard-plan-card relative mt-5 overflow-hidden rounded-2xl p-4 text-[#152744] sm:p-5">
+              <div className="flex items-center justify-between gap-2">
+                <span className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[#152744]/70">
+                  Saved card
+                </span>
+                <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#152744]/10 text-[#152744]">
+                  <SidebarSvgIcon name="payment" size={22} strokeWidth={1.75} />
+                </span>
+              </div>
+              <p className="font-sans mt-6 text-lg font-bold tracking-[0.08em] sm:text-xl">
+                {card.card_number_masked}
+              </p>
+              <div className="mt-4 flex items-end justify-between gap-3">
+                <div className="min-w-0">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#152744]/55">
+                    Cardholder
+                  </p>
+                  <p className="font-sans mt-0.5 truncate text-sm font-semibold">
+                    {card.card_holder_name || "—"}
                   </p>
                 </div>
-              </section>
-            )}
-          </div>
+                <div className="shrink-0 text-right">
+                  <p className="text-[10px] font-semibold uppercase tracking-[0.1em] text-[#152744]/55">
+                    Expires
+                  </p>
+                  <p className="font-sans mt-0.5 text-sm font-semibold">
+                    {String(card.exp_month).padStart(2, "0")}/{card.exp_year}
+                  </p>
+                </div>
+              </div>
+              <div className="mt-5 flex flex-wrap gap-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowForm(true);
+                    setError(null);
+                    setSuccess(null);
+                  }}
+                  className="dashboard-navy-btn font-sans inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full px-4 text-sm font-medium text-white"
+                >
+                  <SidebarSvgIcon name="payment" size={14} strokeWidth={1.9} />
+                  Update card
+                </button>
+                <button
+                  type="button"
+                  onClick={() => void handleRemove()}
+                  disabled={removing}
+                  className="font-sans inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full border border-[#152744]/25 px-4 text-sm font-medium text-[#152744] transition hover:bg-[#152744]/08 disabled:opacity-60"
+                >
+                  <SidebarSvgIcon name="cross" size={14} strokeWidth={2} />
+                  {removing ? "Removing…" : "Remove card"}
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="mt-5 flex flex-col items-center justify-center rounded-2xl bg-[color:var(--dash-soft)] px-4 py-8 text-center">
+              <span className="dashboard-tool-icon flex h-12 w-12 items-center justify-center rounded-full text-[color:var(--dash-text)]">
+                <SidebarSvgIcon name="payment" size={22} strokeWidth={1.75} />
+              </span>
+              <p className="font-sans mt-3 text-sm font-semibold text-[color:var(--dash-text)]">
+                No card on file
+              </p>
+              <p className="text-brand-caption mt-1 max-w-[16rem] text-[color:var(--dash-faint)]">
+                Add a card below to enable membership purchases.
+              </p>
+            </div>
+          )}
+
+          {showForm ? (
+            <form className="mt-5 grid gap-3 sm:gap-4" onSubmit={handleSubmit} noValidate>
+              <DashField
+                id="card_holder_name"
+                label="Cardholder name"
+                value={form.card_holder_name}
+                onChange={(value) => {
+                  setForm((prev) => ({
+                    ...prev,
+                    card_holder_name: value.slice(0, CARDHOLDER_MAX),
+                  }));
+                  setFieldErrors((prev) => ({ ...prev, card_holder_name: undefined }));
+                }}
+                placeholder="Name on card"
+                autoComplete="cc-name"
+                maxLength={CARDHOLDER_MAX}
+                error={fieldErrors.card_holder_name}
+              />
+              <DashField
+                id="card_number"
+                label="Card number"
+                value={form.card_number}
+                onChange={(value) => {
+                  setForm((prev) => ({
+                    ...prev,
+                    card_number: value.replace(/[^\d\s]/g, "").slice(0, 23),
+                  }));
+                  setFieldErrors((prev) => ({ ...prev, card_number: undefined }));
+                }}
+                placeholder="1234 5678 9012 3456"
+                autoComplete="cc-number"
+                inputMode="numeric"
+                required
+                error={fieldErrors.card_number}
+              />
+
+              <div className="grid gap-2">
+                <span className="dashboard-field-label">Expiry (MM / YYYY)</span>
+                <div className="grid grid-cols-[minmax(0,5.5rem)_minmax(0,1fr)] gap-3">
+                  <input
+                    id="exp_month"
+                    name="exp_month"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="cc-exp-month"
+                    placeholder="MM"
+                    maxLength={2}
+                    value={form.exp_month}
+                    aria-invalid={Boolean(fieldErrors.exp_month)}
+                    aria-describedby={fieldErrors.exp_month ? "exp_month-error" : undefined}
+                    onChange={(event) => {
+                      setForm((prev) => ({
+                        ...prev,
+                        exp_month: event.target.value.replace(/\D/g, "").slice(0, 2),
+                      }));
+                      setFieldErrors((prev) => ({ ...prev, exp_month: undefined }));
+                    }}
+                    className={cn(
+                      "dashboard-field text-center",
+                      fieldErrors.exp_month && "border-[color:var(--dash-danger,#c45c5c)]",
+                    )}
+                    required
+                  />
+                  <input
+                    id="exp_year"
+                    name="exp_year"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="cc-exp-year"
+                    placeholder="YYYY"
+                    maxLength={4}
+                    value={form.exp_year}
+                    aria-invalid={Boolean(fieldErrors.exp_year)}
+                    aria-describedby={fieldErrors.exp_year ? "exp_year-error" : undefined}
+                    onChange={(event) => {
+                      setForm((prev) => ({
+                        ...prev,
+                        exp_year: event.target.value.replace(/\D/g, "").slice(0, 4),
+                      }));
+                      setFieldErrors((prev) => ({ ...prev, exp_year: undefined }));
+                    }}
+                    className={cn(
+                      "dashboard-field",
+                      fieldErrors.exp_year && "border-[color:var(--dash-danger,#c45c5c)]",
+                    )}
+                    required
+                  />
+                </div>
+                {fieldErrors.exp_month || fieldErrors.exp_year ? (
+                  <p
+                    id={fieldErrors.exp_month ? "exp_month-error" : "exp_year-error"}
+                    className="text-brand-caption text-[color:var(--dash-danger,#b42318)]"
+                  >
+                    {fieldErrors.exp_month || fieldErrors.exp_year}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+                <DashField
+                  id="cvc"
+                  label="CVC"
+                  value={form.cvc}
+                  onChange={(value) => {
+                    setForm((prev) => ({
+                      ...prev,
+                      cvc: value.replace(/\D/g, "").slice(0, 4),
+                    }));
+                    setFieldErrors((prev) => ({ ...prev, cvc: undefined }));
+                  }}
+                  placeholder="123"
+                  inputMode="numeric"
+                  maxLength={4}
+                  required
+                  error={fieldErrors.cvc}
+                />
+                <DashField
+                  id="pin"
+                  label="PIN (optional)"
+                  value={form.pin}
+                  onChange={(value) => {
+                    setForm((prev) => ({
+                      ...prev,
+                      pin: value.replace(/\D/g, "").slice(0, 6),
+                    }));
+                    setFieldErrors((prev) => ({ ...prev, pin: undefined }));
+                  }}
+                  placeholder="4–6 digits"
+                  inputMode="numeric"
+                  maxLength={6}
+                  error={fieldErrors.pin}
+                />
+              </div>
+
+              <div className="mt-1 flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap">
+                {card ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowForm(false);
+                      setForm(emptyCardForm);
+                      setFieldErrors({});
+                      setError(null);
+                    }}
+                    className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)]"
+                  >
+                    Cancel
+                  </button>
+                ) : null}
+                <button
+                  type="submit"
+                  disabled={saving}
+                  className="dashboard-navy-btn font-sans inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full px-6 text-sm font-medium tracking-[0.01em] text-white disabled:pointer-events-none disabled:opacity-60 sm:min-w-[10rem]"
+                >
+                  <SidebarSvgIcon name="check" size={15} strokeWidth={2.2} />
+                  {saving ? "Saving…" : card ? "Save updated card" : "Add card"}
+                </button>
+              </div>
+            </form>
+          ) : (
+            <p className="text-brand-body mt-5 text-[color:var(--dash-muted)]">
+              Your card is ready for membership purchases. Choose Update card to replace it, or
+              Remove card to delete it.
+            </p>
+          )}
         </>
       )}
-    </PaymentPageLayout>
+    </section>
   );
+}
+
+export function StudentCardPage() {
+  return <StudentCardPanel />;
 }

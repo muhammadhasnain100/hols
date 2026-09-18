@@ -24,6 +24,8 @@ export function StudentPeptideAdviserChatPage({ patientId }: StudentPeptideAdvis
     getCachedPatient(patientId, true),
   );
   const [loadError, setLoadError] = useState<string | null>(null);
+  const [boardOpen, setBoardOpen] = useState(false);
+  const [boardUpdated, setBoardUpdated] = useState(false);
 
   useEffect(() => {
     window.sessionStorage.setItem(ACTIVE_PATIENT_STORAGE_KEY, patientId);
@@ -83,10 +85,31 @@ export function StudentPeptideAdviserChatPage({ patientId }: StudentPeptideAdvis
     );
   }, []);
 
+  const handleBoardToggle = useCallback(() => {
+    setBoardOpen((open) => {
+      if (!open) setBoardUpdated(false);
+      return !open;
+    });
+  }, []);
+
+  const board =
+    patient?.recommendation_board
+      ? {
+          open: boardOpen,
+          updated: boardUpdated && !boardOpen,
+          peptideName:
+            patient.recommendation_board.preferred ||
+            patient.recommendation_board.ranked[0]?.name,
+          onToggle: handleBoardToggle,
+        }
+      : null;
+
   if (loadError) {
     return (
       <AdviserChatPageLayout patientName="Consultation chat">
-        <AuthAlert variant="error">{loadError}</AuthAlert>
+        <div className="flex min-h-0 flex-1 flex-col justify-center">
+          <AuthAlert variant="error">{loadError}</AuthAlert>
+        </div>
       </AdviserChatPageLayout>
     );
   }
@@ -94,17 +117,25 @@ export function StudentPeptideAdviserChatPage({ patientId }: StudentPeptideAdvis
   if (!patient) {
     return (
       <AdviserChatPageLayout patientName="Consultation chat">
-        <ChatMessagesSkeleton />
+        <div className="min-h-0 flex-1 overflow-y-auto">
+          <ChatMessagesSkeleton />
+        </div>
       </AdviserChatPageLayout>
     );
   }
 
   return (
-    <AdviserChatPageLayout patientName={patient.display_name}>
+    <AdviserChatPageLayout patientName={patient.display_name} board={board}>
       <AdviserChatPanel
         key={patient.patient_id}
         patient={patient}
         onPatientChange={handlePatientChange}
+        boardOpen={boardOpen}
+        onBoardOpenChange={(open) => {
+          setBoardOpen(open);
+          if (open) setBoardUpdated(false);
+        }}
+        onBoardUpdated={() => setBoardUpdated(true)}
       />
     </AdviserChatPageLayout>
   );

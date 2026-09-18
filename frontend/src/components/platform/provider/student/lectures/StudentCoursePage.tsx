@@ -140,9 +140,9 @@ export function StudentCoursePage({ courseId }: StudentCoursePageProps) {
       {loading && !course ? <CoursePageSkeleton /> : null}
 
       {course ? (
-          <div
+        <div
           ref={stageRef}
-          className="lecture-overview-stage grid w-full min-w-0 max-w-full items-stretch gap-3 sm:gap-4 md:gap-5 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.18fr)] xl:grid-cols-[minmax(0,0.88fr)_minmax(0,1.22fr)]"
+          className="lecture-overview-stage grid w-full min-w-0 max-w-full items-start gap-3 sm:gap-4 md:gap-5 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.18fr)] xl:grid-cols-[minmax(0,0.88fr)_minmax(0,1.22fr)]"
         >
           <HolsVolume course={course} courseId={courseId} topicGroups={topicGroups} />
 
@@ -247,7 +247,8 @@ function HolsVolume({
                   }}
                   aria-label="Close volume"
                 >
-                  <SidebarSvgIcon name="cross" size={34} strokeWidth={2.15} />
+                  <SidebarSvgIcon name="cross" size={18} strokeWidth={2.15} className="sm:hidden" />
+                  <SidebarSvgIcon name="cross" size={28} strokeWidth={2.15} className="hidden sm:block" />
                 </button>
               </div>
 
@@ -429,12 +430,11 @@ function TableOfContents({
   return (
     <section
       data-book-toc
-      className="course-book-toc relative min-w-0 w-full overflow-hidden rounded-xl p-3 sm:p-5 md:p-6"
+      className="dashboard-glass-card course-book-toc relative min-w-0 w-full overflow-hidden rounded-2xl p-4 sm:p-5 md:p-6"
     >
-      <div className="course-book-toc-gutter pointer-events-none absolute inset-y-0 left-0 w-1.5" aria-hidden />
-      <div className="flex flex-col gap-3 border-b border-[color:var(--dash-surface-border)] pb-4 pl-1 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-2 sm:pl-2">
+      <div className="flex flex-col gap-3 border-b border-[color:var(--dash-surface-border)] pb-4 sm:flex-row sm:flex-wrap sm:items-end sm:justify-between sm:gap-3">
         <div className="min-w-0">
-          <p className="text-brand-caption font-semibold uppercase tracking-[0.14em] text-[color:var(--dash-faint)]">
+          <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
             Inside this volume
           </p>
           <h2 className="font-sans mt-1 text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl">
@@ -446,9 +446,10 @@ function TableOfContents({
         </div>
         <Link
           href={`/student/lectures/${courseId}/lessons`}
-          className="font-sans inline-flex min-h-9 w-full shrink-0 items-center justify-center rounded-lg bg-[#DDE466] px-4 text-sm font-medium text-[#152744] transition hover:brightness-105 sm:min-h-9 sm:w-auto"
+          className="dashboard-navy-btn font-sans inline-flex min-h-10 w-full shrink-0 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white sm:w-auto"
         >
           Start reading
+          <SidebarSvgIcon name="next" size={15} />
         </Link>
       </div>
 
@@ -457,7 +458,7 @@ function TableOfContents({
           No chapters available yet.
         </p>
       ) : (
-        <ol className="mt-1 divide-y divide-[color:var(--dash-surface-border)] pl-1">
+        <ol className="mt-1 divide-y divide-[color:var(--dash-surface-border)]">
           {topicGroups.map((topic, index) => (
             <TopicChapter
               key={`${topic.topic_key}-${topic.order}`}
@@ -521,22 +522,17 @@ function TopicChapter({
         onClick={onToggle}
         data-expanded={expanded}
         className={cn(
-          "course-toc-row group flex w-full items-start gap-2.5 rounded-xl px-2.5 py-2.5 text-left sm:items-center sm:gap-4 sm:px-3.5 sm:py-3",
+          "course-toc-row flex w-full items-start gap-2.5 rounded-xl px-2.5 py-2.5 text-left sm:items-center sm:gap-4 sm:px-3.5 sm:py-3",
           expanded && "bg-[color:var(--dash-soft)]",
         )}
         aria-expanded={expanded}
       >
-        <span
-          className={cn(
-            "course-toc-badge mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg sm:mt-0 sm:h-10 sm:w-10",
-            expanded && "is-active",
-          )}
-        >
+        <span className="dashboard-tool-icon course-toc-badge mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[color:var(--dash-text)] sm:mt-0 sm:h-10 sm:w-10">
           <RomanChapterIcon index={index} size={18} aria-hidden />
           <span className="sr-only">Chapter {index + 1}</span>
         </span>
         <span className="min-w-0 flex-1">
-          <span className="font-sans block break-words text-sm font-semibold leading-snug tracking-[0.005em] text-[color:var(--dash-text)] transition group-hover:text-[color:var(--dash-accent)] sm:text-lg sm:leading-normal">
+          <span className="font-sans block break-words text-sm font-semibold leading-snug tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg sm:leading-normal">
             {topic.l1_name}
           </span>
           <span className="text-brand-caption mt-0.5 block text-[color:var(--dash-faint)]">
@@ -546,10 +542,10 @@ function TopicChapter({
         </span>
         <span
           className={cn(
-            "course-toc-chevron mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition duration-200 sm:mt-0 sm:h-9 sm:w-9",
+            "course-toc-chevron mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full sm:mt-0 sm:h-9 sm:w-9",
             expanded
-              ? "bg-[#DDE466] text-[#152744] shadow-[0_4px_12px_rgba(221,228,102,0.35)]"
-              : "bg-[color:var(--dash-soft)] text-[color:var(--dash-muted)] group-hover:bg-[#DDE466]/25 group-hover:text-[color:var(--dash-text)]",
+              ? "dashboard-navy-btn text-white"
+              : "dashboard-pill-soft text-[color:var(--dash-muted)]",
           )}
           aria-hidden
         >
@@ -563,7 +559,7 @@ function TopicChapter({
             <p className="text-brand-caption text-[color:var(--dash-faint)]">In this chapter</p>
             <Link
               href={topicLessonsHref}
-              className="text-brand-caption font-medium text-[color:var(--dash-accent)] transition hover:brightness-110"
+              className="text-brand-caption font-medium text-[color:var(--dash-text)] transition hover:opacity-80"
             >
               Open chapter
             </Link>
@@ -603,13 +599,13 @@ function SectionEntry({
     <li>
       <Link
         href={href}
-        className="course-section-row group flex items-start gap-2.5 rounded-lg px-2 py-2.5 hover:bg-[color:var(--dash-soft)] sm:items-baseline sm:gap-3 sm:px-2.5"
+        className="course-section-row hols-option-hover flex items-start gap-2.5 rounded-lg px-2 py-2.5 sm:items-baseline sm:gap-3 sm:px-2.5"
       >
         <span className="font-sans mt-0.5 w-6 shrink-0 text-xs font-semibold tabular-nums text-[color:var(--dash-dim)] sm:mt-0">
           {String(index + 1).padStart(2, "0")}
         </span>
         <span className="min-w-0 flex-1 border-b border-dotted border-[color:var(--dash-surface-border)] pb-1">
-          <span className="font-sans break-words text-sm font-medium leading-snug text-[color:var(--dash-text)] transition group-hover:text-[color:var(--dash-accent)]">
+          <span className="font-sans break-words text-sm font-medium leading-snug text-[color:var(--dash-text)]">
             {section.l2_name}
           </span>
         </span>

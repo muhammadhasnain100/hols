@@ -37,6 +37,35 @@ export function MembershipPageSkeleton() {
   );
 }
 
+export function MembershipHubSkeleton() {
+  return (
+    <div className="grid w-full min-w-0 gap-4 sm:gap-5" aria-busy="true" aria-label="Loading membership">
+      <section className="dashboard-glass-card flex items-center justify-between rounded-2xl px-4 py-3 sm:px-5">
+        <SkeletonBlock className="h-5 w-40 rounded-full" />
+        <SkeletonBlock className="h-5 w-28 rounded-full" />
+      </section>
+      <div className="grid w-full gap-3 sm:gap-4 lg:grid-cols-3">
+        {Array.from({ length: 3 }, (_, index) => (
+          <section
+            key={index}
+            className="membership-plan-card flex min-h-[20rem] flex-col rounded-[1.35rem] p-4 sm:p-5"
+          >
+            <SkeletonBlock className="h-6 w-24 rounded-full" />
+            <SkeletonBlock className="mt-5 h-7 w-28 rounded-full" />
+            <SkeletonBlock className="mt-3 h-9 w-32 rounded-full" />
+            <div className="mt-5 space-y-2.5">
+              <SkeletonBlock className="h-3 w-[88%] rounded-full" />
+              <SkeletonBlock className="h-3 w-[72%] rounded-full" />
+              <SkeletonBlock className="h-3 w-[80%] rounded-full" />
+            </div>
+            <SkeletonBlock className="mt-auto h-11 w-full rounded-full" />
+          </section>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export function OrderListRowsSkeleton({ count = 5 }: { count?: number }) {
   return (
     <div className="space-y-2.5" aria-busy="true" aria-label="Loading orders">
@@ -152,60 +181,55 @@ export function PaymentCardPageSkeleton() {
 export function ProfilePageSkeleton() {
   return (
     <div
-      className="grid w-full min-w-0 items-start gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]"
+      className="grid w-full min-w-0 items-start gap-3 sm:gap-4 lg:grid-cols-[minmax(15.5rem,18.75rem)_minmax(0,1fr)]"
       aria-busy="true"
-      aria-label="Loading profile"
+      aria-label="Loading settings"
     >
       <div className="flex min-w-0 flex-col gap-3 sm:gap-4">
-        <section className="dashboard-hero relative overflow-hidden rounded-2xl p-3.5 sm:p-5 md:p-6">
-          <div className="flex flex-col items-center gap-3 sm:flex-row sm:gap-5">
-            <SkeletonBlock className="h-14 w-14 shrink-0 rounded-2xl sm:h-20 sm:w-20" />
-            <div className="flex w-full min-w-0 flex-col items-center gap-2 sm:items-start">
-              <SkeletonBlock className="h-3 w-24 rounded-full" />
-              <SkeletonBlock className="h-7 w-40 rounded-full sm:h-9 sm:w-52" />
-              <SkeletonBlock className="h-4 w-48 rounded-full" />
-            </div>
-          </div>
-          <SkeletonBlock className="mt-4 h-11 w-full rounded-full sm:ml-auto sm:w-32" />
+        <section className="dashboard-glass-card flex flex-col items-center rounded-2xl px-4 py-5 sm:p-5">
+          <SkeletonBlock className="h-20 w-20 rounded-full sm:h-24 sm:w-24" />
+          <SkeletonBlock className="mt-3 h-3 w-20 rounded-full" />
+          <SkeletonBlock className="mt-3 h-5 w-36 rounded-full" />
+          <SkeletonBlock className="mt-2 h-3 w-40 rounded-full" />
+          <SkeletonBlock className="mt-3 h-6 w-16 rounded-full" />
         </section>
-
-        <section className="dashboard-surface rounded-2xl p-3.5 sm:p-5 md:p-6">
-          <SkeletonBlock className="h-3 w-16 rounded-full" />
-          <SkeletonBlock className="mt-2 h-5 w-36 rounded-full" />
-          <div className="mt-4 space-y-2.5">
-            {Array.from({ length: 4 }, (_, index) => (
-              <div
-                key={index}
-                className="flex items-start gap-3 rounded-xl px-2.5 py-2.5 sm:px-3.5 sm:py-3"
-              >
-                <SkeletonBlock className="h-9 w-9 shrink-0 rounded-full" />
-                <div className="min-w-0 flex-1 space-y-2">
-                  <SkeletonBlock className="h-3 w-24 rounded-full" />
-                  <SkeletonBlock className="h-3.5 w-40 rounded-full" />
-                </div>
+        <section className="dashboard-glass-card hidden rounded-2xl p-2.5 lg:block">
+          <div className="space-y-1">
+            {Array.from({ length: 3 }, (_, index) => (
+              <div key={index} className="flex items-center gap-3 rounded-xl px-3 py-2.5">
+                <SkeletonBlock className="h-5 w-5 shrink-0 rounded-full" />
+                <SkeletonBlock className="h-3.5 w-32 rounded-full" />
               </div>
             ))}
           </div>
         </section>
       </div>
-
-      <section className="dashboard-surface rounded-2xl p-3.5 sm:p-5 md:p-6">
-        <SkeletonBlock className="h-3 w-20 rounded-full" />
-        <SkeletonBlock className="mt-2 h-5 w-36 rounded-full" />
-        <div className="mt-3 space-y-1">
-          {Array.from({ length: 3 }, (_, index) => (
-            <div
-              key={index}
-              className="flex items-center gap-3 rounded-xl px-2.5 py-2.5 sm:px-3 sm:py-3"
-            >
-              <SkeletonBlock className="h-9 w-9 shrink-0 rounded-full" />
-              <div className="min-w-0 flex-1 space-y-2">
-                <SkeletonBlock className="h-3 w-16 rounded-full" />
-                <SkeletonBlock className="h-3.5 w-28 rounded-full" />
-              </div>
-              <SkeletonBlock className="h-4 w-4 shrink-0 rounded-full" />
+      <section className="dashboard-glass-card min-w-0 rounded-2xl p-4 sm:p-5 md:p-6">
+        <SkeletonBlock className="h-5 w-40 rounded-full" />
+        <SkeletonBlock className="mt-2 h-4 w-64 rounded-full" />
+        <div className="mt-6 grid gap-4">
+          <div className="space-y-2">
+            <SkeletonBlock className="h-3 w-24 rounded-full" />
+            <SkeletonBlock className="h-11 w-full rounded-2xl" />
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="space-y-2">
+              <SkeletonBlock className="h-3 w-20 rounded-full" />
+              <SkeletonBlock className="h-11 w-full rounded-2xl" />
             </div>
-          ))}
+            <div className="space-y-2">
+              <SkeletonBlock className="h-3 w-20 rounded-full" />
+              <SkeletonBlock className="h-11 w-full rounded-2xl" />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <SkeletonBlock className="h-3 w-28 rounded-full" />
+            <SkeletonBlock className="h-11 w-full rounded-2xl" />
+          </div>
+          <div className="space-y-2">
+            <SkeletonBlock className="h-3 w-28 rounded-full" />
+            <SkeletonBlock className="h-11 w-full rounded-2xl" />
+          </div>
         </div>
       </section>
     </div>
@@ -215,49 +239,70 @@ export function ProfilePageSkeleton() {
 export function AdviserHubPageSkeleton() {
   return (
     <div className="grid w-full min-w-0 gap-3 sm:gap-4" aria-busy="true" aria-label="Loading adviser">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0 space-y-2">
-          <SkeletonBlock className="h-3 w-28 rounded-lg" />
-          <SkeletonBlock className="h-6 w-48 rounded-lg" />
+      <div className="flex items-center justify-between gap-1.5">
+        <div className="flex min-w-0 gap-1.5">
+          <SkeletonBlock className="h-10 w-16 rounded-full" />
+          <SkeletonBlock className="h-10 w-28 rounded-full" />
+          <SkeletonBlock className="h-10 w-20 rounded-full" />
         </div>
-        <SkeletonBlock className="h-10 w-32 rounded-lg" />
+        <SkeletonBlock className="h-10 w-32 shrink-0 rounded-full" />
       </div>
-
-      <div className="grid min-w-0 gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.4fr)_minmax(14rem,0.8fr)]">
-        <aside className="hols-auth-card min-w-0 rounded-xl p-4 sm:p-5">
-          <div className="flex items-center justify-between gap-2">
-            <div className="space-y-2">
-              <SkeletonBlock className="h-3 w-16 rounded-lg" />
-              <SkeletonBlock className="h-5 w-24 rounded-lg" />
+      <section className="dashboard-glass-card min-w-0 overflow-hidden rounded-2xl">
+        <div className="grid grid-cols-5 gap-3 bg-[color:var(--dash-soft)] px-4 py-3 sm:px-5">
+          {Array.from({ length: 5 }, (_, index) => (
+            <SkeletonBlock key={index} className="h-3 w-16 rounded-full" />
+          ))}
+        </div>
+        {Array.from({ length: 5 }, (_, index) => (
+          <div
+            key={index}
+            className="grid grid-cols-5 items-center gap-3 border-t border-[color:var(--dash-surface-border)] px-4 py-3 sm:px-5"
+          >
+            <div className="flex items-center gap-3">
+              <SkeletonBlock className="h-9 w-9 shrink-0 rounded-full" />
+              <SkeletonBlock className="h-3.5 w-24 rounded-full" />
             </div>
-            <SkeletonBlock className="h-9 w-16 rounded-lg" />
+            <SkeletonBlock className="h-6 w-20 rounded-full" />
+            <SkeletonBlock className="h-3 w-32 rounded-full" />
+            <SkeletonBlock className="h-3 w-8 rounded-full" />
+            <SkeletonBlock className="h-3 w-20 rounded-full" />
           </div>
-          <div className="mt-4 space-y-2">
-            {Array.from({ length: 5 }, (_, index) => (
-              <div key={index} className="flex items-start gap-3 rounded-lg px-2.5 py-2.5 sm:px-3 sm:py-3">
-                <SkeletonBlock className="h-9 w-9 shrink-0 rounded-lg" />
-                <div className="min-w-0 flex-1 space-y-2">
-                  <SkeletonBlock className="h-3.5 w-32 rounded-lg" />
-                  <SkeletonBlock className="h-3 w-40 rounded-lg" />
-                </div>
-                <SkeletonBlock className="h-5 w-12 rounded-lg" />
-              </div>
-            ))}
-          </div>
-        </aside>
+        ))}
+      </section>
+    </div>
+  );
+}
 
-        <aside className="hols-auth-card min-w-0 rounded-xl p-4 sm:p-5">
-          <SkeletonBlock className="h-3 w-24 rounded-lg" />
-          <div className="mt-4 space-y-2.5">
-            {Array.from({ length: 4 }, (_, index) => (
-              <div key={index} className="flex items-center justify-between gap-2 rounded-lg bg-[color:var(--dash-soft)] px-3 py-2.5">
-                <SkeletonBlock className="h-3 w-24 rounded-lg" />
-                <SkeletonBlock className="h-3 w-16 rounded-lg" />
-              </div>
-            ))}
-          </div>
-        </aside>
+export function WebinarsPageSkeleton() {
+  return (
+    <div className="grid w-full min-w-0 gap-3 sm:gap-4" aria-busy="true" aria-label="Loading webinars">
+      <div className="flex min-w-0 gap-1.5">
+        <SkeletonBlock className="h-10 w-16 rounded-full" />
+        <SkeletonBlock className="h-10 w-20 rounded-full" />
+        <SkeletonBlock className="h-10 w-24 rounded-full" />
       </div>
+      <section className="dashboard-glass-card min-w-0 overflow-hidden rounded-2xl">
+        <div className="grid grid-cols-5 gap-3 bg-[color:var(--dash-soft)] px-4 py-3 sm:px-5">
+          {Array.from({ length: 5 }, (_, index) => (
+            <SkeletonBlock key={index} className="h-3 w-16 rounded-full" />
+          ))}
+        </div>
+        {Array.from({ length: 5 }, (_, index) => (
+          <div
+            key={index}
+            className="grid grid-cols-5 items-center gap-3 border-t border-[color:var(--dash-surface-border)] px-4 py-3 sm:px-5"
+          >
+            <div className="flex items-center gap-3">
+              <SkeletonBlock className="h-9 w-9 shrink-0 rounded-full" />
+              <SkeletonBlock className="h-3.5 w-28 rounded-full" />
+            </div>
+            <SkeletonBlock className="h-6 w-16 rounded-full" />
+            <SkeletonBlock className="h-3 w-32 rounded-full" />
+            <SkeletonBlock className="h-3 w-8 rounded-full" />
+            <SkeletonBlock className="h-3 w-16 rounded-full" />
+          </div>
+        ))}
+      </section>
     </div>
   );
 }
@@ -333,60 +378,36 @@ export function CalculatorPageSkeleton() {
 export function CoursePageSkeleton() {
   return (
     <div
-      className="grid w-full items-start gap-4 lg:grid-cols-[1.9fr_1fr]"
+      className="lecture-overview-stage grid w-full min-w-0 items-start gap-3 sm:gap-4 md:gap-5 lg:grid-cols-[minmax(0,0.92fr)_minmax(0,1.18fr)]"
       aria-busy="true"
       aria-label="Loading course"
     >
-      <section className="dashboard-surface rounded-2xl p-5">
-        <div className="flex items-center justify-between">
-          <SkeletonBlock className="h-5 w-40 rounded-full" />
-          <SkeletonBlock className="h-4 w-16 rounded-full" />
+      <section className="min-h-[22rem] overflow-hidden rounded-2xl sm:min-h-[26rem] lg:min-h-[28rem]">
+        <SkeletonBlock className="h-full min-h-[22rem] w-full rounded-2xl sm:min-h-[26rem] lg:min-h-[28rem]" />
+      </section>
+
+      <section className="dashboard-glass-card min-w-0 rounded-2xl p-4 sm:p-5 md:p-6">
+        <div className="flex flex-col gap-3 border-b border-[color:var(--dash-surface-border)] pb-4 sm:flex-row sm:items-end sm:justify-between">
+          <div className="min-w-0">
+            <SkeletonBlock className="h-3 w-28 rounded-lg" />
+            <SkeletonBlock className="mt-2 h-6 w-48 rounded-lg" />
+            <SkeletonBlock className="mt-2 h-3 w-56 rounded-lg" />
+          </div>
+          <SkeletonBlock className="h-10 w-full rounded-full sm:w-36" />
         </div>
-        <div className="mt-4 space-y-2.5">
+        <div className="mt-2 space-y-1">
           {Array.from({ length: 5 }, (_, index) => (
-            <div key={index} className="rounded-xl px-3.5 py-3">
-              <div className="flex items-center justify-between gap-3">
-                <div className="flex min-w-0 items-center gap-3">
-                  <SkeletonBlock className="h-9 w-9 shrink-0 rounded-full" />
-                  <div className="space-y-2">
-                    <SkeletonBlock className="h-3.5 w-36 rounded-full" />
-                    <SkeletonBlock className="h-3 w-24 rounded-full" />
-                  </div>
-                </div>
-                <SkeletonBlock className="h-4 w-4 rounded-full" />
+            <div key={index} className="flex items-center gap-3 rounded-xl px-2.5 py-3">
+              <SkeletonBlock className="h-10 w-10 shrink-0 rounded-lg" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <SkeletonBlock className="h-3.5 w-[70%] rounded-lg" />
+                <SkeletonBlock className="h-3 w-28 rounded-lg" />
               </div>
+              <SkeletonBlock className="h-9 w-9 shrink-0 rounded-full" />
             </div>
           ))}
         </div>
       </section>
-
-      <div className="flex flex-col gap-4">
-        <section className="dashboard-surface rounded-2xl p-5">
-          <div className="space-y-1">
-            {Array.from({ length: 3 }, (_, index) => (
-              <div key={index} className="flex items-center gap-3 rounded-xl px-3 py-3">
-                <SkeletonBlock className="h-9 w-9 shrink-0 rounded-full" />
-                <SkeletonBlock className="h-3.5 w-28 rounded-full" />
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 grid grid-cols-2 gap-2.5">
-            <SkeletonBlock className="h-10 w-full rounded-full" />
-            <SkeletonBlock className="h-10 w-full rounded-full" />
-          </div>
-        </section>
-        <section className="dashboard-surface rounded-2xl p-5">
-          <SkeletonBlock className="h-5 w-28 rounded-full" />
-          <div className="mt-4 space-y-2.5">
-            {Array.from({ length: 3 }, (_, index) => (
-              <div key={index} className="flex items-center justify-between rounded-xl px-3.5 py-3">
-                <SkeletonBlock className="h-3.5 w-20 rounded-full" />
-                <SkeletonBlock className="h-3.5 w-8 rounded-full" />
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
     </div>
   );
 }
@@ -466,52 +487,53 @@ export function LessonLearningSkeleton() {
 export function TestResultsPageSkeleton() {
   return (
     <div
-      className="grid w-full items-start gap-4 lg:grid-cols-[1.9fr_1fr]"
+      className="grid w-full min-w-0 items-start gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(18rem,0.85fr)]"
       aria-busy="true"
       aria-label="Loading test results"
     >
-      <div className="flex flex-col gap-4">
-        <section className="dashboard-surface rounded-2xl p-5 md:p-6">
-          <SkeletonBlock className="h-3 w-24 rounded-full" />
-          <SkeletonBlock className="mt-3 h-9 w-24 rounded-full" />
-          <SkeletonBlock className="mt-3 h-4 w-48 rounded-full" />
-          <div className="mt-5 flex flex-wrap gap-2.5">
-            <SkeletonBlock className="h-10 w-36 rounded-full" />
-            <SkeletonBlock className="h-10 w-32 rounded-full" />
-          </div>
-        </section>
-        <section className="dashboard-surface rounded-2xl p-5 md:p-6">
-          <div className="flex items-center justify-between gap-3">
-            <SkeletonBlock className="h-5 w-40 rounded-full" />
-            <SkeletonBlock className="h-4 w-16 rounded-full" />
-          </div>
-          <div className="mt-4 space-y-2.5">
-            {Array.from({ length: 5 }, (_, index) => (
-              <div key={index} className="flex items-center justify-between gap-3 rounded-xl px-3.5 py-3">
-                <div className="flex min-w-0 items-center gap-3">
-                  <SkeletonBlock className="h-9 w-9 shrink-0 rounded-full" />
-                  <div className="space-y-2">
-                    <SkeletonBlock className="h-3.5 w-36 rounded-full" />
-                    <SkeletonBlock className="h-3 w-28 rounded-full" />
-                  </div>
-                </div>
-                <SkeletonBlock className="h-6 w-14 rounded-full" />
+      <div className="flex min-w-0 flex-col gap-3 sm:gap-4">
+        <section className="dashboard-glass-card rounded-2xl p-4 sm:p-5 md:p-6">
+          <SkeletonBlock className="h-3 w-28 rounded-lg" />
+          <SkeletonBlock className="mt-3 h-7 w-2/3 rounded-lg" />
+          <SkeletonBlock className="mt-4 h-9 w-24 rounded-lg" />
+          <SkeletonBlock className="mt-4 h-2 w-full rounded-full" />
+          <div className="mt-4 grid grid-cols-2 gap-2.5">
+            {Array.from({ length: 4 }, (_, index) => (
+              <div key={index} className="rounded-xl bg-[color:var(--dash-soft)] px-3 py-3">
+                <SkeletonBlock className="h-3 w-16 rounded-lg" />
+                <SkeletonBlock className="mt-2 h-5 w-12 rounded-lg" />
               </div>
             ))}
+          </div>
+          <div className="mt-5 flex flex-wrap gap-2.5">
+            <SkeletonBlock className="h-10 w-40 rounded-full" />
+            <SkeletonBlock className="h-10 w-36 rounded-full" />
+          </div>
+        </section>
+        <section className="dashboard-glass-card rounded-2xl p-4 sm:p-5 md:p-6">
+          <SkeletonBlock className="h-5 w-40 rounded-lg" />
+          <SkeletonBlock className="mt-2 h-3 w-56 rounded-lg" />
+          <div className="mt-4">
+            <TestResultRowsSkeleton />
           </div>
         </section>
       </div>
 
-      <section className="dashboard-surface rounded-2xl p-5 md:p-6">
-        <SkeletonBlock className="h-5 w-28 rounded-full" />
+      <section className="dashboard-glass-card h-fit rounded-2xl p-4 sm:p-5 md:p-6">
+        <SkeletonBlock className="h-3 w-24 rounded-lg" />
         <div className="mt-4 space-y-2.5">
-          {Array.from({ length: 4 }, (_, index) => (
-            <div key={index} className="flex items-center justify-between rounded-xl px-3.5 py-3">
-              <SkeletonBlock className="h-3.5 w-24 rounded-full" />
-              <SkeletonBlock className="h-3.5 w-10 rounded-full" />
+          {Array.from({ length: 3 }, (_, index) => (
+            <div key={index} className="flex items-center gap-3 rounded-2xl px-3.5 py-3">
+              <SkeletonBlock className="h-10 w-10 shrink-0 rounded-full" />
+              <div className="min-w-0 flex-1 space-y-2">
+                <SkeletonBlock className="h-3 w-24 rounded-lg" />
+                <SkeletonBlock className="h-4 w-16 rounded-lg" />
+              </div>
             </div>
           ))}
         </div>
+        <SkeletonBlock className="mt-6 h-10 w-full rounded-full" />
+        <SkeletonBlock className="mt-2 h-10 w-full rounded-full" />
       </section>
     </div>
   );

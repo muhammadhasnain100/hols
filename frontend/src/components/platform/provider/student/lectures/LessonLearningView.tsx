@@ -150,7 +150,7 @@ function ToolButton({
       className={cn(
         "lesson-learning-tool inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition",
         active
-          ? "bg-[#DDE466] text-[#152744]"
+          ? "dashboard-navy-btn text-white"
           : "text-current",
         disabled && "cursor-not-allowed opacity-40",
         className,
@@ -189,7 +189,7 @@ function IconSegmentedControl<T extends string>({
           className={cn(
             "lesson-learning-seg-btn inline-flex h-8 w-8 items-center justify-center rounded-full transition",
             value === option.id
-              ? "bg-[#DDE466] text-[#152744] shadow-sm"
+              ? "dashboard-navy-btn text-white"
               : "text-current/70",
           )}
         >
@@ -225,7 +225,7 @@ function TextSegmentedControl<T extends string>({
           className={cn(
             "lesson-learning-seg-btn font-sans inline-flex h-8 items-center rounded-full px-2.5 text-xs font-medium transition",
             value === option.id
-              ? "bg-[#DDE466] text-[#152744] shadow-sm"
+              ? "dashboard-navy-btn text-white"
               : "text-current/70",
           )}
         >
@@ -638,10 +638,7 @@ export function LearningModeToggle({
       disabled={disabled}
       aria-pressed={active}
       className={cn(
-        "font-sans inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-lg px-4 text-sm font-medium tracking-[0.01em] transition",
-        active
-          ? "bg-[#DDE466] text-[#152744]"
-          : "dashboard-pill-soft text-[color:var(--dash-text)] hover:brightness-[0.98]",
+        "dashboard-navy-btn font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white",
         disabled && "cursor-not-allowed opacity-50",
       )}
     >

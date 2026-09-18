@@ -62,6 +62,7 @@ coverage/
 # Large lecture seed dumps (import via script, do not commit)
 backend/lectures/courses_complete.json
 backend/lectures/*.complete.json
+backend/data.json
 
 # Local client deliverables (course JSON/PDF + legal Word docs)
 courses/

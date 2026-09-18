@@ -125,9 +125,13 @@ body {
   --hols-scroll-thumb-hover: rgba(20, 38, 68, 0.72);
   --hols-scroll-track: rgba(141, 195, 225, 0.16);
   --hols-chrome-accent: #3853a4;
-  --hols-chrome-focus-ring: rgba(221, 228, 102, 0.42);
+  --hols-chrome-focus-ring: rgba(56, 83, 164, 0.35);
   --hols-chrome-autofill-bg: rgba(141, 195, 225, 0.22);
   --hols-chrome-autofill-text: #142644;
+  /* Field hover/focus: dashboard navy in light, lemon lime in dark */
+  --hols-field-hover-border: #142644;
+  /* Login-matched text-field stroke (2px). Light = navy; dark = light so it reads. */
+  --hols-field-focus-border: #142644;
 }
 
 html {
@@ -230,6 +234,7 @@ html::-webkit-scrollbar-corner {
   background-color: var(--hols-scroll-thumb-hover);
 }
 
+html[data-portal-theme="dark"],
 .portal-shell[data-theme="dark"] {
   --hols-scroll-thumb: rgba(141, 195, 225, 0.38);
   --hols-scroll-thumb-hover: rgba(221, 228, 102, 0.55);
@@ -238,6 +243,15 @@ html::-webkit-scrollbar-corner {
   --hols-chrome-focus-ring: rgba(221, 228, 102, 0.35);
   --hols-chrome-autofill-bg: rgba(56, 83, 164, 0.45);
   --hols-chrome-autofill-text: #f4f7fb;
+  --hols-field-hover-border: #dde466;
+  --hols-field-focus-border: #f4f7fb;
+}
+
+/* Auth/marketing stay dusk-blue even if a portal dark preference is persisted on <html>.
+   Portaled dialogs still inherit yellow because they coexist with .portal-shell[data-theme="dark"]. */
+html:not(:has(.portal-shell[data-theme="dark"])) {
+  --hols-field-hover-border: #142644;
+  --hols-field-focus-border: #142644;
 }
 
 /* Number spinners — hide OS-default grey steppers */
@@ -278,20 +292,52 @@ select:-webkit-autofill:focus {
    Kept unlayered so it beats Tailwind utilities — exclude fields that
    manage their own focus chrome (dashboard / auth). */
 :where(
-  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not(.dashboard-field):not(.auth-field):not(.lecture-library-search-input),
-  textarea:not(.dashboard-field):not(.auth-field),
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="file"]):not(.dashboard-field):not(.auth-field):not(.lecture-library-search-input):not(.portal-sidebar-search-input):not(.adviser-chat-composer-input),
+  textarea:not(.dashboard-field):not(.auth-field):not(.adviser-chat-composer-input),
   select:not(.dashboard-field-select):not(.auth-field)
 ):focus-visible {
   outline: 2px solid var(--hols-chrome-focus-ring);
   outline-offset: 2px;
 }
 
-/* Auth inputs: single yellow border only — no outline / ring / outer glow */
+/* Standard hover/focus border for fields, searches, and matching controls */
+.hols-hover-border:hover,
+.hols-hover-border:focus,
+.hols-hover-border:focus-visible,
+.hols-hover-border:focus-within,
+.hols-hover-border[aria-expanded="true"] {
+  border-width: 2px !important;
+  border-style: solid !important;
+  border-color: var(--hols-field-focus-border) !important;
+}
+
+/* Text inputs: 2px stroke on hover/focus so the line reads as bold, not hairline */
+input.hols-hover-border:hover,
+input.hols-hover-border:focus,
+input.hols-hover-border:focus-visible,
+textarea.hols-hover-border:hover,
+textarea.hols-hover-border:focus,
+textarea.hols-hover-border:focus-visible {
+  border-width: 2px !important;
+  border-style: solid !important;
+}
+
+/* Shared option/row hover — same wash on sidebar nav and dashboard lists */
+.hols-option-hover:hover {
+  background: var(--sidebar-hover) !important;
+}
+
+/* Auth inputs: single accent border only — no outline / ring / outer glow */
 input.auth-field,
 input.auth-field:hover,
 input.auth-field:focus,
 input.auth-field:focus-visible,
 input.auth-field:active,
+textarea.auth-field,
+textarea.auth-field:hover,
+textarea.auth-field:focus,
+textarea.auth-field:focus-visible,
+textarea.auth-field:active,
 select.auth-field,
 select.auth-field:hover,
 select.auth-field:focus,
@@ -313,13 +359,161 @@ button.auth-field:active {
 input.auth-field:hover,
 input.auth-field:focus,
 input.auth-field:focus-visible,
+textarea.auth-field:hover,
+textarea.auth-field:focus,
+textarea.auth-field:focus-visible,
 select.auth-field:hover,
 select.auth-field:focus,
 select.auth-field:focus-visible,
 button.auth-field:hover,
 button.auth-field:focus,
-button.auth-field:focus-visible {
-  border-color: #dde466 !important;
+button.auth-field:focus-visible,
+button.auth-field[aria-expanded="true"] {
+  border-width: 2px !important;
+  border-style: solid !important;
+  border-color: var(--hols-field-focus-border) !important;
+}
+
+/* Portal + chat + sidebar search: same 2px login stroke in light and dark */
+.dashboard-field:hover,
+.dashboard-field:focus,
+.dashboard-field:focus-visible,
+.dashboard-field:focus-within,
+.dashboard-field[aria-expanded="true"],
+.dashboard-field-select:hover,
+.dashboard-field-select:focus,
+.dashboard-field-select:focus-visible,
+.portal-sidebar-search:hover,
+.portal-sidebar-search:focus-within,
+.portal-sidebar-search-collapsed:hover,
+.portal-sidebar-search-collapsed:focus-visible,
+.lecture-library-search:hover,
+.lecture-library-search:focus-within,
+.adviser-chat-composer:hover,
+.adviser-chat-composer:focus-within,
+.profile-page .profile-field:hover,
+.profile-page .profile-field:focus,
+.profile-page .profile-field:focus-visible,
+.profile-page .profile-field[aria-expanded="true"],
+.payment-page .payment-field:hover,
+.payment-page .payment-field:focus,
+.payment-page .payment-field:focus-visible,
+.portal-shell[data-theme="dark"] .dashboard-field:hover,
+.portal-shell[data-theme="dark"] .dashboard-field:focus,
+.portal-shell[data-theme="dark"] .dashboard-field:focus-visible,
+.portal-shell[data-theme="dark"] .dashboard-field:focus-within,
+.portal-shell[data-theme="dark"] .dashboard-screen .dashboard-field:hover,
+.portal-shell[data-theme="dark"] .dashboard-screen .dashboard-field:focus,
+.portal-shell[data-theme="dark"] .dashboard-screen .dashboard-field:focus-visible,
+.portal-shell[data-theme="dark"] .portal-sidebar-search:hover,
+.portal-shell[data-theme="dark"] .portal-sidebar-search:focus-within,
+.portal-shell[data-theme="dark"] .lecture-library-search:hover,
+.portal-shell[data-theme="dark"] .lecture-library-search:focus-within,
+.portal-shell[data-theme="dark"] .adviser-chat-composer:hover,
+.portal-shell[data-theme="dark"] .adviser-chat-composer:focus-within,
+.portal-content-area[data-backdrop="brand"] .adviser-chat-composer.dashboard-glass-card:hover,
+.portal-content-area[data-backdrop="brand"] .adviser-chat-composer.dashboard-glass-card:focus-within,
+.portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .adviser-chat-composer.dashboard-glass-card:hover,
+.portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .adviser-chat-composer.dashboard-glass-card:focus-within,
+html:has(.portal-shell[data-theme="dark"]) .profile-page .profile-field:hover,
+html:has(.portal-shell[data-theme="dark"]) .profile-page .profile-field:focus,
+html:has(.portal-shell[data-theme="dark"]) .profile-page .profile-field:focus-visible,
+html:has(.portal-shell[data-theme="dark"]) .payment-page .payment-field:hover,
+html:has(.portal-shell[data-theme="dark"]) .payment-page .payment-field:focus {
+  border-width: 2px !important;
+  border-style: solid !important;
+  border-color: var(--hols-field-focus-border) !important;
+  box-shadow: none !important;
+  outline: none !important;
+}
+
+/* Login / register panel — same tokens and fields as the student portal */
+.auth-panel {
+  --dash-text: #152744;
+  --dash-muted: rgba(21, 39, 68, 0.72);
+  --dash-faint: rgba(21, 39, 68, 0.52);
+  --dash-dim: rgba(21, 39, 68, 0.34);
+  --dash-navy: #142644;
+  --dash-surface: rgba(21, 39, 68, 0.035);
+  --dash-surface-border: rgba(21, 39, 68, 0.15);
+  --dash-soft: rgba(21, 39, 68, 0.05);
+  position: relative;
+  isolation: isolate;
+  color: var(--dash-text);
+}
+
+.auth-panel .auth-field,
+.auth-panel .dashboard-field {
+  border-radius: 0.875rem;
+  border: 1px solid var(--dash-surface-border);
+  background-color: var(--dash-soft);
+  color: var(--dash-text);
+  padding: 0.8rem 1rem;
+}
+
+.auth-panel input.auth-field.auth-field--icon {
+  padding-left: 2.75rem;
+}
+
+.auth-panel input.auth-field.auth-field--trailing {
+  padding-right: 3rem;
+}
+
+.auth-panel .auth-field::placeholder,
+.auth-panel .dashboard-field::placeholder {
+  color: var(--dash-faint);
+}
+
+.auth-panel .auth-field:hover,
+.auth-panel .auth-field:focus,
+.auth-panel .auth-field:focus-visible,
+.auth-panel .dashboard-field:hover,
+.auth-panel .dashboard-field:focus,
+.auth-panel .dashboard-field:focus-visible {
+  border-width: 2px !important;
+  border-style: solid !important;
+  border-color: var(--hols-field-focus-border) !important;
+  background-color: var(--dash-surface);
+}
+
+.auth-panel .dashboard-field-label {
+  color: var(--dash-muted);
+}
+
+.footer-newsletter {
+  --dash-text: #152744;
+  --dash-muted: rgba(21, 39, 68, 0.72);
+  --dash-faint: rgba(21, 39, 68, 0.52);
+  --dash-dim: rgba(21, 39, 68, 0.34);
+  --dash-navy: #142644;
+  --dash-surface: #ffffff;
+  --dash-surface-border: rgba(21, 39, 68, 0.15);
+  --dash-soft: #ffffff;
+}
+
+.footer-newsletter .dashboard-field {
+  display: block;
+  box-sizing: border-box;
+  height: 2.75rem !important;
+  min-height: 2.75rem !important;
+  width: 100%;
+  min-width: 0;
+  padding: 0 1.15rem !important;
+  font-size: 0.9375rem !important;
+  line-height: 2.75rem;
+  background: #ffffff !important;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.footer-newsletter .dashboard-field:hover,
+.footer-newsletter .dashboard-field:focus,
+.footer-newsletter .dashboard-field:focus-visible {
+  border-width: 2px !important;
+  border-style: solid !important;
+  border-color: #142644 !important;
+  background-color: #ffffff;
 }
 
 .adviser-chat-composer textarea:focus-visible {
@@ -496,13 +690,15 @@ button.auth-field:focus-visible {
   --sidebar-border: rgba(56, 83, 164, 0.12);
   --sidebar-text: #142644;
   --sidebar-muted: rgba(20, 38, 68, 0.62);
-  --sidebar-hover: rgba(56, 83, 164, 0.08);
+  --sidebar-hover: rgba(20, 38, 68, 0.08);
   --sidebar-active: rgba(221, 228, 102, 0.28);
   --sidebar-active-fg: #6f7a1c;
   --sidebar-accent: #3853a4;
   --sidebar-divider: rgba(20, 38, 68, 0.08);
   --sidebar-footer-bg: rgba(255, 255, 255, 0.28);
   --portal-guide-bg: #eef6fb;
+  --hols-field-hover-border: #142644;
+  --hols-field-focus-border: #142644;
 }
 
 .portal-shell[data-theme="dark"] {
@@ -523,6 +719,8 @@ button.auth-field:focus-visible {
   --sidebar-hover: rgba(255, 255, 255, 0.08);
   --sidebar-active: rgba(221, 228, 102, 0.16);
   --sidebar-active-fg: #dde466;
+  --hols-field-hover-border: #dde466;
+  --hols-field-focus-border: #f4f7fb;
   --sidebar-accent: #dde466;
   --sidebar-divider: rgba(255, 255, 255, 0.1);
   --sidebar-footer-bg: rgba(0, 0, 0, 0.22);
@@ -662,7 +860,7 @@ button.auth-field:focus-visible {
 
 .portal-nav-item {
   color: var(--sidebar-text);
-  border-radius: 0.5rem;
+  border-radius: 1rem;
   transition:
     color 0.2s ease,
     background 0.2s ease,
@@ -672,46 +870,33 @@ button.auth-field:focus-visible {
 .portal-nav-item:hover {
   background: var(--sidebar-hover);
   color: var(--sidebar-text);
-  box-shadow:
-    0 6px 16px rgba(21, 39, 68, 0.1),
-    0 1px 4px rgba(21, 39, 68, 0.05);
+  box-shadow: none;
 }
 
 .portal-shell[data-theme="dark"] .portal-nav-item:hover {
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow:
-    0 6px 16px rgba(0, 0, 0, 0.32),
-    0 1px 4px rgba(0, 0, 0, 0.18);
-}
-
-.portal-nav-item.is-active {
-  background: transparent;
-  color: var(--sidebar-active-fg);
-  box-shadow: none;
-}
-
-.portal-shell[data-theme="dark"] .portal-nav-item.is-active {
-  background: transparent;
-  color: var(--sidebar-active-fg);
-  box-shadow: none;
-}
-
-.portal-nav-item.is-active:hover {
   background: var(--sidebar-hover);
-  color: var(--sidebar-active-fg);
-  box-shadow:
-    0 6px 16px rgba(21, 39, 68, 0.1),
-    0 1px 4px rgba(21, 39, 68, 0.05);
+  box-shadow: none;
 }
 
-.portal-shell[data-theme="dark"] .portal-nav-item.is-active:hover {
-  background: rgba(255, 255, 255, 0.08);
-  box-shadow:
-    0 6px 16px rgba(0, 0, 0, 0.32),
-    0 1px 4px rgba(0, 0, 0, 0.18);
+.portal-nav-item.is-active,
+.portal-shell[data-theme="dark"] .portal-nav-item.is-active,
+.portal-shell[data-role="student"] .portal-nav-item.is-active,
+.portal-shell[data-theme="dark"][data-role="student"] .portal-nav-item.is-active {
+  background: #dde466;
+  color: #142644;
+  box-shadow: none;
 }
 
-/* Sidebar icon — larger than label text; dark in light, white in dark */
+.portal-nav-item.is-active:hover,
+.portal-shell[data-theme="dark"] .portal-nav-item.is-active:hover,
+.portal-shell[data-role="student"] .portal-nav-item.is-active:hover,
+.portal-shell[data-theme="dark"][data-role="student"] .portal-nav-item.is-active:hover {
+  background: #d5de58;
+  color: #142644;
+  box-shadow: none;
+}
+
+/* Sidebar icon — same weight as the label, navy on the lime active pill */
 .portal-nav-icon {
   color: #142644;
   background: transparent;
@@ -732,42 +917,24 @@ button.auth-field:focus-visible {
   color: #ffffff;
 }
 
-.portal-nav-item.is-active .portal-nav-icon {
-  background: transparent;
-  color: var(--sidebar-active-fg);
-  box-shadow: none;
-}
-
-.portal-shell[data-theme="dark"] .portal-nav-item.is-active .portal-nav-icon {
-  color: var(--sidebar-active-fg);
-}
-
-/* Keep student/admin/affiliate active chrome consistent */
-.portal-shell[data-role="student"] .portal-nav-item.is-active {
-  background: transparent;
-  color: var(--sidebar-active-fg);
-  box-shadow: none;
-}
-
-.portal-shell[data-theme="dark"][data-role="student"] .portal-nav-item.is-active {
-  background: transparent;
-  color: var(--sidebar-active-fg);
-  box-shadow: none;
-}
-
+.portal-nav-item.is-active .portal-nav-icon,
+.portal-shell[data-theme="dark"] .portal-nav-item.is-active .portal-nav-icon,
 .portal-shell[data-role="student"] .portal-nav-item.is-active .portal-nav-icon {
   background: transparent;
-  color: var(--sidebar-active-fg);
+  color: #142644;
   box-shadow: none;
 }
 
-.portal-shell[data-role="student"] .portal-nav-item.is-active:hover {
-  background: var(--sidebar-hover);
-  color: var(--sidebar-active-fg);
+.portal-sidebar-flush nav .border-l .portal-nav-item.is-active,
+.portal-sidebar-flyout .portal-nav-item.is-active {
+  background: rgba(221, 228, 102, 0.35);
+  color: #142644;
 }
 
-.portal-shell[data-theme="dark"][data-role="student"] .portal-nav-item.is-active:hover {
-  background: rgba(255, 255, 255, 0.08);
+.portal-sidebar-flush nav .border-l .portal-nav-item.is-active:hover,
+.portal-sidebar-flyout .portal-nav-item.is-active:hover {
+  background: rgba(221, 228, 102, 0.5);
+  color: #142644;
 }
 
 .portal-sidebar-footer {
@@ -883,31 +1050,45 @@ button.auth-field:focus-visible {
   min-height: 2.75rem;
   align-items: center;
   gap: 0.55rem;
-  border-radius: 0.5rem;
-  border: 1px solid var(--sidebar-border);
-  background: transparent;
+  box-sizing: border-box;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(20, 38, 68, 0.15);
+  background: rgba(255, 255, 255, 0.62);
   padding: 0.65rem 0.85rem;
   color: var(--sidebar-text);
   box-shadow: none;
-  transition: border-color 0.2s ease, color 0.2s ease;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease, border-width 0.2s ease;
 }
 
 .portal-sidebar-search:hover {
-  border-color: #dde466;
+  border-width: 2px;
+  border-style: solid;
+  border-color: var(--hols-field-focus-border);
   color: var(--sidebar-text);
+  background: rgba(255, 255, 255, 0.78);
 }
 
 .portal-sidebar-search:focus-within,
 .portal-sidebar-search:hover:focus-within {
-  border-color: #dde466;
-  background: transparent;
+  border-width: 2px;
+  border-style: solid;
+  border-color: var(--hols-field-focus-border);
+  background: rgba(255, 255, 255, 0.86);
   box-shadow: none;
   color: var(--sidebar-text);
 }
 
+.portal-shell[data-theme="dark"] .portal-sidebar-search {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: var(--sidebar-border);
+}
+
 .portal-shell[data-theme="dark"] .portal-sidebar-search:hover,
 .portal-shell[data-theme="dark"] .portal-sidebar-search:focus-within {
-  border-color: #dde466;
+  border-width: 2px;
+  border-style: solid;
+  border-color: var(--hols-field-focus-border);
+  background: rgba(255, 255, 255, 0.08);
 }
 
 .portal-sidebar-search-input {
@@ -956,8 +1137,10 @@ button.auth-field:focus-visible {
 .portal-sidebar-search-collapsed:hover,
 .portal-sidebar-search-collapsed:focus-visible {
   background: transparent;
-  border-color: #dde466;
-  color: var(--sidebar-active-fg);
+  border-width: 2px;
+  border-style: solid;
+  border-color: var(--hols-field-focus-border);
+  color: var(--sidebar-text);
   outline: none;
   box-shadow: none;
 }
@@ -1054,6 +1237,10 @@ button.auth-field:focus-visible {
   --dash-faint: rgba(21, 39, 68, 0.52);
   --dash-dim: rgba(21, 39, 68, 0.34);
   --dash-accent: #6f7a1c;
+  --dash-navy: #142644;
+  --dash-amount: #16a34a;
+  --dash-ring-done: #dde466;
+  --dash-ring-left: #142644;
   --dash-surface: rgba(21, 39, 68, 0.035);
   --dash-surface-border: rgba(21, 39, 68, 0.15);
   --dash-soft: rgba(21, 39, 68, 0.05);
@@ -1088,6 +1275,10 @@ button.auth-field:focus-visible {
   --dash-faint: rgba(244, 247, 251, 0.64);
   --dash-dim: rgba(244, 247, 251, 0.48);
   --dash-accent: #dde466;
+  --dash-navy: #142644;
+  --dash-amount: #4ade80;
+  --dash-ring-done: #dde466;
+  --dash-ring-left: #3853a4;
   --dash-surface: rgba(255, 255, 255, 0.08);
   --dash-surface-border: rgba(255, 255, 255, 0.22);
   --dash-soft: rgba(255, 255, 255, 0.1);
@@ -1124,6 +1315,46 @@ button.auth-field:focus-visible {
 
 .portal-shell[data-theme="dark"] .dashboard-screen .dashboard-field::placeholder {
   color: rgba(244, 247, 251, 0.55);
+}
+
+.membership-progress-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.membership-progress-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .membership-progress-body {
+    flex-direction: row;
+    align-items: flex-end;
+    justify-content: flex-start;
+    gap: 2rem;
+  }
+
+  .membership-progress-actions {
+    align-items: flex-start;
+    padding-bottom: 0.35rem;
+  }
+}
+
+.portal-shell[data-theme="dark"] .dashboard-screen {
+  --dash-ring-left: #3853a4;
+}
+
+.portal-shell[data-theme="dark"] .membership-progress-ring circle[data-seg="track"],
+.portal-shell[data-theme="dark"] .membership-progress-ring circle[data-seg="left"] {
+  stroke: #3853a4;
+}
+
+.portal-shell[data-theme="dark"] .membership-progress-swatch-left {
+  background-color: #3853a4;
 }
 
 /* Shared light brand screen gradient — portal + auth
@@ -1173,10 +1404,23 @@ button.auth-field:focus-visible {
   }
 }
 
+/* Profile + payment: fill leftover viewport like chat, without locking overflow */
+.portal-content-area[data-backdrop="brand"] .dashboard-screen.profile-page,
+.portal-content-area[data-backdrop="brand"] .dashboard-screen.payment-page {
+  display: flex;
+  flex-direction: column;
+}
+
 /* Glass cards / surfaces on brand screens */
 .portal-content-area[data-backdrop="brand"] .dashboard-glass-card,
 .portal-content-area[data-backdrop="brand"] .dashboard-surface,
-.portal-content-area[data-backdrop="brand"] .dashboard-hero {
+.portal-content-area[data-backdrop="brand"] .dashboard-hero,
+.portal-content-area[data-backdrop="brand"] .course-book-page,
+.portal-content-area[data-backdrop="brand"] .course-book-index,
+.portal-content-area[data-backdrop="brand"] .course-book-toc,
+.portal-content-area[data-backdrop="brand"] .course-book-filter,
+.auth-brand-backdrop .dashboard-glass-card,
+.auth-panel.dashboard-glass-card {
   background: rgba(255, 255, 255, 0.28) !important;
   backdrop-filter: blur(22px) saturate(180%);
   -webkit-backdrop-filter: blur(22px) saturate(180%);
@@ -1186,7 +1430,11 @@ button.auth-field:focus-visible {
 
 .portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .dashboard-glass-card,
 .portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .dashboard-surface,
-.portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .dashboard-hero {
+.portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .dashboard-hero,
+.portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .course-book-page,
+.portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .course-book-index,
+.portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .course-book-toc,
+.portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .course-book-filter {
   background: rgba(20, 38, 68, 0.35) !important;
   border-color: rgba(141, 195, 225, 0.28);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
@@ -1216,12 +1464,15 @@ button.auth-field:focus-visible {
 }
 
 .portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .dashboard-pill-soft {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.14);
+  background: var(--hols-nav-glass-bg);
+  border-color: var(--hols-nav-glass-border);
+  box-shadow: var(--hols-nav-glass-shadow);
+  backdrop-filter: var(--hols-nav-glass-filter);
+  -webkit-backdrop-filter: var(--hols-nav-glass-filter);
 }
 
 .portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .dashboard-pill-soft:hover {
-  background: rgba(255, 255, 255, 0.16);
+  background: var(--hols-nav-glass-bg-hover);
 }
 
 .portal-content-area[data-backdrop="brand"] .dashboard-icon-btn,
@@ -1236,24 +1487,229 @@ button.auth-field:focus-visible {
 .portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .dashboard-icon-btn,
 .portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .dashboard-welcome-chip,
 .portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .dashboard-tool-icon {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.14);
+  background: var(--hols-nav-glass-bg);
+  border-color: var(--hols-nav-glass-border);
+  box-shadow: var(--hols-nav-glass-shadow);
+  backdrop-filter: var(--hols-nav-glass-filter);
+  -webkit-backdrop-filter: var(--hols-nav-glass-filter);
 }
 
-/* Quick tools: yellow hover must win over dark brand backdrop specificity */
+.portal-content-area[data-backdrop="brand"] .dashboard-welcome-chip-navy {
+  background: #142644;
+  border-color: transparent;
+  color: #ffffff;
+}
+
+.portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .dashboard-welcome-chip-navy {
+  background: var(--hols-nav-glass-bg);
+  border-color: var(--hols-nav-glass-border);
+  box-shadow: var(--hols-nav-glass-shadow);
+  color: #f4f7fb;
+  backdrop-filter: var(--hols-nav-glass-filter);
+  -webkit-backdrop-filter: var(--hols-nav-glass-filter);
+}
+
+.dashboard-notify-btn {
+  background: #142644;
+  border: 1px solid transparent;
+  color: #f4f7fb;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  transition: filter 0.2s ease, background 0.2s ease;
+}
+
+.dashboard-notify-btn:hover {
+  background: #1b3358;
+  color: #ffffff;
+  filter: brightness(1.06);
+}
+
+.portal-content-area[data-backdrop="brand"] .dashboard-notify-btn {
+  background: #142644;
+  border-color: transparent;
+  color: #f4f7fb;
+}
+
+.portal-shell[data-theme="dark"] .dashboard-notify-btn,
+.portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .dashboard-notify-btn {
+  background: var(--hols-nav-glass-bg);
+  border-color: var(--hols-nav-glass-border);
+  box-shadow: var(--hols-nav-glass-shadow);
+  color: #f4f7fb;
+  backdrop-filter: var(--hols-nav-glass-filter);
+  -webkit-backdrop-filter: var(--hols-nav-glass-filter);
+}
+
+.portal-content-area[data-backdrop="brand"] .dashboard-notify-btn:hover {
+  background: #1b3358;
+  color: #ffffff;
+}
+
+.portal-shell[data-theme="dark"] .dashboard-notify-btn:hover,
+.portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .dashboard-notify-btn:hover {
+  background: var(--hols-nav-glass-bg-hover);
+  border-color: var(--hols-nav-glass-border);
+  color: #ffffff;
+  filter: none;
+}
+
+.dashboard-notify-panel {
+  --notify-text: #152744;
+  --notify-muted: rgba(21, 39, 68, 0.72);
+  --notify-faint: rgba(21, 39, 68, 0.52);
+  --notify-soft: rgba(21, 39, 68, 0.05);
+  position: fixed;
+  z-index: 90;
+  display: flex;
+  width: min(22.5rem, calc(100vw - 1.5rem));
+  max-height: min(28rem, calc(100svh - 5rem));
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 1.25rem;
+  color: var(--notify-text);
+  animation: dashboard-notify-in 180ms ease;
+  transform-origin: top right;
+}
+
+.dashboard-notify-panel-header,
+.dashboard-notify-panel-footer {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+}
+
+.dashboard-notify-panel-header {
+  justify-content: space-between;
+  border-bottom: 1px solid rgba(21, 39, 68, 0.1);
+}
+
+.dashboard-notify-panel-footer {
+  border-top: 1px solid rgba(21, 39, 68, 0.1);
+}
+
+.dashboard-notify-list {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+.dashboard-notify-item {
+  display: flex;
+  min-height: 4.25rem;
+  cursor: pointer;
+  gap: 0.75rem;
+  padding: 0.85rem 1rem;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.15s ease;
+}
+
+.dashboard-notify-item:hover,
+.dashboard-notify-item:focus-visible {
+  background: var(--notify-soft);
+  outline: none;
+}
+
+.dashboard-notify-meta {
+  color: var(--notify-muted);
+}
+
+.dashboard-notify-faint {
+  color: var(--notify-faint);
+}
+
+.dashboard-notify-dot {
+  margin-top: 0.45rem;
+  height: 0.5rem;
+  width: 0.5rem;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: #dde466;
+  box-shadow: 0 0 0 3px rgba(221, 228, 102, 0.28);
+}
+
+.dashboard-notify-dot--read {
+  background: rgba(21, 39, 68, 0.22);
+  box-shadow: none;
+}
+
+.dashboard-notify-badge {
+  position: absolute;
+  right: -0.1rem;
+  top: -0.1rem;
+  display: inline-flex;
+  min-width: 1.15rem;
+  height: 1.15rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #dde466;
+  padding: 0 0.28rem;
+  font-family: var(--font-primary-stack);
+  font-size: 0.62rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #142644;
+}
+
+@keyframes dashboard-notify-in {
+  from {
+    opacity: 0;
+    transform: translateY(-6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dashboard-notify-panel {
+    animation: none;
+  }
+}
+
+html:has(.portal-shell[data-theme="dark"]) .dashboard-notify-panel,
+.dashboard-notify-panel[data-theme="dark"] {
+  --notify-text: #f4f7fb;
+  --notify-muted: rgba(244, 247, 251, 0.82);
+  --notify-faint: rgba(244, 247, 251, 0.64);
+  --notify-soft: rgba(255, 255, 255, 0.08);
+}
+
+html:has(.portal-shell[data-theme="dark"]) .dashboard-notify-panel-header,
+html:has(.portal-shell[data-theme="dark"]) .dashboard-notify-panel-footer,
+.dashboard-notify-panel[data-theme="dark"] .dashboard-notify-panel-header,
+.dashboard-notify-panel[data-theme="dark"] .dashboard-notify-panel-footer {
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+html:has(.portal-shell[data-theme="dark"]) .dashboard-notify-item:hover,
+html:has(.portal-shell[data-theme="dark"]) .dashboard-notify-item:focus-visible,
+.dashboard-notify-panel[data-theme="dark"] .dashboard-notify-item:hover,
+.dashboard-notify-panel[data-theme="dark"] .dashboard-notify-item:focus-visible {
+  background: rgba(255, 255, 255, 0.08);
+}
+
+html:has(.portal-shell[data-theme="dark"]) .dashboard-notify-dot--read,
+.dashboard-notify-panel[data-theme="dark"] .dashboard-notify-dot--read {
+  background: rgba(244, 247, 251, 0.35);
+}
+
 .portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .group:hover .dashboard-tool-icon,
 .portal-shell .group:hover .dashboard-tool-icon {
-  background: #dde466 !important;
-  border-color: rgba(221, 228, 102, 0.65);
-  color: #152744;
+  color: #dde466;
 }
 
 .portal-content-area[data-backdrop="brand"] .dashboard-row:hover {
-  background: rgba(255, 255, 255, 0.28);
+  background: var(--sidebar-hover);
 }
 
 .portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .dashboard-row:hover {
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--sidebar-hover);
 }
 
 /* Course overview — book cover / table of contents */
@@ -1309,12 +1765,7 @@ button.auth-field:focus-visible {
 }
 
 /* HOLS auth-matched surface card — same recipe as login AuthShell panel */
-.hols-auth-card,
-.course-book-page,
-.course-book-index,
-.course-book-toc,
-.course-book-filter,
-.lectures-page .dashboard-surface {
+.hols-auth-card {
   position: relative;
   isolation: isolate;
   overflow: hidden;
@@ -1328,9 +1779,19 @@ button.auth-field:focus-visible {
   -webkit-backdrop-filter: blur(22px) saturate(180%);
 }
 
+.course-book-page,
+.course-book-index,
+.course-book-toc,
+.course-book-filter,
+.lectures-page .dashboard-surface {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 1rem;
+}
+
 .course-book-page {
   z-index: 2;
-  background-color: rgba(255, 255, 255, 0.78);
 }
 
 .course-book-page-grain {
@@ -1369,12 +1830,7 @@ button.auth-field:focus-visible {
   box-shadow: inset 0 0 0 1px rgba(221, 228, 102, 0.25);
 }
 
-.portal-shell[data-theme="dark"] .hols-auth-card,
-.portal-shell[data-theme="dark"] .course-book-page,
-.portal-shell[data-theme="dark"] .course-book-index,
-.portal-shell[data-theme="dark"] .course-book-toc,
-.portal-shell[data-theme="dark"] .course-book-filter,
-.portal-shell[data-theme="dark"] .lectures-page .dashboard-surface {
+.portal-shell[data-theme="dark"] .hols-auth-card {
   border-color: rgba(255, 255, 255, 0.14);
   background: rgba(19, 32, 58, 0.78);
   box-shadow:
@@ -1516,9 +1972,9 @@ button.auth-field:focus-visible {
 }
 
 .course-book-quiz-band {
-  background: rgba(221, 228, 102, 0.1);
-  border: 1px solid rgba(221, 228, 102, 0.28);
-  border-radius: 0.75rem;
+  background: var(--dash-soft);
+  border: 1px solid var(--dash-surface-border);
+  border-radius: 1rem;
 }
 
 .course-book-open-spine {
@@ -1827,8 +2283,8 @@ button.auth-field:focus-visible {
   flex-shrink: 0;
   position: relative;
   z-index: 5;
-  width: 3rem;
-  height: 3rem;
+  width: 2.5rem;
+  height: 2.5rem;
   margin-right: -0.35rem;
   padding: 0;
   border-radius: 999px;
@@ -1842,9 +2298,16 @@ button.auth-field:focus-visible {
     transform 0.2s ease;
 }
 
+@media (min-width: 640px) {
+  .hols-volume .book-interior-close {
+    width: 3rem;
+    height: 3rem;
+  }
+}
+
 .hols-volume .book-interior-close:hover {
-  background: rgba(221, 228, 102, 0.28);
-  color: #152744;
+  background: color-mix(in srgb, var(--hols-page-ink) 8%, transparent);
+  color: var(--hols-page-ink);
   transform: scale(1.05);
 }
 
@@ -1912,8 +2375,7 @@ button.auth-field:focus-visible {
   font-size: 0.6875rem;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
-  color: var(--hols-lime);
-  filter: var(--hols-page-topic-filter);
+  color: var(--hols-page-ink);
 }
 
 .hols-volume .book-interior-metrics {
@@ -2277,12 +2739,17 @@ button.auth-field:focus-visible {
 
 .book-cover-title {
   margin: 0;
-  max-width: 92%;
+  width: 100%;
+  max-width: 100%;
   font-size: clamp(1.65rem, 5.2vw, 2.65rem);
   font-weight: 700;
-  line-height: 1.04;
+  line-height: 1.12;
   letter-spacing: -0.015em;
-  text-wrap: balance;
+  text-align: left;
+  text-wrap: wrap;
+  overflow-wrap: break-word;
+  word-break: normal;
+  hyphens: none;
   color: #142644;
   text-shadow: 0 1px 0 rgba(255, 255, 255, 0.5);
 }
@@ -2290,9 +2757,8 @@ button.auth-field:focus-visible {
 @media (min-width: 640px) {
   .book-cover-title {
     font-size: clamp(2rem, 3.8vw, 3.625rem);
-    max-width: 88%;
     letter-spacing: -0.02em;
-    line-height: 1.02;
+    line-height: 1.08;
   }
 }
 
@@ -2303,11 +2769,10 @@ button.auth-field:focus-visible {
   border-radius: 999px;
   background: linear-gradient(
     90deg,
-    rgba(111, 122, 28, 0.85) 0%,
-    rgba(141, 195, 225, 0.55) 72%,
+    rgba(20, 38, 68, 0.85) 0%,
+    rgba(20, 38, 68, 0.42) 72%,
     transparent 100%
   );
-  box-shadow: 0 0 8px rgba(141, 195, 225, 0.16);
 }
 
 @media (min-width: 640px) {
@@ -2669,7 +3134,7 @@ button.auth-field:focus-visible {
 }
 
 .book-cover-footer-dot {
-  color: rgba(111, 122, 28, 0.72);
+  color: rgba(20, 38, 68, 0.42);
   font-size: 0.5rem;
   line-height: 1;
 }
@@ -2719,7 +3184,7 @@ button.auth-field:focus-visible {
 .book-cover-content--photo-vial .book-cover-header {
   gap: 0.35rem;
   margin-bottom: 0.35rem;
-  max-width: min(94%, 42rem);
+  max-width: 100%;
 }
 
 .book-cover-content--photo-vial .book-cover-brand {
@@ -2748,10 +3213,10 @@ button.auth-field:focus-visible {
 }
 
 .book-cover-content--photo-vial .book-cover-title {
-  /* Title sits on the cover art — no glass capsule; stay on one line until the row is full */
+  /* Title sits on the cover art and wraps left to right across the cover */
   box-sizing: border-box;
-  width: max-content;
-  max-width: min(94%, 42rem);
+  width: 100%;
+  max-width: 100%;
   margin: 0.15rem 0 0;
   padding: 0;
   border: none;
@@ -2767,7 +3232,7 @@ button.auth-field:focus-visible {
   color: #0f172a;
   text-align: left;
   text-wrap: wrap;
-  overflow-wrap: normal;
+  overflow-wrap: break-word;
   word-break: normal;
   hyphens: none;
   -webkit-hyphens: none;
@@ -2776,7 +3241,7 @@ button.auth-field:focus-visible {
     0 1px 0 rgba(255, 255, 255, 0.55),
     0 2px 14px rgba(252, 252, 253, 0.45);
   display: block;
-  align-self: flex-start;
+  align-self: stretch;
   overflow: visible;
   -webkit-line-clamp: unset;
 }
@@ -2826,7 +3291,7 @@ button.auth-field:focus-visible {
   .book-cover-content--photo-vial .book-cover-header {
     gap: 0.4rem;
     margin-bottom: 0.4rem;
-    max-width: min(94%, 42rem);
+    max-width: 100%;
   }
 
   .book-cover-content--photo-vial .book-cover-mark {
@@ -2843,8 +3308,8 @@ button.auth-field:focus-visible {
   }
 
   .book-cover-content--photo-vial .book-cover-title {
-    width: max-content;
-    max-width: min(94%, 42rem);
+    width: 100%;
+    max-width: 100%;
     font-size: clamp(1.3rem, 2.1vw, 1.85rem);
     line-height: 1.18;
     letter-spacing: -0.028em;
@@ -2969,8 +3434,8 @@ button.auth-field:focus-visible {
   z-index: 4;
   padding: 0.28rem 0.55rem;
   border-radius: 999px;
-  border: 1.5px solid #DDE466;
-  background: #FCFBF4;
+  border: 1.5px solid rgba(20, 38, 68, 0.16);
+  background: rgba(252, 251, 244, 0.94);
   box-shadow: 0 1px 3px rgba(20, 38, 68, 0.12);
   font-size: 0.5rem;
   font-weight: 700;
@@ -2978,7 +3443,7 @@ button.auth-field:focus-visible {
   text-transform: uppercase;
   color: #142644;
   pointer-events: none;
-  transition: opacity 0.25s ease, border-color 0.3s ease, background 0.3s ease, box-shadow 0.3s ease;
+  transition: opacity 0.25s ease, border-color 0.3s ease, background 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
 }
 
 @media (min-width: 640px) {
@@ -2992,9 +3457,9 @@ button.auth-field:focus-visible {
 }
 
 .hols-volume:not(.is-open) .book-cover:hover .book-open-hint {
-  border-color: #DDE466;
-  background: #DDE466;
-  color: #142644;
+  border-color: #142644;
+  background: #142644;
+  color: #ffffff;
   box-shadow: 0 2px 6px rgba(20, 38, 68, 0.16);
 }
 
@@ -3096,7 +3561,7 @@ button.auth-field:focus-visible {
 }
 
 .portal-shell[data-theme="dark"] .book-cover-publisher {
-  color: rgba(221, 228, 102, 0.78);
+  color: rgba(244, 247, 251, 0.72);
   text-shadow: 0 1px 8px rgba(5, 9, 28, 0.45);
 }
 
@@ -3117,9 +3582,9 @@ button.auth-field:focus-visible {
 }
 
 .portal-shell[data-theme="dark"] .book-cover-volume-label-text {
-  border-color: rgba(221, 228, 102, 0.28);
+  border-color: rgba(255, 255, 255, 0.22);
   background: rgba(5, 9, 28, 0.42);
-  color: rgba(221, 228, 102, 0.95);
+  color: rgba(244, 247, 251, 0.95);
   filter: drop-shadow(0 1px 2px rgba(5, 9, 28, 0.45));
 }
 
@@ -3134,11 +3599,11 @@ button.auth-field:focus-visible {
 .portal-shell[data-theme="dark"] .book-cover-rule {
   background: linear-gradient(
     90deg,
-    rgba(221, 228, 102, 0.92) 0%,
-    rgba(221, 228, 102, 0.55) 72%,
+    rgba(244, 247, 251, 0.88) 0%,
+    rgba(244, 247, 251, 0.4) 72%,
     transparent 100%
   );
-  box-shadow: 0 0 12px rgba(221, 228, 102, 0.22);
+  box-shadow: none;
 }
 
 .portal-shell[data-theme="dark"] .book-cover-art-bg::before {
@@ -3193,7 +3658,7 @@ button.auth-field:focus-visible {
 }
 
 .portal-shell[data-theme="dark"] .book-cover-footer-dot {
-  color: rgba(221, 228, 102, 0.5);
+  color: rgba(255, 255, 255, 0.35);
 }
 
 .portal-shell[data-theme="dark"] .hols-volume .book-cover-spine {
@@ -3230,16 +3695,16 @@ button.auth-field:focus-visible {
 }
 
 .portal-shell[data-theme="dark"] .book-open-hint {
-  border-color: rgba(221, 228, 102, 0.55);
+  border-color: rgba(255, 255, 255, 0.22);
   background: rgba(5, 9, 28, 0.82);
-  color: rgba(221, 228, 102, 0.95);
+  color: rgba(244, 247, 251, 0.92);
   box-shadow: 0 1px 4px rgba(5, 9, 28, 0.35);
 }
 
 .portal-shell[data-theme="dark"] .hols-volume:not(.is-open) .book-cover:hover .book-open-hint {
-  border-color: #DDE466;
-  background: #DDE466;
-  color: #142644;
+  border-color: #142644;
+  background: #142644;
+  color: #ffffff;
   box-shadow: 0 2px 6px rgba(5, 9, 28, 0.28);
 }
 
@@ -3350,8 +3815,8 @@ html[data-portal-theme="dark"] .hols-volume .book-interior-watermark {
 
 .hols-volume[data-paper-theme="dark"] .book-interior-topic-index,
 .portal-shell[data-theme="dark"] .hols-volume .book-interior-topic-index {
-  color: #dde466;
-  filter: brightness(0.95) saturate(1.05);
+  color: rgba(244, 247, 251, 0.88);
+  filter: none;
 }
 
 .hols-volume[data-paper-theme="dark"] .book-interior-metrics,
@@ -3370,9 +3835,9 @@ html[data-portal-theme="dark"] .hols-volume .book-interior-watermark {
 .hols-volume[data-paper-theme="dark"] .book-interior-close:hover,
 .portal-shell[data-theme="dark"] .hols-volume .book-interior-close:hover,
 html[data-portal-theme="dark"] .hols-volume .book-interior-close:hover {
-  background: rgba(221, 228, 102, 0.22);
+  background: rgba(255, 255, 255, 0.1);
   border-color: transparent;
-  color: #dde466;
+  color: #f4f7fb;
   box-shadow: none;
 }
 
@@ -3557,41 +4022,22 @@ html[data-portal-theme="dark"] .hols-volume .book-interior-close:hover {
   transform: translateY(0);
 }
 
-/* Table of contents rows: growing accent rail + gentle slide on hover */
+/* Table of contents rows — same wash as sidebar / lecture lists */
 .course-toc-row {
   position: relative;
-  transition:
-    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-    background 0.25s ease;
+  transition: background 0.2s ease;
 }
 
-.course-toc-row::before {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 50%;
-  height: 0;
-  width: 3px;
-  border-radius: 999px;
-  background: linear-gradient(180deg, #dde466, #8dc3e1);
-  transform: translateY(-50%);
-  transition: height 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+.course-toc-row:hover:not([data-expanded="true"]) {
+  background: var(--sidebar-hover);
 }
 
-.course-toc-row:hover {
-  transform: translateX(3px);
-}
-
-.course-toc-row:hover::before,
-.course-toc-row[data-expanded="true"]::before {
-  height: 62%;
+.course-toc-row:hover .dashboard-tool-icon,
+.course-toc-row:hover .course-toc-badge {
+  color: var(--dash-text);
 }
 
 @media (hover: none) {
-  .course-toc-row:hover {
-    transform: none;
-  }
-
   .hols-volume:not(.is-open) .book-assembly:has(.book-cover:hover) {
     transform: none;
   }
@@ -3609,13 +4055,13 @@ html[data-portal-theme="dark"] .hols-volume .book-interior-close:hover {
   }
 
   .book-cover-content--photo-vial .book-cover-title {
-    width: max-content;
-    max-width: min(92%, 40rem);
+    width: 100%;
+    max-width: 100%;
     font-size: clamp(1.35rem, 1.7vw, 1.9rem);
   }
 
   .book-cover-content--photo-vial .book-cover-header {
-    max-width: min(92%, 40rem);
+    max-width: 100%;
   }
 
   .book-cover-content--photo-vial .book-cover-footer {
@@ -3626,60 +4072,17 @@ html[data-portal-theme="dark"] .hols-volume .book-interior-close:hover {
 
 @media (min-width: 1280px) {
   .book-cover-content--photo-vial .book-cover-title {
-    max-width: min(90%, 44rem);
+    max-width: 100%;
     font-size: clamp(1.4rem, 1.55vw, 1.95rem);
   }
 }
 
 .course-toc-badge {
-  background: rgba(221, 228, 102, 0.28);
-  color: #152744;
-  border: 1px solid rgba(221, 228, 102, 0.55);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
-  transition:
-    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-    background 0.25s ease,
-    color 0.25s ease,
-    border-color 0.25s ease,
-    box-shadow 0.28s ease;
-}
-
-.course-toc-row:hover .course-toc-badge,
-.course-toc-row[data-expanded="true"] .course-toc-badge,
-.course-toc-badge.is-active {
-  transform: scale(1.08) rotate(-3deg);
-  background: #dde466;
-  border-color: #c9d24a;
-  color: #152744;
-  box-shadow:
-    0 8px 18px rgba(221, 228, 102, 0.42),
-    inset 0 1px 0 rgba(255, 255, 255, 0.45);
-}
-
-.portal-shell[data-theme="dark"] .course-toc-badge {
-  background: rgba(221, 228, 102, 0.18);
-  border-color: rgba(221, 228, 102, 0.4);
-  color: #dde466;
-  box-shadow: none;
-}
-
-.portal-shell[data-theme="dark"] .course-toc-row:hover .course-toc-badge,
-.portal-shell[data-theme="dark"] .course-toc-row[data-expanded="true"] .course-toc-badge,
-.portal-shell[data-theme="dark"] .course-toc-badge.is-active {
-  background: #dde466;
-  border-color: #dde466;
-  color: #152744;
-  box-shadow: 0 8px 18px rgba(221, 228, 102, 0.28);
+  color: var(--dash-text);
 }
 
 .course-section-row {
-  transition:
-    transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
-    background 0.2s ease;
-}
-
-.course-section-row:hover {
-  transform: translateX(4px);
+  transition: background 0.2s ease;
 }
 
 /* Lesson reading: top progress rail that fills as you scroll the page */
@@ -3694,8 +4097,7 @@ html[data-portal-theme="dark"] .hols-volume .book-interior-close:hover {
   height: 100%;
   width: 0%;
   border-radius: 999px;
-  background: linear-gradient(90deg, #dde466 0%, #8dc3e1 60%, #3853a4 100%);
-  box-shadow: 0 0 12px rgba(221, 228, 102, 0.5);
+  background: var(--dash-navy);
   transition: width 0.12s linear;
 }
 
@@ -3709,32 +4111,18 @@ html[data-portal-theme="dark"] .hols-volume .book-interior-close:hover {
   font-size: 0.72rem;
   font-weight: 600;
   letter-spacing: 0.02em;
-  background: rgba(221, 228, 102, 0.14);
-  border: 1px solid rgba(221, 228, 102, 0.32);
-  color: var(--dash-accent);
+  background: var(--dash-soft);
+  border: 1px solid var(--dash-surface-border);
+  color: var(--dash-text);
 }
 
 /* Index rows in the lessons workspace */
 .lesson-index-row {
-  transition:
-    transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
-    background 0.2s ease;
+  transition: background 0.2s ease;
 }
 
-.lesson-index-row:hover {
-  transform: translateX(3px);
-}
-
-.lesson-index-badge {
-  transition:
-    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-    background 0.25s ease,
-    box-shadow 0.25s ease;
-}
-
-.lesson-index-row:hover .lesson-index-badge {
-  transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(221, 228, 102, 0.3);
+.lesson-index-row:hover .dashboard-tool-icon {
+  color: var(--dash-text);
 }
 
 /* Floating scroll-to-top for long lessons */
@@ -3747,17 +4135,19 @@ html[data-portal-theme="dark"] .hols-volume .book-interior-close:hover {
   height: 2.75rem;
   width: 2.75rem;
   align-items: center;
-  justify-content: center;
+  justify-center: center;
   border-radius: 999px;
-  background: #dde466;
-  color: #152744;
-  box-shadow: 0 10px 26px rgba(21, 39, 68, 0.3);
+  background: var(--dash-navy);
+  color: #ffffff;
+  border: 1px solid transparent;
+  box-shadow: none;
   opacity: 0;
   transform: translateY(14px) scale(0.9);
   pointer-events: none;
   transition:
     opacity 0.3s ease,
-    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+    transform 0.3s cubic-bezier(0.22, 1, 0.36, 1),
+    filter 0.2s ease;
 }
 
 .lesson-to-top[data-visible="true"] {
@@ -3767,7 +4157,7 @@ html[data-portal-theme="dark"] .hols-volume .book-interior-close:hover {
 }
 
 .lesson-to-top:hover {
-  transform: translateY(-2px) scale(1.05);
+  filter: brightness(1.08);
 }
 
 /* Next-page CTA arrow nudge */
@@ -3875,6 +4265,42 @@ html[data-portal-theme="dark"] .hols-volume .book-interior-close:hover {
   border: 1px solid var(--dash-surface-border);
 }
 
+.dashboard-navy-btn {
+  background: var(--dash-navy);
+  color: #ffffff;
+  border: 1px solid transparent;
+  transition: filter 0.2s ease, background 0.2s ease;
+}
+
+.dashboard-navy-btn:hover {
+  filter: brightness(1.08);
+}
+
+.portal-shell[data-theme="dark"] .dashboard-navy-btn {
+  background: var(--hols-nav-glass-bg);
+  color: #f4f7fb;
+  border: 1px solid var(--hols-nav-glass-border);
+  box-shadow: var(--hols-nav-glass-shadow);
+  backdrop-filter: var(--hols-nav-glass-filter);
+  -webkit-backdrop-filter: var(--hols-nav-glass-filter);
+}
+
+.dashboard-count-badge {
+  display: inline-flex;
+  height: 1.75rem;
+  min-width: 1.75rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #dde466;
+  padding: 0 0.4rem;
+  font-family: var(--font-primary-stack);
+  font-size: 0.75rem;
+  font-weight: 700;
+  line-height: 1;
+  color: #142644;
+}
+
 .dashboard-pill-soft {
   background: var(--dash-soft);
   border: 1px solid var(--dash-surface-border);
@@ -3886,24 +4312,23 @@ html[data-portal-theme="dark"] .hols-volume .book-interior-close:hover {
 }
 
 .lecture-course-card-cta {
+  border: 1px solid transparent;
   box-shadow: none;
 }
 
-.lecture-course-card:hover .lecture-course-card-cta,
-.lecture-course-card:focus-visible .lecture-course-card-cta {
-  filter: brightness(1.05);
+.lecture-course-card-cta:hover {
+  border-color: transparent;
+  filter: brightness(1.08);
 }
 
 .dashboard-tool-icon {
   background: var(--dash-soft);
   border: 1px solid var(--dash-surface-border);
-  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  transition: color 0.2s ease;
 }
 
 .group:hover .dashboard-tool-icon {
-  background: #dde466;
-  border-color: rgba(221, 228, 102, 0.65);
-  color: #152744;
+  color: #dde466;
 }
 
 .dashboard-row {
@@ -3911,7 +4336,7 @@ html[data-portal-theme="dark"] .hols-volume .book-interior-close:hover {
 }
 
 .dashboard-row:hover {
-  background: var(--dash-soft);
+  background: var(--sidebar-hover);
 }
 
 .dashboard-plan-card {
@@ -3950,9 +4375,19 @@ html[data-portal-theme="dark"] .hols-volume .book-interior-close:hover {
     inset 0 1px 0 rgba(255, 255, 255, 0.8);
 }
 
-@media (min-width: 1280px) {
+.membership-plan-card:hover {
+  transform: translateY(-3px);
+}
+
+.membership-plan-card--favourite:hover {
+  transform: translateY(-6px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .membership-plan-card,
   .membership-plan-card--favourite {
-    transform: translateY(-4px);
+    transform: none;
+    transition: none;
   }
 }
 
@@ -4009,6 +4444,16 @@ html[data-portal-theme="dark"] .hols-volume .book-interior-close:hover {
 .membership-plan-badge--value {
   background: rgba(141, 195, 225, 0.28);
   color: var(--dash-accent);
+}
+
+.membership-plan-badge--current {
+  background: #152744;
+  color: #dde466;
+}
+
+.portal-shell[data-theme="dark"] .membership-plan-badge--current {
+  background: rgba(221, 228, 102, 0.18);
+  color: #dde466;
 }
 
 .membership-plan-badge--spacer {
@@ -4077,10 +4522,13 @@ html[data-portal-theme="dark"] .hols-volume .book-interior-close:hover {
   filter: brightness(1.08);
 }
 
-.portal-shell[data-theme="dark"] .membership-plan-cta {
-  background: rgba(255, 255, 255, 0.12);
+.portal-shell[data-theme="dark"] .membership-plan-cta:not(.membership-plan-cta--favourite) {
+  background: var(--hols-nav-glass-bg);
   color: #f4f7fb;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid var(--hols-nav-glass-border);
+  box-shadow: var(--hols-nav-glass-shadow);
+  backdrop-filter: var(--hols-nav-glass-filter);
+  -webkit-backdrop-filter: var(--hols-nav-glass-filter);
 }
 
 .membership-plan-cta--favourite {
@@ -4112,9 +4560,12 @@ html[data-portal-theme="dark"] .hols-volume .book-interior-close:hover {
   --dash-faint: rgba(21, 39, 68, 0.52);
   --dash-dim: rgba(21, 39, 68, 0.34);
   --dash-accent: #6f7a1c;
+  --dash-navy: #142644;
   --dash-surface: rgba(21, 39, 68, 0.035);
   --dash-surface-border: rgba(21, 39, 68, 0.15);
   --dash-soft: rgba(21, 39, 68, 0.05);
+  --sidebar-hover: rgba(20, 38, 68, 0.08);
+  --sidebar-text: #142644;
   border: 1px solid var(--dash-surface-border);
   background: #ffffff;
   box-shadow: none;
@@ -4192,7 +4643,7 @@ html:has(.portal-shell[data-theme="dark"]) .quiz-dialog-panel {
 .quiz-dialog-panel .auth-field:hover,
 .quiz-dialog-panel .auth-field:focus,
 .quiz-dialog-panel .auth-field:focus-visible {
-  border-color: #dde466 !important;
+  border-color: var(--hols-field-focus-border) !important;
   background-color: #ffffff !important;
   box-shadow: none !important;
 }
@@ -4215,8 +4666,9 @@ html:has(.portal-shell[data-theme="dark"]) .quiz-dialog-panel {
 .calc-amount-control:hover,
 .calc-unit-trigger:hover,
 .calc-unit-trigger:focus,
-.calc-unit-trigger:focus-visible {
-  border-color: #dde466 !important;
+.calc-unit-trigger:focus-visible,
+.calc-unit-trigger[aria-expanded="true"] {
+  border-color: var(--hols-field-focus-border) !important;
   box-shadow: none !important;
   outline: none !important;
 }
@@ -4311,8 +4763,11 @@ html:has(.portal-shell[data-theme="dark"]) .calc-syringe-option:not([aria-presse
 
 .profile-page .profile-field:hover,
 .profile-page .profile-field:focus,
-.profile-page .profile-field:focus-visible {
-  border-color: #dde466 !important;
+.profile-page .profile-field:focus-visible,
+.profile-page .profile-field[aria-expanded="true"] {
+  border-width: 2px !important;
+  border-style: solid !important;
+  border-color: var(--hols-field-focus-border) !important;
   background-color: rgba(255, 255, 255, 0.96) !important;
   box-shadow: none !important;
   outline: none !important;
@@ -4339,8 +4794,11 @@ html:has(.portal-shell[data-theme="dark"]) .profile-page .profile-field {
 
 html:has(.portal-shell[data-theme="dark"]) .profile-page .profile-field:hover,
 html:has(.portal-shell[data-theme="dark"]) .profile-page .profile-field:focus,
-html:has(.portal-shell[data-theme="dark"]) .profile-page .profile-field:focus-visible {
-  border-color: #dde466 !important;
+html:has(.portal-shell[data-theme="dark"]) .profile-page .profile-field:focus-visible,
+html:has(.portal-shell[data-theme="dark"]) .profile-page .profile-field[aria-expanded="true"] {
+  border-width: 2px !important;
+  border-style: solid !important;
+  border-color: var(--hols-field-focus-border) !important;
   background-color: rgba(42, 62, 100, 0.96) !important;
 }
 
@@ -4359,7 +4817,9 @@ html:has(.portal-shell[data-theme="dark"]) .profile-page .profile-field option {
 .payment-page .payment-field:hover,
 .payment-page .payment-field:focus,
 .payment-page .payment-field:focus-visible {
-  border-color: #dde466 !important;
+  border-width: 2px !important;
+  border-style: solid !important;
+  border-color: var(--hols-field-focus-border) !important;
   background-color: rgba(255, 255, 255, 0.96) !important;
   box-shadow: none !important;
   outline: none !important;
@@ -4374,7 +4834,9 @@ html:has(.portal-shell[data-theme="dark"]) .payment-page .payment-field {
 html:has(.portal-shell[data-theme="dark"]) .payment-page .payment-field:hover,
 html:has(.portal-shell[data-theme="dark"]) .payment-page .payment-field:focus,
 html:has(.portal-shell[data-theme="dark"]) .payment-page .payment-field:focus-visible {
-  border-color: #dde466 !important;
+  border-width: 2px !important;
+  border-style: solid !important;
+  border-color: var(--hols-field-focus-border) !important;
   background-color: rgba(42, 62, 100, 0.96) !important;
 }
 
@@ -4391,8 +4853,11 @@ html:has(.portal-shell[data-theme="dark"]) .payment-page .payment-field::placeho
 
 .adviser-dialog-panel .adviser-field:hover,
 .adviser-dialog-panel .adviser-field:focus,
-.adviser-dialog-panel .adviser-field:focus-visible {
-  border-color: #dde466 !important;
+.adviser-dialog-panel .adviser-field:focus-visible,
+.adviser-dialog-panel .adviser-field[aria-expanded="true"] {
+  border-width: 2px !important;
+  border-style: solid !important;
+  border-color: var(--hols-field-focus-border) !important;
   background-color: rgba(255, 255, 255, 0.96) !important;
   box-shadow: none !important;
   outline: none !important;
@@ -4427,6 +4892,11 @@ html:has(.portal-shell[data-theme="dark"]) .payment-page .payment-field::placeho
 
 .adviser-dialog-panel .adviser-select {
   min-width: 0;
+  z-index: 1;
+}
+
+.adviser-dialog-panel .adviser-select:has([aria-expanded="true"]) {
+  z-index: 40;
 }
 
 @keyframes adviser-intake-step-in {
@@ -4468,32 +4938,77 @@ html:has(.portal-shell[data-theme="dark"]) .payment-page .payment-field::placeho
     background 0.2s ease;
 }
 
-/* Onboarding select — keep check + yellow selected state above shared quiz overrides */
+/* Onboarding select — match sidebar hover + yellow selected */
+.adviser-dialog-panel .adviser-select-option:hover,
+.adviser-dialog-panel .adviser-select-option.is-active:not(.is-selected),
+.adviser-dialog-panel .adviser-select-option:focus-visible {
+  background: var(--sidebar-hover, rgba(20, 38, 68, 0.08)) !important;
+  color: var(--sidebar-text, #142644) !important;
+  box-shadow: none !important;
+}
+
 .adviser-dialog-panel .adviser-select-option.is-selected,
 .adviser-dialog-panel .adviser-select-option.is-selected:hover,
 .adviser-dialog-panel .adviser-select-option.is-selected:focus-visible {
-  background: rgba(221, 228, 102, 0.2) !important;
-  color: #152744 !important;
+  background: #dde466 !important;
+  color: #142644 !important;
   font-weight: 600;
   box-shadow: none !important;
 }
 
-.adviser-dialog-panel .adviser-select-option.is-active:not(.is-selected) {
-  background: rgba(56, 83, 164, 0.08) !important;
+.adviser-dialog-panel .adviser-select-option.is-selected:hover,
+.adviser-dialog-panel .adviser-select-option.is-selected:focus-visible {
+  background: #d5de58 !important;
+}
+
+.adviser-dialog-panel .adviser-select-option .quiz-option-check {
+  border-color: rgba(20, 38, 68, 0.2);
+  background: transparent;
+  color: transparent;
+}
+
+.adviser-dialog-panel .adviser-select-option.is-selected .quiz-option-check {
+  border-color: #142644 !important;
+  background: transparent !important;
+  color: #142644 !important;
+}
+
+.adviser-dialog-panel .adviser-option-card:hover {
+  background: var(--sidebar-hover, rgba(20, 38, 68, 0.08)) !important;
+  border-color: transparent !important;
+  color: var(--sidebar-text, #142644) !important;
+  box-shadow: none !important;
 }
 
 .adviser-dialog-panel .adviser-option-card.is-selected,
 .adviser-dialog-panel .adviser-option-card.is-selected:hover {
-  background: rgba(221, 228, 102, 0.15) !important;
-  border-color: #dde466 !important;
-  color: var(--dash-text, #152744) !important;
+  background: #dde466 !important;
+  border-color: transparent !important;
+  color: #142644 !important;
   box-shadow: none !important;
 }
 
 .adviser-dialog-panel .adviser-option-card.is-selected .quiz-option-check {
-  border-color: #dde466 !important;
+  border-color: #142644 !important;
+  background: transparent !important;
+  color: #142644 !important;
+}
+
+.adviser-dialog-panel .adviser-sidebar-chip {
+  background: var(--dash-soft, rgba(20, 38, 68, 0.06));
+  color: var(--dash-text, #142644);
+  border: 0;
+}
+
+.adviser-dialog-panel .adviser-sidebar-chip:hover {
+  background: var(--sidebar-hover, rgba(20, 38, 68, 0.08)) !important;
+  color: var(--sidebar-text, #142644) !important;
+}
+
+.adviser-dialog-panel .adviser-sidebar-chip.is-selected,
+.adviser-dialog-panel .adviser-sidebar-chip.is-selected:hover {
   background: #dde466 !important;
-  color: #152744 !important;
+  color: #142644 !important;
 }
 
 .adviser-dialog-panel .adviser-select-trigger-check {
@@ -4504,19 +5019,40 @@ html:has(.portal-shell[data-theme="dark"]) .payment-page .payment-field::placeho
   background: color-mix(in srgb, var(--dash-soft, #f3f6fa) 88%, white) !important;
 }
 
+html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .adviser-select-option:hover,
+html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .adviser-select-option.is-active:not(.is-selected),
+html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .adviser-select-option:focus-visible,
+html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .adviser-option-card:hover,
+html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .adviser-sidebar-chip:hover {
+  background: rgba(255, 255, 255, 0.08) !important;
+  color: #f4f7fb !important;
+  box-shadow: none !important;
+}
+
 html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .adviser-select-option.is-selected,
 html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .adviser-select-option.is-selected:hover,
 .portal-shell[data-theme="dark"] .adviser-dialog-panel .adviser-select-option.is-selected,
-.portal-shell[data-theme="dark"] .adviser-dialog-panel .adviser-select-option.is-selected:hover {
-  background: rgba(221, 228, 102, 0.22) !important;
-  color: #f4f7fb !important;
+.portal-shell[data-theme="dark"] .adviser-dialog-panel .adviser-select-option.is-selected:hover,
+html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .adviser-option-card.is-selected,
+html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .adviser-option-card.is-selected:hover,
+html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .adviser-sidebar-chip.is-selected,
+html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .adviser-sidebar-chip.is-selected:hover {
+  background: #dde466 !important;
+  color: #142644 !important;
+  border-color: transparent !important;
 }
 
-html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .adviser-option-card.is-selected,
-.portal-shell[data-theme="dark"] .adviser-dialog-panel .adviser-option-card.is-selected {
-  background: rgba(221, 228, 102, 0.16) !important;
-  border-color: #dde466 !important;
-  color: #f4f7fb !important;
+html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .adviser-select-option.is-selected:hover,
+html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .adviser-option-card.is-selected:hover,
+html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .adviser-sidebar-chip.is-selected:hover {
+  background: #d5de58 !important;
+}
+
+html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .adviser-option-card.is-selected .quiz-option-check,
+html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .adviser-select-option.is-selected .quiz-option-check {
+  border-color: #142644 !important;
+  background: transparent !important;
+  color: #142644 !important;
 }
 
 @media (max-width: 639px) {
@@ -4537,10 +5073,14 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .adviser-field,
 html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .adviser-field:hover,
 html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .adviser-field:focus,
 html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .adviser-field:focus-visible,
+html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .adviser-field[aria-expanded="true"],
 .portal-shell[data-theme="dark"] .adviser-dialog-panel .adviser-field:hover,
 .portal-shell[data-theme="dark"] .adviser-dialog-panel .adviser-field:focus,
-.portal-shell[data-theme="dark"] .adviser-dialog-panel .adviser-field:focus-visible {
-  border-color: #dde466 !important;
+.portal-shell[data-theme="dark"] .adviser-dialog-panel .adviser-field:focus-visible,
+.portal-shell[data-theme="dark"] .adviser-dialog-panel .adviser-field[aria-expanded="true"] {
+  border-width: 2px !important;
+  border-style: solid !important;
+  border-color: var(--hols-field-focus-border) !important;
   background-color: rgba(42, 62, 100, 0.96) !important;
 }
 
@@ -4556,8 +5096,8 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .adviser-field:
 }
 
 .adviser-dialog-panel .adviser-onboarding-close:hover {
-  background: rgba(221, 228, 102, 0.28);
-  color: #152744;
+  background: var(--dash-soft);
+  color: var(--dash-text);
   transform: scale(1.05);
 }
 
@@ -4570,8 +5110,8 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .adviser-onboar
 }
 
 html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .adviser-onboarding-close:hover {
-  background: rgba(221, 228, 102, 0.22);
-  color: #dde466;
+  background: rgba(255, 255, 255, 0.1);
+  color: #f4f7fb;
 }
 
 html:has(.portal-shell[data-theme="dark"]) .quiz-dialog-panel .auth-field,
@@ -4587,8 +5127,9 @@ html:has(.portal-shell[data-theme="dark"]) .quiz-field-select {
 
 html:has(.portal-shell[data-theme="dark"]) .quiz-dialog-panel .auth-field:hover,
 html:has(.portal-shell[data-theme="dark"]) .quiz-dialog-panel .auth-field:focus,
-html:has(.portal-shell[data-theme="dark"]) .quiz-dialog-panel .auth-field:focus-visible {
-  border-color: #dde466 !important;
+html:has(.portal-shell[data-theme="dark"]) .quiz-dialog-panel .auth-field:focus-visible,
+html:has(.portal-shell[data-theme="dark"]) .quiz-dialog-panel .auth-field[aria-expanded="true"] {
+  border-color: var(--hols-field-focus-border) !important;
   background-color: rgba(255, 255, 255, 0.08) !important;
 }
 
@@ -4762,7 +5303,7 @@ html:has(.portal-shell[data-theme="dark"]) .quiz-option-card {
 }
 
 html:has(.portal-shell[data-theme="dark"]) .quiz-option-card:hover {
-  background: rgba(255, 255, 255, 0.08) !important;
+  background: var(--sidebar-hover) !important;
   border-color: transparent !important;
   color: #f4f7fb !important;
   box-shadow:
@@ -4860,9 +5401,12 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel {
   --dash-faint: rgba(244, 247, 251, 0.5);
   --dash-dim: rgba(244, 247, 251, 0.35);
   --dash-accent: #dde466;
+  --dash-navy: #142644;
   --dash-surface: rgba(255, 255, 255, 0.05);
   --dash-surface-border: rgba(255, 255, 255, 0.16);
   --dash-soft: rgba(255, 255, 255, 0.06);
+  --sidebar-hover: rgba(255, 255, 255, 0.08);
+  --sidebar-text: #f4f7fb;
   border-color: rgba(141, 195, 225, 0.28);
   background: #142644;
   box-shadow: none;
@@ -4951,7 +5495,7 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
   background: #1a2f55;
 }
 
-/* Peptide Adviser chat — plain sidebar-matched colors (no brand gradient) */
+/* Peptide Adviser chat — lock the viewport; keep the brand backdrop so glass cards read */
 .portal-shell:has(.adviser-chat-screen) {
   height: 100svh;
   max-height: 100svh;
@@ -4960,25 +5504,30 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
 
 .portal-shell:has(.adviser-chat-screen) > .flex {
   height: 100%;
-  min-height: 0;
+  min-height: 0 !important;
   overflow: hidden;
 }
 
-.portal-shell:has(.adviser-chat-screen),
-.portal-shell:has(.adviser-chat-screen) .portal-content-area {
-  /* Solid form of light --sidebar-bg (rgba(236, 244, 250, …)) */
-  background: #ecf4fa !important;
+.portal-content-area[data-backdrop="brand"] .adviser-chat-screen.dashboard-screen {
+  height: 100%;
+  min-height: 0 !important;
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+@media (max-width: 1023px) {
+  .portal-content-area[data-backdrop="brand"] .adviser-chat-screen.dashboard-screen {
+    min-height: 0 !important;
+    padding: 0 !important;
+  }
 }
 
 .portal-shell:has(.adviser-chat-screen) .portal-content-area {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
   min-height: 0;
   overflow: hidden;
-}
-
-.portal-shell[data-theme="dark"]:has(.adviser-chat-screen),
-.portal-shell[data-theme="dark"]:has(.adviser-chat-screen) .portal-content-area {
-  /* Same as dark --sidebar-bg */
-  background: #142644 !important;
 }
 
 .portal-shell:has(.adviser-chat-screen) .portal-content-area > main {
@@ -5009,7 +5558,9 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
  *       .adviser-chat-composer-bar
  */
 .adviser-chat-screen {
-  --adviser-chat-header-offset: 4.5rem; /* ~72px chrome row; safe-area added via padding */
+  --adviser-chat-header-offset: calc(
+    2.5rem + max(0.375rem, env(safe-area-inset-top)) + 0.375rem
+  );
   --adviser-chat-frost-blur: 22px;
   --adviser-chat-frost-saturate: 140%;
   --adviser-chat-frost-contrast: 92%;
@@ -5047,7 +5598,7 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
   z-index: 20;
   flex-shrink: 0;
   isolation: isolate;
-  overflow: hidden;
+  overflow: visible;
   width: 100%;
   min-height: var(--adviser-chat-header-offset);
   margin: 0;
@@ -5171,11 +5722,12 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
   z-index: 5;
   display: flex;
   align-items: center;
+  gap: 0.5rem;
   min-height: var(--adviser-chat-header-offset);
   padding:
-    max(0.65rem, env(safe-area-inset-top))
-    0.75rem
-    0.75rem;
+    max(0.375rem, env(safe-area-inset-top))
+    0.625rem
+    0.375rem;
 }
 
 .adviser-chat-header-chrome h1 {
@@ -5190,16 +5742,41 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
   text-shadow: none;
 }
 
-.adviser-chat-header-chrome .dashboard-icon-btn {
-  color: rgba(21, 39, 68, 0.78);
-  background: rgba(255, 255, 255, 0.42);
-  border-color: rgba(21, 39, 68, 0.12);
+.adviser-chat-header-strip .adviser-chat-header-chrome .dashboard-icon-btn {
+  color: #142644;
+  background: rgba(255, 255, 255, 0.38);
+  border-color: rgba(255, 255, 255, 0.55);
   box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
 }
 
-.adviser-chat-header-chrome .dashboard-icon-btn:hover {
-  color: #152744;
+.adviser-chat-header-strip .adviser-chat-header-chrome .dashboard-icon-btn svg {
+  color: inherit;
+  stroke: currentColor;
+}
+
+.adviser-chat-header-strip .adviser-chat-header-chrome .dashboard-icon-btn:hover {
+  color: #142644;
   background: rgba(255, 255, 255, 0.62);
+}
+
+.adviser-chat-header-strip .adviser-chat-header-chrome .adviser-chat-back-btn,
+.adviser-chat-header-strip .adviser-chat-header-chrome .dashboard-notify-btn {
+  color: #ffffff;
+  background: #142644;
+  border-color: transparent;
+  box-shadow: none;
+}
+
+.adviser-chat-header-strip .adviser-chat-header-chrome .adviser-chat-back-btn svg,
+.adviser-chat-header-strip .adviser-chat-header-chrome .dashboard-notify-btn svg {
+  color: #ffffff;
+  stroke: currentColor;
+}
+
+.adviser-chat-header-strip .adviser-chat-header-chrome .adviser-chat-back-btn:hover,
+.adviser-chat-header-strip .adviser-chat-header-chrome .dashboard-notify-btn:hover {
+  color: #ffffff;
+  background: #1b3358;
 }
 
 .portal-shell[data-theme="dark"] .adviser-chat-screen {
@@ -5238,33 +5815,59 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
 }
 
 .portal-shell[data-theme="dark"] .adviser-chat-header-chrome .dashboard-welcome-chip {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.14);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  background: var(--hols-nav-glass-bg);
+  border-color: var(--hols-nav-glass-border);
+  box-shadow: var(--hols-nav-glass-shadow);
+  backdrop-filter: var(--hols-nav-glass-filter);
+  -webkit-backdrop-filter: var(--hols-nav-glass-filter);
   text-shadow: 0 1px 2px rgba(0, 0, 0, 0.4);
 }
 
-.portal-shell[data-theme="dark"] .adviser-chat-header-chrome .dashboard-icon-btn {
-  color: rgba(244, 247, 251, 0.9);
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.14);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+.portal-shell[data-theme="dark"] .adviser-chat-header-strip .adviser-chat-header-chrome .dashboard-icon-btn {
+  color: #f4f7fb;
+  background: var(--hols-nav-glass-bg);
+  border-color: var(--hols-nav-glass-border);
+  box-shadow: var(--hols-nav-glass-shadow);
+  backdrop-filter: var(--hols-nav-glass-filter);
+  -webkit-backdrop-filter: var(--hols-nav-glass-filter);
 }
 
-.portal-shell[data-theme="dark"] .adviser-chat-header-chrome .dashboard-icon-btn:hover {
+.portal-shell[data-theme="dark"] .adviser-chat-header-strip .adviser-chat-header-chrome .dashboard-icon-btn:hover {
+  color: #ffffff;
+  background: var(--hols-nav-glass-bg-hover);
+}
+
+.portal-shell[data-theme="dark"] .adviser-chat-header-strip .adviser-chat-header-chrome .adviser-chat-back-btn,
+.portal-shell[data-theme="dark"] .adviser-chat-header-strip .adviser-chat-header-chrome .dashboard-notify-btn {
   color: #f4f7fb;
-  background: rgba(255, 255, 255, 0.16);
+  background: var(--hols-nav-glass-bg);
+  border-color: var(--hols-nav-glass-border);
+  box-shadow: var(--hols-nav-glass-shadow);
+  backdrop-filter: var(--hols-nav-glass-filter);
+  -webkit-backdrop-filter: var(--hols-nav-glass-filter);
+}
+
+.portal-shell[data-theme="dark"] .adviser-chat-header-strip .adviser-chat-header-chrome .adviser-chat-back-btn:hover,
+.portal-shell[data-theme="dark"] .adviser-chat-header-strip .adviser-chat-header-chrome .dashboard-notify-btn:hover {
+  color: #ffffff;
+  background: var(--hols-nav-glass-bg-hover);
+  filter: none;
 }
 
 @media (min-width: 640px) {
+  .adviser-chat-screen {
+    --adviser-chat-header-offset: calc(3rem + 0.5rem + 0.5rem);
+  }
+
   .adviser-chat-header-chrome {
-    padding-left: 1rem;
-    padding-right: 1rem;
+    gap: 0.75rem;
+    padding: 0.5rem 1rem;
   }
 }
 
 @media (min-width: 768px) {
   .adviser-chat-header-chrome {
+    gap: 1rem;
     padding-left: 1.5rem;
     padding-right: 1.5rem;
   }
@@ -5284,8 +5887,282 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
   background: transparent;
 }
 
+.dash-right-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+}
+
+.dash-right-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(21, 39, 68, 0.45);
+  cursor: pointer;
+}
+
+.dash-right-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 81;
+  display: flex;
+  width: min(26.5rem, 100%);
+  flex-direction: column;
+  overflow: hidden;
+  border-left: 1px solid rgba(21, 39, 68, 0.12);
+  background: #f4f7fb;
+  box-shadow: -16px 0 40px rgba(21, 39, 68, 0.16);
+  animation: adviser-board-in 220ms ease;
+}
+
+.dash-right-drawer-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid rgba(21, 39, 68, 0.1);
+}
+
+.dash-right-drawer-body {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.adviser-board-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+}
+
+html:has(.portal-shell[data-theme="dark"]) .dash-right-backdrop,
+.portal-shell[data-theme="dark"] .dash-right-backdrop {
+  background: rgba(4, 10, 22, 0.48);
+}
+
+html:has(.portal-shell[data-theme="dark"]) .dash-right-drawer,
+.portal-shell[data-theme="dark"] .dash-right-drawer {
+  background: #142644;
+  border-left-color: rgba(255, 255, 255, 0.1);
+  box-shadow: -16px 0 40px rgba(0, 0, 0, 0.4);
+}
+
+html:has(.portal-shell[data-theme="dark"]) .dash-right-drawer-header,
+.portal-shell[data-theme="dark"] .dash-right-drawer-header {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.adviser-board-backdrop {
+  position: absolute;
+  inset: 0;
+  border: 0;
+  background: rgba(21, 39, 68, 0.45);
+  cursor: pointer;
+}
+
+.adviser-board-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 31;
+  display: flex;
+  width: min(26.5rem, 100%);
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 0;
+  border-left: 1px solid rgba(21, 39, 68, 0.12);
+  background: #f4f7fb;
+  box-shadow: -16px 0 40px rgba(21, 39, 68, 0.16);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  animation: adviser-board-in 220ms ease;
+}
+
+@keyframes adviser-board-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .adviser-board-drawer,
+  .dash-right-drawer {
+    animation: none;
+  }
+}
+
+.adviser-board-drawer-header {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  border-bottom: 1px solid rgba(21, 39, 68, 0.1);
+}
+
+.adviser-board-drawer-body {
+  min-height: 0;
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+}
+
+.adviser-board-card {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.adviser-board-current {
+  border-radius: 1rem;
+  border: 1px solid rgba(21, 39, 68, 0.12);
+  background: #ffffff;
+  padding: 1rem;
+}
+
+.adviser-board-rank {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  background: #dde466;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #142644;
+}
+
+.adviser-board-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin-top: 1rem;
+}
+
+.adviser-board-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.adviser-board-row {
+  display: flex;
+  width: 100%;
+  min-height: 2.75rem;
+  align-items: center;
+  gap: 0.75rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(21, 39, 68, 0.1);
+  background: #ffffff;
+  padding: 0.7rem 0.85rem;
+  text-align: left;
+  color: var(--dash-text);
+  transition: background 140ms ease, border-color 140ms ease;
+}
+
+.adviser-board-row:hover:not(:disabled) {
+  background: var(--sidebar-hover);
+  border-color: var(--hols-field-hover-border);
+}
+
+.adviser-board-row.is-selected,
+.adviser-board-row.is-preferred {
+  border-color: #dde466;
+  background: #dde466;
+  color: #142644;
+}
+
+.adviser-board-row.is-selected span,
+.adviser-board-row.is-preferred span {
+  color: #142644;
+}
+
+.adviser-board-row-rank {
+  flex-shrink: 0;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--dash-faint);
+}
+
+.adviser-board-row.is-selected .adviser-board-row-rank,
+.adviser-board-row.is-preferred .adviser-board-row-rank {
+  color: #142644;
+}
+
+.adviser-talking-chip {
+  display: inline-flex;
+  max-width: min(100%, 16rem);
+  min-height: 1.75rem;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0 0 0.45rem;
+  padding: 0.15rem 0.65rem 0.15rem 0.2rem;
+  border: 1px solid rgba(21, 39, 68, 0.12);
+  border-radius: 999px;
+  background: #ffffff;
+  color: #142644;
+  text-align: left;
+}
+
+.adviser-talking-chip .adviser-board-rank {
+  padding: 0.08rem 0.4rem;
+  font-size: 0.62rem;
+}
+
+.adviser-talking-chip:hover {
+  border-color: var(--hols-field-hover-border);
+}
+
+.portal-shell[data-theme="dark"] .adviser-talking-chip {
+  background: #1a2f55;
+  border-color: rgba(255, 255, 255, 0.12);
+  color: #f4f7fb;
+}
+
+.portal-shell[data-theme="dark"] .adviser-talking-chip:hover {
+  border-color: var(--hols-field-hover-border);
+}
+
+.portal-shell[data-theme="dark"] .adviser-board-backdrop {
+  background: rgba(4, 10, 22, 0.48);
+}
+
+.portal-shell[data-theme="dark"] .adviser-board-drawer {
+  background: #142644;
+  border-left-color: rgba(255, 255, 255, 0.1);
+  box-shadow: -16px 0 40px rgba(0, 0, 0, 0.4);
+}
+
+.portal-shell[data-theme="dark"] .adviser-board-drawer-header {
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+
+.portal-shell[data-theme="dark"] .adviser-board-current {
+  background: #1a2f55;
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.portal-shell[data-theme="dark"] .adviser-board-row {
+  background: #1a2f55;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.portal-shell[data-theme="dark"] .adviser-board-row.is-selected,
+.portal-shell[data-theme="dark"] .adviser-board-row.is-preferred {
+  background: #dde466;
+  border-color: #dde466;
+  color: #142644;
+}
+
 /* Loading / error (no transcript panel) — restore readable side inset */
 .adviser-chat-body:not(:has(.adviser-chat-transcript)) {
+  overflow: auto;
   padding: 1rem max(0.75rem, env(safe-area-inset-left)) 1.25rem
     max(0.75rem, env(safe-area-inset-right));
 }
@@ -5310,31 +6187,31 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
   scrollbar-gutter: stable;
 }
 
-/* Chat composer — anchored below transcript, not fixed over messages */
+/* Chat composer — glass card on the brand backdrop, pinned below the thread */
 .adviser-chat-composer-bar {
-  background: #ecf4fa;
-  border-top: 1px solid rgba(21, 39, 68, 0.06);
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
+  position: relative;
+  z-index: 15;
+  overflow: visible;
+  background: transparent;
+  border-top: 1px solid transparent;
 }
 
 .portal-shell[data-theme="dark"] .adviser-chat-composer-bar {
-  background: #142644;
-  border-top-color: rgba(255, 255, 255, 0.08);
+  background: transparent;
+  border-top-color: transparent;
 }
 
 .adviser-chat-composer {
-  border: 1px solid rgba(21, 39, 68, 0.12);
-  background: #ffffff !important;
-  backdrop-filter: none !important;
-  -webkit-backdrop-filter: none !important;
-  box-shadow: none;
   overflow: visible;
-  transition: border-color 0.2s ease;
+  box-sizing: border-box;
+  transition: border-color 0.2s ease, border-width 0.2s ease;
 }
 
+.adviser-chat-composer:hover,
 .adviser-chat-composer:focus-within {
-  border-color: #dde466;
+  border-width: 2px;
+  border-style: solid;
+  border-color: var(--hols-field-focus-border);
 }
 
 /* Scrollport stays inside the rounded composer; thin bar never spills past the border */
@@ -5350,6 +6227,7 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
   max-height: calc(24px * 3 + 20px);
   overflow-x: hidden;
   overflow-y: auto;
+  color: var(--dash-text);
   scrollbar-width: thin;
   scrollbar-color: rgba(21, 39, 68, 0.28) transparent;
 }
@@ -5378,16 +6256,6 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
   height: 0;
 }
 
-.portal-shell[data-theme="dark"] .adviser-chat-composer {
-  border-color: rgba(255, 255, 255, 0.14);
-  background: rgba(36, 54, 88, 0.92) !important;
-  box-shadow: none;
-}
-
-.portal-shell[data-theme="dark"] .adviser-chat-composer:focus-within {
-  border-color: #dde466;
-}
-
 .portal-shell[data-theme="dark"] .adviser-chat-composer-input {
   scrollbar-color: rgba(244, 247, 251, 0.28) transparent;
 }
@@ -5398,27 +6266,47 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
 
 .adviser-chat-composer-send-idle {
   background: rgba(21, 39, 68, 0.08);
-  color: rgba(21, 39, 68, 0.34);
+  color: rgba(21, 39, 68, 0.45);
 }
 
 .portal-shell[data-theme="dark"] .adviser-chat-composer-send-idle {
   background: rgba(255, 255, 255, 0.1);
-  color: rgba(244, 247, 251, 0.35);
+  color: rgba(244, 247, 251, 0.45);
 }
 
-/* Clinical War Room — interactive recommendation board */
+/* Reading cards on the brand backdrop need a denser frost than dashboard tiles */
+.portal-content-area[data-backdrop="brand"] .adviser-chat-ai.dashboard-glass-card,
+.portal-content-area[data-backdrop="brand"] .adviser-chat-composer.dashboard-glass-card,
+.portal-content-area[data-backdrop="brand"] .adviser-chat-empty.dashboard-glass-card {
+  background: rgba(255, 255, 255, 0.72) !important;
+  border-color: rgba(21, 39, 68, 0.14);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+}
+
+.portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .adviser-chat-ai.dashboard-glass-card,
+.portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .adviser-chat-composer.dashboard-glass-card,
+.portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .adviser-chat-empty.dashboard-glass-card {
+  background: rgba(20, 38, 68, 0.62) !important;
+  border-color: rgba(141, 195, 225, 0.3);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.adviser-chat-composer.dashboard-glass-card:hover,
+.adviser-chat-composer.dashboard-glass-card:focus-within,
+.portal-content-area[data-backdrop="brand"] .adviser-chat-composer.dashboard-glass-card:hover,
+.portal-content-area[data-backdrop="brand"] .adviser-chat-composer.dashboard-glass-card:focus-within,
+.portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .adviser-chat-composer.dashboard-glass-card:hover,
+.portal-shell[data-theme="dark"] .portal-content-area[data-backdrop="brand"] .adviser-chat-composer.dashboard-glass-card:focus-within {
+  border-width: 2px !important;
+  border-style: solid !important;
+  border-color: var(--hols-field-focus-border) !important;
+  box-shadow: none !important;
+}
+
+/* Clinical War Room — dashboard glass card */
 .adviser-war-room {
-  border: 1px solid color-mix(in srgb, var(--dash-surface-border) 88%, transparent);
-  background:
-    linear-gradient(
-      160deg,
-      color-mix(in srgb, var(--dash-surface) 92%, #dde466 8%),
-      var(--dash-surface) 42%,
-      color-mix(in srgb, var(--dash-surface) 94%, #152744 6%)
-    );
-  border-radius: 1.15rem;
+  border-radius: 1rem;
   padding: 1rem 1rem 1.1rem;
-  box-shadow: 0 10px 28px rgba(21, 39, 68, 0.06);
 }
 
 .adviser-war-room-header {
@@ -5476,10 +6364,11 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
   gap: 0.2rem;
   min-height: var(--orbit-size);
   border-radius: 1rem;
-  border: 1px solid color-mix(in srgb, var(--dash-surface-border) 90%, transparent);
-  background: color-mix(in srgb, var(--dash-soft) 70%, transparent);
+  border: 1px solid rgba(21, 39, 68, 0.16);
+  background: rgba(255, 255, 255, 0.62);
   padding: 0.75rem 0.85rem;
   text-align: left;
+  color: var(--dash-text);
   transition:
     transform 160ms ease,
     border-color 160ms ease,
@@ -5546,9 +6435,10 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
   flex-direction: column;
   gap: 0.75rem;
   border-radius: 0.95rem;
-  border: 1px solid color-mix(in srgb, var(--dash-surface-border) 88%, transparent);
-  background: color-mix(in srgb, var(--dash-surface) 88%, white 12%);
+  border: 1px solid rgba(21, 39, 68, 0.16);
+  background: rgba(255, 255, 255, 0.62);
   padding: 0.85rem 0.95rem;
+  color: var(--dash-text);
 }
 
 @media (min-width: 640px) {
@@ -5565,21 +6455,28 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
 }
 
 .adviser-war-room-mini-btn {
-  border-radius: 0.65rem;
-  border: 1px solid color-mix(in srgb, var(--dash-surface-border) 90%, transparent);
-  background: var(--dash-soft);
+  min-height: 2.5rem;
+  border-radius: 999px;
+  border: 1px solid rgba(21, 39, 68, 0.16);
+  background: rgba(255, 255, 255, 0.55);
   color: var(--dash-text);
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  padding: 0.4rem 0.65rem;
+  padding: 0.4rem 0.85rem;
   transition: background 140ms ease, border-color 140ms ease;
 }
 
 .adviser-war-room-mini-btn:hover:not(:disabled) {
-  border-color: color-mix(in srgb, #dde466 50%, var(--dash-surface-border));
+  border-color: var(--hols-field-hover-border);
 }
 
 .adviser-war-room-mini-btn.is-accent {
+  background: #dde466;
+  border-color: #dde466;
+  color: #152744;
+}
+
+.portal-shell[data-theme="dark"] .adviser-war-room-mini-btn.is-accent {
   background: #dde466;
   border-color: #dde466;
   color: #152744;
@@ -5629,32 +6526,30 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
   position: relative;
   z-index: 5;
   flex: 0 0 auto;
-  align-self: center;
-  width: max-content;
-  max-width: 100%;
+  align-self: flex-end;
 }
 
 .adviser-composer-confidence-trigger {
-  display: block;
+  display: flex;
   box-sizing: border-box;
-  width: max-content;
-  max-width: 100%;
-  height: 2.75rem;
-  min-height: 2.75rem;
+  width: 2.5rem;
+  height: 2.5rem;
+  min-height: 2.5rem;
   margin: 0;
   padding: 0;
-  border-radius: 0.65rem;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
   border: 1px solid rgba(21, 39, 68, 0.12);
   background: color-mix(in srgb, var(--dash-soft) 90%, transparent);
   color: var(--dash-text);
   line-height: 1;
-  transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+  transition: border-color 140ms ease, background 140ms ease;
 }
 
 @media (min-width: 640px) {
-  .adviser-composer-confidence-trigger {
-    height: 2.25rem;
-    min-height: 2.25rem;
+  .adviser-composer-confidence-menu {
+    align-self: center;
   }
 }
 
@@ -5663,59 +6558,31 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
   flex-direction: row;
   flex-wrap: nowrap;
   align-items: center;
-  justify-content: flex-start;
-  gap: 0.35rem;
-  box-sizing: border-box;
-  width: max-content;
-  max-width: 100%;
+  justify-content: center;
+  gap: 0;
+  width: 100%;
   height: 100%;
-  padding: 0 0.45rem 0 0.5rem;
+  padding: 0;
   white-space: nowrap;
 }
 
 .adviser-composer-confidence-trigger-icon,
-.adviser-composer-confidence-trigger-row > svg,
-.adviser-composer-confidence-chevron {
+.adviser-composer-confidence-trigger-row > svg {
   display: block;
   flex: 0 0 auto;
   width: 1rem;
   height: 1rem;
 }
 
-.adviser-composer-confidence-chevron {
-  width: 0.875rem;
-  height: 0.875rem;
-  color: var(--dash-faint);
-  transition: transform 160ms ease;
-}
-
 .adviser-composer-confidence-trigger:hover:not(:disabled),
 .adviser-composer-confidence-trigger.is-open {
-  border-color: #dde466;
-  background: rgba(221, 228, 102, 0.18);
+  border-color: var(--hols-field-hover-border);
+  background: color-mix(in srgb, var(--hols-field-hover-border) 18%, transparent);
 }
 
 .adviser-composer-confidence-trigger:disabled {
   opacity: 0.55;
   cursor: not-allowed;
-}
-
-.adviser-composer-confidence-trigger-label {
-  display: block;
-  flex: 0 1 auto;
-  min-width: 0;
-  max-width: 6.5rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  font-size: 0.75rem;
-  font-weight: 650;
-  line-height: 1;
-  letter-spacing: 0.01em;
-}
-
-.adviser-composer-confidence-chevron.is-open {
-  transform: rotate(180deg);
 }
 
 .adviser-composer-confidence-popover {
@@ -5745,11 +6612,12 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
 }
 
 .adviser-composer-confidence-option:hover {
-  background: color-mix(in srgb, var(--dash-soft) 88%, transparent);
+  background: var(--sidebar-hover);
 }
 
 .adviser-composer-confidence-option.is-active {
-  background: rgba(221, 228, 102, 0.28);
+  background: #dde466;
+  color: #142644;
 }
 
 .adviser-composer-confidence-option-icon {
@@ -5776,7 +6644,7 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
 
 .portal-shell[data-theme="dark"] .adviser-composer-confidence-trigger:hover:not(:disabled),
 .portal-shell[data-theme="dark"] .adviser-composer-confidence-trigger.is-open {
-  border-color: #dde466;
+  border-color: var(--hols-field-hover-border);
   background: rgba(221, 228, 102, 0.16);
 }
 
@@ -5787,11 +6655,12 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
 }
 
 .portal-shell[data-theme="dark"] .adviser-composer-confidence-option:hover {
-  background: rgba(255, 255, 255, 0.06);
+  background: var(--sidebar-hover);
 }
 
 .portal-shell[data-theme="dark"] .adviser-composer-confidence-option.is-active {
-  background: rgba(221, 228, 102, 0.2);
+  background: #dde466;
+  color: #142644;
 }
 
 .portal-shell[data-theme="dark"] .adviser-composer-confidence-option-icon {
@@ -5799,41 +6668,10 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
   color: rgba(255, 255, 255, 0.75);
 }
 
-@media (max-width: 419px) {
-  .adviser-composer-confidence-trigger-label {
-    max-width: 4.75rem;
-  }
-}
-
-/* Adviser chat — mobile layout (phones / narrow tablets) */
 @media (max-width: 639px) {
-  .adviser-chat-screen {
-    --adviser-chat-header-offset: 3.75rem;
-  }
-
   .adviser-chat-header-chrome {
-    padding-left: max(0.55rem, env(safe-area-inset-left));
-    padding-right: max(0.55rem, env(safe-area-inset-right));
-    padding-bottom: 0.55rem;
-  }
-
-  .adviser-composer-confidence-trigger {
-    height: 2.75rem;
-    min-height: 2.75rem;
-    width: 2.75rem;
-    border-radius: 0.75rem;
-  }
-
-  .adviser-composer-confidence-trigger-row {
-    width: 100%;
-    justify-content: center;
-    padding: 0;
-    gap: 0;
-  }
-
-  .adviser-composer-confidence-trigger-label,
-  .adviser-composer-confidence-chevron {
-    display: none !important;
+    padding-left: max(0.625rem, env(safe-area-inset-left));
+    padding-right: max(0.625rem, env(safe-area-inset-right));
   }
 
   .adviser-composer-confidence-popover {
@@ -5958,12 +6796,11 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
 
 .adviser-war-room-chip {
   border-radius: 999px;
-  border: 1px solid color-mix(in srgb, var(--dash-surface-border) 88%, transparent);
-  background: color-mix(in srgb, var(--dash-surface) 80%, white 20%);
-  color: var(--dash-text);
+  min-height: 2.5rem;
   font-size: 0.75rem;
   font-weight: 600;
   padding: 0.45rem 0.8rem;
+  color: var(--dash-text);
   transition: border-color 140ms ease, background 140ms ease, transform 140ms ease;
 }
 
@@ -5978,24 +6815,12 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
   cursor: not-allowed;
 }
 
-.portal-shell[data-theme="dark"] .adviser-war-room {
-  background:
-    linear-gradient(
-      160deg,
-      rgba(48, 68, 104, 0.95),
-      rgba(28, 44, 74, 0.98) 50%,
-      rgba(22, 36, 62, 0.98)
-    );
-  border-color: rgba(255, 255, 255, 0.1);
-  box-shadow: none;
-}
-
 .portal-shell[data-theme="dark"] .adviser-war-room-orbit-card,
 .portal-shell[data-theme="dark"] .adviser-war-room-detail,
 .portal-shell[data-theme="dark"] .adviser-war-room-chip,
 .portal-shell[data-theme="dark"] .adviser-war-room-mini-btn {
-  background: rgba(255, 255, 255, 0.05);
-  border-color: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.12);
 }
 
 .portal-shell[data-theme="dark"] .adviser-war-room-orbit-card.is-top,
@@ -6007,12 +6832,11 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
   background: rgba(255, 255, 255, 0.06);
 }
 
-/* AI replies — equal side margins, 1.5 line height, text spans full column */
+/* AI replies — glass card, navy body text */
 .adviser-chat-ai {
   width: 100%;
   max-width: 100%;
   margin-inline: 0;
-  padding-inline: 0;
   box-sizing: border-box;
 }
 
@@ -6020,16 +6844,27 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
 .adviser-chat-markdown {
   width: 100%;
   max-width: 100%;
+  color: var(--dash-text);
   line-height: 1.5;
 }
 
 .adviser-chat-markdown p,
 .adviser-chat-markdown li {
+  color: var(--dash-text);
   line-height: 1.5;
-  text-align: justify;
-  text-align-last: left;
-  hyphens: auto;
+  text-align: left;
+  hyphens: none;
   overflow-wrap: anywhere;
+}
+
+.adviser-chat-user {
+  background: var(--dash-navy);
+  color: #ffffff;
+}
+
+.portal-shell[data-theme="dark"] .adviser-chat-user {
+  background: #dde466;
+  color: #142644;
 }
 
 /* Dashboard form fields — theme-aware (light / dark via --dash-*) */
@@ -6061,10 +6896,21 @@ html:has(.portal-shell[data-theme="dark"]) .adviser-dialog-panel .dashboard-fiel
   color: var(--dash-faint);
 }
 
-.dashboard-field:focus {
-  border-color: rgba(221, 228, 102, 0.55);
+.dashboard-field:hover,
+.dashboard-field:focus-within,
+.dashboard-field[aria-expanded="true"] {
+  border-width: 2px;
+  border-style: solid;
+  border-color: var(--hols-field-focus-border);
+}
+
+.dashboard-field:focus,
+.dashboard-field:focus-visible {
+  border-width: 2px;
+  border-style: solid;
+  border-color: var(--hols-field-focus-border);
   background-color: var(--dash-surface);
-  box-shadow: 0 0 0 4px rgba(221, 228, 102, 0.18);
+  box-shadow: none;
 }
 
 .dashboard-field-select {
@@ -6855,6 +7701,16 @@ select.dashboard-field option:hover {
 }
 
 /* ── Hero overlay buttons (brand-driven, see lib/hero-styles.ts) ─ */
+/* Navbar Log in (ghost) is the dark-surface glass source of truth. */
+:root {
+  --hols-nav-glass-bg: rgba(255, 255, 255, 0.08);
+  --hols-nav-glass-bg-hover: rgba(255, 255, 255, 0.16);
+  --hols-nav-glass-filter: blur(20px) saturate(180%);
+  --hols-nav-glass-border: rgba(255, 255, 255, 0.18);
+  --hols-nav-glass-shadow:
+    0 8px 28px rgba(0, 0, 0, 0.12),
+    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+}
 
 .hols-hero-btn-primary {
   background-color: var(--brand-lemon-lime);
@@ -6868,8 +7724,8 @@ select.dashboard-field option:hover {
 
 .hols-hero-btn-secondary {
   background-color: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: var(--hols-nav-glass-filter);
+  -webkit-backdrop-filter: var(--hols-nav-glass-filter);
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow:
     0 8px 32px rgba(0, 0, 0, 0.14),
@@ -6877,23 +7733,75 @@ select.dashboard-field option:hover {
 }
 
 .hols-hero-btn-ghost {
-  background-color: rgba(255, 255, 255, 0.08);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
-  border: 1px solid rgba(255, 255, 255, 0.18);
-  box-shadow:
-    0 8px 28px rgba(0, 0, 0, 0.12),
-    inset 0 1px 0 rgba(255, 255, 255, 0.14);
+  background-color: var(--hols-nav-glass-bg);
+  backdrop-filter: var(--hols-nav-glass-filter);
+  -webkit-backdrop-filter: var(--hols-nav-glass-filter);
+  border: 1px solid var(--hols-nav-glass-border);
+  box-shadow: var(--hols-nav-glass-shadow);
 }
 
 .hols-hero-btn-icon {
   overflow: hidden;
   border-radius: 9999px;
   background-color: rgba(255, 255, 255, 0.1);
-  backdrop-filter: blur(20px) saturate(180%);
-  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  backdrop-filter: var(--hols-nav-glass-filter);
+  -webkit-backdrop-filter: var(--hols-nav-glass-filter);
   border: 1px solid rgba(255, 255, 255, 0.2);
   box-shadow: none;
+}
+
+.portal-shell[data-theme="dark"] .dashboard-navy-btn,
+.portal-shell[data-theme="dark"] .dashboard-pill-soft,
+.portal-shell[data-theme="dark"] .dashboard-icon-btn,
+.portal-shell[data-theme="dark"] .dashboard-notify-btn,
+.portal-shell[data-theme="dark"] .dashboard-welcome-chip,
+.portal-shell[data-theme="dark"] .dashboard-welcome-chip-navy,
+.portal-shell[data-theme="dark"] .dashboard-tool-icon,
+.portal-shell[data-theme="dark"] .portal-header-icon,
+.portal-shell[data-theme="dark"] .membership-plan-cta:not(.membership-plan-cta--favourite),
+.portal-shell[data-theme="dark"] .adviser-chat-back-btn,
+html:has(.portal-shell[data-theme="dark"]) .dash-right-drawer .dashboard-navy-btn,
+html:has(.portal-shell[data-theme="dark"]) .dash-right-drawer .dashboard-pill-soft,
+html:has(.portal-shell[data-theme="dark"]) .dash-right-drawer .dashboard-icon-btn,
+html:has(.portal-shell[data-theme="dark"]) .quiz-dialog-panel .dashboard-navy-btn,
+html:has(.portal-shell[data-theme="dark"]) .quiz-dialog-panel .dashboard-pill-soft,
+html:has(.portal-shell[data-theme="dark"]) .quiz-dialog-panel .dashboard-icon-btn {
+  background: var(--hols-nav-glass-bg);
+  backdrop-filter: var(--hols-nav-glass-filter);
+  -webkit-backdrop-filter: var(--hols-nav-glass-filter);
+  border: 1px solid var(--hols-nav-glass-border);
+  box-shadow: var(--hols-nav-glass-shadow);
+  color: #f4f7fb;
+  filter: none;
+}
+
+.portal-shell[data-theme="dark"] .dashboard-navy-btn:hover,
+.portal-shell[data-theme="dark"] .dashboard-pill-soft:hover,
+.portal-shell[data-theme="dark"] .dashboard-icon-btn:hover,
+.portal-shell[data-theme="dark"] .dashboard-notify-btn:hover,
+.portal-shell[data-theme="dark"] .portal-header-icon:hover,
+.portal-shell[data-theme="dark"] .membership-plan-cta:not(.membership-plan-cta--favourite):hover,
+.portal-shell[data-theme="dark"] .adviser-chat-back-btn:hover,
+html:has(.portal-shell[data-theme="dark"]) .dash-right-drawer .dashboard-navy-btn:hover,
+html:has(.portal-shell[data-theme="dark"]) .dash-right-drawer .dashboard-pill-soft:hover,
+html:has(.portal-shell[data-theme="dark"]) .dash-right-drawer .dashboard-icon-btn:hover,
+html:has(.portal-shell[data-theme="dark"]) .quiz-dialog-panel .dashboard-navy-btn:hover,
+html:has(.portal-shell[data-theme="dark"]) .quiz-dialog-panel .dashboard-pill-soft:hover,
+html:has(.portal-shell[data-theme="dark"]) .quiz-dialog-panel .dashboard-icon-btn:hover {
+  background: var(--hols-nav-glass-bg-hover);
+  border-color: var(--hols-nav-glass-border);
+  color: #ffffff;
+  filter: none;
+}
+
+.portal-shell[data-theme="dark"] .membership-plan-cta--favourite,
+.portal-shell[data-theme="dark"] .membership-plan-cta--favourite:hover {
+  background: #dde466;
+  border: 0;
+  box-shadow: 0 8px 20px rgba(221, 228, 102, 0.28);
+  color: #152744;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
 }
 
 .glass-panel {
@@ -6988,7 +7896,7 @@ html.lenis main {
   min-height: 2.75rem;
   align-items: center;
   gap: 0.55rem;
-  border-radius: 0.5rem;
+  border-radius: 0.9rem;
   border: 1px solid var(--dash-surface-border);
   background: var(--dash-surface);
   padding: 0.5rem 0.75rem;
@@ -7044,11 +7952,15 @@ html.lenis main {
 }
 
 .lecture-library-search:hover {
-  border-color: #dde466;
+  border-width: 2px;
+  border-style: solid;
+  border-color: var(--hols-field-focus-border);
 }
 
 .lecture-library-search:focus-within {
-  border-color: #dde466;
+  border-width: 2px;
+  border-style: solid;
+  border-color: var(--hols-field-focus-border);
   background: var(--dash-surface);
   box-shadow: none;
 }
@@ -7125,7 +8037,9 @@ html.lenis main {
 .portal-content-area[data-backdrop="brand"] .lecture-library-search:hover,
 .portal-content-area[data-backdrop="brand"] .lecture-library-search:focus-within {
   background: rgba(255, 255, 255, 0.96);
-  border-color: #dde466;
+  border-width: 2px;
+  border-style: solid;
+  border-color: var(--hols-field-focus-border);
   box-shadow: none;
 }
 
@@ -7144,7 +8058,9 @@ html.lenis main {
 
 .portal-shell[data-theme="dark"] .lecture-library-search:hover,
 .portal-shell[data-theme="dark"] .lecture-library-search:focus-within {
-  border-color: #dde466;
+  border-width: 2px;
+  border-style: solid;
+  border-color: var(--hols-field-focus-border);
   background: rgba(255, 255, 255, 0.08);
   box-shadow: none;
 }
@@ -8703,26 +9619,19 @@ html.lenis main {
 }
 
 .lecture-course-card {
-  background: rgba(255, 255, 255, 0.72);
-  border: 1px solid rgba(255, 255, 255, 0.55);
-  border-radius: 0.75rem;
-  box-shadow:
-    0 16px 48px rgba(20, 38, 68, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  background: rgba(255, 255, 255, 0.28);
+  border: 1px solid rgba(255, 255, 255, 0.62);
+  border-radius: 1rem;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
   backdrop-filter: blur(22px) saturate(180%);
   -webkit-backdrop-filter: blur(22px) saturate(180%);
-  transition:
-    transform 0.28s cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 0.2s ease,
-    box-shadow 0.2s ease;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
   animation: lecture-card-enter 0.45s cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
 .lecture-course-card[data-featured="true"] {
-  border: 1px solid rgba(221, 228, 102, 0.55);
-  box-shadow:
-    0 16px 48px rgba(20, 38, 68, 0.1),
-    inset 0 1px 0 rgba(255, 255, 255, 0.85);
+  border-color: rgba(255, 255, 255, 0.62);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
 }
 
 .lecture-course-card-spotlight {
@@ -8738,28 +9647,29 @@ html.lenis main {
 }
 
 .lecture-course-card-glass {
-  background: rgba(255, 255, 255, 0.78);
-  backdrop-filter: blur(12px) saturate(160%);
-  -webkit-backdrop-filter: blur(12px) saturate(160%);
-  border-top: 1px solid rgba(255, 255, 255, 0.55);
+  isolation: isolate;
+  background: rgba(255, 255, 255, 0.55);
+  backdrop-filter: blur(16px) saturate(160%);
+  -webkit-backdrop-filter: blur(16px) saturate(160%);
+  border-top: 1px solid rgba(255, 255, 255, 0.45);
 }
 
 .lecture-course-card-title {
   margin: 0 0 0.7rem;
   max-width: 100%;
+  min-height: calc(1.2em * 2);
   font-size: clamp(0.95rem, 2.4vw, 1.125rem);
   font-weight: 700;
   line-height: 1.2;
-  letter-spacing: -0.03em;
-  color: #1a2140;
+  letter-spacing: 0.01em;
+  color: var(--dash-text);
   display: -webkit-box;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   overflow: hidden;
-}
-
-.portal-shell[data-theme="dark"] .lecture-course-card-title {
-  color: #f5f7ff;
+  overflow-wrap: break-word;
+  word-break: break-word;
 }
 
 .lecture-course-stats {
@@ -8800,42 +9710,33 @@ html.lenis main {
 
 .lecture-course-card:hover,
 .lecture-course-card:focus-visible {
-  transform: translateY(-4px);
-  border-color: rgba(221, 228, 102, 0.85);
-  box-shadow:
-    0 20px 52px rgba(20, 38, 68, 0.14),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  border-color: rgba(255, 255, 255, 0.62);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
   outline: none;
 }
 
 .lecture-course-card[data-featured="true"]:hover,
 .lecture-course-card[data-featured="true"]:focus-visible {
-  border-color: #dde466;
-  box-shadow:
-    0 20px 52px rgba(20, 38, 68, 0.14),
-    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  border-color: rgba(255, 255, 255, 0.62);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.75);
 }
 
 .portal-shell[data-theme="dark"] .lecture-course-card {
-  background: rgba(19, 32, 58, 0.78);
-  border-color: rgba(255, 255, 255, 0.14);
-  box-shadow:
-    0 16px 48px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  background: rgba(20, 38, 68, 0.35);
+  border-color: rgba(141, 195, 225, 0.28);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .portal-shell[data-theme="dark"] .lecture-course-card[data-featured="true"] {
-  border-color: rgba(221, 228, 102, 0.45);
-  box-shadow:
-    0 16px 48px rgba(0, 0, 0, 0.35),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  border-color: rgba(141, 195, 225, 0.28);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .portal-shell[data-theme="dark"] .lecture-course-card-glass {
-  background: rgba(15, 26, 52, 0.86);
-  backdrop-filter: blur(12px) saturate(140%);
-  -webkit-backdrop-filter: blur(12px) saturate(140%);
-  border-top-color: rgba(255, 255, 255, 0.12);
+  background: rgba(20, 38, 68, 0.55);
+  backdrop-filter: blur(16px) saturate(140%);
+  -webkit-backdrop-filter: blur(16px) saturate(140%);
+  border-top-color: rgba(141, 195, 225, 0.22);
 }
 
 .portal-shell[data-theme="dark"] .lecture-course-stats {
@@ -8857,18 +9758,14 @@ html.lenis main {
 
 .portal-shell[data-theme="dark"] .lecture-course-card:hover,
 .portal-shell[data-theme="dark"] .lecture-course-card:focus-visible {
-  border-color: rgba(221, 228, 102, 0.45);
-  box-shadow:
-    0 20px 52px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border-color: rgba(141, 195, 225, 0.28);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .portal-shell[data-theme="dark"] .lecture-course-card[data-featured="true"]:hover,
 .portal-shell[data-theme="dark"] .lecture-course-card[data-featured="true"]:focus-visible {
-  border-color: rgba(221, 228, 102, 0.55);
-  box-shadow:
-    0 20px 52px rgba(0, 0, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.1);
+  border-color: rgba(141, 195, 225, 0.28);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.08);
 }
 
 .lecture-course-card:hover .lecture-cover-art-scene,
@@ -8888,7 +9785,7 @@ html.lenis main {
 }
 
 .lecture-course-card:active {
-  transform: translateY(-2px);
+  transform: none;
 }
 
 .lecture-course-card-shine {

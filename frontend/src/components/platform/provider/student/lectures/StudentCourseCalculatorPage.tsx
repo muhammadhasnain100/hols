@@ -39,6 +39,8 @@ export function StudentCourseCalculatorPage({ courseId }: StudentCourseCalculato
       description="Reconstitution and dosing helper while you study this course."
       courseId={courseId}
       courseNavActive="calculator"
+      backHref={`/student/lectures/${courseId}`}
+      backLabel="Back to cover"
       hideHero
     >
       {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}

@@ -1,10 +1,5 @@
-import { PortalGate } from "@/components/platform/provider/PortalGate";
-import { StudentOrdersPage } from "@/components/platform/provider/student/payment/StudentOrdersPage";
+import { redirect } from "next/navigation";
 
 export default function StudentOrdersRoute() {
-  return (
-    <PortalGate role="student">
-      <StudentOrdersPage />
-    </PortalGate>
-  );
+  redirect("/student/profile/orders");
 }

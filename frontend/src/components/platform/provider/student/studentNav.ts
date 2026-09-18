@@ -6,15 +6,6 @@ export const studentNav: PortalNavItem[] = [
   { label: "Webinars", href: "/student/webinars", icon: portalIcons.webinars },
   { label: "Calculator", href: "/student/calculator", icon: portalIcons.calculator },
   { label: "Peptide Advisor", href: "/student/adviser", icon: portalIcons.adviser },
-  {
-    label: "Payment",
-    href: "/student/payment",
-    icon: portalIcons.payment,
-    children: [
-      { label: "Membership", href: "/student/payment", exact: true },
-      { label: "Orders", href: "/student/payment/orders" },
-      { label: "Payment card", href: "/student/payment/card" },
-    ],
-  },
-  { label: "Profile", href: "/student/profile", icon: portalIcons.profile },
+  { label: "Payment", href: "/student/payment", icon: portalIcons.payment, exact: true },
+  { label: "Settings", href: "/student/profile", icon: portalIcons.profile },
 ];

@@ -1,8 +1,7 @@
 "use client";
 
+import { Icon, Menu } from "@/components/icons";
 import { PortalShell } from "@/components/platform/provider/PortalShell";
-import { SidebarSvgIcon } from "@/components/platform/provider/sidebar-icons";
-import { WelcomeChip } from "@/components/platform/provider/student/WelcomeChip";
 import { studentNav } from "@/components/platform/provider/student/studentNav";
 
 type AdviserPageLayoutProps = {
@@ -24,24 +23,20 @@ export function AdviserPageLayout({ children }: AdviserPageLayoutProps) {
       nav={studentNav}
     >
       <div className="dashboard-screen lectures-page adviser-page min-w-0 overflow-x-hidden">
-        <header className="mb-3 flex h-11 min-w-0 items-center gap-2.5 sm:mb-4 sm:h-12 sm:gap-3 md:mb-5 md:gap-4">
+        <header className="mb-4 flex h-10 min-w-0 items-center gap-2 sm:mb-5 sm:h-12 sm:gap-3 md:gap-4">
           <button
             type="button"
             aria-label="Open sidebar"
             onClick={openSidebar}
-            className="dashboard-icon-btn flex h-11 w-11 shrink-0 items-center justify-center rounded-lg lg:hidden sm:h-12 sm:w-12"
+            className="dashboard-icon-btn flex h-10 w-10 shrink-0 items-center justify-center rounded-full lg:hidden sm:h-12 sm:w-12"
           >
-            <SidebarSvgIcon name="menu" size={18} strokeWidth={2} />
+            <Icon icon={Menu} size={18} />
           </button>
 
-          <h1 className="font-sans shrink-0 text-xl font-bold leading-none tracking-[0.01em] text-[color:var(--dash-text)] min-[400px]:text-2xl sm:text-3xl">
+          <h1 className="font-sans min-w-0 truncate text-xl font-bold leading-none tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl">
             <span className="sm:hidden">Advisor</span>
             <span className="hidden sm:inline">Peptide Advisor</span>
           </h1>
-
-          <div className="min-w-0 flex-1" aria-hidden />
-
-          <WelcomeChip className="lecture-header-welcome h-11 sm:h-12" />
         </header>
 
         <div className="grid w-full min-w-0 gap-3 sm:gap-4">{children}</div>

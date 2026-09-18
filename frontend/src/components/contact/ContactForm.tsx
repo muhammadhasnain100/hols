@@ -7,7 +7,7 @@ import { contactContent } from "@/content/contact";
 import { cn } from "@/lib/utils";
 
 const inputClassName =
-  "w-full rounded-xl border border-border/50 bg-white/90 px-4 py-3.5 text-sm text-primary outline-none transition placeholder:text-muted/70 focus:border-primary-light focus:ring-2 focus:ring-primary-light/15";
+  "hols-hover-border w-full rounded-xl border border-border/50 bg-white/90 px-4 py-3.5 text-sm text-primary outline-none transition-[border-color] placeholder:text-muted/70 focus:ring-0";
 
 type ContactFormProps = {
   className?: string;
