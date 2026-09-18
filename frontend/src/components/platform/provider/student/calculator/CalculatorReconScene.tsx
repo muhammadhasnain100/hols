@@ -38,26 +38,25 @@ type CalculatorReconSceneProps = {
 };
 
 /**
- * Overview vials — sized so both silhouettes read as the same height on a
- * shared surface. Water uses 160×210 art; med uses 120×205 with a higher
- * internal scale, so med CSS width stays ~0.77× water.
- * `max-[390px]` targets iPhone SE / small phones — keep proportions close to
- * desktop so needle insert depth scales correctly.
+ * Overview vials — deliberately smaller than the stage so the syringe has room
+ * and the card doesn’t feel packed. Water uses 160×210 art; med uses 120×205
+ * with a higher internal scale, so med CSS width stays ~0.77× water.
+ * `max-[390px]` targets iPhone SE / small phones.
  */
 const vialSizeClass =
-  "w-[3.85rem] max-[390px]:w-[3.6rem] sm:w-[6.05rem] md:w-[9.35rem]";
+  "w-[3.1rem] max-[390px]:w-[2.9rem] sm:w-[4.75rem] md:w-[7.25rem]";
 const waterVialSizeClass =
-  "w-[5rem] max-[390px]:w-[4.65rem] sm:w-[7.9rem] md:w-[12.15rem]";
+  "w-[4rem] max-[390px]:w-[3.75rem] sm:w-[6.2rem] md:w-[9.4rem]";
 /**
- * Draw (animation) column + art widths — match overview so the reconstitution
- * scene reads at the same scale as the selection preview on every breakpoint.
+ * Draw (animation) column + art widths — match overview so measurement and
+ * reconstitution stay at the same vial scale.
  */
 const drawColumnClass =
-  "w-[5rem] max-[390px]:w-[4.65rem] sm:w-[7.9rem] md:w-[12.15rem]";
+  "w-[4rem] max-[390px]:w-[3.75rem] sm:w-[6.2rem] md:w-[9.4rem]";
 const drawVialArtClass =
-  "w-[3.85rem] max-[390px]:w-[3.6rem] sm:w-[6.05rem] md:w-[9.35rem]";
+  "w-[3.1rem] max-[390px]:w-[2.9rem] sm:w-[4.75rem] md:w-[7.25rem]";
 const drawWaterVialArtClass =
-  "w-[5rem] max-[390px]:w-[4.65rem] sm:w-[7.9rem] md:w-[12.15rem]";
+  "w-[4rem] max-[390px]:w-[3.75rem] sm:w-[6.2rem] md:w-[9.4rem]";
 /**
  * Back (liquid) + front (glass) overlays MUST share this exact flex layout.
  * Top padding is applied inline as `paddingTop` based on the selected syringe
@@ -198,7 +197,8 @@ export function CalculatorReconScene({
           // Syringe near top (pt); leftover space between syringe & vials;
           // vials pinned to the bottom of the stage.
           "mx-auto flex w-full max-w-[18rem] flex-col items-center px-2 pt-6 pb-4 max-[390px]:max-w-[17rem] max-[390px]:px-1.5 max-[390px]:pt-5 max-[390px]:pb-3.5 sm:max-w-[24rem] sm:px-2 sm:pt-7 sm:pb-5 md:max-w-lg md:pt-8 md:pb-6",
-          "min-h-[17rem] max-[390px]:min-h-[16rem] sm:min-h-[20rem] md:min-h-[24rem]",
+          // Keep stage tall after shrinking vials so the card doesn’t collapse.
+          "min-h-[18rem] max-[390px]:min-h-[17rem] sm:min-h-[22rem] md:min-h-[26rem]",
           className,
         )}
       >
@@ -219,7 +219,7 @@ export function CalculatorReconScene({
           </div>
         ) : null}
 
-        <div className="min-h-6 w-full min-w-0 flex-1 max-[390px]:min-h-5 sm:min-h-7 md:min-h-8" aria-hidden />
+        <div className="min-h-8 w-full min-w-0 flex-1 max-[390px]:min-h-6 sm:min-h-10 md:min-h-12" aria-hidden />
 
         <div className="flex w-full min-w-0 shrink-0 items-end justify-center gap-3 max-[390px]:gap-2.5 sm:gap-6 md:gap-12">
           <AssetVial
