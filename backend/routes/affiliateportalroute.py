@@ -2,9 +2,8 @@
 
 import asyncio
 from typing import Annotated, Optional
-from urllib.parse import urlparse
 
-from fastapi import APIRouter, Depends, HTTPException, Query, Request, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 
 from core.route_handlers import handle_route_errors
 from database_entities import UserRole
@@ -38,34 +37,13 @@ from services.routes.sales import service as sales_service
 router = APIRouter(prefix="/affiliate", tags=["affiliate"])
 
 
-def _public_origin(request: Request) -> str:
-    """Prefer the browser Origin/Referer, else the configured frontend URL."""
-    origin = request.headers.get("origin")
-    if origin:
-        return origin.rstrip("/")
-
-    referer = request.headers.get("referer")
-    if referer:
-        parsed = urlparse(referer)
-        if parsed.scheme and parsed.netloc:
-            return f"{parsed.scheme}://{parsed.netloc}"
-
-    from services.common import email as email_service
-
-    return email_service.frontend_origin()
-
-
 @router.get("/invite-url", response_model=AffiliateInviteUrlResponse)
 @handle_route_errors("get affiliate invite url", log_prefix="Affiliate")
 async def get_invite_url(
-    request: Request,
     current_user: Annotated[CurrentUser, Depends(require_roles(UserRole.AFFILIATE))],
 ) -> AffiliateInviteUrlResponse:
     """Affiliate - return public signup URL for this affiliate's invite code."""
-    result = await affiliate_portal_service.get_invite_url(
-        affiliate_id=current_user.user_id,
-        public_origin=_public_origin(request),
-    )
+    result = await affiliate_portal_service.get_invite_url(affiliate_id=current_user.user_id)
     return success_response(AffiliateInviteUrlData(**result))
 
 
@@ -84,23 +62,18 @@ async def resolve_invite_code(invite_code: str) -> AffiliateInviteResolveRespons
 )
 @handle_route_errors("send affiliate student invites", log_prefix="Affiliate")
 async def send_invites(
-    request: Request,
     body: AffiliateInviteRequest,
     current_user: Annotated[CurrentUser, Depends(require_roles(UserRole.AFFILIATE))],
 ) -> AffiliateInviteEmailResponse:
     """Affiliate - email the public signup URL to one or many students."""
     recipients = body.normalized_emails()
-    invite_url = await affiliate_portal_service.get_invite_url(
-        affiliate_id=current_user.user_id,
-        public_origin=_public_origin(request),
-    )
+    invite_url = await affiliate_portal_service.get_invite_url(affiliate_id=current_user.user_id)
     if not invite_url.get("invite_code"):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Affiliate invite code is not assigned")
 
     task = affiliate_portal_service.send_student_invites(
         affiliate_id=current_user.user_id,
         recipients=recipients,
-        public_origin=_public_origin(request),
         message=body.message,
     )
     asyncio.create_task(task)

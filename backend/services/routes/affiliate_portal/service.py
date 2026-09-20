@@ -78,38 +78,34 @@ def _signup_path(affiliate: dict[str, Any]) -> str:
     return f"/signup?{urlencode(query)}"
 
 
-def build_invite_url(affiliate: dict[str, Any], public_origin: str) -> dict[str, Any]:
+def build_invite_url(affiliate: dict[str, Any]) -> dict[str, Any]:
     signup_path = _signup_path(affiliate)
     return {
         "affiliate_id": affiliate["user_id"],
         "invite_code": affiliate.get("invite_code"),
         "signup_path": signup_path,
-        "public_url": f"{public_origin.rstrip('/')}{signup_path}",
+        "public_url": email_service.frontend_url(signup_path),
         "student_count": _as_int(affiliate.get("student_count")) or 0,
         "invitation_quota": _as_int(affiliate.get("invitation_quota")),
     }
 
 
-async def get_invite_url(affiliate_id: str, public_origin: str) -> dict[str, Any]:
+async def get_invite_url(affiliate_id: str) -> dict[str, Any]:
     affiliate = await _get_affiliate(affiliate_id)
-    origin = (public_origin or "").rstrip("/") or email_service.frontend_origin()
-    return build_invite_url(affiliate, origin)
+    return build_invite_url(affiliate)
 
 
 async def send_student_invites(
     *,
     affiliate_id: str,
     recipients: list[str],
-    public_origin: str,
     message: Optional[str] = None,
 ) -> dict[str, Any]:
     affiliate = await _get_affiliate(affiliate_id)
     if not affiliate.get("invite_code"):
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Affiliate invite code is not assigned")
 
-    # Prefer configured frontend URL so invite buttons never point at the API host.
-    origin = (public_origin or "").rstrip("/") or email_service.frontend_origin()
-    invite_url = build_invite_url(affiliate, origin)
+    invite_url = build_invite_url(affiliate)
     first_name = affiliate.get("first_name") or "Your HOLS affiliate"
     personal_message = (message or "").strip()
     invite_extra = (
