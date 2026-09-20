@@ -35,7 +35,7 @@ function LecturesSearch({
         value={value}
         onChange={(event) => onChange(event.target.value)}
         placeholder="Search lectures…"
-        className="lecture-library-search-input"
+        className="hols-plain-control lecture-library-search-input"
         aria-label="Search lectures"
       />
       {value ? (
@@ -69,7 +69,7 @@ export function LecturesPageLayout({
       nav={studentNav}
     >
       <div className="dashboard-screen lectures-page min-w-0 overflow-x-hidden">
-        <header className="mb-3 flex h-10 min-w-0 items-center gap-2 sm:mb-4 sm:h-12 sm:gap-3 md:mb-5 md:gap-4">
+        <header className="mb-3 flex min-w-0 flex-wrap items-center gap-2 sm:mb-4 sm:min-h-12 sm:flex-nowrap sm:gap-3 md:mb-5 md:gap-4">
           <button
             type="button"
             aria-label="Open sidebar"
@@ -79,7 +79,7 @@ export function LecturesPageLayout({
             <Icon icon={Menu} size={18} />
           </button>
 
-          <h1 className="font-sans min-w-0 shrink-0 truncate text-xl font-bold leading-none tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl">
+          <h1 className="font-sans min-w-0 flex-1 truncate text-lg font-bold leading-none tracking-[0.01em] text-[color:var(--dash-text)] sm:flex-none sm:text-xl md:text-2xl">
             Lectures
           </h1>
 
@@ -87,10 +87,10 @@ export function LecturesPageLayout({
             <LecturesSearch
               value={searchQuery}
               onChange={onSearchQueryChange}
-              className="ml-auto w-full min-w-0 max-w-[16.5rem] sm:max-w-[20rem] md:max-w-[22rem]"
+              className="w-full min-w-0 basis-full sm:ml-auto sm:w-auto sm:max-w-[20rem] sm:flex-1 sm:basis-auto md:max-w-[22rem]"
             />
           ) : (
-            <div className="min-w-0 flex-1" aria-hidden />
+            <div className="hidden min-w-0 flex-1 sm:block" aria-hidden />
           )}
         </header>
 

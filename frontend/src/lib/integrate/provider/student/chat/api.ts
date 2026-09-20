@@ -11,6 +11,7 @@ import type {
   IntakeEvaluation,
   PatientDetail,
   PatientListData,
+  PatientListParams,
   PatientMessagesData,
   QuestionnaireFlow,
 } from "@/lib/integrate/provider/student/chat/types";
@@ -167,8 +168,15 @@ export async function evaluateQuestionnaire(answers: IntakeAnswers): Promise<Int
   });
 }
 
-export async function listPatients(): Promise<PatientListData> {
-  return cachedAdviserRequest<PatientListData>(cacheKey("patients"), "/api/chat/patients");
+export async function listPatients(params: PatientListParams = {}): Promise<PatientListData> {
+  const search = new URLSearchParams();
+  search.set("page", String(params.page ?? 1));
+  search.set("limit", String(params.limit ?? 10));
+  search.set("sort", params.sort ?? "newest");
+  search.set("status", params.status ?? "all");
+  if (params.q?.trim()) search.set("q", params.q.trim());
+  const query = search.toString();
+  return apiRequest<PatientListData>(`/api/chat/patients?${query}`, { auth: true });
 }
 
 export async function createPatient(displayName: string): Promise<PatientDetail> {
@@ -191,10 +199,16 @@ export async function getPatient(
     search.set("include_messages", "true");
   }
   const query = search.toString();
-  return cachedAdviserRequest<PatientDetail>(
-    patientCacheKey(patientId, includeMessages),
-    `/api/chat/patients/${patientId}${query ? `?${query}` : ""}`,
-  );
+  const path = `/api/chat/patients/${patientId}${query ? `?${query}` : ""}`;
+  if (!includeMessages) {
+    return cachedAdviserRequest<PatientDetail>(patientCacheKey(patientId, false), path);
+  }
+
+  const patient = await apiRequest<PatientDetail>(path, { auth: true });
+  const key = patientCacheKey(patientId, true);
+  adviserMemoryCache.set(key, patient);
+  writeSessionCache(key, patient);
+  return patient;
 }
 
 export async function getPatientMessages(
@@ -246,6 +260,7 @@ export async function updatePatientBoard(
     confidence?: "conservative" | "balanced" | "aggressive" | string;
     preferred?: string | null;
     clear_preferred?: boolean;
+    focus_peptides?: string[];
   },
 ): Promise<PatientDetail> {
   const patient = await apiRequest<PatientDetail>(`/api/chat/patients/${patientId}/board`, {
@@ -255,6 +270,7 @@ export async function updatePatientBoard(
       confidence: input.confidence,
       preferred: input.preferred ?? undefined,
       clear_preferred: input.clear_preferred ?? false,
+      ...(input.focus_peptides !== undefined ? { focus_peptides: input.focus_peptides } : {}),
     },
   });
   const patientKey = patientCacheKey(patientId, true);
@@ -267,11 +283,15 @@ export async function updatePatientBoard(
 export async function sendPatientMessage(
   patientId: string,
   question: string,
+  options?: { focusPeptides?: string[] },
 ): Promise<PatientDetail> {
   const patient = await apiRequest<PatientDetail>(`/api/chat/patients/${patientId}/messages`, {
     method: "POST",
     auth: true,
-    body: { question },
+    body: {
+      question,
+      focus_peptides: options?.focusPeptides?.filter(Boolean) ?? [],
+    },
   });
   const patientKey = patientCacheKey(patientId, true);
   adviserMemoryCache.set(patientKey, patient);

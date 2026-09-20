@@ -196,7 +196,7 @@ export function CalculatorReconScene({
         className={cn(
           // Syringe near top (pt); leftover space between syringe & vials;
           // vials pinned to the bottom of the stage.
-          "mx-auto flex w-full max-w-[18rem] flex-col items-center px-2 pt-6 pb-4 max-[390px]:max-w-[17rem] max-[390px]:px-1.5 max-[390px]:pt-5 max-[390px]:pb-3.5 sm:max-w-[24rem] sm:px-2 sm:pt-7 sm:pb-5 md:max-w-lg md:pt-8 md:pb-6",
+          "mx-auto flex w-full max-w-[18rem] flex-col items-center px-2 pt-6 pb-7 max-[390px]:max-w-[17rem] max-[390px]:px-1.5 max-[390px]:pt-5 max-[390px]:pb-6 sm:max-w-[24rem] sm:px-2 sm:pt-7 sm:pb-8 md:max-w-lg md:pt-8 md:pb-9",
           // Keep stage tall after shrinking vials so the card doesn’t collapse.
           "min-h-[18rem] max-[390px]:min-h-[17rem] sm:min-h-[22rem] md:min-h-[26rem]",
           className,
@@ -277,11 +277,7 @@ export function CalculatorReconScene({
           {/* Contact shadow — follows syringe via GSAP */}
           <div
             data-syringe-contact-shadow
-            className="pointer-events-none absolute z-[4] h-3 w-14 rounded-full opacity-0"
-            style={{
-              background: "radial-gradient(ellipse, rgba(20,38,68,0.22) 0%, transparent 72%)",
-              filter: "blur(2px)",
-            }}
+            className="calc-contact-shadow pointer-events-none absolute z-[4] h-3 w-14 rounded-full opacity-0"
             aria-hidden
           />
           {/*

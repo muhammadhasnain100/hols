@@ -19,9 +19,7 @@ import {
   X,
 } from "@/components/icons";
 import { PortalNavIcon, SidebarSvgIcon } from "@/components/platform/provider/sidebar-icons";
-import { stopPortalAuthRuntime } from "@/lib/integrate/auth/runtime";
-import { getLoginPath } from "@/lib/integrate/auth/routes";
-import { clearAuthSession } from "@/lib/integrate/auth/storage";
+import { logoutImmediately } from "@/lib/integrate/auth/session";
 import type { UserRole } from "@/lib/integrate/auth/types";
 import {
   portalNavFlyoutLabelClass,
@@ -38,6 +36,7 @@ import {
   writePortalTheme,
 } from "@/components/platform/provider/portal-theme-store";
 import { useServerPortalTheme } from "@/components/platform/provider/PortalThemeProvider";
+import { NotificationsLiveSync, useUnreadNotificationsCount } from "@/components/platform/provider/notifications/NotificationsLiveSync";
 import { cn } from "@/lib/utils";
 
 const COLLAPSED_KEY = "hols-portal-sidebar-collapsed";
@@ -54,6 +53,7 @@ export type PortalNavItem = {
   icon: React.ReactNode;
   exact?: boolean;
   children?: PortalNavChild[];
+  badge?: "unread";
 };
 
 type PortalShellProps = {
@@ -114,6 +114,8 @@ export function PortalShell({
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(() => new Set());
   const [navQuery, setNavQuery] = useState("");
   const [isDesktop, setIsDesktop] = useState(false);
+  const unreadCount = useUnreadNotificationsCount();
+  const unreadLabel = unreadCount > 99 ? "99+" : String(unreadCount);
 
   // Collapsed icon-rail only applies on desktop; mobile drawer is always full.
   const compact = collapsed && isDesktop;
@@ -218,10 +220,8 @@ export function PortalShell({
   }, []);
 
   const handleLogout = useCallback(() => {
-    stopPortalAuthRuntime();
-    clearAuthSession();
-    router.push(getLoginPath(role));
-    router.refresh();
+    const loginPath = logoutImmediately(role);
+    router.replace(loginPath);
   }, [role, router]);
 
   const closeMobile = useCallback(() => {
@@ -247,12 +247,15 @@ export function PortalShell({
       ? isItemActive(pathname, opts.child.href, opts.child.exact)
       : isNavItemActive(pathname, item);
     const showIcon = !opts?.inFlyout && !opts?.child;
+    const showUnread = item.badge === "unread" && !opts?.child && unreadCount > 0;
+    const compactBadge = Boolean(showUnread && compact && !opts?.inFlyout);
 
     return (
       <Link
         key={opts?.child?.href ?? item.href}
         href={href}
         onClick={closeMobile}
+        aria-label={showUnread ? `${label}, ${unreadCount} unread` : undefined}
         className={cn(
           "portal-nav-item group relative flex items-center transition-colors duration-200",
           portalNavItemClass,
@@ -261,7 +264,12 @@ export function PortalShell({
         )}
       >
         {showIcon ? item.icon : null}
-        {(!compact || opts?.inFlyout) && <span className="truncate">{label}</span>}
+        {(!compact || opts?.inFlyout) && <span className="min-w-0 flex-1 truncate">{label}</span>}
+        {showUnread ? (
+          <span className={cn("portal-nav-unread", compactBadge && "portal-nav-unread--compact")}>
+            {unreadLabel}
+          </span>
+        ) : null}
         {!opts?.inFlyout && !compact && item.children?.length ? (
           <Icon
             icon={ChevronRight}
@@ -287,6 +295,7 @@ export function PortalShell({
       data-backdrop={brandBackdrop ? "brand" : undefined}
       style={brandBackdrop ? undefined : { background: "var(--portal-page-bg)" }}
     >
+      <NotificationsLiveSync />
       <div className="flex min-h-svh">
         {mobileOpen ? (
           <button
@@ -343,7 +352,7 @@ export function PortalShell({
                   value={navQuery}
                   onChange={(event) => setNavQuery(event.target.value)}
                   placeholder="Search menu…"
-                  className="portal-sidebar-search-input"
+                  className="hols-plain-control portal-sidebar-search-input"
                   aria-label="Search navigation"
                 />
               </label>
@@ -563,4 +572,6 @@ export const portalIcons = {
   earnings: <PortalNavIcon name="earnings" />,
   calculator: <PortalNavIcon name="calculator" />,
   adviser: <PortalNavIcon name="adviser" />,
+  reports: <PortalNavIcon name="orders" />,
+  notifications: <PortalNavIcon name="bell" />,
 };

@@ -258,7 +258,7 @@ function IntakeNumberField({
         onChange={(event) => onChange(clipIntegerInput(event.target.value, maxDigits, maxValue))}
         className={cn(
           authFieldClass,
-          "adviser-field adviser-number-field h-12 min-h-12 px-4",
+          "adviser-field adviser-number-field min-h-11 px-4 sm:min-h-12",
           error && "border-[color:var(--dash-navy)]",
         )}
         aria-invalid={Boolean(error)}
@@ -616,7 +616,7 @@ export function IntakeWizard({
           onChange={(event) => updateAnswer(question.id, event.target.value)}
           className={cn(
             authFieldClass,
-            "adviser-field h-12 min-h-12 px-4",
+            "adviser-field min-h-11 px-4 sm:min-h-12",
             question.id === "allergy_detail" && "sm:max-w-md",
           )}
         />
@@ -634,9 +634,57 @@ export function IntakeWizard({
   const snapshotNumberQuestions = snapshotQuestions.filter((q) => q.type === "number");
   const snapshotOtherQuestions = snapshotQuestions.filter((q) => q.type !== "number");
 
-  return (
-    <div className={cn(bare ? "space-y-0" : "dashboard-surface rounded-2xl p-5 md:p-6")}>
-      <div key={step} className="adviser-intake-step space-y-4">
+  const nav =
+    step > 0 ? (
+      <div
+        className={cn(
+          "adviser-intake-nav flex flex-col gap-2",
+          bare
+            ? "shrink-0 border-t border-[color:var(--dash-surface-border)] pt-3 sm:flex-row sm:items-center sm:justify-between sm:gap-2.5"
+            : "mt-5 sm:mt-6 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-2.5",
+        )}
+      >
+        <button
+          type="button"
+          onClick={handleBack}
+          className="dashboard-pill-soft font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] sm:w-auto"
+        >
+          <SidebarSvgIcon name="previous" size={14} strokeWidth={2.2} />
+          Back
+        </button>
+        <div className="flex w-full flex-col gap-1.5 sm:w-auto sm:items-end">
+          {!isStepValid ? (
+            <p className="text-brand-caption text-pretty text-center text-[color:var(--dash-faint)] sm:text-right">
+              {validationMessageForStep().replace("Please ", "").replace(/\.$/, "")}
+            </p>
+          ) : (
+            <p className="text-brand-caption hidden text-center text-[color:var(--dash-muted)] sm:block sm:text-right">
+              Looking good — continue when ready
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={handleNext}
+            disabled={!isStepValid}
+            className="dashboard-navy-btn font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-45 sm:w-auto"
+          >
+            {step === 6 ? (
+              <>
+                <span className="sm:hidden">Generate</span>
+                <span className="hidden sm:inline">Generate recommendation</span>
+              </>
+            ) : (
+              "Continue"
+            )}
+            {step < 6 ? <SidebarSvgIcon name="next" size={14} strokeWidth={2.2} /> : null}
+          </button>
+        </div>
+      </div>
+    ) : null;
+
+  const body = (
+    <>
+      <div key={step} className={cn("adviser-intake-step space-y-4", bare && "adviser-intake-step--bare")}>
         {stepProgress ? (
           <div className="adviser-intake-step-meta flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] px-3 py-2.5">
             <p className="text-brand-caption text-[color:var(--dash-muted)]">
@@ -783,46 +831,24 @@ export function IntakeWizard({
           <AuthAlert variant="error">{validationError}</AuthAlert>
         </div>
       ) : null}
+    </>
+  );
 
-      {step > 0 ? (
-        <div className="adviser-intake-nav mt-5 flex flex-col gap-2 sm:mt-6 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-2.5">
-          <button
-            type="button"
-            onClick={handleBack}
-            className="dashboard-pill-soft font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] sm:w-auto"
-          >
-            <SidebarSvgIcon name="previous" size={14} strokeWidth={2.2} />
-            Back
-          </button>
-          <div className="flex w-full flex-col gap-1.5 sm:w-auto sm:items-end">
-            {!isStepValid ? (
-              <p className="text-brand-caption text-center text-[color:var(--dash-faint)] sm:text-right">
-                {validationMessageForStep().replace("Please ", "").replace(/\.$/, "")}
-              </p>
-            ) : (
-              <p className="text-brand-caption hidden text-center text-[color:var(--dash-muted)] sm:block sm:text-right">
-                Looking good — continue when ready
-              </p>
-            )}
-            <button
-              type="button"
-              onClick={handleNext}
-              disabled={!isStepValid}
-              className="dashboard-navy-btn font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-45 sm:w-auto"
-            >
-              {step === 6 ? (
-                <>
-                  <span className="sm:hidden">Generate</span>
-                  <span className="hidden sm:inline">Generate recommendation</span>
-                </>
-              ) : (
-                "Continue"
-              )}
-              {step < 6 ? <SidebarSvgIcon name="next" size={14} strokeWidth={2.2} /> : null}
-            </button>
-          </div>
+  if (bare) {
+    return (
+      <div className="flex min-h-0 flex-1 flex-col">
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pr-0.5">
+          {body}
         </div>
-      ) : null}
+        {nav}
+      </div>
+    );
+  }
+
+  return (
+    <div className="dashboard-surface rounded-2xl p-5 md:p-6">
+      {body}
+      {nav}
     </div>
   );
 }
@@ -840,11 +866,11 @@ function StageBlock({
 }) {
   return (
     <div className="space-y-4">
-      <div>
+      <div className="adviser-intake-step-header">
         <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
           {badge}
         </p>
-        <h2 className="font-sans mt-1 text-lg font-semibold tracking-[0.005em] text-[color:var(--dash-text)] md:text-xl">
+        <h2 className="font-sans mt-1 text-pretty text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg md:text-xl">
           {title}
         </h2>
         {description ? (
@@ -879,7 +905,9 @@ export function IntakeStageList({
           className={cn(
             orientation === "vertical"
               ? "text-brand-caption flex h-5 w-5 shrink-0 items-center justify-center rounded-md font-semibold"
-              : "flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold leading-none",
+              : orientation === "wrap"
+                ? "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold leading-none"
+                : "flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold leading-none",
             active && "bg-[color:var(--dash-navy)] text-white",
             !active &&
               done &&
@@ -899,27 +927,24 @@ export function IntakeStageList({
             index + 1
           )}
         </span>
-        <span
-          className={cn(
-            "min-w-0 leading-tight",
-            orientation === "wrap"
-              ? "whitespace-nowrap"
-              : orientation === "horizontal"
-                ? "max-w-[7.5rem] truncate"
-                : "truncate",
-          )}
-        >
-          {label}
-        </span>
+        {orientation === "wrap" ? null : (
+          <span
+            className={cn(
+              "min-w-0 leading-tight",
+              orientation === "horizontal" ? "max-w-[7.5rem] truncate" : "truncate",
+            )}
+          >
+            {label}
+          </span>
+        )}
       </>
     );
 
     const className = cn(
       "font-sans inline-flex items-center gap-1.5 rounded-lg text-left transition",
       orientation === "vertical" && "flex w-full gap-2 px-2 py-1.5 text-sm",
-      orientation !== "vertical" && "min-h-9 shrink-0 px-2 py-1.5 text-xs",
-      orientation === "horizontal" && "h-8 shrink-0 rounded-full px-2.5",
-      orientation === "wrap" && "shrink-0",
+      orientation === "horizontal" && "h-8 min-h-9 shrink-0 rounded-full px-2.5 py-1.5 text-xs",
+      orientation === "wrap" && "min-h-11 w-full justify-center px-1 text-xs",
       active && "bg-[color:var(--dash-soft)] font-semibold text-[color:var(--dash-text)] ring-1 ring-[color:var(--dash-surface-border)]",
       !active && done && "bg-[color:var(--dash-soft)] text-[color:var(--dash-muted)]",
       !active && !done && "bg-[color:var(--dash-soft)] text-[color:var(--dash-faint)]",
@@ -944,15 +969,17 @@ export function IntakeStageList({
     );
   };
 
-  if (orientation === "horizontal" || orientation === "wrap") {
+  if (orientation === "horizontal") {
     return (
-      <ol
-        className={cn(
-          orientation === "wrap"
-            ? "flex gap-1.5 overflow-x-auto overscroll-x-contain pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-4 md:overflow-visible md:pb-0"
-            : "flex gap-1.5 overflow-x-auto overscroll-x-contain pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden",
-        )}
-      >
+      <ol className="flex gap-1.5 overflow-x-auto overscroll-x-contain pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+        {INTAKE_STAGES.map((label, index) => renderItem(label, index))}
+      </ol>
+    );
+  }
+
+  if (orientation === "wrap") {
+    return (
+      <ol className="grid grid-cols-4 gap-1.5">
         {INTAKE_STAGES.map((label, index) => renderItem(label, index))}
       </ol>
     );

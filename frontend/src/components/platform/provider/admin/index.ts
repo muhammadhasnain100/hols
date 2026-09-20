@@ -3,5 +3,8 @@ export { AdminStudentsPage } from "@/components/platform/provider/admin/users/Ad
 export { AdminAffiliatesPage } from "@/components/platform/provider/admin/users/AdminAffiliatesPage";
 export { AdminUserDetailPage } from "@/components/platform/provider/admin/users/AdminUserDetailPage";
 export { AdminPlansPage } from "@/components/platform/provider/admin/payment/AdminPlansPage";
-export { AdminProfilePage } from "@/components/platform/provider/admin/profile/AdminProfilePage";
+export { AdminPayoutPage } from "@/components/platform/provider/admin/payout/AdminPayoutPage";
+export { AdminReportsPage } from "@/components/platform/provider/admin/reports/AdminReportsPage";
+export { NotificationsPage } from "@/components/platform/provider/notifications/NotificationsPage";
+export { AdminSettingsPage, AdminProfilePage } from "@/components/platform/provider/admin/profile/AdminSettingsPage";
 export { adminNav } from "@/components/platform/provider/admin/adminNav";

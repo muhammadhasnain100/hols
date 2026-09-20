@@ -228,7 +228,10 @@ function DashSelect({
         value={value}
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
-        className={cn("dashboard-field dashboard-field-select", disabled && "cursor-not-allowed opacity-50")}
+        className={cn(
+          "dashboard-field dashboard-field-select min-h-11 w-full min-w-0 max-w-full sm:min-h-10",
+          disabled && "cursor-not-allowed opacity-50",
+        )}
       >
         {options.map((option) => (
           <option key={`${option.value}-${option.label}`} value={option.value}>
@@ -419,7 +422,7 @@ export function SettingsProfilePanel({
           autoComplete="address-line2"
         />
 
-        <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+        <div className="grid min-w-0 gap-3 md:grid-cols-2 md:gap-4">
           <DashSelect
             id="state"
             label="State"
@@ -532,14 +535,14 @@ export function SettingsProfilePanel({
             type="button"
             onClick={resetForm}
             disabled={!hasChanges || saving}
-            className="dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50 sm:w-auto"
+            className="dashboard-pill-soft font-sans inline-flex min-h-11 w-full items-center justify-center rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50 sm:min-h-10 sm:w-auto"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={saving || !hasChanges}
-            className="dashboard-navy-btn font-sans inline-flex min-h-10 w-full items-center justify-center rounded-full px-6 text-sm font-medium tracking-[0.01em] text-white transition disabled:pointer-events-none disabled:opacity-60 sm:w-auto sm:min-w-[10rem]"
+            className="dashboard-navy-btn font-sans inline-flex min-h-11 w-full items-center justify-center rounded-full px-6 text-sm font-medium tracking-[0.01em] text-white transition disabled:pointer-events-none disabled:opacity-60 sm:min-h-10 sm:w-auto sm:min-w-[10rem]"
           >
             {saving ? "Saving…" : "Save changes"}
           </button>

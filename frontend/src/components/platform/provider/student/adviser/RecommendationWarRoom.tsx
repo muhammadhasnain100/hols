@@ -1,6 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { SidebarSvgIcon } from "@/components/platform/provider/sidebar-icons";
+import {
+  rankedFocusNames,
+} from "@/components/platform/provider/student/adviser/talkAbout";
 import { cn } from "@/lib/utils";
 import type {
   BoardConfidence,
@@ -19,8 +23,8 @@ type RecommendationWarRoomProps = {
   onAskAbout: (peptide: RecommendationBoardPeptide, action: "why" | "compare" | "safety") => void;
   /** Hide the dial when a sticky composer dial is shown instead. */
   hideConfidenceDial?: boolean;
-  selectedName?: string | null;
-  onSelectPeptide?: (name: string) => void;
+  selectedNames?: string[];
+  onSelectPeptides?: (names: string[]) => void;
 };
 
 export const CONFIDENCE_OPTIONS: Array<{
@@ -106,29 +110,55 @@ export function RecommendationWarRoom({
   onChip,
   onAskAbout,
   hideConfidenceDial = false,
-  selectedName,
-  onSelectPeptide,
+  selectedNames: selectedNamesProp,
+  onSelectPeptides,
 }: RecommendationWarRoomProps) {
   const ranked = board.ranked ?? [];
+  const rankedNames = ranked.map((peptide) => peptide.name);
   const preferredName = board.preferred || ranked[0]?.name || null;
-  const [internalSelected, setInternalSelected] = useState<string | null>(preferredName);
-  const activeName = selectedName ?? internalSelected ?? preferredName;
+  const selectedNames = (
+    selectedNamesProp && selectedNamesProp.length > 0
+      ? selectedNamesProp
+      : rankedFocusNames(board)
+  ).filter((name) => rankedNames.includes(name));
+  const selectedSet = new Set(selectedNames);
+  const allSelected = rankedNames.length > 0 && rankedNames.every((name) => selectedSet.has(name));
+  const [detailName, setDetailName] = useState<string | null>(
+    selectedNames[0] ?? preferredName,
+  );
+
+  const selectedKey = selectedNames.join("|");
 
   useEffect(() => {
-    if (selectedName == null) setInternalSelected(preferredName);
-  }, [preferredName, selectedName]);
+    if (detailName && selectedNames.includes(detailName)) return;
+    setDetailName(selectedNames[0] ?? preferredName);
+  }, [detailName, preferredName, selectedKey, selectedNames]);
 
-  const selectPeptide = (name: string) => {
-    setInternalSelected(name);
-    onSelectPeptide?.(name);
+  const togglePeptide = (name: string) => {
+    let next: string[];
+    if (selectedSet.has(name)) {
+      next = selectedNames.filter((item) => item !== name);
+      if (next.length === 0) next = [name];
+    } else {
+      next = [...selectedNames, name];
+      setDetailName(name);
+    }
+    if (next.includes(name)) setDetailName(name);
+    onSelectPeptides?.(next);
+  };
+
+  const toggleAll = () => {
+    const next = allSelected ? [rankedNames[0]] : rankedNames;
+    onSelectPeptides?.(next);
+    setDetailName(next[0] ?? preferredName);
   };
 
   const selected =
-    ranked.find((item) => item.name === activeName) ??
+    ranked.find((item) => item.name === detailName) ??
     ranked.find((item) => item.name === preferredName) ??
     ranked[0];
-  const others = ranked.filter((item) => item.name !== selected?.name);
   const confidence = (board.confidence as BoardConfidence) || "balanced";
+  const compareSelected = selectedNames.length >= 2;
 
   return (
     <section className="adviser-board-card" aria-label="Current peptide recommendation">
@@ -148,11 +178,12 @@ export function RecommendationWarRoom({
                   <span className="text-brand-caption font-semibold text-[color:var(--dash-navy)]">
                     Preferred
                   </span>
-                ) : (
-                  <span className="text-brand-caption font-medium text-[color:var(--dash-faint)]">
-                    Current peptide
-                  </span>
-                )}
+                ) : null}
+                <span className="text-brand-caption font-medium text-[color:var(--dash-faint)]">
+                  {selectedNames.length === 1
+                    ? "Only this peptide"
+                    : `${selectedNames.length} selected`}
+                </span>
               </div>
               <h3 className="font-sans mt-2 text-xl font-bold leading-tight tracking-[0.01em] text-[color:var(--dash-text)]">
                 {selected.name}
@@ -184,10 +215,7 @@ export function RecommendationWarRoom({
               type="button"
               disabled={disabled}
               className="adviser-war-room-mini-btn"
-              onClick={() => {
-                selectPeptide(selected.name);
-                onAskAbout(selected, "why");
-              }}
+              onClick={() => onAskAbout(selected, "why")}
             >
               Why?
             </button>
@@ -196,22 +224,16 @@ export function RecommendationWarRoom({
                 type="button"
                 disabled={disabled}
                 className="adviser-war-room-mini-btn"
-                onClick={() => {
-                  selectPeptide(selected.name);
-                  onAskAbout(selected, "compare");
-                }}
+                onClick={() => onAskAbout(selected, "compare")}
               >
-                Compare
+                {compareSelected ? "Compare selected" : "Compare"}
               </button>
             ) : null}
             <button
               type="button"
               disabled={disabled}
               className="adviser-war-room-mini-btn"
-              onClick={() => {
-                selectPeptide(selected.name);
-                onAskAbout(selected, "safety");
-              }}
+              onClick={() => onAskAbout(selected, "safety")}
             >
               Safety
             </button>
@@ -229,10 +251,7 @@ export function RecommendationWarRoom({
                 type="button"
                 disabled={disabled}
                 className="adviser-war-room-mini-btn is-accent"
-                onClick={() => {
-                  selectPeptide(selected.name);
-                  onPrefer(selected.name);
-                }}
+                onClick={() => onPrefer(selected.name)}
               >
                 Choose
               </button>
@@ -245,36 +264,61 @@ export function RecommendationWarRoom({
         </p>
       )}
 
-      {others.length > 0 ? (
-        <div className="adviser-board-list" aria-label="Also ranked">
-          <p className="text-brand-caption mb-2 font-medium uppercase tracking-[0.06em] text-[color:var(--dash-faint)]">
-            Also ranked
-          </p>
-          {others.map((peptide) => (
-            <button
-              key={peptide.name}
-              type="button"
-              disabled={disabled}
-              onClick={() => selectPeptide(peptide.name)}
-              className={cn(
-                "adviser-board-row",
-                activeName === peptide.name && "is-selected",
-                board.preferred === peptide.name && "is-preferred",
-              )}
-            >
-              <span className="adviser-board-row-rank">#{peptide.rank}</span>
-              <span className="min-w-0 flex-1 text-left">
-                <span className="block truncate font-semibold text-[color:var(--dash-text)]">
-                  {peptide.name}
+      {ranked.length > 0 ? (
+        <div className="adviser-board-list" aria-label="Talk about peptides">
+          <div className="mb-2 flex items-center justify-between gap-2">
+            <p className="text-brand-caption font-medium uppercase tracking-[0.06em] text-[color:var(--dash-faint)]">
+              Talk about
+            </p>
+            {ranked.length > 1 ? (
+              <button
+                type="button"
+                disabled={disabled}
+                onClick={toggleAll}
+                className="adviser-board-select-all text-brand-caption font-medium"
+              >
+                {allSelected ? "Only top pick" : "Select all"}
+              </button>
+            ) : null}
+          </div>
+          {ranked.map((peptide) => {
+            const talking = selectedSet.has(peptide.name);
+            return (
+              <button
+                key={peptide.name}
+                type="button"
+                disabled={disabled}
+                onClick={() => togglePeptide(peptide.name)}
+                aria-pressed={talking}
+                className={cn(
+                  "adviser-board-row",
+                  talking && "is-talking",
+                  board.preferred === peptide.name && "is-preferred",
+                )}
+              >
+                <span
+                  className={cn("adviser-peptide-select-check", talking && "is-checked")}
+                  aria-hidden
+                >
+                  {talking ? <SidebarSvgIcon name="check" size={13} strokeWidth={2.6} /> : null}
                 </span>
-                {peptide.evidence ? (
-                  <span className="text-brand-caption mt-0.5 block truncate text-[color:var(--dash-muted)]">
-                    {peptide.evidence}
+                <span className="adviser-board-row-rank">#{peptide.rank}</span>
+                <span className="min-w-0 flex-1 text-left">
+                  <span className="block truncate font-semibold text-[color:var(--dash-text)]">
+                    {peptide.name}
                   </span>
-                ) : null}
-              </span>
-            </button>
-          ))}
+                  <span className="text-brand-caption mt-0.5 block truncate text-[color:var(--dash-muted)]">
+                    {talking
+                      ? selectedNames.length === 1
+                        ? "Talking about this peptide"
+                        : "Included in this chat"
+                      : "Tap to include"}
+                    {peptide.evidence ? ` · ${peptide.evidence}` : ""}
+                  </span>
+                </span>
+              </button>
+            );
+          })}
         </div>
       ) : null}
 
@@ -292,10 +336,11 @@ export function RecommendationWarRoom({
           {board.labs?.length ? (
             <div>
               <p className="text-brand-caption font-medium text-[color:var(--dash-muted)]">Baseline labs</p>
-              <p className="text-brand-caption mt-1 text-[color:var(--dash-text)]">
-                {board.labs.slice(0, 4).join(" · ")}
-                {board.labs.length > 4 ? ` +${board.labs.length - 4}` : ""}
-              </p>
+              <ul className="adviser-board-labs">
+                {board.labs.map((lab) => (
+                  <li key={lab}>{lab}</li>
+                ))}
+              </ul>
             </div>
           ) : null}
           {board.stacks?.length ? (

@@ -30,7 +30,9 @@ from models.payment import (
     StudentCommerceData,
     StudentCommerceResponse,
 )
+from models.sales import SalesOverviewData, SalesOverviewResponse
 from services.routes.payment import service as payment_service
+from services.routes.sales import service as sales_service
 
 router = APIRouter(prefix="/payment", tags=["payment"])
 
@@ -128,6 +130,16 @@ async def list_student_orders_admin(
     return success_response(OrderHistoryData(**result))
 
 
+@router.get("/commerce", response_model=StudentCommerceResponse)
+@handle_route_errors("get my commerce summary", log_prefix="Payment")
+async def get_my_commerce(
+    current_user: Annotated[CurrentUser, Depends(require_roles(UserRole.STUDENT))],
+) -> StudentCommerceResponse:
+    """Student — stored sales and order totals."""
+    summary = await payment_service.get_student_commerce_summary(current_user.user_id)
+    return success_response(StudentCommerceData(**summary))
+
+
 @router.get("/students/{user_id}/commerce", response_model=StudentCommerceResponse)
 @handle_route_errors("get student commerce summary", log_prefix="Payment")
 async def get_student_commerce(
@@ -138,6 +150,17 @@ async def get_student_commerce(
     _ = current_user
     summary = await payment_service.get_student_commerce_summary(user_id)
     return success_response(StudentCommerceData(**summary))
+
+
+@router.get("/sales", response_model=SalesOverviewResponse)
+@handle_route_errors("get admin sales overview", log_prefix="Payment")
+async def get_admin_sales(
+    current_user: Annotated[CurrentUser, Depends(require_roles(UserRole.ADMIN))],
+) -> SalesOverviewResponse:
+    """Admin — stored weekly, monthly, and yearly sales, revenue, and profit."""
+    _ = current_user
+    overview = await sales_service.get_admin_sales_overview()
+    return success_response(SalesOverviewData(**overview))
 
 
 @router.post("/card", response_model=CardResponse)

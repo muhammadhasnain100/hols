@@ -3,9 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
-import { authFieldClass, authLabelClass } from "@/components/platform/auth/auth-styles";
 import { SidebarSvgIcon } from "@/components/platform/provider/sidebar-icons";
-import { cn } from "@/lib/utils";
 
 type CreatePatientDialogProps = {
   open: boolean;
@@ -57,7 +55,7 @@ export function CreatePatientDialog({
   const canSubmit = Boolean(name.trim()) && !isSubmitting;
 
   return createPortal(
-    <div className="adviser-dialog-overlay fixed inset-0 z-[80] flex items-center justify-center bg-black/45 px-3 py-4 max-sm:items-end max-sm:px-0 max-sm:pb-0 max-sm:pt-[env(safe-area-inset-top)] sm:px-4 sm:py-6">
+    <div className="adviser-dialog-overlay adviser-dialog-overlay--center fixed inset-0 z-[80] flex min-h-dvh items-center justify-center bg-black/45 px-[max(0.75rem,env(safe-area-inset-left))] py-[max(1rem,env(safe-area-inset-top),env(safe-area-inset-bottom))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:px-4 sm:py-6">
       <button
         type="button"
         aria-label="Close create patient dialog"
@@ -71,7 +69,7 @@ export function CreatePatientDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="adviser-dialog-panel relative z-10 flex w-full max-w-md flex-col overflow-hidden rounded-2xl max-sm:max-h-[min(90svh,28rem)] max-sm:rounded-b-none max-sm:rounded-t-3xl max-sm:pb-[env(safe-area-inset-bottom)]"
+        className="adviser-dialog-panel adviser-dialog-panel--center relative z-10 flex max-h-[min(88svh,40rem)] w-full max-w-lg min-w-0 flex-col overflow-hidden rounded-2xl"
         onSubmit={(event) => {
           event.preventDefault();
           const trimmed = name.trim();
@@ -79,8 +77,6 @@ export function CreatePatientDialog({
           onSubmit(trimmed);
         }}
       >
-        <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-lg bg-[color:var(--dash-dim)] sm:hidden" aria-hidden />
-
         <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[color:var(--dash-surface-border)] px-4 py-3.5 sm:gap-4 sm:px-5 sm:py-4 md:px-6">
           <div className="min-w-0">
             <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
@@ -92,25 +88,25 @@ export function CreatePatientDialog({
             >
               New patient
             </h2>
-            <p className="text-brand-body mt-1 text-sm text-[color:var(--dash-muted)] sm:text-base">
-              <span className="sm:hidden">Enter a case name to start intake.</span>
-              <span className="hidden sm:inline">Enter a case name to start structured intake.</span>
+            <p className="text-brand-body mt-1 text-pretty text-sm text-[color:var(--dash-muted)] sm:text-base">
+              Enter a case name to start structured intake.
             </p>
           </div>
           <button
             type="button"
             disabled={isSubmitting}
             onClick={onClose}
-            className="dashboard-icon-btn flex h-10 w-10 shrink-0 items-center justify-center rounded-lg disabled:opacity-50 sm:h-9 sm:w-9"
+            className="adviser-onboarding-close inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50 sm:h-12 sm:w-12"
             aria-label="Close dialog"
           >
-            <SidebarSvgIcon name="cross" size={16} strokeWidth={2} />
+            <SidebarSvgIcon name="cross" size={24} strokeWidth={2.2} className="sm:hidden" />
+            <SidebarSvgIcon name="cross" size={28} strokeWidth={2.15} className="hidden sm:block" />
           </button>
         </div>
 
         <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 sm:py-5 md:px-6">
-          <label className="grid gap-2">
-            <span className={authLabelClass}>Patient name</span>
+          <label className="grid min-w-0 gap-2">
+            <span className="dashboard-field-label">Patient name</span>
             <input
               ref={inputRef}
               type="text"
@@ -122,7 +118,7 @@ export function CreatePatientDialog({
               enterKeyHint="done"
               autoComplete="off"
               onChange={(event) => setName(event.target.value)}
-              className={cn(authFieldClass, "adviser-field px-4")}
+              className="dashboard-field adviser-field"
             />
           </label>
 

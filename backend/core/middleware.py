@@ -18,6 +18,8 @@ class RequestLoggingMiddleware(BaseHTTPMiddleware):
     """Log method, path, status, and duration for every request."""
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        if request.headers.get("upgrade", "").lower() == "websocket":
+            return await call_next(request)
         start = time.perf_counter()
         response = await call_next(request)
         duration_ms = (time.perf_counter() - start) * 1000
@@ -35,6 +37,9 @@ class ApiResponseMiddleware(BaseHTTPMiddleware):
     """Wrap ``/api/*`` success JSON as ``{status: true, response: ...}``."""
 
     async def dispatch(self, request: Request, call_next: Callable) -> Response:
+        if request.headers.get("upgrade", "").lower() == "websocket":
+            return await call_next(request)
+
         response = await call_next(request)
 
         if not request.url.path.startswith("/api"):

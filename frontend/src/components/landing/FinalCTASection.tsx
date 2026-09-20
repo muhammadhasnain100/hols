@@ -92,9 +92,9 @@ export function FinalCTASection() {
       >
         <div
           className={cn(
-            "relative z-10 w-full text-left",
-            // Leave room for the ball; avoid nowrap overflow on phones
-            "max-w-[min(100%,18.5rem)] pr-2",
+            "relative z-10 w-full min-w-0 text-left",
+            // Leave room for the ball; wrap below lg so nowrap never clips
+            "max-w-[min(100%,22rem)] pr-2",
             "sm:max-w-md sm:pr-0",
             "md:max-w-xl",
             "lg:max-w-2xl",
@@ -102,11 +102,11 @@ export function FinalCTASection() {
           )}
         >
           <h2 className={FINAL_CTA_HEADLINE}>
-            <span className="block text-pretty sm:whitespace-nowrap">
+            <span className="block text-pretty lg:whitespace-nowrap">
               {whiteText}
             </span>
             {accentText ? (
-              <span className="mt-1 block text-pretty text-accent sm:mt-0 sm:whitespace-nowrap">
+              <span className="mt-1 block text-pretty text-accent lg:mt-0 lg:whitespace-nowrap">
                 {accentText}
               </span>
             ) : null}

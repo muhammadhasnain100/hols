@@ -33,6 +33,9 @@ function buildQuery(params: PaginationParams) {
   if (params.page) search.set("page", String(params.page));
   if (params.limit) search.set("limit", String(params.limit));
   if (params.cursor) search.set("cursor", params.cursor);
+  if (params.sort) search.set("sort", params.sort);
+  if (params.empty_referrals) search.set("empty_referrals", "true");
+  if (params.empty_orders) search.set("empty_orders", "true");
   const query = search.toString();
   return query ? `?${query}` : "";
 }
@@ -50,7 +53,14 @@ export function getCachedAffiliates(params: PaginationParams = {}) {
 
 export function getCachedStudents(params: PaginationParams = {}) {
   return readAdminCache<AdminListResult<StudentSummary>>(
-    adminCacheKey("students-v3", params.page, params.limit, params.cursor),
+    adminCacheKey(
+      "students-v4",
+      params.page,
+      params.limit,
+      params.cursor,
+      params.sort,
+      params.empty_orders ? "empty" : "",
+    ),
   );
 }
 
@@ -63,9 +73,32 @@ export function listAffiliates(params: PaginationParams = {}) {
 
 export function listStudents(params: PaginationParams = {}) {
   return cachedAdminRequest<AdminListResult<StudentSummary>>(
-    adminCacheKey("students-v3", params.page, params.limit, params.cursor),
+    adminCacheKey(
+      "students-v4",
+      params.page,
+      params.limit,
+      params.cursor,
+      params.sort,
+      params.empty_orders ? "empty" : "",
+    ),
     `/api/users/students${buildQuery(params)}`,
   );
+}
+
+export async function listAllStudents(params: PaginationParams = {}) {
+  const items: StudentSummary[] = [];
+  let page = 1;
+  let hasNext = true;
+
+  while (hasNext) {
+    const data = await listStudents({ ...params, page, limit: 100, cursor: undefined });
+    items.push(...data.items);
+    hasNext = Boolean(data.pagination.has_next);
+    page += 1;
+    if (page > 50) break;
+  }
+
+  return items;
 }
 
 export function getStudentCommerce(userId: string) {

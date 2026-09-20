@@ -273,36 +273,27 @@ export function AdviserHubPageSkeleton() {
   );
 }
 
-export function WebinarsPageSkeleton() {
+export function WebinarsPageSkeleton({ hideToolbar = false }: { hideToolbar?: boolean }) {
   return (
     <div className="grid w-full min-w-0 gap-3 sm:gap-4" aria-busy="true" aria-label="Loading webinars">
-      <div className="flex min-w-0 gap-1.5">
-        <SkeletonBlock className="h-10 w-16 rounded-full" />
-        <SkeletonBlock className="h-10 w-20 rounded-full" />
-        <SkeletonBlock className="h-10 w-24 rounded-full" />
-      </div>
-      <section className="dashboard-glass-card min-w-0 overflow-hidden rounded-2xl">
-        <div className="grid grid-cols-5 gap-3 bg-[color:var(--dash-soft)] px-4 py-3 sm:px-5">
-          {Array.from({ length: 5 }, (_, index) => (
-            <SkeletonBlock key={index} className="h-3 w-16 rounded-full" />
-          ))}
+      {hideToolbar ? null : (
+        <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
+          <SkeletonBlock className="h-11 w-full rounded-full sm:h-10 sm:max-w-[22rem]" />
+          <SkeletonBlock className="h-11 w-full rounded-full sm:ml-auto sm:h-10 sm:w-[9.75rem]" />
         </div>
-        {Array.from({ length: 5 }, (_, index) => (
-          <div
-            key={index}
-            className="grid grid-cols-5 items-center gap-3 border-t border-[color:var(--dash-surface-border)] px-4 py-3 sm:px-5"
-          >
-            <div className="flex items-center gap-3">
-              <SkeletonBlock className="h-9 w-9 shrink-0 rounded-full" />
-              <SkeletonBlock className="h-3.5 w-28 rounded-full" />
+      )}
+      <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-3">
+        {Array.from({ length: 3 }, (_, index) => (
+          <div key={index} className="dashboard-glass-card overflow-hidden rounded-2xl">
+            <SkeletonBlock className="block aspect-[16/9] w-full rounded-none" />
+            <div className="space-y-2 p-4">
+              <SkeletonBlock className="block h-5 w-3/4 rounded-full" />
+              <SkeletonBlock className="block h-4 w-1/2 rounded-full" />
+              <SkeletonBlock className="mt-3 block h-10 w-full rounded-full" />
             </div>
-            <SkeletonBlock className="h-6 w-16 rounded-full" />
-            <SkeletonBlock className="h-3 w-32 rounded-full" />
-            <SkeletonBlock className="h-3 w-8 rounded-full" />
-            <SkeletonBlock className="h-3 w-16 rounded-full" />
           </div>
         ))}
-      </section>
+      </div>
     </div>
   );
 }

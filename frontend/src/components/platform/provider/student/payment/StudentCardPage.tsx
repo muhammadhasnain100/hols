@@ -309,7 +309,7 @@ export function StudentCardPanel() {
                   </p>
                 </div>
               </div>
-              <div className="mt-5 flex flex-wrap gap-2">
+              <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:flex-wrap">
                 <button
                   type="button"
                   onClick={() => {
@@ -317,7 +317,7 @@ export function StudentCardPanel() {
                     setError(null);
                     setSuccess(null);
                   }}
-                  className="dashboard-navy-btn font-sans inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full px-4 text-sm font-medium text-white"
+                  className="dashboard-navy-btn font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-4 text-sm font-medium text-white sm:min-h-10 sm:w-auto"
                 >
                   <SidebarSvgIcon name="payment" size={14} strokeWidth={1.9} />
                   Update card
@@ -326,7 +326,7 @@ export function StudentCardPanel() {
                   type="button"
                   onClick={() => void handleRemove()}
                   disabled={removing}
-                  className="font-sans inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full border border-[#152744]/25 px-4 text-sm font-medium text-[#152744] transition hover:bg-[#152744]/08 disabled:opacity-60"
+                  className="font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full border border-[#152744]/25 px-4 text-sm font-medium text-[#152744] transition hover:bg-[#152744]/08 disabled:opacity-60 sm:min-h-10 sm:w-auto"
                 >
                   <SidebarSvgIcon name="cross" size={14} strokeWidth={2} />
                   {removing ? "Removing…" : "Remove card"}
@@ -491,7 +491,7 @@ export function StudentCardPanel() {
                       setFieldErrors({});
                       setError(null);
                     }}
-                    className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)]"
+                    className="dashboard-pill-soft font-sans inline-flex min-h-11 w-full items-center justify-center rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] sm:min-h-10 sm:w-auto"
                   >
                     Cancel
                   </button>
@@ -499,7 +499,7 @@ export function StudentCardPanel() {
                 <button
                   type="submit"
                   disabled={saving}
-                  className="dashboard-navy-btn font-sans inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full px-6 text-sm font-medium tracking-[0.01em] text-white disabled:pointer-events-none disabled:opacity-60 sm:min-w-[10rem]"
+                  className="dashboard-navy-btn font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-6 text-sm font-medium tracking-[0.01em] text-white disabled:pointer-events-none disabled:opacity-60 sm:min-h-10 sm:w-auto sm:min-w-[10rem]"
                 >
                   <SidebarSvgIcon name="check" size={15} strokeWidth={2.2} />
                   {saving ? "Saving…" : card ? "Save updated card" : "Add card"}

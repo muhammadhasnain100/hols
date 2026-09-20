@@ -86,7 +86,7 @@ export const heroNavCapsule =
   "glass-capsule-overlay flex items-center gap-0.5 rounded-full p-1.5 md:gap-1 md:p-2";
 
 export const heroNavCapsuleLink =
-  "rounded-full px-4 py-2 font-sans text-sm font-medium tracking-[0.01em] transition-colors duration-300 md:px-5 md:py-2.5";
+  "whitespace-nowrap rounded-full px-4 py-2 font-sans text-sm font-medium tracking-[0.01em] transition-colors duration-300 md:px-5 md:py-2.5";
 
 export function getHeroNavCapsuleLinkClass(isActive: boolean, className?: string) {
   return cn(
@@ -119,7 +119,7 @@ export const heroWelcome = {
 /** Brand guideline typography for hero headline block */
 export const heroTypography = {
   headline:
-    "font-sans text-[1.875rem] font-bold leading-[1.05] tracking-[0.01em] text-white sm:text-[2.25rem] md:text-[3.75rem]",
+    "font-sans text-[1.875rem] font-bold leading-[1.05] tracking-[0.01em] text-white sm:text-[2.25rem] md:text-[2.75rem] lg:text-[3.75rem]",
   subhead:
     "font-sans mt-3 text-lg font-normal leading-[1.12] tracking-[0.005em] text-white/90 sm:text-xl md:mt-5 md:max-w-xl md:text-[2.125rem] md:leading-[1.1] lg:max-w-2xl",
   body: "text-brand-body mt-4 max-w-lg text-white/85 sm:mt-5 md:mt-6 md:max-w-xl",

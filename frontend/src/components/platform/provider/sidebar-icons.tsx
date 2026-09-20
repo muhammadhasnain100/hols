@@ -39,7 +39,8 @@ export type SidebarIconName =
   | "orders"
   | "star"
   | "menu"
-  | "alert";
+  | "alert"
+  | "lock";
 
 export type RomanChapterName =
   | "roman-i"
@@ -119,7 +120,7 @@ const ICON_PATHS: Record<SidebarIconName, React.ReactNode> = {
   ),
   adviser: (
     <>
-      <path d="M5.5 16.75 4 20l3.5-1.35A8.75 8.75 0 1 0 5.5 16.75Z" />
+      <path d="M5.5 16.75 4 20l3.5-1.35A8.75 8.75 0 1 0 5.5 16.75Z" fill="none" />
       <circle cx="9.25" cy="11" r="1.05" fill="currentColor" stroke="none" />
       <circle cx="12" cy="11" r="1.05" fill="currentColor" stroke="none" />
       <circle cx="14.75" cy="11" r="1.05" fill="currentColor" stroke="none" />
@@ -311,6 +312,12 @@ const ICON_PATHS: Record<SidebarIconName, React.ReactNode> = {
       <circle cx="12" cy="12" r="8.25" />
       <path d="M12 8v5" />
       <path d="M12 16.85h.01" />
+    </>
+  ),
+  lock: (
+    <>
+      <rect x="4.5" y="11" width="15" height="9.5" rx="2.25" />
+      <path d="M8 11V7.75a4 4 0 0 1 8 0V11" />
     </>
   ),
 };

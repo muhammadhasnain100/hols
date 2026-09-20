@@ -23,9 +23,9 @@ type ButtonProps = {
   onClick?: () => void;
 };
 
-function readGlassRestColor() {
+function readGlassRestColor(node: Element | null) {
   if (typeof document === "undefined") return "#142644";
-  const shell = document.querySelector(".portal-shell");
+  const shell = node?.closest(".portal-shell");
   return shell?.getAttribute("data-theme") === "dark" ? "#f4f7fb" : "#142644";
 }
 
@@ -41,15 +41,6 @@ export function Button({
 }: ButtonProps) {
   const spread = buttonHoverSpread[variant];
   const [glassRest, setGlassRest] = useState("#142644");
-
-  useEffect(() => {
-    if (variant !== "glass") return;
-    const sync = () => setGlassRest(readGlassRestColor());
-    sync();
-    window.addEventListener(PORTAL_THEME_CHANGE_EVENT, sync);
-    return () => window.removeEventListener(PORTAL_THEME_CHANGE_EVENT, sync);
-  }, [variant]);
-
   const defaultColor = variant === "glass" ? glassRest : spread.textDefault;
   const hoverColor = variant === "glass" ? "#142644" : spread.textHover;
 
@@ -59,6 +50,14 @@ export function Button({
       defaultColor,
       hoverColor,
     });
+
+  useEffect(() => {
+    if (variant !== "glass") return;
+    const sync = () => setGlassRest(readGlassRestColor(containerRef.current));
+    sync();
+    window.addEventListener(PORTAL_THEME_CHANGE_EVENT, sync);
+    return () => window.removeEventListener(PORTAL_THEME_CHANGE_EVENT, sync);
+  }, [variant]);
 
   const classes = getButtonClassName(
     variant,
@@ -76,7 +75,7 @@ export function Button({
       <span
         ref={labelRef}
         className="relative z-10 inline-flex items-center justify-center gap-2"
-        style={{ color: spread.textDefault }}
+        style={{ color: defaultColor }}
       >
         {children}
       </span>

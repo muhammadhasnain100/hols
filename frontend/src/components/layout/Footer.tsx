@@ -171,8 +171,8 @@ function NewsletterSignup() {
             onChange={(event) => setEmail(event.target.value)}
             placeholder="Your Email Address"
             className={cn(
-              "dashboard-field hols-hover-border min-h-11 w-full",
-              "outline-none",
+              "dashboard-field hols-hover-border min-h-11 w-full appearance-none overflow-hidden",
+              "outline-none ring-0 focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0",
             )}
           />
           <HeroButton

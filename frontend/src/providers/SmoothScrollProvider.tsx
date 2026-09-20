@@ -117,8 +117,12 @@ export function SmoothScrollProvider({ children }: SmoothScrollProviderProps) {
       ScrollTrigger.getAll().forEach((trigger) => trigger.kill());
       ScrollTrigger.clearScrollMemory();
       document.documentElement.classList.remove("lenis", "lenis-smooth", "lenis-stopped", "lenis-scrolling");
+      document.documentElement.style.removeProperty("height");
+      document.documentElement.style.removeProperty("overflow");
+      document.documentElement.style.removeProperty("transform");
       document.body.style.removeProperty("overflow");
       document.body.style.removeProperty("height");
+      document.body.style.removeProperty("transform");
       window.scrollTo(0, 0);
       ScrollTrigger.refresh();
     };

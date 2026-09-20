@@ -23,19 +23,18 @@ export function AdviserPageLayout({ children }: AdviserPageLayoutProps) {
       nav={studentNav}
     >
       <div className="dashboard-screen lectures-page adviser-page min-w-0 overflow-x-hidden">
-        <header className="mb-4 flex h-10 min-w-0 items-center gap-2 sm:mb-5 sm:h-12 sm:gap-3 md:gap-4">
+        <header className="mb-4 flex min-h-11 min-w-0 items-center gap-2 sm:mb-5 sm:min-h-12 sm:gap-3 md:gap-4">
           <button
             type="button"
             aria-label="Open sidebar"
             onClick={openSidebar}
-            className="dashboard-icon-btn flex h-10 w-10 shrink-0 items-center justify-center rounded-full lg:hidden sm:h-12 sm:w-12"
+            className="dashboard-icon-btn flex h-11 w-11 shrink-0 items-center justify-center rounded-full lg:hidden sm:h-12 sm:w-12"
           >
             <Icon icon={Menu} size={18} />
           </button>
 
-          <h1 className="font-sans min-w-0 truncate text-xl font-bold leading-none tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl">
-            <span className="sm:hidden">Advisor</span>
-            <span className="hidden sm:inline">Peptide Advisor</span>
+          <h1 className="font-sans min-w-0 truncate text-lg font-bold leading-none tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl">
+            Peptide Advisor
           </h1>
         </header>
 

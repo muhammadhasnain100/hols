@@ -196,11 +196,11 @@ export function HorizontalSyringeArt({
           <stop offset="100%" stopColor="#64748b" />
         </linearGradient>
 
-        <linearGradient id={liquidGrad} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#d7f0fa" stopOpacity="0.82" />
-          <stop offset="0.35" stopColor="#8fd0ea" stopOpacity="0.9" />
-          <stop offset="0.75" stopColor="#5bb4d8" stopOpacity="0.94" />
-          <stop offset="1" stopColor="#3d9bc4" stopOpacity="0.96" />
+        <linearGradient id={liquidGrad} className="calc-syringe-liquid-grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="var(--calc-syringe-water-0)" stopOpacity="0.78" />
+          <stop offset="0.35" stopColor="var(--calc-syringe-water-1)" stopOpacity="0.88" />
+          <stop offset="0.75" stopColor="var(--calc-syringe-water-2)" stopOpacity="0.94" />
+          <stop offset="1" stopColor="var(--calc-syringe-water-3)" stopOpacity="0.98" />
         </linearGradient>
         <linearGradient id={liquidShine} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#ffffff" stopOpacity="0.4" />
@@ -223,7 +223,7 @@ export function HorizontalSyringeArt({
             dy="3"
             stdDeviation="4"
             floodColor="#0f172a"
-            floodOpacity="0.16"
+            floodOpacity="0"
           />
         </filter>
 

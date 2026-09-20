@@ -58,6 +58,32 @@ export function refreshTokens(refresh_token: string) {
   });
 }
 
+export function restoreSession(refresh_token: string) {
+  const headers = new Headers();
+  if (typeof window !== "undefined") {
+    const access = localStorage.getItem("hols_access_token");
+    if (access) headers.set("Authorization", `Bearer ${access}`);
+  }
+  return apiRequest<LoginSuccess>("/api/auth/restore-session", {
+    method: "POST",
+    body: { refresh_token },
+    headers,
+  });
+}
+
+export function logout(refresh_token?: string | null) {
+  const headers = new Headers();
+  if (typeof window !== "undefined") {
+    const access = localStorage.getItem("hols_access_token");
+    if (access) headers.set("Authorization", `Bearer ${access}`);
+  }
+  return apiRequest<{ logged_out: boolean }>("/api/auth/logout", {
+    method: "POST",
+    body: refresh_token ? { refresh_token } : {},
+    headers,
+  });
+}
+
 export function getMyProfile() {
   return apiRequest<ProfileData>("/api/auth/profile", { auth: true });
 }

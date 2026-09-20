@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import asyncio
 import logging
 from decimal import Decimal
 from typing import Any, Optional
@@ -15,8 +16,9 @@ from database import get_table
 from database_entities import UserRole
 from models.users import StudentAffiliateInfo
 from services.common import email as email_service
-from services.common.pagination import build_pagination, decode_cursor, encode_cursor, normalize_value
+from services.common.pagination import build_pagination, normalize_value
 from services.routes.auth import service as auth_service
+from services.routes.payout import service as payout_service
 
 logger = logging.getLogger(__name__)
 
@@ -134,6 +136,12 @@ async def send_student_invites(
             logger.exception("Failed to send affiliate student invite to %s", recipient)
 
     logger.info("Affiliate %s queued %s student invite emails", affiliate_id, len(recipients))
+    try:
+        from services.notification import events as notify_events
+
+        notify_events.affiliate_invite_sent(affiliate=affiliate, recipients=recipients)
+    except Exception:
+        logger.exception("Failed to queue affiliate invite notification affiliate_id=%s", affiliate_id)
     return {
         "queued": True,
         "public_url": invite_url["public_url"],
@@ -167,8 +175,60 @@ def _student_summary(student: dict[str, Any], affiliate: dict[str, Any]) -> dict
         "marketing_pref": clean.get("marketing_pref", False),
         "referred_by_affiliate_id": clean.get("referred_by_affiliate_id"),
         "affiliate": _affiliate_info(affiliate),
+        "total_spent": 0.0,
+        "admin_earned": 0.0,
+        "affiliate_earned": 0.0,
+        "order_count": 0,
+        "paid_order_count": 0,
+        "spend_currency": "USD",
+        "current_plan": None,
+        "membership_status": None,
+        "last_purchase_at": None,
+        "last_purchase_amount": None,
         "created_at": clean.get("created_at"),
     }
+
+
+async def _student_summary_with_earnings(
+    student: dict[str, Any],
+    affiliate: dict[str, Any],
+    affiliate_id: str,
+) -> dict[str, Any]:
+    summary = _student_summary(student, affiliate)
+    student_id = summary.get("user_id")
+    if not student_id:
+        return summary
+
+    stats = await payout_service.get_referral_stats(affiliate_id, student_id)
+    if stats:
+        summary["total_spent"] = stats["total_spent"]
+        summary["affiliate_earned"] = stats["commission_earned"]
+        summary["admin_earned"] = stats["admin_earned"]
+        summary["order_count"] = stats["order_count"]
+        summary["paid_order_count"] = stats["order_count"]
+        summary["spend_currency"] = stats["currency"]
+        summary["current_plan"] = stats.get("last_plan_type")
+        summary["last_purchase_at"] = stats.get("last_purchase_at")
+        summary["last_purchase_amount"] = stats.get("last_purchase_amount")
+        return summary
+
+    from services.routes.finance.service import student_commerce_from_item
+
+    commerce = student_commerce_from_item(student, user_id=student_id)
+    if not commerce["order_count"] and not commerce["total_spent"]:
+        profile = await auth_service.get_user_by_id(student_id)
+        commerce = student_commerce_from_item(profile, user_id=student_id)
+    summary["total_spent"] = commerce["total_spent"]
+    summary["admin_earned"] = commerce["admin_earned"]
+    summary["affiliate_earned"] = commerce["affiliate_earned"]
+    summary["order_count"] = commerce["order_count"]
+    summary["paid_order_count"] = commerce["paid_order_count"]
+    summary["spend_currency"] = commerce["currency"]
+    summary["current_plan"] = commerce.get("current_plan")
+    summary["membership_status"] = commerce.get("membership_status")
+    summary["last_purchase_at"] = commerce.get("last_purchase_at")
+    summary["last_purchase_amount"] = commerce.get("last_purchase_amount")
+    return summary
 
 
 async def list_referred_students(
@@ -177,64 +237,77 @@ async def list_referred_students(
     page: int = 1,
     limit: int = 20,
     cursor: Optional[str] = None,
+    sort: str = "newest",
+    empty_orders: bool = False,
 ) -> dict[str, Any]:
     if page < 1:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "page must be >= 1")
     if limit < 1 or limit > 100:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "limit must be between 1 and 100")
+    _ = cursor
 
     affiliate = await _get_affiliate(affiliate_id)
-    total = _as_int(affiliate.get("student_count")) or 0
-    start_index = (page - 1) * limit
-    skipped = 0
+    newest_first = sort != "oldest"
     collected: list[dict[str, Any]] = []
-    exclusive_start_key = decode_cursor(cursor) if cursor else None
-    next_cursor: Optional[str] = None
-    has_next = False
 
     query_kwargs: dict[str, Any] = {
         "IndexName": "GSI2",
         "KeyConditionExpression": (
             Key("GSI2PK").eq(f"AFFILIATE#{affiliate_id}") & Key("GSI2SK").begins_with("USER#")
         ),
-        "ScanIndexForward": False,
+        "ScanIndexForward": not newest_first,
     }
-    if exclusive_start_key:
-        query_kwargs["ExclusiveStartKey"] = exclusive_start_key
 
-    while len(collected) < limit:
-        def _query(kw=query_kwargs):
+    while len(collected) < 500:
+        def _query(kw=dict(query_kwargs)):
             return _table().query(**kw)
 
         response = await run_sync(_query)
-        last_key = response.get("LastEvaluatedKey")
-        for item in response.get("Items", []):
+        for item in response.get("Items", []) or []:
             if item.get("role") != UserRole.STUDENT.value:
                 continue
-            if skipped < start_index:
-                skipped += 1
-                continue
             collected.append(item)
-            if len(collected) == limit:
+            if len(collected) >= 500:
                 break
-
-        if len(collected) >= limit:
-            has_next = last_key is not None
-            next_cursor = encode_cursor(last_key)
-            break
-        if not last_key:
+        last_key = response.get("LastEvaluatedKey")
+        if not last_key or len(collected) >= 500:
             break
         query_kwargs["ExclusiveStartKey"] = last_key
 
+    summaries = await asyncio.gather(
+        *[
+            _student_summary_with_earnings(student, affiliate, affiliate_id)
+            for student in collected
+        ]
+    )
+    matching = list(summaries)
+    if empty_orders:
+        matching = [item for item in matching if int(item.get("order_count") or 0) == 0]
+    matching.sort(
+        key=lambda item: str(item.get("created_at") or ""),
+        reverse=newest_first,
+    )
+
+    total = len(matching)
+    start = (page - 1) * limit
+    page_items = matching[start : start + limit]
+    has_next = start + limit < total
+    wallet = await payout_service.get_wallet(affiliate_id)
+
     return {
-        "items": [_student_summary(student, affiliate) for student in collected],
+        "items": list(page_items),
         "pagination": build_pagination(
             page=page,
             limit=limit,
             total=total,
             has_next=has_next,
-            next_cursor=next_cursor,
         ),
+        "totals": {
+            "student_count": _as_int(affiliate.get("student_count")) or total,
+            "total_spent": wallet.get("order_volume") or 0,
+            "affiliate_earned": wallet.get("total_earned") or 0,
+            "currency": wallet.get("currency") or "USD",
+        },
     }
 
 
@@ -329,19 +402,27 @@ async def sum_affiliate_commission(
 
 
 async def get_earnings(*, affiliate_id: str, history_limit: int = 25) -> dict[str, Any]:
-    """Sum commissionable paid orders indexed under this affiliate."""
+    """Return stored wallet balances and recent commission ledger rows."""
+    from services.routes.payout.service import get_payout_settings, get_wallet, list_commissions
+
     affiliate = await _get_affiliate(affiliate_id)
     margin = normalize_value(affiliate.get("margin_percent"))
-    summed = await sum_affiliate_commission(affiliate_id, history_limit=history_limit)
-    total_earned = summed["total_earned"]
-    # Payout ledger is not implemented yet — treat all earned commission as pending.
+    wallet = await get_wallet(affiliate_id)
+    settings = await get_payout_settings()
+    items = await list_commissions(affiliate_id, limit=history_limit)
+    total_earned = round(wallet["total_earned"], 2)
+    lock_amount = round(wallet["lock_amount"], 2)
+    available = round(wallet["available"], 2)
     return {
         "total_earned": total_earned,
-        "pending_payout": total_earned,
-        "paid_out": 0.0,
-        "currency": summed["currency"],
-        "order_count": summed["order_count"],
+        "lock_amount": lock_amount,
+        "available": available,
+        "pending_payout": round(lock_amount + available, 2),
+        "paid_out": round(wallet["paid_out"], 2),
+        "currency": wallet["currency"],
+        "order_count": wallet["order_count"],
+        "payout_lock_days": settings["payout_lock_days"],
         "margin_percent": float(margin) if margin is not None else None,
         "next_milestone": _next_milestone(total_earned),
-        "items": summed["items"],
+        "items": items,
     }

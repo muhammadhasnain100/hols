@@ -16,15 +16,32 @@ export type {
   WebinarUpdatePayload,
 } from "@/lib/integrate/provider/student/webinars/types";
 
-function buildQuery(params: { page?: number; limit?: number }) {
+function buildQuery(params: {
+  page?: number;
+  limit?: number;
+  q?: string;
+  status?: string;
+  sort?: string;
+}) {
   const search = new URLSearchParams();
   if (params.page) search.set("page", String(params.page));
   if (params.limit) search.set("limit", String(params.limit));
+  if (params.q?.trim()) search.set("q", params.q.trim());
+  if (params.status && params.status !== "all") search.set("status", params.status);
+  if (params.sort) search.set("sort", params.sort);
   const query = search.toString();
   return query ? `?${query}` : "";
 }
 
-export function listWebinars(params: { page?: number; limit?: number } = {}) {
+export function listWebinars(
+  params: {
+    page?: number;
+    limit?: number;
+    q?: string;
+    status?: string;
+    sort?: string;
+  } = {},
+) {
   return apiRequest<{ items: WebinarSummary[]; pagination: AdminPaginationMeta }>(
     `/api/webinars${buildQuery(params)}`,
     { auth: true },
@@ -36,12 +53,6 @@ export function getWebinar(webinarId: string) {
     `/api/webinars/${encodeURIComponent(webinarId)}`,
     { auth: true },
   );
-}
-
-export function listWebinarNotifications() {
-  return apiRequest<{ items: WebinarNotification[] }>("/api/webinars/notifications", {
-    auth: true,
-  });
 }
 
 export function listMyWebinarBookings() {

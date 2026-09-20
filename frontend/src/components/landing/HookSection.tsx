@@ -148,20 +148,55 @@ function buildArrowPolygon(tip: Point, from: Point, size = 11): string {
  * Pin the arrowhead to the live tip of a stroke-dash draw.
  * Hidden until the stem has started; travels with the growing tip (never static ahead).
  */
+function strokeDashIsPrepared(line: SVGPathElement) {
+  const raw = gsap.getProperty(line, "strokeDasharray");
+  if (raw === undefined || raw === null || raw === "none" || raw === "") return false;
+  const s = String(raw);
+  return s !== "0" && s !== "0px";
+}
+
+function getStrokeDrawProgress(line: SVGPathElement) {
+  const length = line.getTotalLength();
+  if (length <= 0 || !strokeDashIsPrepared(line)) return 0;
+  const raw = gsap.getProperty(line, "strokeDashoffset");
+  if (raw === undefined || raw === null || raw === "none" || raw === "") return 0;
+  const dashoffset = typeof raw === "number" ? raw : parseFloat(String(raw));
+  if (!Number.isFinite(dashoffset)) return 0;
+  return Math.min(1, Math.max(0, 1 - dashoffset / length));
+}
+
+function hideHookSvg(el: SVGElement) {
+  el.setAttribute("opacity", "0");
+  el.style.opacity = "0";
+  el.setAttribute("visibility", "hidden");
+  el.style.visibility = "hidden";
+}
+
+function showHookSvg(el: SVGElement) {
+  el.setAttribute("opacity", "1");
+  el.style.opacity = "1";
+  el.setAttribute("visibility", "visible");
+  el.style.visibility = "visible";
+}
+
+/** Round caps paint a speck until a few pixels of stroke exist. */
+const MIN_STROKE_DRAW_PX = 8;
+const MIN_ARROW_DRAW_PX = 10;
+
+function syncLinePaint(line: SVGPathElement) {
+  const length = line.getTotalLength();
+  const drawn = getStrokeDrawProgress(line) * length;
+  if (drawn < MIN_STROKE_DRAW_PX) hideHookSvg(line);
+  else showHookSvg(line);
+}
+
 function syncArrowToLine(line: SVGPathElement | undefined, arrow: SVGPolygonElement | undefined, size = 11) {
   if (!line || !arrow) return;
   const length = line.getTotalLength();
-  if (length <= 0) {
-    arrow.setAttribute("opacity", "0");
-    return;
-  }
-  const raw = gsap.getProperty(line, "strokeDashoffset");
-  const dashoffset = typeof raw === "number" ? raw : parseFloat(String(raw)) || 0;
-  const drawn = Math.min(length, Math.max(0, length - dashoffset));
-  const progress = drawn / length;
-
-  if (progress < 0.03) {
-    arrow.setAttribute("opacity", "0");
+  const progress = getStrokeDrawProgress(line);
+  const drawn = progress * length;
+  if (length <= 0 || drawn < MIN_ARROW_DRAW_PX) {
+    hideHookSvg(arrow);
     return;
   }
 
@@ -170,22 +205,17 @@ function syncArrowToLine(line: SVGPathElement | undefined, arrow: SVGPolygonElem
   const from =
     Math.hypot(tip.x - back.x, tip.y - back.y) > 0.1 ? back : { x: tip.x - 1, y: tip.y };
   arrow.setAttribute("points", buildArrowPolygon(tip, from, size));
-  arrow.setAttribute("opacity", "1");
+  showHookSvg(arrow);
 }
 
 /** Pin the arrowhead to the path terminal — target stays put while the stem updates. */
 function syncArrowToLineEnd(line: SVGPathElement | undefined, arrow: SVGPolygonElement | undefined, size = 11) {
   if (!line || !arrow) return;
   const length = line.getTotalLength();
-  if (length <= 0) {
-    arrow.setAttribute("opacity", "0");
-    return;
-  }
-  const raw = gsap.getProperty(line, "strokeDashoffset");
-  const dashoffset = typeof raw === "number" ? raw : parseFloat(String(raw)) || 0;
-  const drawn = Math.min(length, Math.max(0, length - dashoffset));
-  if (drawn / length < 0.03) {
-    arrow.setAttribute("opacity", "0");
+  const progress = getStrokeDrawProgress(line);
+  const drawn = progress * length;
+  if (length <= 0 || drawn < MIN_ARROW_DRAW_PX) {
+    hideHookSvg(arrow);
     return;
   }
 
@@ -194,15 +224,11 @@ function syncArrowToLineEnd(line: SVGPathElement | undefined, arrow: SVGPolygonE
   const from =
     Math.hypot(tip.x - back.x, tip.y - back.y) > 0.1 ? back : { x: tip.x - 1, y: tip.y };
   arrow.setAttribute("points", buildArrowPolygon(tip, from, size));
-  arrow.setAttribute("opacity", "1");
+  showHookSvg(arrow);
 }
 
 function isLineFullyDrawn(line: SVGPathElement) {
-  const length = line.getTotalLength();
-  if (length <= 0) return false;
-  const raw = gsap.getProperty(line, "strokeDashoffset");
-  const dashoffset = typeof raw === "number" ? raw : parseFloat(String(raw)) || 0;
-  return dashoffset / length < 0.01;
+  return getStrokeDrawProgress(line) > 0.99;
 }
 
 function syncTrunkArrow(line: SVGPathElement | undefined, arrow: SVGPolygonElement | undefined) {
@@ -210,9 +236,6 @@ function syncTrunkArrow(line: SVGPathElement | undefined, arrow: SVGPolygonEleme
   if (isLineFullyDrawn(line)) syncArrowToLineEnd(line, arrow);
   else syncArrowToLine(line, arrow);
 }
-
-/** Space between ball bottom / label and the trunk stem start (mobile). */
-const MOBILE_TRUNK_AFTER_LABEL_PX = 10;
 
 /** Scrub timeline beats — branch/CTA must not start until trunk finishes. */
 const HOOK_TL = {
@@ -235,10 +258,11 @@ function appendHookOutboundBeats(
   structLabel: HTMLElement[],
   dashboard: HTMLElement[],
   cta: HTMLElement[],
+  options?: { revealCtaWithBranch?: boolean },
 ) {
   tl.to(
     trunkLines,
-    { strokeDashoffset: 0, opacity: 1, duration: HOOK_TL.trunkDuration, ease: "none" },
+    { strokeDashoffset: 0, duration: HOOK_TL.trunkDuration, ease: "none" },
     HOOK_TL.trunkStart,
   );
 
@@ -254,13 +278,13 @@ function appendHookOutboundBeats(
     // Second connector starts only after ball → dashboard completes.
     tl.to(
       branchLines,
-      { strokeDashoffset: 0, opacity: 1, duration: HOOK_TL.branchDuration, ease: "none" },
+      { strokeDashoffset: 0, duration: HOOK_TL.branchDuration, ease: "none" },
       trunkEnd,
     );
     tl.to(
       cta,
       { autoAlpha: 1, y: 0, duration: HOOK_TL.ctaDuration, ease: "power1.out" },
-      trunkEnd + HOOK_TL.branchDuration,
+      options?.revealCtaWithBranch ? trunkEnd : trunkEnd + HOOK_TL.branchDuration,
     );
   } else {
     tl.to(cta, { autoAlpha: 1, y: 0, duration: HOOK_TL.ctaDuration, ease: "power1.out" }, trunkEnd + 0.12);
@@ -408,7 +432,9 @@ function buildDiagramGeometry(
 
 /**
  * Mobile: wires drop from each card's bottom edge onto the ball's top arc.
- * With dashboard: ball → dashboard border, then dashboard → Explore CTA.
+ * With dashboard: ball south pole → dashboard top border, then dashboard
+ * bottom border → Explore CTA top border. Both stems share one X so they
+ * stay vertical (a center mismatch was drawing a diagonal through the mock).
  */
 function buildVerticalDiagramGeometry(
   cardRects: DOMRect[],
@@ -416,7 +442,6 @@ function buildVerticalDiagramGeometry(
   dashRect: DOMRect | null,
   ctaRect: DOMRect | null,
   svgRect: DOMRect,
-  structLabelRect: DOMRect | null = null,
 ): { paths: DiagramPath[]; arrows: DiagramArrow[] } {
   if (svgRect.width <= 0 || svgRect.height <= 0 || !ballRect.width) {
     return { paths: [], arrows: [] };
@@ -431,6 +456,7 @@ function buildVerticalDiagramGeometry(
   const ballCY = ballRect.top + ballRect.height / 2;
   const center = toSvg(ballCX, ballCY);
   const entryR = ballEntryRadius(ballRect);
+  const exitR = ballExitRadius(ballRect);
 
   const paths: DiagramPath[] = [];
   const arrows: DiagramArrow[] = [];
@@ -444,14 +470,12 @@ function buildVerticalDiagramGeometry(
     paths.push({ id: `card-${i}`, group: "card", d: buildConvergePath(start, entry, center, i + 1) });
   });
 
-  void structLabelRect;
   if (HOOK_SHOW_DASHBOARD && dashRect && dashRect.width) {
-    const flowX = ballCX;
-    const trunkStartY = ballRect.bottom + MOBILE_TRUNK_AFTER_LABEL_PX;
-    const trunkTipY = dashRect.top;
-    if (trunkStartY < trunkTipY - 4) {
-      const trunkStart = toSvg(flowX, trunkStartY);
-      const trunkTip = toSvg(dashRect.left + dashRect.width / 2, trunkTipY);
+    const flowX = dashRect.left + dashRect.width / 2;
+    const south = ballExitPoint(ballCX, ballCY, exitR, flowX, dashRect.top);
+    const trunkStart = toSvg(flowX, south.y);
+    const trunkTip = toSvg(flowX, dashRect.top);
+    if (south.y < dashRect.top - 4) {
       paths.push({ id: "trunk", group: "trunk", d: buildStraightLine(trunkStart, trunkTip) });
       arrows.push({
         id: "trunk-arrow",
@@ -463,11 +487,9 @@ function buildVerticalDiagramGeometry(
     }
 
     if (ctaRect && ctaRect.width) {
-      const branchStartY = dashRect.bottom;
-      const branchTipY = ctaRect.top;
-      if (branchStartY < branchTipY - 4) {
-        const branchStart = toSvg(dashRect.left + dashRect.width / 2, branchStartY);
-        const branchTip = toSvg(ctaRect.left + ctaRect.width / 2, branchTipY);
+      const branchStart = toSvg(flowX, dashRect.bottom);
+      const branchTip = toSvg(flowX, ctaRect.top);
+      if (dashRect.bottom < ctaRect.top - 4) {
         paths.push({ id: "branch", group: "branch", d: buildStraightLine(branchStart, branchTip) });
         arrows.push({
           id: "branch-arrow",
@@ -479,12 +501,11 @@ function buildVerticalDiagramGeometry(
       }
     }
   } else if (ctaRect && ctaRect.width) {
-    const flowX = ballCX;
-    const trunkStartY = ballRect.bottom + MOBILE_TRUNK_AFTER_LABEL_PX;
-    const trunkTipY = ctaRect.top;
-    if (trunkStartY < trunkTipY - 4) {
-      const trunkStart = toSvg(flowX, trunkStartY);
-      const trunkTip = toSvg(ctaRect.left + ctaRect.width / 2, trunkTipY);
+    const flowX = ctaRect.left + ctaRect.width / 2;
+    const south = ballExitPoint(ballCX, ballCY, exitR, flowX, ctaRect.top);
+    const trunkStart = toSvg(flowX, south.y);
+    const trunkTip = toSvg(flowX, ctaRect.top);
+    if (south.y < ctaRect.top - 4) {
       paths.push({ id: "trunk", group: "trunk", d: buildStraightLine(trunkStart, trunkTip) });
       arrows.push({
         id: "trunk-arrow",
@@ -501,12 +522,13 @@ function buildVerticalDiagramGeometry(
 
 function prepareStroke(path: SVGPathElement, hidden: boolean) {
   const length = path.getTotalLength();
-  // opacity 0 when collapsed — round linecaps still paint a speck at dashoffset=length
+  // Round linecaps still paint a speck at dashoffset=length — keep paint off until draw starts.
   gsap.set(path, {
     strokeDasharray: length,
     strokeDashoffset: hidden ? length : 0,
-    opacity: hidden ? 0 : 1,
   });
+  if (hidden) hideHookSvg(path);
+  else syncLinePaint(path);
 }
 
 function resyncPathStroke(path: SVGPathElement) {
@@ -517,12 +539,11 @@ function resyncPathStroke(path: SVGPathElement) {
   let drawRatio = 0;
   if (oldLen > 0 && typeof dashoffset === "number") drawRatio = 1 - dashoffset / oldLen;
   drawRatio = Math.min(1, Math.max(0, drawRatio));
-  // Keep undrawn strokes fully invisible (round caps otherwise leave speck dots)
   gsap.set(path, {
     strokeDasharray: length,
     strokeDashoffset: length * (1 - drawRatio),
-    opacity: drawRatio > 0.002 ? 1 : 0,
   });
+  syncLinePaint(path);
 }
 
 /* ── Scattered source-card icons (Lucide vector) ───────────────────────── */
@@ -592,11 +613,13 @@ function ScatteredCard({
 function HolsBall({
   innerRef,
   className,
+  labelInFlow = false,
 }: {
   innerRef?: (node: HTMLDivElement | null) => void;
   className?: string;
+  labelInFlow?: boolean;
 }) {
-  return <HookHolsBall innerRef={innerRef} className={className} />;
+  return <HookHolsBall innerRef={innerRef} className={className} labelInFlow={labelInFlow} />;
 }
 
 /* ── Interactive portal mock (replaces static dashboard image) ─────────── */
@@ -617,11 +640,11 @@ function HookCopy({ centered = false }: { centered?: boolean }) {
     <div
       data-hook-copy
       className={cn(
-        "w-full max-w-3xl lg:max-w-4xl",
+        "w-full max-w-3xl min-w-0 lg:max-w-4xl",
         centered ? "mx-auto text-center" : "text-left",
       )}
     >
-      <h2 className="font-sans text-[1.875rem] font-normal leading-[1.05] tracking-tight text-primary sm:text-[2.25rem] md:text-[3.75rem]">
+      <h2 className="font-sans text-[1.75rem] font-normal leading-[1.08] tracking-tight text-balance text-primary sm:text-[2.25rem] md:text-[2.75rem] lg:text-[3.75rem] lg:leading-[1.05]">
         <span>{hook.beforeLabel}</span>
         <span style={{ color: HOOK_LINE }}>
           {" "}
@@ -713,8 +736,12 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
       }
     });
     svg.querySelectorAll<SVGPolygonElement>("[data-hook-arrow]").forEach((a) => {
-      const op = a.getAttribute("opacity");
-      if (op === null || op === "") a.setAttribute("opacity", "0");
+      const group = a.getAttribute("data-group");
+      const line = group
+        ? svg.querySelector<SVGPathElement>(`[data-hook-line][data-group="${group}"]`)
+        : null;
+      if (line) syncTrunkArrow(line, a);
+      else hideHookSvg(a);
     });
   }, [paths, arrows]);
 
@@ -771,6 +798,8 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
               stroke="url(#hook-card-gradient)"
               strokeWidth={1.6}
               strokeLinecap="round"
+              opacity={0}
+              visibility="hidden"
             />
           ) : (
             <path
@@ -781,6 +810,8 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
               stroke={HOOK_LINE}
               strokeWidth={2}
               strokeLinecap="butt"
+              opacity={0}
+              visibility="hidden"
             />
           ),
         )}
@@ -793,6 +824,7 @@ function FlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
             points={arrow.points}
             fill={HOOK_LINE}
             opacity={0}
+            visibility="hidden"
           />
         ))}
       </svg>
@@ -953,7 +985,6 @@ function MobileFlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
     const ballRect = ball.getBoundingClientRect();
     const dashRect = HOOK_SHOW_DASHBOARD ? getPortalLayoutRect(dashRef.current) : null;
     const ctaRect = getCtaLayoutRect(ctaRef.current);
-    const structLabelRect = structLabelRef.current?.getBoundingClientRect() ?? null;
 
     const next = buildVerticalDiagramGeometry(
       cardRects,
@@ -961,7 +992,6 @@ function MobileFlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
       dashRect,
       ctaRect,
       svgRect,
-      structLabelRect,
     );
     setViewBox(`0 0 ${svgRect.width.toFixed(1)} ${svgRect.height.toFixed(1)}`);
     setPaths((cur) => (JSON.stringify(cur) === JSON.stringify(next.paths) ? cur : next.paths));
@@ -1003,8 +1033,12 @@ function MobileFlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
       }
     });
     svg.querySelectorAll<SVGPolygonElement>("[data-hook-arrow]").forEach((a) => {
-      const op = a.getAttribute("opacity");
-      if (op === null || op === "") a.setAttribute("opacity", "0");
+      const group = a.getAttribute("data-group");
+      const line = group
+        ? svg.querySelector<SVGPathElement>(`[data-hook-line][data-group="${group}"]`)
+        : null;
+      if (line) syncTrunkArrow(line, a);
+      else hideHookSvg(a);
     });
   }, [paths, arrows]);
 
@@ -1036,13 +1070,13 @@ function MobileFlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
   }, [syncPaths]);
 
   return (
-    <div ref={diagramRef} className="relative flex w-full flex-col items-center overflow-hidden">
+    <div ref={diagramRef} className="relative flex w-full flex-col items-center overflow-x-clip">
       <svg
         ref={svgRef}
         aria-hidden
         viewBox={viewBox}
         preserveAspectRatio="none"
-        className="pointer-events-none absolute inset-0 z-[5] h-full w-full overflow-visible"
+        className="pointer-events-none absolute inset-0 z-0 h-full w-full overflow-visible"
         fill="none"
       >
         <defs>
@@ -1062,6 +1096,8 @@ function MobileFlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
               stroke="url(#hook-card-gradient-mobile)"
               strokeWidth={1.6}
               strokeLinecap="round"
+              opacity={0}
+              visibility="hidden"
             />
           ) : (
             <path
@@ -1072,6 +1108,8 @@ function MobileFlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
               stroke={HOOK_LINE}
               strokeWidth={2}
               strokeLinecap="butt"
+              opacity={0}
+              visibility="hidden"
             />
           ),
         )}
@@ -1084,19 +1122,20 @@ function MobileFlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
             points={arrow.points}
             fill={HOOK_LINE}
             opacity={0}
+            visibility="hidden"
           />
         ))}
       </svg>
 
       <div className="relative z-10 flex w-full flex-col items-center">
         {/* Scattered cluster header — centered above the card wrap */}
-        <div className="mb-4 flex w-full max-w-md flex-col items-center sm:max-w-lg">
+        <div className="mb-4 flex w-full max-w-md flex-col items-center sm:max-w-lg md:max-w-2xl">
           <span data-hook-scatter-label className={cn(HOOK_CAPSULE_CLASS, "opacity-0")}>
             {hook.scatteredLabel}
           </span>
         </div>
 
-        <div className="flex max-w-md flex-wrap items-center justify-center gap-2.5 px-1 sm:max-w-lg sm:gap-3">
+        <div className="flex w-full max-w-md flex-wrap items-center justify-center gap-2.5 px-1 sm:max-w-lg sm:gap-3 md:max-w-2xl">
           {hook.sourceCards.map((card, i) => {
             const color = CARD_COLORS[card.id] ?? BLUE;
             return (
@@ -1115,11 +1154,11 @@ function MobileFlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
         <div aria-hidden className="h-16 w-full sm:h-20" />
 
         <div className="relative z-10">
-          <HolsBall innerRef={(n) => (ballRef.current = n)} className="opacity-0" />
+          <HolsBall innerRef={(n) => (ballRef.current = n)} className="opacity-0" labelInFlow />
         </div>
 
-        {/* Clearance under HOLS wordmark — no trunk through this gap */}
-        <div aria-hidden className="h-14 w-full sm:h-16" />
+        {/* Gap between HOLS wordmark and the structured capsule */}
+        <div aria-hidden className="h-8 w-full sm:h-10" />
 
         {HOOK_SHOW_DASHBOARD ? (
           <>
@@ -1127,7 +1166,7 @@ function MobileFlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
             <span
               ref={structLabelRef}
               data-hook-struct-label
-              className={cn(HOOK_CAPSULE_CLASS, "opacity-0")}
+              className={cn(HOOK_CAPSULE_CLASS, "relative z-30 bg-[#E5E5E5] opacity-0")}
             >
               {hook.structuredLabel}
             </span>
@@ -1135,11 +1174,11 @@ function MobileFlowDiagram({ onPathsReady }: { onPathsReady?: () => void }) {
             {/* Room for short stem + arrowhead into dashboard chrome */}
             <div aria-hidden className="h-14 w-full sm:h-16" />
 
-            <HookPortalShell responsive className="relative z-20">
+            <HookPortalShell responsive className="relative z-20 mx-auto w-full max-w-[min(100%,460px)]">
               <DashboardMockup innerRef={(n) => (dashRef.current = n)} className="opacity-0" />
             </HookPortalShell>
 
-            {/* Clearance so the ball→CTA trunk can pass behind the portal */}
+            {/* Gap for dashboard → CTA connector */}
             <div aria-hidden className="h-14 w-full sm:h-16" />
           </>
         ) : (
@@ -1191,7 +1230,7 @@ function HookStatic() {
                 </span>
               ))}
             </div>
-            <HolsBall />
+            <HolsBall labelInFlow />
             {HOOK_SHOW_DASHBOARD ? (
               <>
                 <span className={HOOK_CAPSULE_CLASS}>
@@ -1314,8 +1353,8 @@ export function HookSection() {
         if (cards.length === 0) return;
 
         allLines.forEach((p) => prepareStroke(p, true));
-        trunkArrows.forEach((arrow) => arrow.setAttribute("opacity", "0"));
-        branchArrows.forEach((arrow) => arrow.setAttribute("opacity", "0"));
+        trunkArrows.forEach(hideHookSvg);
+        branchArrows.forEach(hideHookSvg);
         gsap.set(cards, { autoAlpha: 0, y: 10, yPercent: -50 });
         gsap.set(scatterLabel, { autoAlpha: 0, y: 6 });
         if (HOOK_SHOW_DASHBOARD) {
@@ -1326,6 +1365,7 @@ export function HookSection() {
         gsap.set(cta, { autoAlpha: 0, y: 8 });
 
         const syncAllArrows = () => {
+          allLines.forEach(syncLinePaint);
           syncTrunkArrow(trunkLines[0], trunkArrows[0]);
           syncTrunkArrow(branchLines[0], branchArrows[0]);
         };
@@ -1354,7 +1394,7 @@ export function HookSection() {
         cardLines.forEach((p, i) => {
           tl.to(
             p,
-            { strokeDashoffset: 0, opacity: 1, duration: 1.1, ease: "none" },
+            { strokeDashoffset: 0, duration: 1.1, ease: "none" },
             0.9 + i * 0.07,
           );
         });
@@ -1418,18 +1458,21 @@ export function HookSection() {
         if (cards.length === 0) return;
 
         allLines.forEach((p) => prepareStroke(p, true));
-        trunkArrows.forEach((arrow) => arrow.setAttribute("opacity", "0"));
-        branchArrows.forEach((arrow) => arrow.setAttribute("opacity", "0"));
+        trunkArrows.forEach(hideHookSvg);
+        branchArrows.forEach(hideHookSvg);
         gsap.set(cards, { autoAlpha: 0, y: 10 });
         gsap.set(scatterLabel, { autoAlpha: 0, y: 6 });
         if (HOOK_SHOW_DASHBOARD) {
           gsap.set(structLabel, { autoAlpha: 0, y: 6 });
-          gsap.set(dashboard, { autoAlpha: 0, y: 12, scale: 0.98 });
+          // No y/scale offset — those shift getBoundingClientRect and send
+          // the stem through the dashboard / into the CTA on mobile.
+          gsap.set(dashboard, { autoAlpha: 0 });
         }
         gsap.set(hub, { autoAlpha: 0, scale: 0.94 });
-        gsap.set(cta, { autoAlpha: 0, y: 8 });
+        gsap.set(cta, { autoAlpha: 0 });
 
         const syncAllArrows = () => {
+          allLines.forEach(syncLinePaint);
           syncTrunkArrow(trunkLines[0], trunkArrows[0]);
           syncTrunkArrow(branchLines[0], branchArrows[0]);
         };
@@ -1457,12 +1500,14 @@ export function HookSection() {
         cardLines.forEach((p, i) => {
           tl.to(
             p,
-            { strokeDashoffset: 0, opacity: 1, duration: 1.1, ease: "none" },
+            { strokeDashoffset: 0, duration: 1.1, ease: "none" },
             0.9 + i * 0.07,
           );
         });
         tl.to(hub, { autoAlpha: 1, scale: 1, duration: 0.85, ease: "power1.out" }, HOOK_TL.hub);
-        appendHookOutboundBeats(tl, trunkLines, branchLines, structLabel, dashboard, cta);
+        appendHookOutboundBeats(tl, trunkLines, branchLines, structLabel, dashboard, cta, {
+          revealCtaWithBranch: true,
+        });
 
         const onSync = () => {
           allLines.forEach(resyncPathStroke);

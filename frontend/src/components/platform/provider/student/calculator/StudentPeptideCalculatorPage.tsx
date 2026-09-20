@@ -1,12 +1,11 @@
 "use client";
 
-import { useCallback, useEffect, useId, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useGSAP } from "@gsap/react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { CalculatorPageSkeleton } from "@/components/platform/provider/student/DashboardSkeletons";
 import { CalculatorPageLayout } from "@/components/platform/provider/student/calculator/CalculatorPageLayout";
 import { CalculatorVisual } from "@/components/platform/provider/student/calculator/CalculatorVisual";
-import { SyringeSizeOption } from "@/components/platform/provider/student/calculator/CalculatorAssetIllustrations";
 import { InjectionAnimation } from "@/components/platform/provider/student/calculator/InjectionAnimation";
 import { SidebarSvgIcon } from "@/components/platform/provider/sidebar-icons";
 import { gsap, registerGsap } from "@/lib/gsap";
@@ -16,7 +15,7 @@ import {
   calculatePeptideDose,
   type MassUnit,
   type PeptideCalculatorResult,
-  type SyringeSizeMl,
+  type SyringePresetMl,
 } from "@/lib/integrate/provider/student/calculator";
 import { cn } from "@/lib/utils";
 
@@ -33,38 +32,18 @@ const PROGRESS_STEPS: Array<{
   { id: "dose", label: "Dose", description: "Set desired dose" },
 ];
 
-const amountFieldClass = cn(
-  "calc-amount-field min-w-0 flex-1 appearance-none border-0 bg-transparent px-1.5 py-0 text-center text-sm font-medium text-[color:var(--dash-text)] outline-none ring-0 [appearance:textfield] placeholder:text-[color:var(--dash-faint)]",
-  "[&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
-  "focus:outline-none focus:ring-0 focus-visible:outline-none focus-visible:ring-0",
-);
+const calcSelectClass = "dashboard-field dashboard-field-select min-h-11 w-full py-0 sm:min-h-12";
 
-const amountControlClass = cn(
-  "calc-amount-control hols-hover-border flex h-12 min-h-12 w-full max-w-[15rem] shrink-0 items-stretch overflow-hidden rounded-lg border border-[color:var(--dash-surface-border)] transition-[border-color]",
-);
+const calcAmountInputClass =
+  "calc-amount-field hols-plain-control min-w-0 flex-1 px-4 [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none";
 
-const unitCapsuleClass =
-  "calc-unit-capsule inline-flex h-12 min-h-12 min-w-[3.5rem] shrink-0 items-center justify-center rounded-lg border border-[color:var(--dash-surface-border)] px-3 text-sm font-medium leading-none text-[color:var(--dash-muted)]";
-
-/** Step size for the amount counter — matches typical vial / dose increments. */
-function amountStepForUnit(unit?: string): number {
-  switch (unit) {
-    case "g":
-      return 0.1;
-    case "ml":
-      return 0.5;
-    case "mcg":
-      return 10;
-    case "mg":
-    default:
-      return 1;
-  }
+function isAmountDraft(raw: string): boolean {
+  return raw === "" || /^\d*\.?\d*$/.test(raw);
 }
 
-function formatSteppedAmount(value: number, step: number): string {
-  const decimals = step < 1 ? String(step).split(".")[1]?.length ?? 1 : 0;
-  const rounded = Number(value.toFixed(decimals));
-  return decimals > 0 ? String(rounded) : String(Math.round(rounded));
+function parseSyringePreset(raw: string): SyringePresetMl {
+  const value = Number(raw);
+  return (SYRINGE_SIZES_ML as readonly number[]).includes(value) ? (value as SyringePresetMl) : 1;
 }
 
 export function StudentPeptideCalculatorPage({
@@ -76,7 +55,7 @@ export function StudentPeptideCalculatorPage({
 } = {}) {
   const [ready, setReady] = useState(embedded);
   const [step, setStep] = useState<Step>("syringe");
-  const [syringeMl, setSyringeMl] = useState<SyringeSizeMl>(1);
+  const [syringeMl, setSyringeMl] = useState<SyringePresetMl>(1);
   const [peptideAmount, setPeptideAmount] = useState("");
   const [peptideUnit, setPeptideUnit] = useState<MassUnit>("mg");
   const [waterMl, setWaterMl] = useState("");
@@ -231,7 +210,7 @@ export function StudentPeptideCalculatorPage({
     <>
       {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
 
-      <section className="dashboard-surface min-w-0 overflow-x-hidden rounded-2xl p-2.5 max-[390px]:p-2 sm:p-5 md:p-6">
+      <section className="calculator-workspace dashboard-surface min-w-0 max-w-full overflow-x-hidden rounded-2xl p-2.5 max-[390px]:p-2 sm:p-5 md:p-6">
         <CalculatorStepper progressIndex={progressIndex} step={step} />
 
         <div
@@ -260,16 +239,18 @@ export function StudentPeptideCalculatorPage({
                   />
                 }
               >
-                <div className="flex flex-wrap items-center justify-center gap-1 max-[390px]:gap-1 sm:gap-2 lg:justify-start">
-                  {SYRINGE_SIZES_ML.map((size) => (
-                    <SyringeSizeOption
-                      key={size}
-                      size={size}
-                      selected={syringeMl === size}
-                      onSelect={() => setSyringeMl(size)}
-                    />
-                  ))}
-                </div>
+                <select
+                    aria-label="Syringe size"
+                    value={String(syringeMl)}
+                    onChange={(event) => setSyringeMl(parseSyringePreset(event.target.value))}
+                    className={calcSelectClass}
+                  >
+                    {SYRINGE_SIZES_ML.map((size) => (
+                      <option key={size} value={size}>
+                        {size} ml
+                      </option>
+                    ))}
+                  </select>
               </StepPanel>
             ) : null}
 
@@ -342,36 +323,32 @@ export function StudentPeptideCalculatorPage({
             ) : null}
 
             {step === "result" && result ? (
-              <div className="hols-auth-card calc-step-card flex h-full flex-col justify-center rounded-xl p-3 text-center max-[390px]:p-2.5 sm:p-6 lg:text-left">
-                <h2 className="font-sans text-base font-semibold leading-[1.15] tracking-[0.01em] text-[color:var(--dash-text)] max-[390px]:text-sm sm:text-xl">
+              <div className="hols-auth-card calc-step-card flex h-full min-w-0 max-w-full flex-col justify-center overflow-hidden rounded-xl p-4 text-left max-[390px]:p-3 sm:p-6">
+                <h2 className="font-sans text-pretty text-base font-semibold leading-[1.15] tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl">
                   Results
                 </h2>
-                <div className="mt-3 grid grid-cols-1 gap-2 max-[390px]:gap-1.5 sm:mt-4 sm:grid-cols-2 sm:gap-3">
-                  <div className="dashboard-row rounded-2xl px-3 py-3 max-[390px]:px-2.5 max-[390px]:py-2.5 sm:px-5 sm:py-5">
-                    <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-                      Units per dose
-                    </p>
-                    <p className="font-sans mt-1 text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] max-[390px]:text-lg sm:mt-1.5 sm:text-3xl">
-                      <span ref={unitsRef}>{result.unitsPerDose.toFixed(2)}</span>
-                    </p>
-                  </div>
-                  <div className="dashboard-row rounded-2xl px-3 py-3 max-[390px]:px-2.5 max-[390px]:py-2.5 sm:px-5 sm:py-5">
-                    <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-                      Total doses in vial
-                    </p>
-                    <p className="font-sans mt-1 text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] max-[390px]:text-lg sm:mt-1.5 sm:text-3xl">
-                      <span ref={dosesRef}>{result.totalDoses.toFixed(2)}</span>
-                    </p>
-                  </div>
+                <div className="calc-result-grid mt-4 grid min-w-0 grid-cols-2 gap-x-3 gap-y-1 sm:mt-5 sm:gap-x-5">
+                  <p className="calc-result-label text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+                    Units per dose
+                  </p>
+                  <p className="calc-result-label text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+                    Total doses in vial
+                  </p>
+                  <p className="calc-result-value font-sans text-2xl font-bold tracking-tight text-[color:var(--dash-text)] sm:text-[1.75rem]">
+                    <span ref={unitsRef}>{result.unitsPerDose.toFixed(2)}</span>
+                  </p>
+                  <p className="calc-result-value font-sans text-2xl font-bold tracking-tight text-[color:var(--dash-text)] sm:text-[1.75rem]">
+                    <span ref={dosesRef}>{result.totalDoses.toFixed(2)}</span>
+                  </p>
                 </div>
-                <p className="text-brand-body mx-auto mt-3 max-w-md text-xs text-[color:var(--dash-muted)] max-[390px]:mt-2.5 sm:mt-4 sm:text-sm lg:mx-0">
+                <p className="text-brand-body mt-4 min-w-0 text-xs leading-relaxed break-words text-[color:var(--dash-muted)] sm:mt-5 sm:text-sm">
                   Draw to {result.unitsPerDose.toFixed(2)} units ({result.doseVolumeMl} ml) on your{" "}
                   {syringeMl} ml syringe.
                 </p>
                 <button
                   type="button"
                   onClick={restart}
-                  className="font-sans mt-4 inline-flex min-h-10 w-full items-center justify-center rounded-lg bg-[#DDE466] px-5 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 active:scale-[0.98] sm:mt-6 sm:w-auto sm:px-6"
+                  className="dashboard-navy-btn font-sans mt-5 inline-flex min-h-11 w-full shrink-0 items-center justify-center rounded-full px-5 text-sm font-semibold text-white sm:mt-6"
                 >
                   Restart
                 </button>
@@ -399,14 +376,14 @@ export function StudentPeptideCalculatorPage({
         </div>
       </section>
 
-      <p className="text-brand-caption px-1 text-center leading-relaxed text-[color:var(--dash-faint)]">
+      <p className="text-brand-caption px-1 text-center leading-relaxed text-[color:var(--dash-muted)]">
         Research-use education tool only. Follow peptide documentation and institutional protocols.
       </p>
     </>
   );
 
   if (embedded) {
-    return <div className="grid w-full min-w-0 gap-3 sm:gap-4">{content}</div>;
+    return <div className="calculator-page grid w-full min-w-0 max-w-full gap-3 overflow-x-hidden sm:gap-4">{content}</div>;
   }
 
   return <CalculatorPageLayout>{content}</CalculatorPageLayout>;
@@ -438,7 +415,7 @@ function CalculatorStepper({
                 <span
                   aria-hidden
                   className={cn(
-                    "absolute left-[calc(50%+0.85rem)] right-[calc(-50%+0.85rem)] top-[0.7rem] h-[2px] sm:left-[calc(50%+1rem)] sm:right-[calc(-50%+1rem)] sm:top-[0.85rem]",
+                    "absolute left-[calc(50%+0.7rem)] right-[calc(-50%+0.7rem)] top-[0.7rem] h-[2px] sm:left-[calc(50%+1rem)] sm:right-[calc(-50%+1rem)] sm:top-[0.85rem]",
                     connectorDone ? "bg-[#DDE466]" : "bg-[color:var(--dash-surface-border)]",
                   )}
                 />
@@ -449,7 +426,7 @@ function CalculatorStepper({
                   "relative z-[1] flex h-6 w-6 items-center justify-center rounded-full sm:h-7 sm:w-7",
                   done && "bg-[#DDE466] text-[#152744]",
                   active && "border-2 border-[#DDE466] bg-[color:var(--dash-surface,#fff)]",
-                  pending && "bg-[color:var(--dash-soft)]",
+                  pending && "border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-surface)]",
                 )}
                 aria-current={active ? "step" : undefined}
               >
@@ -459,7 +436,7 @@ function CalculatorStepper({
                   <span
                     className={cn(
                       "h-2 w-2 rounded-full sm:h-2.5 sm:w-2.5",
-                      active ? "bg-[#DDE466]" : "bg-[color:var(--dash-dim)]",
+                      active ? "bg-[#DDE466]" : "bg-[color:var(--dash-muted)]",
                     )}
                   />
                 )}
@@ -467,7 +444,7 @@ function CalculatorStepper({
 
               <p
                 className={cn(
-                  "font-sans mt-2 max-w-[5.5rem] text-[11px] font-semibold leading-tight tracking-[0.01em] sm:mt-2.5 sm:max-w-[7rem] sm:text-sm",
+                  "font-sans mt-2 w-full truncate px-0.5 text-[11px] font-semibold leading-tight tracking-[0.01em] sm:mt-2.5 sm:px-1 sm:text-sm",
                   active
                     ? "text-[color:var(--dash-accent,#6f7a1c)]"
                     : "text-[color:var(--dash-text)]",
@@ -477,10 +454,10 @@ function CalculatorStepper({
               </p>
               <p
                 className={cn(
-                  "mt-0.5 max-w-[5.75rem] text-[10px] leading-snug sm:max-w-[8rem] sm:text-xs",
+                  "mt-0.5 hidden max-w-[8rem] text-xs leading-snug sm:block",
                   active
                     ? "text-[color:var(--dash-accent,#6f7a1c)]"
-                    : "text-[color:var(--dash-faint)]",
+                    : "text-[color:var(--dash-muted)]",
                 )}
               >
                 {item.description}
@@ -507,21 +484,21 @@ function StepPanel({
   actions: React.ReactNode;
 }) {
   return (
-    <div className="hols-auth-card calc-step-card flex w-full flex-col rounded-xl p-3 max-[390px]:p-2.5 sm:p-6">
-      <div className="mx-auto flex w-full max-w-sm flex-col items-center gap-3 text-center max-[390px]:gap-2.5 sm:gap-5 lg:mx-0 lg:max-w-none lg:items-start lg:text-left">
-        <div className="min-w-0 w-full">
-          <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+    <div className="hols-auth-card calc-step-card flex w-full min-w-0 max-w-full flex-col rounded-xl p-3 max-[390px]:p-2.5 sm:p-6">
+      <div className="mx-auto flex w-full min-w-0 max-w-sm flex-col items-center gap-3 text-center max-[390px]:gap-2.5 sm:gap-5 lg:mx-0 lg:max-w-none lg:items-start lg:text-left">
+        <div className="w-full min-w-0">
+          <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-muted)]">
             {eyebrow}
           </p>
-          <h2 className="font-sans mt-1 text-sm font-semibold leading-[1.3] tracking-[0.01em] text-[color:var(--dash-text)] max-[390px]:text-[13px] sm:mt-1.5 sm:text-lg md:text-xl">
+          <h2 className="font-sans mt-1 text-pretty text-sm font-semibold leading-[1.3] tracking-[0.01em] text-[color:var(--dash-text)] sm:mt-1.5 sm:text-lg md:text-xl">
             {title}
           </h2>
-          <p className="text-brand-body mt-1 text-xs text-[color:var(--dash-muted)] max-[390px]:text-[11px] max-[390px]:leading-snug sm:mt-2 sm:text-sm">
+          <p className="text-brand-body mt-1 text-pretty text-xs leading-snug text-[color:var(--dash-muted)] sm:mt-2 sm:text-sm sm:leading-relaxed">
             {hint}
           </p>
         </div>
         <div className="w-full min-w-0">{children}</div>
-        <div className="w-full border-t border-[color:var(--dash-surface-border)] pt-2.5 max-[390px]:pt-2 sm:pt-4">
+        <div className="w-full min-w-0 border-t border-[color:var(--dash-surface-border)] pt-2.5 max-[390px]:pt-2 sm:pt-4">
           {actions}
         </div>
       </div>
@@ -540,119 +517,35 @@ function StepActions({
   backDisabled?: boolean;
   nextLabel: string;
 }) {
+  const showBack = !backDisabled;
+
   return (
-    <div className="flex w-full flex-row flex-wrap items-center justify-center gap-1.5 max-[390px]:gap-1 sm:flex-nowrap sm:gap-2 lg:justify-start">
-      <button
-        type="button"
-        onClick={onBack}
-        disabled={backDisabled}
-        className="dashboard-pill-soft font-sans inline-flex min-h-10 flex-1 items-center justify-center rounded-lg px-4 text-sm font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-40 sm:flex-none sm:px-5"
-      >
-        Back
-      </button>
+    <div
+      className={cn(
+        "flex w-full flex-col gap-2 sm:flex-row sm:items-center sm:gap-2.5",
+        showBack ? "sm:justify-between" : "sm:justify-end",
+      )}
+    >
+      {showBack ? (
+        <button
+          type="button"
+          onClick={onBack}
+          className="dashboard-pill-soft font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] sm:w-auto"
+        >
+          <SidebarSvgIcon name="previous" size={14} strokeWidth={2.2} />
+          Back
+        </button>
+      ) : null}
       <button
         type="button"
         onClick={onNext}
-        className="font-sans inline-flex min-h-10 flex-1 items-center justify-center rounded-lg bg-[#DDE466] px-5 text-sm font-medium tracking-[0.01em] text-[#152744] transition hover:brightness-105 sm:flex-none sm:px-6"
+        className="dashboard-navy-btn font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-semibold text-white sm:w-auto sm:px-6"
       >
         {nextLabel}
+        {nextLabel !== "Calculate" ? (
+          <SidebarSvgIcon name="next" size={14} strokeWidth={2.2} />
+        ) : null}
       </button>
-    </div>
-  );
-}
-
-function CalcUnitSelect({
-  value,
-  units,
-  onChange,
-}: {
-  value: MassUnit;
-  units: MassUnit[];
-  onChange: (unit: MassUnit) => void;
-}) {
-  const listId = useId();
-  const rootRef = useRef<HTMLDivElement>(null);
-  const [open, setOpen] = useState(false);
-
-  useEffect(() => {
-    if (!open) return;
-
-    function onPointerDown(event: MouseEvent) {
-      if (rootRef.current?.contains(event.target as Node)) return;
-      setOpen(false);
-    }
-
-    function onKeyDown(event: KeyboardEvent) {
-      if (event.key === "Escape") setOpen(false);
-    }
-
-    document.addEventListener("mousedown", onPointerDown);
-    document.addEventListener("keydown", onKeyDown);
-    return () => {
-      document.removeEventListener("mousedown", onPointerDown);
-      document.removeEventListener("keydown", onKeyDown);
-    };
-  }, [open]);
-
-  return (
-    <div ref={rootRef} className="calc-unit-select relative shrink-0">
-      <button
-        type="button"
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        aria-controls={listId}
-        aria-label="Unit"
-        onClick={() => setOpen((current) => !current)}
-        className={cn(
-          "calc-unit-trigger hols-hover-border flex h-12 min-h-12 min-w-[5.75rem] items-center justify-between gap-2 rounded-lg border border-[color:var(--dash-surface-border)] px-3 pr-9 text-left text-sm font-medium leading-none transition-[border-color] focus:outline-none",
-        )}
-      >
-        <span className="calc-unit-trigger-label block overflow-visible whitespace-nowrap text-[color:var(--dash-text)]">
-          {value}
-        </span>
-      </button>
-      <span
-        className="quiz-select-chevron pointer-events-none absolute inset-y-0 right-0 flex w-9 items-center justify-center"
-        aria-hidden
-      >
-        <SidebarSvgIcon
-          name={open ? "chevron-up" : "chevron-down"}
-          size={15}
-          strokeWidth={2.35}
-        />
-      </span>
-
-      {open ? (
-        <ul
-          id={listId}
-          role="listbox"
-          className="quiz-select-menu absolute left-0 right-0 top-[calc(100%+0.35rem)] z-30 min-w-full overflow-hidden rounded-lg p-1.5"
-        >
-          {units.map((option) => {
-            const isSelected = option === value;
-            return (
-              <li key={option} role="option" aria-selected={isSelected}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onChange(option);
-                    setOpen(false);
-                  }}
-                  className={cn(
-                    "quiz-select-option font-sans flex w-full items-center justify-between gap-2 rounded-md px-3 py-2.5 text-left text-sm leading-normal transition",
-                    isSelected ? "is-selected" : "",
-                  )}
-                >
-                  <span className="overflow-visible whitespace-nowrap">{option}</span>
-                  {isSelected ? (
-                    <SidebarSvgIcon name="check" size={13} strokeWidth={2.2} className="shrink-0" />
-                  ) : null}
-                </button>
-              </li>
-            );
-          })}
-        </ul>
-      ) : null}
     </div>
   );
 }
@@ -672,75 +565,48 @@ function AmountRow({
   units?: MassUnit[];
   unitLabel?: string;
 }) {
-  const activeUnit = unitLabel ?? unit;
-  const step = amountStepForUnit(activeUnit);
-  const numericValue = Number.parseFloat(value);
-  const hasPositiveValue = Number.isFinite(numericValue) && numericValue > 0;
-  const canDecrease = hasPositiveValue && numericValue > step;
-
-  function nudge(delta: number) {
-    const base = hasPositiveValue ? numericValue : step;
-    const next = base + delta * step;
-    if (next < step) return;
-    onValueChange(formatSteppedAmount(next, step));
-  }
-
   function handleChange(raw: string) {
-    if (raw === "") {
-      onValueChange("");
-      return;
-    }
-    // Allow in-progress typing (e.g. "0." / ".") but never commit a bare zero.
-    if (raw === "0" || raw === "0.0" || raw === "0.00") return;
-    const parsed = Number(raw);
-    if (!Number.isFinite(parsed) || parsed < 0) return;
-    if (parsed === 0) return;
+    if (!isAmountDraft(raw)) return;
     onValueChange(raw);
   }
 
   return (
-    <div className="flex w-full min-w-0 flex-wrap items-center justify-center gap-2 sm:flex-nowrap lg:justify-start">
-      <div className={amountControlClass}>
-        <button
-          type="button"
-          aria-label={`Decrease by ${step}${activeUnit ? ` ${activeUnit}` : ""}`}
-          onClick={() => nudge(-1)}
-          disabled={!canDecrease}
-          className="calc-amount-btn calc-amount-btn--minus flex w-11 shrink-0 items-center justify-center transition hover:bg-[#DDE466]/25 hover:text-[#152744] active:bg-[#DDE466]/35 disabled:pointer-events-none disabled:opacity-35"
-        >
-          <SidebarSvgIcon name="minus" size={17} strokeWidth={2.35} />
-        </button>
+    <div className="grid w-full min-w-0 gap-2 text-left">
+      <span className="dashboard-field-label">Amount</span>
+      <div className="calc-amount-control dashboard-field hols-hover-border">
         <input
-          type="number"
-          min={step}
-          step={step}
-          value={value}
-          placeholder="—"
-          autoComplete="off"
+          type="text"
           inputMode="decimal"
+          autoComplete="off"
+          spellCheck={false}
+          value={value}
+          placeholder="Enter amount"
           onChange={(event) => handleChange(event.target.value)}
-          onBlur={() => {
-            if (!hasPositiveValue && value !== "") {
-              onValueChange(formatSteppedAmount(step, step));
-            }
-          }}
-          className={amountFieldClass}
+          className={calcAmountInputClass}
           aria-label="Amount"
         />
-        <button
-          type="button"
-          aria-label={`Increase by ${step}${activeUnit ? ` ${activeUnit}` : ""}`}
-          onClick={() => nudge(1)}
-          className="calc-amount-btn calc-amount-btn--plus flex w-11 shrink-0 items-center justify-center transition hover:bg-[#DDE466]/25 hover:text-[#152744] active:bg-[#DDE466]/35"
-        >
-          <SidebarSvgIcon name="plus" size={17} strokeWidth={2.35} />
-        </button>
+        {unitLabel || (units && unit && onUnitChange) ? (
+          <span className="calc-amount-divider" aria-hidden />
+        ) : null}
+        {unitLabel ? (
+          <span className="calc-amount-unit-static">{unitLabel}</span>
+        ) : units && unit && onUnitChange ? (
+          <span className="calc-amount-unit">
+            <select
+              aria-label="Unit"
+              value={unit}
+              onChange={(event) => onUnitChange(event.target.value as MassUnit)}
+              className="calc-amount-unit-select hols-plain-control"
+            >
+              {units.map((option) => (
+                <option key={option} value={option}>
+                  {option}
+                </option>
+              ))}
+            </select>
+          </span>
+        ) : null}
       </div>
-      {unitLabel ? (
-        <span className={unitCapsuleClass}>{unitLabel}</span>
-      ) : units && unit && onUnitChange ? (
-        <CalcUnitSelect value={unit} units={units} onChange={onUnitChange} />
-      ) : null}
     </div>
   );
 }

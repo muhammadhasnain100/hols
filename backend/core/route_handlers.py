@@ -5,7 +5,7 @@ from __future__ import annotations
 import inspect
 import logging
 from functools import wraps
-from typing import Any, Callable, TypeVar
+from typing import Any, Callable, NoReturn, TypeVar
 
 from fastapi import HTTPException, status
 
@@ -21,7 +21,7 @@ def raise_api_error(
     status_code: int,
     error: str,
     error_code: str | None = None,
-) -> None:
+) -> NoReturn:
     """Raise an HTTPException using the standard error envelope fields."""
     raise HTTPException(
         status_code=status_code,

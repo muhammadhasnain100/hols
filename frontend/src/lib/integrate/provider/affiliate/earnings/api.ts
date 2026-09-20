@@ -8,14 +8,18 @@ export type AffiliateCommissionItem = {
   currency: string;
   status: string;
   created_at?: string | null;
+  unlock_at?: string | null;
 };
 
 export type AffiliateEarnings = {
   total_earned: number;
+  lock_amount: number;
+  available: number;
   pending_payout: number;
   paid_out: number;
   currency: string;
   order_count: number;
+  payout_lock_days?: number;
   margin_percent?: number | null;
   next_milestone: number;
   items: AffiliateCommissionItem[];

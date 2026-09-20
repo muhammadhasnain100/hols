@@ -1,6 +1,6 @@
 """User listing routes — affiliates and students."""
 
-from typing import Annotated, Optional
+from typing import Annotated, Literal, Optional
 
 from fastapi import APIRouter, Depends, Query
 
@@ -26,10 +26,18 @@ async def list_affiliates(
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=20, ge=1, le=100),
     cursor: Optional[str] = Query(default=None),
+    sort: Literal["newest", "oldest"] = Query(default="newest"),
+    empty_referrals: bool = Query(default=False),
 ) -> AffiliateListResponse:
     """List affiliates with pagination and total student count per affiliate."""
     _ = current_user
-    result = await users_service.list_affiliates(page=page, limit=limit, cursor=cursor)
+    result = await users_service.list_affiliates(
+        page=page,
+        limit=limit,
+        cursor=cursor,
+        sort=sort,
+        empty_referrals=empty_referrals,
+    )
     return success_response(AffiliateListData(**result))
 
 
@@ -40,8 +48,16 @@ async def list_students(
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=20, ge=1, le=100),
     cursor: Optional[str] = Query(default=None),
+    sort: Literal["newest", "oldest"] = Query(default="newest"),
+    empty_orders: bool = Query(default=False),
 ) -> StudentListResponse:
     """List students with pagination and linked affiliate details when present."""
     _ = current_user
-    result = await users_service.list_students(page=page, limit=limit, cursor=cursor)
+    result = await users_service.list_students(
+        page=page,
+        limit=limit,
+        cursor=cursor,
+        sort=sort,
+        empty_orders=empty_orders,
+    )
     return success_response(StudentListData(**result))

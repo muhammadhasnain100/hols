@@ -17,7 +17,7 @@ from database import get_table
 from database_entities import UserProfile, UserRole
 from services.common import email as email_service
 from services.common.pagination import normalize_value
-from services.routes.affiliate_portal.service import sum_affiliate_commission
+from services.routes.payout.service import get_wallet, wallet_reporting_fields
 from services.routes.auth import service as auth_service
 from services.routes.users import service as users_service
 
@@ -113,6 +113,9 @@ def affiliate_summary(user: dict[str, Any]) -> dict[str, Any]:
         "invitation_quota": _decimal_to_int(clean.get("invitation_quota")),
         "student_count": _decimal_to_int(clean.get("student_count")) or 0,
         "total_earned": 0.0,
+        "lock_amount": 0.0,
+        "available": 0.0,
+        "paid_out": 0.0,
         "admin_earned": 0.0,
         "total_order_amount": 0.0,
         "order_count": 0,
@@ -127,14 +130,10 @@ async def affiliate_summary_with_earnings(user: dict[str, Any]) -> dict[str, Any
     if not user_id:
         return summary
     try:
-        summed = await sum_affiliate_commission(str(user_id))
-        summary["total_earned"] = summed["total_earned"]
-        summary["admin_earned"] = summed["admin_earned"]
-        summary["total_order_amount"] = summed["total_order_amount"]
-        summary["order_count"] = summed["order_count"]
-        summary["earnings_currency"] = summed["currency"]
+        wallet = await get_wallet(str(user_id))
+        summary.update(wallet_reporting_fields(wallet))
     except Exception:
-        logger.exception("Failed to sum commission for affiliate_id=%s", user_id)
+        logger.exception("Failed to read wallet for affiliate_id=%s", user_id)
     return summary
 
 
@@ -170,6 +169,12 @@ async def create_affiliate(
     user = await auth_service.save_user(profile)
     summary = affiliate_summary(user)
     logger.info("Affiliate account created for user_id=%s", user_id)
+    try:
+        from services.notification import events as notify_events
+
+        notify_events.affiliate_account_created(affiliate=summary, password=plain_password)
+    except Exception:
+        logger.exception("Failed to queue affiliate account notifications user_id=%s", user_id)
     return {
         "profile": summary,
         "_credential_email": {
@@ -191,7 +196,7 @@ async def send_affiliate_credentials_email(user: dict[str, Any], password: str) 
             account_email=email,
             invite_code=invite_code,
             password=password,
-            cta_url=email_service.frontend_url("/login"),
+            cta_path="/login/affiliate",
         )
         await email_service.send_email_async(
             to=email,
@@ -208,8 +213,17 @@ async def list_affiliates(
     page: int = 1,
     limit: int = 20,
     cursor: Optional[str] = None,
+    *,
+    sort: str = "newest",
+    empty_referrals: bool = False,
 ) -> dict[str, Any]:
-    return await users_service.list_affiliates(page=page, limit=limit, cursor=cursor)
+    return await users_service.list_affiliates(
+        page=page,
+        limit=limit,
+        cursor=cursor,
+        sort=sort,
+        empty_referrals=empty_referrals,
+    )
 
 
 async def get_affiliate(affiliate_id: str) -> dict[str, Any]:

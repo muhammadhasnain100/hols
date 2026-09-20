@@ -20,6 +20,10 @@ export type AffiliateSummary = {
   invitation_quota?: number;
   student_count: number;
   total_earned?: number;
+  lock_amount?: number;
+  available?: number;
+  pending?: number;
+  paid_out?: number;
   admin_earned?: number;
   total_order_amount?: number;
   order_count?: number;
@@ -49,6 +53,7 @@ export type StudentSummary = {
   affiliate?: StudentAffiliateInfo | null;
   total_spent?: number;
   admin_earned?: number;
+  affiliate_earned?: number;
   order_count?: number;
   paid_order_count?: number;
   spend_currency?: string;
@@ -83,14 +88,18 @@ export type AffiliateCommissionItem = {
   currency: string;
   status: string;
   created_at?: string | null;
+  unlock_at?: string | null;
 };
 
 export type AffiliateEarningsSummary = {
   total_earned: number;
+  lock_amount?: number;
+  available?: number;
   pending_payout: number;
   paid_out: number;
   currency: string;
   order_count: number;
+  payout_lock_days?: number;
   margin_percent?: number | null;
   next_milestone: number;
   items: AffiliateCommissionItem[];
@@ -100,4 +109,7 @@ export type PaginationParams = {
   page?: number;
   limit?: number;
   cursor?: string;
+  sort?: "newest" | "oldest";
+  empty_referrals?: boolean;
+  empty_orders?: boolean;
 };

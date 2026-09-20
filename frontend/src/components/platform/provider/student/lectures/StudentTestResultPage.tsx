@@ -12,6 +12,8 @@ import {
   CoursePageLayout,
   useOpenCourseCalculator,
 } from "@/components/platform/provider/student/lectures/CoursePageLayout";
+import { LectureMembershipLockedScreen } from "@/components/platform/provider/student/lectures/LectureMembershipLock";
+import { LecturesPageLayout } from "@/components/platform/provider/student/lectures/LecturesPageLayout";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
   getCourse,
@@ -20,6 +22,10 @@ import {
   type CourseTestResultsData,
   type PaginationMeta,
 } from "@/lib/integrate/provider/student/lectures";
+import {
+  isMembershipRequiredError,
+  useStudentMembershipAccess,
+} from "@/lib/integrate/provider/student/payment/membershipAccess";
 import { cn } from "@/lib/utils";
 
 type StudentTestResultPageProps = {
@@ -40,6 +46,7 @@ function formatWhen(value?: string) {
 }
 
 export function StudentTestResultPage({ courseId }: StudentTestResultPageProps) {
+  const membershipAccess = useStudentMembershipAccess();
   const [course, setCourse] = useState<CourseSummary | null>(null);
   const [results, setResults] = useState<CourseTestResultsData | null>(null);
   const [page, setPage] = useState(1);
@@ -47,8 +54,11 @@ export function StudentTestResultPage({ courseId }: StudentTestResultPageProps) 
   const [loadingCourse, setLoadingCourse] = useState(true);
   const [loadingResults, setLoadingResults] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [apiLocked, setApiLocked] = useState(false);
 
   useEffect(() => {
+    if (!membershipAccess.ready || membershipAccess.locked) return;
+
     async function loadCourse() {
       setLoadingCourse(true);
       setError(null);
@@ -56,15 +66,20 @@ export function StudentTestResultPage({ courseId }: StudentTestResultPageProps) 
         const courseData = await getCourse(courseId);
         setCourse(courseData.course);
       } catch (err) {
+        if (isMembershipRequiredError(err)) {
+          setApiLocked(true);
+          return;
+        }
         setError(err instanceof ApiRequestError ? err.message : "Failed to load course.");
       } finally {
         setLoadingCourse(false);
       }
     }
     void loadCourse();
-  }, [courseId]);
+  }, [courseId, membershipAccess.locked, membershipAccess.ready]);
 
   const loadResults = useCallback(async () => {
+    if (!membershipAccess.ready || membershipAccess.locked) return;
     setLoadingResults(true);
     setError(null);
     try {
@@ -75,11 +90,15 @@ export function StudentTestResultPage({ courseId }: StudentTestResultPageProps) 
       setResults(testResults);
       setPagination(testResults.pagination);
     } catch (err) {
+      if (isMembershipRequiredError(err)) {
+        setApiLocked(true);
+        return;
+      }
       setError(err instanceof ApiRequestError ? err.message : "Failed to load test results.");
     } finally {
       setLoadingResults(false);
     }
-  }, [courseId, page]);
+  }, [courseId, membershipAccess.locked, membershipAccess.ready, page]);
 
   useEffect(() => {
     void loadResults();
@@ -97,6 +116,18 @@ export function StudentTestResultPage({ courseId }: StudentTestResultPageProps) 
   const passedCount = summary?.passed_count ?? 0;
   const progress = totalLessons > 0 ? Math.min(100, Math.round((lessonsQuizzed / totalLessons) * 100)) : 0;
 
+  if (!membershipAccess.ready) {
+    return (
+      <LecturesPageLayout>
+        <TestResultsPageSkeleton />
+      </LecturesPageLayout>
+    );
+  }
+
+  if (membershipAccess.locked || apiLocked) {
+    return <LectureMembershipLockedScreen />;
+  }
+
   return (
     <CoursePageLayout
       title={course ? `Test result · ${course.title}` : "Test result"}
@@ -112,7 +143,7 @@ export function StudentTestResultPage({ courseId }: StudentTestResultPageProps) 
       {loading ? (
         <TestResultsPageSkeleton />
       ) : (
-        <div className="grid w-full min-w-0 items-start gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.45fr)_minmax(18rem,0.85fr)]">
+        <div className="grid w-full min-w-0 max-w-full items-stretch gap-3 sm:gap-4 lg:grid-cols-2">
           <div className="flex min-w-0 flex-col gap-3 sm:gap-4">
             <section className="dashboard-glass-card min-w-0 overflow-hidden rounded-2xl p-4 sm:p-5 md:p-6">
               <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
@@ -166,7 +197,7 @@ export function StudentTestResultPage({ courseId }: StudentTestResultPageProps) 
               <div className="mt-5 flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:gap-2.5">
                 <Link
                   href={`/student/lectures/${courseId}/lessons`}
-                  className="dashboard-navy-btn font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white sm:w-auto"
+                  className="dashboard-navy-btn font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white sm:min-h-10 sm:w-auto"
                 >
                   Continue lessons
                   <SidebarSvgIcon name="next" size={15} />
@@ -196,47 +227,48 @@ export function StudentTestResultPage({ courseId }: StudentTestResultPageProps) 
                 <TestResultRowsSkeleton />
               ) : results?.items.length ? (
                 <>
-                  <div className="mt-4 space-y-1">
+                  <ul className="mt-4 space-y-2.5 md:space-y-1">
                     {results.items.map((item) => {
                       const when = formatWhen(item.updated_at);
                       return (
-                        <Link
-                          key={item.lesson_id}
-                          href={lessonHref(courseId, item.lesson_id)}
-                          className="dashboard-row hols-option-hover flex min-w-0 items-center justify-between gap-3 rounded-xl px-2.5 py-2.5 sm:px-3.5 sm:py-3"
-                        >
-                          <div className="flex min-w-0 items-center gap-3">
-                            <span className="dashboard-tool-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-xs font-semibold tabular-nums text-[color:var(--dash-text)]">
-                              {item.score_percent}%
-                            </span>
-                            <div className="min-w-0">
-                              <p
-                                title={item.lesson_title}
-                                className="font-sans truncate text-sm font-medium text-[color:var(--dash-text)]"
-                              >
-                                {item.lesson_title}
-                              </p>
-                              <p className="text-brand-caption mt-0.5 truncate text-[color:var(--dash-faint)]">
-                                Lesson {item.lesson_order} · {item.correct_count}/{item.total_questions}{" "}
-                                correct{when ? ` · ${when}` : ""}
-                              </p>
+                        <li key={item.lesson_id} className="min-w-0">
+                          <Link
+                            href={lessonHref(courseId, item.lesson_id)}
+                            className="hols-option-hover flex min-h-11 min-w-0 items-center justify-between gap-3 rounded-2xl bg-[color:var(--dash-soft)]/80 px-3.5 py-3.5 md:min-h-0 md:rounded-xl md:bg-transparent md:px-3.5 md:py-3"
+                          >
+                            <div className="flex min-w-0 items-center gap-3">
+                              <span className="dashboard-tool-icon flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-xs font-semibold tabular-nums text-[color:var(--dash-text)]">
+                                {item.score_percent}%
+                              </span>
+                              <div className="min-w-0">
+                                <p
+                                  title={item.lesson_title}
+                                  className="font-sans truncate text-sm font-medium text-[color:var(--dash-text)]"
+                                >
+                                  {item.lesson_title}
+                                </p>
+                                <p className="text-brand-caption mt-0.5 truncate text-[color:var(--dash-faint)]">
+                                  Lesson {item.lesson_order} · {item.correct_count}/{item.total_questions}{" "}
+                                  correct{when ? ` · ${when}` : ""}
+                                </p>
+                              </div>
                             </div>
-                          </div>
 
-                          <span className="flex shrink-0 items-center gap-2">
-                            <span className="dashboard-pill-soft text-brand-caption inline-flex items-center rounded-full px-2.5 py-1 font-semibold text-[color:var(--dash-text)]">
-                              {item.passed ? "Passed" : "Review"}
+                            <span className="flex shrink-0 items-center gap-2">
+                              <span className="dashboard-pill-soft text-brand-caption inline-flex items-center rounded-full px-2.5 py-1 font-semibold text-[color:var(--dash-text)]">
+                                {item.passed ? "Passed" : "Review"}
+                              </span>
+                              <SidebarSvgIcon
+                                name="next"
+                                size={18}
+                                className="text-[color:var(--dash-accent)] md:text-[color:var(--dash-dim)]"
+                              />
                             </span>
-                            <SidebarSvgIcon
-                              name="next"
-                              size={15}
-                              className="hidden text-[color:var(--dash-dim)] sm:block"
-                            />
-                          </span>
-                        </Link>
+                          </Link>
+                        </li>
                       );
                     })}
-                  </div>
+                  </ul>
 
                   {pagination && pagination.total_pages > 1 ? (
                     <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -279,7 +311,7 @@ export function StudentTestResultPage({ courseId }: StudentTestResultPageProps) 
                   </p>
                   <Link
                     href={`/student/lectures/${courseId}/lessons`}
-                    className="dashboard-navy-btn font-sans mt-5 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white"
+                    className="dashboard-navy-btn font-sans mt-5 inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white sm:min-h-10 sm:w-auto"
                   >
                     Start a lesson
                     <SidebarSvgIcon name="next" size={15} />
@@ -305,14 +337,14 @@ export function StudentTestResultPage({ courseId }: StudentTestResultPageProps) 
             <div className="flex flex-col gap-2">
               <Link
                 href={`/student/lectures/${courseId}/lessons`}
-                className="dashboard-navy-btn font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-4 text-sm font-medium tracking-[0.01em] text-white"
+                className="dashboard-navy-btn font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-4 text-sm font-medium tracking-[0.01em] text-white sm:min-h-10"
               >
                 Open lessons
                 <SidebarSvgIcon name="next" size={14} />
               </Link>
               <Link
                 href={`/student/lectures/${courseId}`}
-                className="dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-4 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)]"
+                className="dashboard-pill-soft font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-4 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] sm:min-h-10"
               >
                 Course overview
               </Link>
@@ -369,8 +401,8 @@ function PagerButton({
 }) {
   const className =
     variant === "next"
-      ? "lesson-next-cta dashboard-navy-btn font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white transition disabled:pointer-events-none disabled:opacity-50 disabled:hover:brightness-100 sm:w-auto"
-      : "lesson-prev-cta dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50 sm:w-auto";
+      ? "lesson-next-cta dashboard-navy-btn font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white transition disabled:pointer-events-none disabled:opacity-50 disabled:hover:brightness-100 sm:min-h-10 sm:w-auto"
+      : "lesson-prev-cta dashboard-pill-soft font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50 sm:min-h-10 sm:w-auto";
 
   return (
     <button type="button" disabled={disabled} onClick={onClick} className={className}>
@@ -385,7 +417,7 @@ function OpenCalculatorButton({ fullWidth = false }: { fullWidth?: boolean }) {
     <Link
       href={calculatorHref}
       className={cn(
-        "dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)]",
+        "dashboard-pill-soft font-sans inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] sm:min-h-10",
         fullWidth ? "w-full" : "w-full sm:w-auto",
       )}
     >

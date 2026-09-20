@@ -1,11 +1,14 @@
 "use client";
 
 import { Icon, Menu } from "@/components/icons";
-import { PortalShell } from "@/components/platform/provider/PortalShell";
+import { PortalShell, type PortalNavItem } from "@/components/platform/provider/PortalShell";
 import { studentNav } from "@/components/platform/provider/student/studentNav";
+import type { UserRole } from "@/lib/integrate/auth/types";
 
 type PaymentPageLayoutProps = {
   title?: string;
+  role?: UserRole;
+  nav?: PortalNavItem[];
   children: React.ReactNode;
 };
 
@@ -13,18 +16,23 @@ function openSidebar() {
   window.dispatchEvent(new Event("hols-portal-open-sidebar"));
 }
 
-export function PaymentPageLayout({ title = "Membership", children }: PaymentPageLayoutProps) {
+export function PaymentPageLayout({
+  title = "Membership",
+  role = "student",
+  nav = studentNav,
+  children,
+}: PaymentPageLayoutProps) {
   return (
     <PortalShell
-      role="student"
+      role={role}
       title={title}
       showPageHeader={false}
       contentFlush
       brandBackdrop
-      nav={studentNav}
+      nav={nav}
     >
       <div className="dashboard-screen lectures-page payment-page min-w-0 overflow-x-hidden">
-        <header className="mb-4 flex h-10 min-w-0 items-center gap-2 sm:mb-5 sm:h-12 sm:gap-3 md:gap-4">
+        <header className="mb-4 flex min-h-10 min-w-0 items-center gap-2 sm:mb-5 sm:min-h-12 sm:gap-3 md:gap-4">
           <button
             type="button"
             aria-label="Open sidebar"
@@ -34,7 +42,7 @@ export function PaymentPageLayout({ title = "Membership", children }: PaymentPag
             <Icon icon={Menu} size={18} />
           </button>
 
-          <h1 className="font-sans min-w-0 truncate text-xl font-bold leading-none tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl">
+          <h1 className="font-sans min-w-0 truncate text-lg font-bold leading-none tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl md:text-2xl">
             {title}
           </h1>
         </header>

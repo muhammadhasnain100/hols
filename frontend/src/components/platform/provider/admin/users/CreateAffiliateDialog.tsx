@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
-import { Icon, Loader2, X } from "@/components/icons";
+import { SidebarSvgIcon } from "@/components/platform/provider/sidebar-icons";
 
 export type CreateAffiliateFormValues = {
   first_name: string;
@@ -96,7 +96,7 @@ export function CreateAffiliateDialog({
   };
 
   return createPortal(
-    <div className="adviser-dialog-overlay fixed inset-0 z-[80] flex items-center justify-center bg-black/45 px-3 py-4 sm:px-4 sm:py-6 max-sm:items-end max-sm:px-0 max-sm:py-0">
+    <div className="adviser-dialog-overlay adviser-dialog-overlay--center fixed inset-0 z-[80] flex min-h-dvh items-center justify-center bg-black/45 px-[max(0.75rem,env(safe-area-inset-left))] py-[max(1rem,env(safe-area-inset-top),env(safe-area-inset-bottom))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:px-4 sm:py-6">
       <button
         type="button"
         aria-label="Close create affiliate dialog"
@@ -110,7 +110,7 @@ export function CreateAffiliateDialog({
         role="dialog"
         aria-modal="true"
         aria-labelledby={titleId}
-        className="adviser-dialog-panel relative z-10 flex max-h-[min(92svh,40rem)] w-full max-w-lg flex-col overflow-hidden rounded-2xl max-sm:h-[min(96svh,40rem)] max-sm:max-h-none max-sm:rounded-b-none max-sm:rounded-t-3xl max-sm:pb-[env(safe-area-inset-bottom)]"
+        className="adviser-dialog-panel adviser-dialog-panel--center relative z-10 flex max-h-[min(88svh,40rem)] w-full max-w-lg min-w-0 flex-col overflow-hidden rounded-2xl"
         onSubmit={(event) => {
           event.preventDefault();
           if (!canSubmit) return;
@@ -121,8 +121,6 @@ export function CreateAffiliateDialog({
           onSubmit(trimmed);
         }}
       >
-        <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-[color:var(--dash-dim)] sm:hidden" aria-hidden />
-
         <div className="flex items-start justify-between gap-3 border-b border-[color:var(--dash-surface-border)] px-4 py-3.5 sm:gap-4 sm:px-5 sm:py-4 md:px-6">
           <div className="min-w-0">
             <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
@@ -144,10 +142,11 @@ export function CreateAffiliateDialog({
             type="button"
             disabled={isSubmitting}
             onClick={onClose}
-            className="dashboard-icon-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full disabled:opacity-50"
+            className="adviser-onboarding-close inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50 sm:h-12 sm:w-12"
             aria-label="Close dialog"
           >
-            <Icon icon={X} size={16} strokeWidth={2} />
+            <SidebarSvgIcon name="cross" size={24} strokeWidth={2.2} className="sm:hidden" />
+            <SidebarSvgIcon name="cross" size={28} strokeWidth={2.15} className="hidden sm:block" />
           </button>
         </div>
 
@@ -294,24 +293,34 @@ export function CreateAffiliateDialog({
               }
               onClose();
             }}
-            className="dashboard-pill-soft font-sans inline-flex min-h-11 w-full items-center justify-center rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50 sm:w-auto"
+            className="dashboard-pill-soft font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] disabled:pointer-events-none disabled:opacity-50 sm:min-h-10 sm:w-auto"
           >
-            {phase === "confirm" ? "Back" : "Cancel"}
+            {phase === "confirm" ? (
+              <>
+                <SidebarSvgIcon name="previous" size={14} strokeWidth={2.2} />
+                Back
+              </>
+            ) : (
+              "Cancel"
+            )}
           </button>
           <button
             type="submit"
             disabled={!canSubmit}
-            className="font-sans inline-flex min-h-11 w-full items-center justify-center rounded-full bg-[#DDE466] px-5 text-sm font-medium text-[#152744] transition hover:brightness-105 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50 sm:w-auto"
+            className="dashboard-navy-btn font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-semibold text-white disabled:pointer-events-none disabled:opacity-50 sm:min-h-10 sm:w-auto"
           >
             {isSubmitting ? (
-              <span className="inline-flex items-center gap-2">
-                <Icon icon={Loader2} size={16} className="animate-spin" />
+              <>
+                <SidebarSvgIcon name="spinner" size={16} strokeWidth={2.5} className="animate-spin" />
                 Creating…
-              </span>
+              </>
             ) : phase === "confirm" ? (
               "Confirm & create"
             ) : (
-              "Continue"
+              <>
+                Continue
+                <SidebarSvgIcon name="next" size={14} strokeWidth={2.2} />
+              </>
             )}
           </button>
         </div>

@@ -32,9 +32,19 @@ export function PortalGate({ role, children }: PortalGateProps) {
       return undefined;
     }
 
+    function onPopState() {
+      const current = getStoredUser();
+      if (!current) return;
+      const path = window.location.pathname;
+      if (path === "/login" || path.startsWith("/login/") || path === "/register") {
+        router.replace(getPortalPath(current.role));
+      }
+    }
+
     setBlocked(false);
     startPortalAuthRuntime(role);
-    return undefined;
+    window.addEventListener("popstate", onPopState);
+    return () => window.removeEventListener("popstate", onPopState);
   }, [role, router]);
 
   useEffect(() => {

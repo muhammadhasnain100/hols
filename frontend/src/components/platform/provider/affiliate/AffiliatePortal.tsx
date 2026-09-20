@@ -2,291 +2,43 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Check, Copy, DollarSign, Icon, User, Users } from "@/components/icons";
+import { Check, Copy, Icon } from "@/components/icons";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
-import { AffiliateEarningsMeter } from "@/components/platform/provider/affiliate/AffiliateEarningsMeter";
-import { DashboardPageLayout } from "@/components/platform/provider/affiliate/dashboard/DashboardPageLayout";
+import { DashboardRecentActivity } from "@/components/platform/provider/admin/dashboard/DashboardRecentActivity";
 import {
-  affiliateDisplayName,
+  AffiliateEarningsChart,
+  AffiliatePlanMixPie,
+  AffiliateWalletPie,
+} from "@/components/platform/provider/affiliate/dashboard/AffiliateDashboardCharts";
+import { DashboardPageLayout } from "@/components/platform/provider/affiliate/dashboard/DashboardPageLayout";
+import { AffiliateWalletCards } from "@/components/platform/provider/affiliate/AffiliateWalletCards";
+import {
   formatAffiliatePercent,
   useAffiliateProfile,
 } from "@/components/platform/provider/affiliate/affiliateProfile";
+import { ApiRequestError } from "@/lib/integrate/client";
 import {
-  getAffiliateEarnings,
-  type AffiliateEarnings,
-} from "@/lib/integrate/provider/affiliate/earnings";
+  getAffiliateDashboard,
+  type AffiliateDashboard,
+  type DashboardPeriod,
+} from "@/lib/integrate/provider/affiliate/dashboard";
 import { cn } from "@/lib/utils";
 
-type QuickTool = {
-  label: string;
-  href: string;
-  icon: React.ReactNode;
-};
-
-const QUICK_TOOLS: readonly QuickTool[] = [
-  {
-    label: "Referrals",
-    href: "/affiliate/referrals",
-    icon: <Icon icon={Users} size={18} />,
-  },
-  {
-    label: "Earnings",
-    href: "/affiliate/earnings",
-    icon: <Icon icon={DollarSign} size={18} />,
-  },
-  {
-    label: "Profile",
-    href: "/affiliate/profile",
-    icon: <Icon icon={User} size={18} />,
-  },
-];
-
-export function AffiliatePortal() {
-  const { profile, inviteInfo, refreshing, error, setError, inviteLink } = useAffiliateProfile();
-  const [copied, setCopied] = useState<"code" | "url" | "hero" | null>(null);
-  const [earnings, setEarnings] = useState<AffiliateEarnings | null>(null);
-  const [earningsLoading, setEarningsLoading] = useState(true);
-  const studentCount = inviteInfo?.student_count ?? profile?.student_count ?? 0;
-  const invitationQuota = inviteInfo?.invitation_quota ?? profile?.invitation_quota;
-  const inviteCode = inviteInfo?.invite_code ?? profile?.invite_code;
-  const quotaLabel = invitationQuota == null ? "Unlimited" : `${studentCount}/${invitationQuota}`;
-  const available =
-    invitationQuota == null ? "Unlimited" : String(Math.max(invitationQuota - studentCount, 0));
-  const status =
-    invitationQuota != null && studentCount >= invitationQuota ? "Full" : "Active";
-  const displayName = affiliateDisplayName(profile);
-  const marginPercent = earnings?.margin_percent ?? profile?.margin_percent;
-
-  useEffect(() => {
-    const controller = new AbortController();
-    setEarningsLoading(true);
-    void getAffiliateEarnings(controller.signal)
-      .then((data) => {
-        if (!controller.signal.aborted) setEarnings(data);
-      })
-      .catch(() => {
-        if (!controller.signal.aborted) setEarnings(null);
-      })
-      .finally(() => {
-        if (!controller.signal.aborted) setEarningsLoading(false);
-      });
-    return () => controller.abort();
-  }, []);
-
-  async function copyText(value: string | undefined | null, field: "code" | "url" | "hero") {
-    if (!value) return;
-    try {
-      await navigator.clipboard.writeText(value);
-      setCopied(field);
-      window.setTimeout(() => setCopied(null), 1800);
-      setError(null);
-    } catch {
-      setError("Could not copy. Please copy it manually.");
-    }
-  }
-
-  return (
-    <DashboardPageLayout>
-      {error ? (
-        <div className="col-span-full">
-          <AuthAlert variant="error">{error}</AuthAlert>
-        </div>
-      ) : null}
-      {refreshing && !profile ? (
-        <DashboardSkeleton />
-      ) : (
-        <>
-          <div className="flex min-w-0 flex-col gap-3 sm:gap-4">
-            <section className="dashboard-glass-card relative overflow-hidden rounded-2xl p-3.5 sm:p-5 md:p-6">
-              <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
-                Affiliate overview
-              </p>
-              <div className="mt-2 flex min-w-0 flex-wrap items-end gap-x-2 gap-y-1">
-                <span className="font-sans max-w-full min-w-0 break-words text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl md:text-[2.5rem] md:leading-none">
-                  {displayName}
-                </span>
-                <span className="mb-0.5 text-brand-caption font-medium text-[color:var(--dash-faint)] sm:mb-1">
-                  Partner
-                </span>
-              </div>
-              <p className="text-brand-body mt-2 text-sm text-[color:var(--dash-muted)] sm:text-base">
-                <span className="sm:hidden">
-                  {studentCount} referred · {formatAffiliatePercent(marginPercent)}
-                </span>
-                <span className="hidden sm:inline">
-                  {studentCount} referred · {quotaLabel} quota · {formatAffiliatePercent(marginPercent)} margin
-                </span>
-              </p>
-
-              <div className="mt-4 grid w-full grid-cols-2 gap-2 min-[420px]:grid-cols-3 sm:mt-5 sm:flex sm:w-auto sm:flex-wrap sm:gap-2.5">
-                <HeroPill href="/affiliate/referrals" variant="solid">
-                  Referrals
-                </HeroPill>
-                <HeroPill href="/affiliate/earnings" variant="soft">
-                  Earnings
-                </HeroPill>
-                <button
-                  type="button"
-                  onClick={() => copyText(inviteLink, "hero")}
-                  disabled={!inviteLink}
-                  className="dashboard-pill-soft font-sans col-span-2 inline-flex min-h-10 w-full items-center justify-center rounded-full px-3 text-sm font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50 min-[420px]:col-span-1 sm:w-auto sm:px-5"
-                >
-                  {copied === "hero" ? "Copied" : "Copy link"}
-                </button>
-              </div>
-            </section>
-
-            <section className="dashboard-glass-card rounded-2xl p-3.5 sm:p-5">
-              <div className="flex items-center justify-between gap-2">
-                <h2 className="font-sans text-base font-semibold tracking-[0.005em] text-[color:var(--dash-accent)] sm:text-lg">
-                  Quick tools
-                </h2>
-                <Link
-                  href="/affiliate/earnings"
-                  className="text-brand-caption shrink-0 font-medium text-[color:var(--dash-accent)] hover:brightness-110"
-                >
-                  View all
-                </Link>
-              </div>
-              <div className="mt-4 grid grid-cols-3 gap-2 sm:gap-3">
-                {QUICK_TOOLS.map((tool) => (
-                  <Link key={tool.href} href={tool.href} className="group flex min-w-0 flex-col items-center gap-2">
-                    <span className="dashboard-tool-icon flex h-11 w-11 items-center justify-center rounded-full text-[color:var(--dash-text)] transition sm:h-12 sm:w-12 group-hover:text-[#152744]">
-                      {tool.icon}
-                    </span>
-                    <span className="text-brand-caption max-w-full truncate text-center text-[color:var(--dash-muted)] group-hover:text-[color:var(--dash-text)]">
-                      {tool.label}
-                    </span>
-                  </Link>
-                ))}
-              </div>
-            </section>
-
-            <AffiliateEarningsMeter
-              totalEarned={earnings?.total_earned ?? 0}
-              nextMilestone={earnings?.next_milestone ?? 100}
-              currency={earnings?.currency ?? "USD"}
-              pendingPayout={earnings?.pending_payout ?? 0}
-              orderCount={earnings?.order_count ?? 0}
-              loading={earningsLoading && !earnings}
-            />
-
-            <section className="dashboard-glass-card rounded-2xl p-3.5 sm:p-5">
-              <h2 className="font-sans text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg">
-                Referral stats
-              </h2>
-              <div className="mt-4 grid grid-cols-1 gap-2.5 min-[420px]:grid-cols-3">
-                {[
-                  { label: "Students", value: String(studentCount), hint: "Using your code" },
-                  { label: "Available", value: available, hint: "Remaining invites" },
-                  { label: "Status", value: status, hint: "Quota health" },
-                ].map((stat) => (
-                  <div
-                    key={stat.label}
-                    className="dashboard-row min-w-0 rounded-xl px-3 py-3 sm:px-3.5 sm:py-3.5"
-                  >
-                    <p className="text-brand-caption font-medium text-[color:var(--dash-faint)]">{stat.label}</p>
-                    <p className="font-sans mt-1 break-words text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl">
-                      {stat.value}
-                    </p>
-                    <p className="text-brand-caption mt-0.5 hidden text-[color:var(--dash-dim)] sm:block">{stat.hint}</p>
-                  </div>
-                ))}
-              </div>
-            </section>
-          </div>
-
-          <div className="flex min-w-0 flex-col gap-3 sm:gap-4">
-            <section className="dashboard-glass-card min-w-0 rounded-2xl p-3.5 sm:p-5">
-              <div className="flex flex-wrap items-end justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-                    Share
-                  </p>
-                  <h2 className="font-sans mt-1 text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg">
-                    Invite link
-                  </h2>
-                </div>
-                <Link
-                  href="/affiliate/referrals"
-                  className="text-brand-caption shrink-0 font-medium text-[color:var(--dash-accent)] hover:brightness-110"
-                >
-                  Referrals
-                </Link>
-              </div>
-              <p className="text-brand-body mt-1 text-sm text-[color:var(--dash-muted)]">
-                Students should sign up from this link so your referral code is attached.
-              </p>
-
-              <div className="mt-4 grid min-w-0 gap-2">
-                <CopyField
-                  label="Invite code"
-                  value={inviteCode ?? "Not assigned"}
-                  copyValue={inviteCode}
-                  copied={copied === "code"}
-                  onCopy={() => copyText(inviteCode, "code")}
-                  valueClassName="text-base font-semibold"
-                />
-                <CopyField
-                  label="Shareable URL"
-                  value={
-                    inviteLink ||
-                    "An admin must assign your invite code before referrals can be tracked."
-                  }
-                  copyValue={inviteLink}
-                  copied={copied === "url"}
-                  onCopy={() => copyText(inviteLink, "url")}
-                  valueClassName="text-sm font-medium"
-                />
-                <div className="dashboard-row min-w-0 rounded-xl px-3 py-3">
-                  <p className="text-brand-caption font-medium text-[color:var(--dash-faint)]">Commission</p>
-                  <p className="font-sans mt-1 text-sm font-semibold text-[color:var(--dash-text)]">
-                    {formatAffiliatePercent(marginPercent)}
-                  </p>
-                </div>
-              </div>
-            </section>
-
-            <section className="dashboard-glass-card rounded-2xl p-3.5 sm:p-5">
-              <h2 className="font-sans text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg">
-                Account health
-              </h2>
-              <div className="mt-3 space-y-1">
-                <HealthRow label="Email verified" value={profile?.email_verified ? "Yes" : "No"} />
-                <HealthRow label="Marketing updates" value={profile?.marketing_pref ? "On" : "Off"} />
-                <HealthRow label="Profile photo" value={profile?.profile_pic ? "Added" : "Missing"} />
-              </div>
-              <Link
-                href="/affiliate/profile"
-                className="dashboard-pill-soft font-sans mt-4 inline-flex min-h-10 w-full items-center justify-center rounded-full px-4 text-sm font-medium text-[color:var(--dash-text)] transition"
-              >
-                Edit profile
-              </Link>
-            </section>
-          </div>
-        </>
-      )}
-    </DashboardPageLayout>
-  );
-}
-
-function HeroPill({
+function NavyLink({
   href,
-  variant,
   children,
+  className,
 }: {
   href: string;
-  variant: "solid" | "soft";
   children: React.ReactNode;
+  className?: string;
 }) {
   return (
     <Link
       href={href}
       className={cn(
-        "font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-3 text-sm font-medium tracking-[0.01em] transition sm:w-auto sm:px-5",
-        variant === "solid"
-          ? "bg-[#DDE466] text-[#152744] hover:brightness-105"
-          : "dashboard-pill-soft text-[color:var(--dash-text)]",
+        "dashboard-navy-btn font-sans inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white sm:min-h-10",
+        className,
       )}
     >
       {children}
@@ -294,55 +46,229 @@ function HeroPill({
   );
 }
 
-function HealthRow({ label, value }: { label: string; value: string }) {
+export function AffiliatePortal() {
+  const { profile, inviteInfo, refreshing, error: profileError, inviteLink } = useAffiliateProfile();
+  const [period, setPeriod] = useState<DashboardPeriod>("weekly");
+  const [dashboard, setDashboard] = useState<AffiliateDashboard | null>(null);
+  const [dashboardLoading, setDashboardLoading] = useState(true);
+  const [dashboardError, setDashboardError] = useState<string | null>(null);
+
+  const studentCount = inviteInfo?.student_count ?? profile?.student_count ?? dashboard?.student_count ?? 0;
+  const inviteCode = inviteInfo?.invite_code ?? profile?.invite_code ?? dashboard?.invite_code;
+  const marginPercent = dashboard?.margin_percent ?? profile?.margin_percent;
+  const wallet = dashboard?.wallet;
+  const currency = wallet?.currency ?? dashboard?.currency ?? "USD";
+  const lockDays = dashboard?.payout_lock_days ?? 7;
+  const lockSeconds = dashboard?.payout_lock_seconds;
+  const error = dashboardError ?? profileError;
+  const loading = (refreshing && !profile) || (dashboardLoading && !dashboard);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    setDashboardLoading(true);
+    setDashboardError(null);
+    void getAffiliateDashboard(period, controller.signal)
+      .then((data) => {
+        if (controller.signal.aborted) return;
+        setDashboard(data);
+      })
+      .catch((err) => {
+        if (controller.signal.aborted) return;
+        if (err instanceof DOMException && err.name === "AbortError") return;
+        setDashboard(null);
+        setDashboardError(err instanceof ApiRequestError ? err.message : "Failed to load dashboard.");
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setDashboardLoading(false);
+      });
+    return () => controller.abort();
+  }, [period]);
+
   return (
-    <div className="dashboard-row flex min-w-0 items-center justify-between gap-3 rounded-xl px-3 py-2.5">
-      <span className="text-brand-caption min-w-0 truncate text-[color:var(--dash-faint)]">{label}</span>
-      <span className="font-sans shrink-0 text-sm font-medium text-[color:var(--dash-text)]">{value}</span>
-    </div>
+    <DashboardPageLayout
+      headerAction={
+        <NavyLink href="/affiliate/payout" className="min-h-11 px-3.5 sm:min-h-10 sm:px-4">
+          Payout
+        </NavyLink>
+      }
+    >
+      {error ? (
+        <div className="col-span-full">
+          <AuthAlert variant="error">{error}</AuthAlert>
+        </div>
+      ) : null}
+      {loading ? (
+        <DashboardSkeleton />
+      ) : (
+        <>
+          <div className="col-span-full grid min-w-0 gap-3 sm:gap-4">
+            <AffiliateWalletCards
+              wallet={wallet}
+              currency={currency}
+              lockDays={lockDays}
+              lockSeconds={lockSeconds}
+              studentCount={studentCount}
+              loading={dashboardLoading}
+              order={["pending", "payout", "available", "lock"]}
+            />
+          </div>
+
+          <div className="flex min-h-0 min-w-0 flex-col gap-3 sm:gap-4">
+            <AffiliateEarningsChart
+              dashboard={dashboard}
+              period={period}
+              onPeriodChange={setPeriod}
+              loading={dashboardLoading}
+            />
+            <DashboardRecentActivity className="min-h-0 flex-1" />
+          </div>
+
+          <div className="flex min-w-0 flex-col gap-3 sm:gap-4">
+            <AffiliatePlanMixPie dashboard={dashboard} period={period} />
+            <AffiliateWalletPie wallet={wallet} />
+            <InviteCard
+              inviteCode={inviteCode}
+              inviteLink={inviteLink}
+              studentCount={studentCount}
+              marginPercent={marginPercent}
+            />
+          </div>
+        </>
+      )}
+    </DashboardPageLayout>
   );
 }
 
-const copyIcon = <Icon icon={Copy} size={14} />;
+function InviteCard({
+  inviteCode,
+  inviteLink,
+  studentCount,
+  marginPercent,
+}: {
+  inviteCode?: string | null;
+  inviteLink?: string | null;
+  studentCount: number;
+  marginPercent?: number | null;
+}) {
+  const [copied, setCopied] = useState<"code" | "link" | null>(null);
 
-const checkIcon = <Icon icon={Check} size={14} strokeWidth={2} />;
+  useEffect(() => {
+    if (!copied) return;
+    const timer = window.setTimeout(() => setCopied(null), 1800);
+    return () => window.clearTimeout(timer);
+  }, [copied]);
 
-function CopyField({
+  async function copyValue(value: string | null | undefined, field: "code" | "link") {
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      setCopied(field);
+      return;
+    } catch {
+      // Some browsers block clipboard.writeText; fall through to a selectable copy.
+    }
+    try {
+      const input = document.createElement("textarea");
+      input.value = value;
+      input.setAttribute("readonly", "");
+      input.style.position = "fixed";
+      input.style.left = "-9999px";
+      document.body.appendChild(input);
+      input.select();
+      const ok = document.execCommand("copy");
+      document.body.removeChild(input);
+      setCopied(ok ? field : null);
+    } catch {
+      setCopied(null);
+    }
+  }
+
+  const code = inviteCode?.trim() || "";
+  const link = inviteLink?.trim() || "";
+
+  return (
+    <section className="dashboard-hero relative overflow-hidden rounded-2xl p-4 sm:p-5">
+      <div className="flex items-center justify-between gap-2">
+        <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
+          Invite students
+        </p>
+        <Link
+          href="/affiliate/customers"
+          className="text-brand-caption shrink-0 font-medium text-[color:var(--dash-muted)] hover:text-[color:var(--dash-text)]"
+        >
+          Customers
+        </Link>
+      </div>
+
+      <p className="text-brand-caption mt-2 text-[color:var(--dash-muted)]">
+        {studentCount} referred · {formatAffiliatePercent(marginPercent)} margin
+      </p>
+
+      <div className="mt-3 grid min-w-0 gap-2">
+        <InviteCopyRow
+          label="Code"
+          value={code || "Not assigned"}
+          displayClassName="font-mono text-base font-bold tracking-[0.12em] sm:text-lg"
+          canCopy={Boolean(code)}
+          copied={copied === "code"}
+          actionLabel="Copy code"
+          onCopy={() => void copyValue(code, "code")}
+        />
+        <InviteCopyRow
+          label="Invite link"
+          value={link || "Your invite link appears after a code is assigned."}
+          displayClassName="text-sm font-medium"
+          canCopy={Boolean(link)}
+          copied={copied === "link"}
+          actionLabel="Copy link"
+          onCopy={() => void copyValue(link, "link")}
+        />
+      </div>
+    </section>
+  );
+}
+
+function InviteCopyRow({
   label,
   value,
-  copyValue,
+  displayClassName,
+  canCopy,
   copied,
+  actionLabel,
   onCopy,
-  valueClassName,
 }: {
   label: string;
   value: string;
-  copyValue?: string | null;
+  displayClassName: string;
+  canCopy: boolean;
   copied: boolean;
+  actionLabel: string;
   onCopy: () => void;
-  valueClassName?: string;
 }) {
-  const canCopy = Boolean(copyValue);
   return (
-    <div className="dashboard-row min-w-0 overflow-hidden rounded-xl px-3 py-3">
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-brand-caption min-w-0 font-medium text-[color:var(--dash-faint)]">{label}</p>
-        <button
-          type="button"
-          onClick={onCopy}
-          disabled={!canCopy}
-          aria-label={copied ? `${label} copied` : `Copy ${label}`}
-          className="dashboard-pill-soft font-sans inline-flex h-8 shrink-0 items-center gap-1 rounded-full px-2.5 text-xs font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-40"
+    <div className="dashboard-row flex min-w-0 items-center gap-3 rounded-xl px-3 py-2.5 sm:px-3.5">
+      <div className="min-w-0 flex-1">
+        <p className="text-brand-caption font-medium text-[color:var(--dash-faint)]">{label}</p>
+        <p
+          className={cn(
+            "font-sans mt-0.5 truncate text-[color:var(--dash-text)]",
+            displayClassName,
+          )}
+          title={value}
         >
-          {copied ? checkIcon : copyIcon}
-          <span className="hidden min-[360px]:inline">{copied ? "Copied" : "Copy"}</span>
-        </button>
+          {value}
+        </p>
       </div>
-      <p
-        className={`font-sans mt-1 break-all text-[color:var(--dash-text)] [overflow-wrap:anywhere] ${valueClassName ?? "text-sm font-medium"}`}
+      <button
+        type="button"
+        onClick={onCopy}
+        disabled={!canCopy}
+        aria-label={copied ? `${actionLabel} copied` : actionLabel}
+        className="dashboard-navy-btn font-sans inline-flex min-h-11 w-11 shrink-0 items-center justify-center gap-1.5 rounded-full px-0 text-sm font-medium tracking-[0.01em] text-white disabled:pointer-events-none disabled:opacity-50 min-[380px]:w-auto min-[380px]:px-3.5 sm:min-h-10 sm:px-4"
       >
-        {value}
-      </p>
+        <Icon icon={copied ? Check : Copy} size={14} strokeWidth={2} />
+        <span className="hidden min-[380px]:inline">{copied ? "Copied" : actionLabel}</span>
+      </button>
     </div>
   );
 }
@@ -354,20 +280,26 @@ function SkeletonBlock({ className }: { className?: string }) {
 function DashboardSkeleton() {
   return (
     <>
-      <div className="flex min-w-0 flex-col gap-3 sm:gap-4" aria-busy="true" aria-label="Loading dashboard">
-        <section className="dashboard-glass-card relative overflow-hidden rounded-2xl p-4 sm:p-5 md:p-6">
-          <SkeletonBlock className="h-3 w-28 rounded-full" />
-          <SkeletonBlock className="mt-3 h-8 w-40 rounded-full sm:h-10 sm:w-52" />
-          <SkeletonBlock className="mt-3 h-4 w-48 rounded-full" />
-        </section>
+      <div className="col-span-full grid min-w-0 gap-3 sm:gap-4" aria-busy="true" aria-label="Loading dashboard">
+        <div className="grid min-w-0 grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
+          {Array.from({ length: 4 }, (_, index) => (
+            <div key={`money-${index}`} className="dashboard-glass-card min-w-0 rounded-2xl px-3.5 py-3 sm:px-4 sm:py-4">
+              <SkeletonBlock className="h-3 w-16 rounded-full" />
+              <SkeletonBlock className="mt-2 h-6 w-20 rounded-full" />
+            </div>
+          ))}
+        </div>
+      </div>
+      <div className="flex min-w-0 flex-col gap-3 sm:gap-4">
         <section className="dashboard-glass-card rounded-2xl p-4 sm:p-5">
           <SkeletonBlock className="h-5 w-28 rounded-full" />
-          <div className="mt-4 grid grid-cols-3 gap-3">
-            {Array.from({ length: 3 }, (_, i) => (
-              <div key={i} className="flex flex-col items-center gap-2">
-                <SkeletonBlock className="h-11 w-11 rounded-full" />
-                <SkeletonBlock className="h-3 w-14 rounded-full" />
-              </div>
+          <SkeletonBlock className="mt-4 h-52 w-full rounded-2xl" />
+        </section>
+        <section className="dashboard-glass-card rounded-2xl p-4 sm:p-5">
+          <SkeletonBlock className="h-5 w-32 rounded-full" />
+          <div className="mt-4 space-y-2">
+            {Array.from({ length: 4 }, (_, index) => (
+              <SkeletonBlock key={index} className="h-12 w-full rounded-xl" />
             ))}
           </div>
         </section>
@@ -375,7 +307,18 @@ function DashboardSkeleton() {
       <div className="flex min-w-0 flex-col gap-3 sm:gap-4">
         <section className="dashboard-glass-card rounded-2xl p-4 sm:p-5">
           <SkeletonBlock className="h-5 w-32 rounded-full" />
-          <SkeletonBlock className="mt-3 h-16 w-full rounded-xl" />
+          <SkeletonBlock className="mx-auto mt-4 h-44 w-44 rounded-full" />
+        </section>
+        <section className="dashboard-hero rounded-2xl p-4 sm:p-5">
+          <div className="flex items-center justify-between gap-2">
+            <SkeletonBlock className="h-3 w-28 rounded-full" />
+            <SkeletonBlock className="h-3 w-16 rounded-full" />
+          </div>
+          <SkeletonBlock className="mt-3 h-3 w-40 rounded-full" />
+          <div className="mt-3 grid gap-2">
+            <SkeletonBlock className="h-14 w-full rounded-xl" />
+            <SkeletonBlock className="h-14 w-full rounded-xl" />
+          </div>
         </section>
       </div>
     </>

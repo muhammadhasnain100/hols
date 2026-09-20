@@ -10,6 +10,8 @@ from core.route_handlers import handle_route_errors
 from database_entities import UserRole
 from dependencies import CurrentUser, require_roles
 from models.affiliate_portal import (
+    AffiliateDashboardData,
+    AffiliateDashboardResponse,
     AffiliateEarningsData,
     AffiliateEarningsResponse,
     AffiliateInviteEmailData,
@@ -19,11 +21,19 @@ from models.affiliate_portal import (
     AffiliateInviteResolveResponse,
     AffiliateInviteUrlData,
     AffiliateInviteUrlResponse,
+    AffiliatePayoutOverviewData,
+    AffiliatePayoutOverviewResponse,
+    AffiliatePayoutRequest,
+    AffiliatePayoutResultData,
+    AffiliatePayoutResultResponse,
     AffiliateReferralStudentListData,
     AffiliateReferralStudentListResponse,
 )
 from models.common import success_response
+from models.sales import SalesOverviewData, SalesOverviewResponse
 from services.routes.affiliate_portal import service as affiliate_portal_service
+from services.routes.payout import service as payout_service
+from services.routes.sales import service as sales_service
 
 router = APIRouter(prefix="/affiliate", tags=["affiliate"])
 
@@ -130,3 +140,51 @@ async def get_earnings(
     """Affiliate - total commission earned from referred student purchases."""
     result = await affiliate_portal_service.get_earnings(affiliate_id=current_user.user_id)
     return success_response(AffiliateEarningsData(**result))
+
+
+@router.get("/dashboard", response_model=AffiliateDashboardResponse)
+@handle_route_errors("get affiliate dashboard", log_prefix="Affiliate")
+async def get_affiliate_dashboard(
+    current_user: Annotated[CurrentUser, Depends(require_roles(UserRole.AFFILIATE))],
+    period: str = Query(default="weekly"),
+) -> AffiliateDashboardResponse:
+    """Affiliate — stored wallet balances plus weekly/monthly/yearly earnings series."""
+    result = await payout_service.get_affiliate_dashboard(
+        affiliate_id=current_user.user_id,
+        period=period.strip().lower(),
+    )
+    return success_response(AffiliateDashboardData(**result))
+
+
+@router.get("/payouts", response_model=AffiliatePayoutOverviewResponse)
+@handle_route_errors("get affiliate payouts", log_prefix="Affiliate")
+async def get_affiliate_payouts(
+    current_user: Annotated[CurrentUser, Depends(require_roles(UserRole.AFFILIATE))],
+) -> AffiliatePayoutOverviewResponse:
+    """Affiliate — wallet balances and payout history."""
+    result = await payout_service.get_payout_overview(current_user.user_id)
+    return success_response(AffiliatePayoutOverviewData(**result))
+
+
+@router.post("/payouts", response_model=AffiliatePayoutResultResponse)
+@handle_route_errors("request affiliate payout", log_prefix="Affiliate")
+async def request_affiliate_payout(
+    current_user: Annotated[CurrentUser, Depends(require_roles(UserRole.AFFILIATE))],
+    body: AffiliatePayoutRequest = AffiliatePayoutRequest(),
+) -> AffiliatePayoutResultResponse:
+    """Affiliate — hold available balance as pending until an admin reviews it."""
+    result = await payout_service.request_payout(
+        affiliate_id=current_user.user_id,
+        amount=body.amount,
+    )
+    return success_response(AffiliatePayoutResultData(**result))
+
+
+@router.get("/sales", response_model=SalesOverviewResponse)
+@handle_route_errors("get affiliate sales overview", log_prefix="Affiliate")
+async def get_affiliate_sales(
+    current_user: Annotated[CurrentUser, Depends(require_roles(UserRole.AFFILIATE))],
+) -> SalesOverviewResponse:
+    """Affiliate — stored weekly, monthly, and yearly earnings from referred sales."""
+    overview = await sales_service.get_affiliate_sales_overview(current_user.user_id)
+    return success_response(SalesOverviewData(**overview))

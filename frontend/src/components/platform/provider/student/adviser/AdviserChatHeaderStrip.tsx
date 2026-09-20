@@ -8,6 +8,7 @@ export type AdviserBoardHeaderControl = {
   open: boolean;
   updated: boolean;
   peptideName?: string;
+  peptideCount?: number;
   onToggle: () => void;
 };
 
@@ -61,7 +62,9 @@ export function AdviserChatHeaderStrip({ patientName, board }: AdviserChatHeader
             type="button"
             aria-label={
               board.peptideName
-                ? `${boardLabel}. Current peptide ${board.peptideName}`
+                ? board.peptideCount && board.peptideCount > 1
+                  ? `${boardLabel}. Talking about ${board.peptideCount} peptides: ${board.peptideName}`
+                  : `${boardLabel}. Talking about 1 peptide: ${board.peptideName}`
                 : boardLabel
             }
             aria-expanded={board.open}
@@ -69,13 +72,18 @@ export function AdviserChatHeaderStrip({ patientName, board }: AdviserChatHeader
             onClick={board.onToggle}
             className={cn(
               "dashboard-notify-btn relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full sm:h-12 sm:w-12",
-              board.open && "ring-2 ring-[#DDE466]/70",
+              board.open && "ring-2 ring-white/75",
             )}
           >
             <Icon icon={ClipboardList} size={18} strokeWidth={1.9} />
+            {board.peptideCount ? (
+              <span className="adviser-peptide-select-count" aria-hidden>
+                {board.peptideCount}
+              </span>
+            ) : null}
             {board.updated ? (
               <span
-                className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-[#dde466] ring-2 ring-[#142644]"
+                className="absolute right-1 top-1 h-2.5 w-2.5 rounded-full bg-white ring-2 ring-[#142644]"
                 aria-hidden
               />
             ) : null}

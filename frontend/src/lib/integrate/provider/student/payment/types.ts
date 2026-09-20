@@ -9,6 +9,22 @@ export type Plan = {
   updated_at?: string;
 };
 
+export type StudentCommerce = {
+  user_id: string;
+  total_spent: number;
+  admin_earned?: number;
+  affiliate_earned?: number;
+  order_count: number;
+  paid_order_count: number;
+  currency: string;
+  last_purchase_at?: string | null;
+  last_purchase_amount?: number | null;
+  last_plan_type?: string | null;
+  current_plan?: string | null;
+  membership_status?: string | null;
+  membership_end_date?: string | null;
+};
+
 export type Membership = {
   plan_type: PlanType;
   status: string;
@@ -42,6 +58,8 @@ export type Order = {
   status: string;
   payment_method_id?: string;
   created_at: string;
+  gateway_transaction_id?: string | null;
+  payment_processor?: string | null;
   /** Present on admin order history when affiliate attribution is included. */
   affiliate_id?: string | null;
   affiliate_commission?: number | null;
@@ -74,6 +92,7 @@ export type PaginationMeta = {
   limit: number;
   total: number;
   has_next: boolean;
+  has_previous?: boolean;
   next_cursor?: string | null;
 };
 

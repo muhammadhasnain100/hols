@@ -6,7 +6,7 @@ from fastapi import APIRouter, Depends, Query
 
 from core.route_handlers import handle_route_errors
 from database_entities import UserRole
-from dependencies import CurrentUser, require_roles
+from dependencies import CurrentUser, require_active_membership, require_roles
 from models.common import success_response
 from models.lectures import (
     CourseBundleData,
@@ -39,6 +39,11 @@ StudentUser = Annotated[
     Depends(require_roles(UserRole.STUDENT, UserRole.ADMIN)),
 ]
 
+MemberStudentUser = Annotated[
+    CurrentUser,
+    Depends(require_active_membership),
+]
+
 
 @router.get("/courses", response_model=CourseListResponse)
 @handle_route_errors("list courses", log_prefix="Lectures")
@@ -48,7 +53,7 @@ async def list_courses(
     limit: int = Query(default=20, ge=1, le=100),
     cursor: Optional[str] = Query(default=None),
 ) -> CourseListResponse:
-    """Paginated list of lecture courses available to students."""
+    """Catalog of lecture courses. Detail, lessons, and quizzes require an active membership."""
     _ = current_user
     result = await lectures_service.list_courses(page=page, limit=limit, cursor=cursor)
     return success_response(CourseListData(**result))
@@ -58,7 +63,7 @@ async def list_courses(
 @handle_route_errors("get course", log_prefix="Lectures")
 async def get_course(
     course_id: str,
-    current_user: StudentUser,
+    current_user: MemberStudentUser,
 ) -> CourseDetailResponse:
     """Get a single course by id."""
     _ = current_user
@@ -70,7 +75,7 @@ async def get_course(
 @handle_route_errors("get course bundle", log_prefix="Lectures")
 async def get_course_bundle(
     course_id: str,
-    current_user: StudentUser,
+    current_user: MemberStudentUser,
 ) -> CourseBundleResponse:
     """Get static course topics, sections, and lessons in one cached payload."""
     _ = current_user
@@ -82,7 +87,7 @@ async def get_course_bundle(
 @handle_route_errors("list course topics", log_prefix="Lectures")
 async def list_topics(
     course_id: str,
-    current_user: StudentUser,
+    current_user: MemberStudentUser,
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=20, ge=1, le=100),
     cursor: Optional[str] = Query(default=None),
@@ -102,7 +107,7 @@ async def list_topics(
 @handle_route_errors("list course sections", log_prefix="Lectures")
 async def list_sections(
     course_id: str,
-    current_user: StudentUser,
+    current_user: MemberStudentUser,
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=20, ge=1, le=100),
     cursor: Optional[str] = Query(default=None),
@@ -126,7 +131,7 @@ async def list_sections(
 @handle_route_errors("list course lessons", log_prefix="Lectures")
 async def list_lessons(
     course_id: str,
-    current_user: StudentUser,
+    current_user: MemberStudentUser,
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=20, ge=1, le=100),
     cursor: Optional[str] = Query(default=None),
@@ -156,7 +161,7 @@ async def list_lessons(
 async def get_lesson(
     course_id: str,
     lesson_id: str,
-    current_user: StudentUser,
+    current_user: MemberStudentUser,
 ) -> LessonDetailResponse:
     """Get one lesson with quiz variants."""
     _ = current_user
@@ -173,7 +178,7 @@ async def submit_lesson_quiz(
     course_id: str,
     lesson_id: str,
     payload: SubmitLessonQuizRequest,
-    current_user: StudentUser,
+    current_user: MemberStudentUser,
 ) -> LessonQuizResultResponse:
     """Submit lesson quiz answers, score them, and store the test result."""
     result = await quiz_service.submit_lesson_quiz(
@@ -192,7 +197,7 @@ async def submit_lesson_quiz(
 @handle_route_errors("list course test results", log_prefix="Lectures")
 async def list_course_test_results(
     course_id: str,
-    current_user: StudentUser,
+    current_user: MemberStudentUser,
     page: int = Query(default=1, ge=1),
     limit: int = Query(default=10, ge=1, le=100),
 ) -> CourseTestResultsResponse:

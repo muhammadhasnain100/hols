@@ -36,10 +36,11 @@ export function updateUserProfile(userId: string, payload: AdminProfileUpdate) {
   });
 }
 
-export function getAdminProfile() {
+export function getAdminProfile(signal?: AbortSignal) {
   return cachedAdminRequest<ProfileData>(
     adminCacheKey("profile"),
     "/api/auth/profile",
+    signal,
   );
 }
 

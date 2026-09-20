@@ -31,6 +31,10 @@ class AffiliateSummary(BaseModel):
     invitation_quota: Optional[int] = None
     student_count: int = 0
     total_earned: float = 0
+    lock_amount: float = 0
+    available: float = 0
+    pending: float = 0
+    paid_out: float = 0
     admin_earned: float = 0
     total_order_amount: float = 0
     order_count: int = 0
@@ -67,6 +71,7 @@ class StudentSummary(BaseModel):
     membership_status: Optional[str] = None
     last_purchase_at: Optional[str] = None
     last_purchase_amount: Optional[float] = None
+    affiliate_earned: float = 0
     created_at: Optional[str] = None
 
 

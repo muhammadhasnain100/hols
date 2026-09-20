@@ -1,12 +1,19 @@
 """Authenticated peptide adviser routes for students."""
 
-from typing import Annotated, Optional
+from typing import Annotated, Literal, Optional
 
 from fastapi import APIRouter, Depends, Query
 
 from core.route_handlers import handle_route_errors
 from database_entities import UserRole
-from dependencies import CurrentUser, require_roles
+from dependencies import (
+    CurrentUser,
+    ensure_active_membership,
+    require_adviser_chat_membership,
+    require_roles,
+    student_has_active_membership,
+    ADVISER_CHAT_MEMBERSHIP_ERROR,
+)
 from models.chat import (
     AdviserBootstrapData,
     AdviserBootstrapResponse,
@@ -38,6 +45,11 @@ StudentUser = Annotated[
     Depends(require_roles(UserRole.STUDENT, UserRole.ADMIN)),
 ]
 
+MemberStudentUser = Annotated[
+    CurrentUser,
+    Depends(require_adviser_chat_membership),
+]
+
 
 @router.get("/bootstrap", response_model=AdviserBootstrapResponse)
 @handle_route_errors("adviser bootstrap", log_prefix="Chat")
@@ -45,11 +57,17 @@ async def adviser_bootstrap(
     current_user: StudentUser,
     patient_id: Optional[str] = Query(default=None),
     message_limit: int = Query(default=settings.chat_messages_page_size, ge=1, le=100),
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=10, ge=1, le=100),
 ) -> AdviserBootstrapResponse:
+    include_messages = await student_has_active_membership(current_user)
     payload = await patient_service.get_adviser_bootstrap(
         user_id=current_user.user_id,
         patient_id=patient_id,
         message_limit=message_limit,
+        include_messages=include_messages,
+        page=page,
+        patients_limit=limit,
     )
     return success_response(
         AdviserBootstrapData(
@@ -57,6 +75,7 @@ async def adviser_bootstrap(
             flow=chat_service.get_questionnaire_flow(),
             patients=payload["patients"],
             total=payload["total"],
+            pagination=payload.get("pagination"),
             active_patient=(
                 PatientDetail(**payload["active_patient"])
                 if payload.get("active_patient")
@@ -101,8 +120,22 @@ async def questionnaire_evaluate(
 
 @router.get("/patients", response_model=PatientListResponse)
 @handle_route_errors("list adviser patients", log_prefix="Chat")
-async def list_patients(current_user: StudentUser) -> PatientListResponse:
-    result = await patient_service.list_patients(user_id=current_user.user_id)
+async def list_patients(
+    current_user: StudentUser,
+    page: int = Query(default=1, ge=1),
+    limit: int = Query(default=10, ge=1, le=100),
+    q: Optional[str] = Query(default=None),
+    status: Literal["all", "progress", "chat"] = Query(default="all"),
+    sort: Literal["newest", "oldest"] = Query(default="newest"),
+) -> PatientListResponse:
+    result = await patient_service.list_patients(
+        user_id=current_user.user_id,
+        page=page,
+        limit=limit,
+        q=q,
+        status=status,
+        sort=sort,
+    )
     return success_response(PatientListData(**result))
 
 
@@ -127,6 +160,11 @@ async def get_patient(
     include_messages: bool = Query(default=False),
     message_limit: int = Query(default=settings.chat_messages_page_size, ge=1, le=100),
 ) -> PatientDetailResponse:
+    if include_messages:
+        await ensure_active_membership(
+            current_user,
+            error=ADVISER_CHAT_MEMBERSHIP_ERROR,
+        )
     result = await patient_service.get_patient(
         user_id=current_user.user_id,
         patient_id=patient_id,
@@ -140,7 +178,7 @@ async def get_patient(
 @handle_route_errors("list patient messages", log_prefix="Chat")
 async def get_patient_messages(
     patient_id: str,
-    current_user: StudentUser,
+    current_user: MemberStudentUser,
     limit: int = Query(default=settings.chat_messages_page_size, ge=1, le=100),
     before: Optional[str] = Query(default=None),
 ) -> PatientMessagesResponse:
@@ -173,7 +211,7 @@ async def save_patient_intake(
 @handle_route_errors("recommend for patient", log_prefix="Chat")
 async def recommend_for_patient(
     patient_id: str,
-    current_user: StudentUser,
+    current_user: MemberStudentUser,
     top_k: Optional[int] = Query(default=None, ge=1, le=20),
 ) -> PatientDetailResponse:
     result = await chat_service.recommend_for_patient(
@@ -189,7 +227,7 @@ async def recommend_for_patient(
 async def update_patient_board(
     patient_id: str,
     req: UpdateBoardRequest,
-    current_user: StudentUser,
+    current_user: MemberStudentUser,
 ) -> PatientDetailResponse:
     result = await chat_service.update_board_for_patient(
         user_id=current_user.user_id,
@@ -197,6 +235,7 @@ async def update_patient_board(
         confidence=req.confidence,
         preferred=req.preferred,
         clear_preferred=req.clear_preferred,
+        focus_peptides=req.focus_peptides,
     )
     return success_response(PatientDetail(**result))
 
@@ -206,12 +245,13 @@ async def update_patient_board(
 async def send_patient_message(
     patient_id: str,
     req: SendMessageRequest,
-    current_user: StudentUser,
+    current_user: MemberStudentUser,
 ) -> PatientDetailResponse:
     result = await chat_service.send_message_for_patient(
         user_id=current_user.user_id,
         patient_id=patient_id,
         question=req.question,
         top_k=req.top_k,
+        focus_peptides=req.focus_peptides,
     )
     return success_response(PatientDetail(**result))

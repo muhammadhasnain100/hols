@@ -21,6 +21,7 @@ import { listAdminAffiliates } from "@/lib/integrate/provider/admin/affiliates/a
 import { listPlans as listAdminPlans } from "@/lib/integrate/provider/admin/payment/api";
 import { getAdminProfile } from "@/lib/integrate/provider/admin/profile/api";
 import { getAffiliateProfile } from "@/lib/integrate/provider/affiliate/profile/api";
+import { getApiRuntime } from "@/lib/integrate/runtime";
 
 const TEN_MINUTES_MS = 10 * 60 * 1000;
 let refreshTimer: number | null = null;
@@ -37,6 +38,7 @@ async function refreshIfDue() {
 
 async function prefetchStudentData() {
   await Promise.allSettled([
+    getApiRuntime(),
     getStudentProfile(),
     getCurrentMembership(),
     listOrders({ page: 1, limit: 1 }),

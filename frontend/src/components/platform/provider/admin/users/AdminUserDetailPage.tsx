@@ -2,11 +2,12 @@
 
 import Link from "next/link";
 import { useCallback, useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { Icon, Menu } from "@/components/icons";
 import { PortalShell } from "@/components/platform/provider/PortalShell";
 import { adminNav } from "@/components/platform/provider/admin/adminNav";
-import { WelcomeChip } from "@/components/platform/provider/student/WelcomeChip";
+import { SidebarSvgIcon } from "@/components/platform/provider/sidebar-icons";
 import { ApiRequestError } from "@/lib/integrate/client";
 import type { UserRole } from "@/lib/integrate/auth/types";
 import {
@@ -110,6 +111,8 @@ function DashField({
 }
 
 export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
+  const searchParams = useSearchParams();
+  const focusOrder = searchParams.get("order")?.trim() || "";
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -152,6 +155,12 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
 
     void load();
   }, [userId]);
+
+  useEffect(() => {
+    if (!focusOrder) return;
+    const node = document.getElementById(`admin-order-${focusOrder}`);
+    node?.scrollIntoView({ block: "center", behavior: "smooth" });
+  }, [focusOrder, orders]);
 
   const loadStudentMoney = useCallback(
     async (pageNum: number) => {
@@ -269,9 +278,23 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
   const isStudent = profile?.role === "student";
   // Student profiles are view-only from the admin directory.
   const allowEdit = Boolean(access?.can_edit) && !isStudent;
-  const backHref = profile?.role === "affiliate" ? "/admin/affiliates" : "/admin/students";
-  const backLabelFull = profile?.role === "affiliate" ? "Back to affiliates" : "Back to students";
-  const backLabelShort = profile?.role === "affiliate" ? "Affiliates" : "Students";
+  const fromWebinarId =
+    searchParams.get("from") === "webinar" ? searchParams.get("webinar")?.trim() || "" : "";
+  const backHref = fromWebinarId
+    ? `/admin/webinars/${encodeURIComponent(fromWebinarId)}`
+    : profile?.role === "affiliate"
+      ? "/admin/affiliates"
+      : "/admin/students";
+  const backLabelFull = fromWebinarId
+    ? "Back to webinar"
+    : profile?.role === "affiliate"
+      ? "Back to affiliates"
+      : "Back to students";
+  const backLabelShort = fromWebinarId
+    ? "Webinar"
+    : profile?.role === "affiliate"
+      ? "Affiliates"
+      : "Students";
 
   return (
     <PortalShell
@@ -283,21 +306,25 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
       nav={adminNav}
     >
       <div className="dashboard-screen profile-page min-w-0 overflow-x-hidden">
-        <header className="mb-4 flex items-center justify-between gap-2 sm:mb-5 sm:gap-4">
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            <button
-              type="button"
-              aria-label="Open sidebar"
-              onClick={openSidebar}
-              className="dashboard-icon-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full lg:hidden"
-            >
-              <Icon icon={Menu} size={18} />
-            </button>
-            <h1 className="font-sans truncate text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl md:text-2xl">
-              User profile
-            </h1>
-          </div>
-          <WelcomeChip fallbackName="Admin" />
+        <header className="mb-4 flex min-h-10 min-w-0 items-center gap-2 sm:mb-5 sm:min-h-12 sm:gap-3 md:gap-4">
+          <button
+            type="button"
+            aria-label="Open sidebar"
+            onClick={openSidebar}
+            className="dashboard-icon-btn flex h-10 w-10 shrink-0 items-center justify-center rounded-full lg:hidden sm:h-12 sm:w-12"
+          >
+            <Icon icon={Menu} size={18} />
+          </button>
+          <Link
+            href={backHref}
+            aria-label={backLabelFull}
+            className="adviser-chat-back-btn dashboard-navy-btn flex h-10 w-10 shrink-0 items-center justify-center rounded-full no-underline sm:h-12 sm:w-12"
+          >
+            <SidebarSvgIcon name="previous" size={18} strokeWidth={2.4} />
+          </Link>
+          <h1 className="font-sans min-w-0 flex-1 truncate text-lg font-bold leading-none tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl md:text-2xl">
+            User profile
+          </h1>
         </header>
 
         <div className="grid w-full min-w-0 gap-3 sm:gap-4">
@@ -545,7 +572,7 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
                         type="button"
                         disabled={exporting || moneyLoading}
                         onClick={() => void handleExportPayments()}
-                        className="dashboard-pill-soft font-sans inline-flex min-h-9 items-center justify-center rounded-full px-3.5 text-sm font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-55"
+                        className="dashboard-pill-soft font-sans inline-flex min-h-11 items-center justify-center rounded-full px-3.5 text-sm font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-55 sm:min-h-10"
                       >
                         {exporting ? "Exporting…" : "Export Excel"}
                       </button>
@@ -595,8 +622,14 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
                     ) : (
                       orders.map((order) => (
                         <article
+                          id={`admin-order-${order.order_id}`}
                           key={order.order_id}
-                          className="rounded-xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)]/40 px-3.5 py-3 sm:px-4"
+                          className={cn(
+                            "rounded-xl border bg-[color:var(--dash-soft)]/40 px-3.5 py-3 sm:px-4",
+                            focusOrder === order.order_id
+                              ? "border-[color:var(--dash-accent)] ring-2 ring-[color:var(--dash-accent)]"
+                              : "border-[color:var(--dash-surface-border)]",
+                          )}
                         >
                           <div className="flex flex-wrap items-start justify-between gap-2">
                             <div className="min-w-0">
@@ -665,7 +698,7 @@ export function AdminUserDetailPage({ userId }: AdminUserDetailPageProps) {
                         type="button"
                         disabled={exporting || moneyLoading}
                         onClick={() => void handleExportPayments()}
-                        className="dashboard-pill-soft font-sans inline-flex min-h-9 items-center justify-center rounded-full px-3.5 text-sm font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-55"
+                        className="dashboard-pill-soft font-sans inline-flex min-h-11 items-center justify-center rounded-full px-3.5 text-sm font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-55 sm:min-h-10"
                       >
                         {exporting ? "Exporting…" : "Export Excel"}
                       </button>

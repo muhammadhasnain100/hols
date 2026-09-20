@@ -1,8 +1,13 @@
 "use client";
 
 import { useEffect } from "react";
-import { Icon, X } from "@/components/icons";
 import { RecommendationWarRoom } from "@/components/platform/provider/student/adviser/RecommendationWarRoom";
+import { SidebarSvgIcon } from "@/components/platform/provider/sidebar-icons";
+import {
+  rankedFocusNames,
+  talkAboutHeaderLabel,
+  talkAboutTitle,
+} from "@/components/platform/provider/student/adviser/talkAbout";
 import type {
   BoardConfidence,
   RecommendationBoard,
@@ -20,8 +25,8 @@ type AdviserBoardDrawerProps = {
   onClearPreferred: () => void;
   onChip: (chip: string) => void;
   onAskAbout: (peptide: RecommendationBoardPeptide, action: "why" | "compare" | "safety") => void;
-  selectedName?: string | null;
-  onSelectPeptide?: (name: string) => void;
+  selectedNames?: string[];
+  onSelectPeptides?: (names: string[]) => void;
 };
 
 export function AdviserBoardDrawer({
@@ -35,11 +40,11 @@ export function AdviserBoardDrawer({
   onClearPreferred,
   onChip,
   onAskAbout,
-  selectedName,
-  onSelectPeptide,
+  selectedNames,
+  onSelectPeptides,
 }: AdviserBoardDrawerProps) {
-  const current =
-    board.ranked.find((item) => item.name === board.preferred) ?? board.ranked[0];
+  const talking = selectedNames && selectedNames.length > 0 ? selectedNames : rankedFocusNames(board);
+  const title = talkAboutHeaderLabel(talking) || "Current peptide";
 
   useEffect(() => {
     function onKeyDown(event: KeyboardEvent) {
@@ -66,22 +71,23 @@ export function AdviserBoardDrawer({
         <header className="adviser-board-drawer-header">
           <div className="min-w-0 flex-1">
             <p className="text-brand-caption font-medium uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-              {updated ? "Board updated" : "Recommendation"}
+              {updated ? "Board updated" : talkAboutTitle(talking)}
             </p>
             <h2
               id="adviser-board-drawer-title"
               className="font-sans mt-1 truncate text-lg font-bold leading-none tracking-[0.01em] text-[color:var(--dash-text)]"
             >
-              {current?.name || "Current peptide"}
+              {title}
             </h2>
           </div>
           <button
             type="button"
             aria-label="Close recommendation board"
             onClick={onClose}
-            className="dashboard-icon-btn flex h-11 w-11 shrink-0 items-center justify-center rounded-full"
+            className="adviser-onboarding-close inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[color:var(--dash-text)] transition sm:h-12 sm:w-12"
           >
-            <Icon icon={X} size={18} strokeWidth={2.1} />
+            <SidebarSvgIcon name="cross" size={24} strokeWidth={2.2} className="sm:hidden" />
+            <SidebarSvgIcon name="cross" size={28} strokeWidth={2.15} className="hidden sm:block" />
           </button>
         </header>
 
@@ -90,7 +96,7 @@ export function AdviserBoardDrawer({
             board={board}
             disabled={disabled}
             isUpdating={isUpdating}
-            hideConfidenceDial
+            hideConfidenceDial={false}
             onConfidenceChange={onConfidenceChange}
             onPrefer={onPrefer}
             onClearPreferred={onClearPreferred}
@@ -99,12 +105,11 @@ export function AdviserBoardDrawer({
               onChip(chip);
             }}
             onAskAbout={(peptide, action) => {
-              onSelectPeptide?.(peptide.name);
               onClose();
               onAskAbout(peptide, action);
             }}
-            selectedName={selectedName}
-            onSelectPeptide={onSelectPeptide}
+            selectedNames={talking}
+            onSelectPeptides={onSelectPeptides}
           />
         </div>
       </aside>

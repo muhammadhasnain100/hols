@@ -1,6 +1,8 @@
 export const SYRINGE_SIZES_ML = [0.25, 0.5, 1, 2, 3] as const;
 
-export type SyringeSizeMl = (typeof SYRINGE_SIZES_ML)[number];
+export type SyringePresetMl = (typeof SYRINGE_SIZES_ML)[number];
+/** Any positive syringe capacity in millilitres. */
+export type SyringeSizeMl = number;
 
 export type MassUnit = "g" | "mg" | "mcg";
 export type VolumeUnit = "ml";
@@ -40,7 +42,7 @@ export function calculatePeptideDose(input: PeptideCalculatorInput): PeptideCalc
   const doseMcg = toMcg(input.doseAmount, input.doseUnit);
   const waterMl = input.waterMl;
 
-  if (!(peptideMcg > 0) || !(waterMl > 0) || !(doseMcg > 0)) {
+  if (!(input.syringeMl > 0) || !(peptideMcg > 0) || !(waterMl > 0) || !(doseMcg > 0)) {
     throw new Error("All values must be greater than zero.");
   }
   if (doseMcg > peptideMcg) {

@@ -15,11 +15,11 @@ export function HeroSection() {
       <div className="relative z-10 flex min-h-svh flex-col">
         <div
           className={cn(
-            "mt-auto flex w-full flex-col md:items-end",
+            "mt-auto flex w-full min-w-0 flex-col lg:items-end",
             heroLayout.content.shell,
           )}
         >
-          <div className="w-full md:ml-auto md:max-w-2xl md:shrink-0 lg:max-w-[42rem] xl:mr-6">
+          <div className="w-full min-w-0 lg:ml-auto lg:max-w-[42rem] lg:shrink-0 xl:mr-6">
             <HeroHeadline />
           </div>
         </div>

@@ -1,0 +1,148 @@
+{
+  "student.order_placed": {
+    "title": "Order confirmed",
+    "body": "Your {{plan_name}} order for {{amount}} is confirmed.",
+    "href": "/student/profile/orders",
+    "email": "student_order_placed"
+  },
+  "student.payment_success": {
+    "title": "Payment successful",
+    "body": "We received {{amount}} for your {{plan_name}} plan.",
+    "href": "/student/profile/orders",
+    "email": "payment_success"
+  },
+  "student.payment_failed": {
+    "title": "Payment failed",
+    "body": "We could not charge {{amount}} for {{plan_name}}. {{failure_reason}}",
+    "href": "/student/profile/card",
+    "email": "payment_failed"
+  },
+  "student.plan_changed": {
+    "title": "Plan updated",
+    "body": "You switched from {{previous_plan_name}} to {{plan_name}}.",
+    "href": "/student/payment",
+    "email": "plan_changed"
+  },
+  "student.quiz_submitted": {
+    "title": "Quiz submitted",
+    "body": "{{lesson_title}}: {{score_percent}}% · {{result_label}}",
+    "href": "/student/lectures"
+  },
+  "student.patient_created": {
+    "title": "Patient added",
+    "body": "{{patient_name}} was added to Peptide Advisor.",
+    "href": "/student/adviser"
+  },
+  "student.recommendation_ready": {
+    "title": "Recommendation ready",
+    "body": "A peptide recommendation is ready for {{patient_name}}.",
+    "href": "/student/adviser"
+  },
+  "student.chat_started": {
+    "title": "Advisor chat started",
+    "body": "You started a consultation chat for {{patient_name}}.",
+    "href": "/student/adviser"
+  },
+  "student.webinar_published": {
+    "title": "New webinar",
+    "body": "{{webinar_title}} is now open to book.",
+    "href": "/student/webinars/{{webinar_id}}"
+  },
+  "student.webinar_updated": {
+    "title": "Webinar updated",
+    "body": "{{webinar_title}} details have changed.",
+    "href": "/student/webinars/{{webinar_id}}"
+  },
+  "student.webinar_cancelled": {
+    "title": "Webinar unavailable",
+    "body": "{{webinar_title}} is no longer available.",
+    "href": "/student/webinars"
+  },
+  "student.webinar_booked": {
+    "title": "Webinar booked",
+    "body": "You are booked for {{webinar_title}}.",
+    "href": "/student/webinars/{{webinar_id}}"
+  },
+  "affiliate.invite_sent": {
+    "title": "Invite sent",
+    "body": "Student invite emailed to {{recipient_summary}}.",
+    "href": "/affiliate/customers"
+  },
+  "affiliate.account_created": {
+    "title": "Affiliate account ready",
+    "body": "Your HOLS affiliate account is set up. Sign in to share your invite code.",
+    "href": "/affiliate",
+    "email": "affiliate_account_created"
+  },
+  "affiliate.payout_requested": {
+    "title": "Payout requested",
+    "body": "{{payout_amount}} moved to pending while we review your request.",
+    "href": "/affiliate/payout",
+    "email": "affiliate_payout_requested"
+  },
+  "affiliate.payout_accepted": {
+    "title": "Payout sent",
+    "body": "{{payout_amount}} was accepted and marked as paid out.",
+    "href": "/affiliate/payout",
+    "email": "affiliate_payout_success"
+  },
+  "affiliate.payout_rejected": {
+    "title": "Payout declined",
+    "body": "{{payout_amount}} was returned to your available balance.",
+    "href": "/affiliate/payout",
+    "email": "affiliate_payout_rejected"
+  },
+  "affiliate.lock_released": {
+    "title": "Earnings available",
+    "body": "{{amount}} moved from lock into your available balance.",
+    "href": "/affiliate/payout",
+    "email": "affiliate_lock_released"
+  },
+  "affiliate.referral_order": {
+    "title": "Referral order placed",
+    "body": "{{student_name}} purchased {{plan_name}} for {{amount}}.",
+    "href": "/affiliate/customers",
+    "email": "affiliate_referral_order"
+  },
+  "affiliate.commission_earned": {
+    "title": "Commission earned",
+    "body": "You earned {{commission_amount}} from {{student_name}}'s {{plan_name}} order.",
+    "href": "/affiliate/payout",
+    "email": "affiliate_commission_earned"
+  },
+  "affiliate.student_joined": {
+    "title": "New referred student",
+    "body": "{{student_name}} joined HOLS with your invite.",
+    "href": "/affiliate/customers"
+  },
+  "affiliate.student_plan_changed": {
+    "title": "Referred student changed plan",
+    "body": "{{student_name}} switched from {{previous_plan_name}} to {{plan_name}}.",
+    "href": "/affiliate/customers"
+  },
+  "admin.student_joined": {
+    "title": "New student",
+    "body": "{{student_name}} created a student account.",
+    "href": "/admin/students?user={{student_id}}"
+  },
+  "admin.affiliate_created": {
+    "title": "New affiliate",
+    "body": "{{affiliate_name}} was added as an affiliate.",
+    "href": "/admin/users/{{affiliate_id}}"
+  },
+  "admin.order_placed": {
+    "title": "New order",
+    "body": "{{student_name}} purchased {{plan_name}} for {{amount}}.",
+    "href": "/admin/reports?order={{order_id}}"
+  },
+  "admin.webinar_joined": {
+    "title": "Student booked a webinar",
+    "body": "{{student_name}} joined {{webinar_title}}.",
+    "href": "/admin/webinars/{{webinar_id}}"
+  },
+  "admin.daily_summary": {
+    "title": "Today's activity",
+    "body": "{{summary_line}}",
+    "href": "/admin"
+  }
+}

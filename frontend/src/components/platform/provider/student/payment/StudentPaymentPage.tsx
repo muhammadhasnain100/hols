@@ -22,6 +22,7 @@ import {
   type PlanType,
 } from "@/lib/integrate/provider/student/payment/api";
 import { planLabels } from "@/lib/integrate/provider/student/payment/types";
+import { getApiRuntime, isPaymentGatewayBypassed } from "@/lib/integrate/runtime";
 
 export function StudentPaymentPage() {
   const [loading, setLoading] = useState(true);
@@ -32,20 +33,23 @@ export function StudentPaymentPage() {
   const [card, setCard] = useState<PaymentCard | null>(null);
   const [purchasingPlan, setPurchasingPlan] = useState<PlanType | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<PlanType | null>(null);
+  const [gatewayBypassed, setGatewayBypassed] = useState(false);
 
   const loadData = useCallback(async (signal?: AbortSignal) => {
     setLoading(true);
     setError(null);
 
     try {
-      const [membershipRes, plansRes] = await Promise.all([
+      const [membershipRes, plansRes, runtime] = await Promise.all([
         getCurrentMembership(signal),
         listPlans(signal),
+        getApiRuntime(),
       ]);
 
       if (signal?.aborted) return;
       setMembership(membershipRes.membership);
       setPlans(plansRes.items);
+      setGatewayBypassed(isPaymentGatewayBypassed(runtime));
 
       try {
         const cardRes = await getCard(signal);
@@ -102,7 +106,7 @@ export function StudentPaymentPage() {
     setPurchasingPlan(planType);
 
     try {
-      const result = await purchasePlan(planType, card.payment_method_id);
+      const result = await purchasePlan(planType, card?.payment_method_id);
       setMembership(result.membership ?? null);
       setSuccess(`Purchased ${planLabels[planType]}.`);
     } catch (err) {
@@ -146,6 +150,7 @@ export function StudentPaymentPage() {
             plan={selected}
             membership={membership}
             card={card}
+            gatewayBypassed={gatewayBypassed}
             purchasing={purchasingPlan === selected.plan_type}
             error={error}
             success={success}

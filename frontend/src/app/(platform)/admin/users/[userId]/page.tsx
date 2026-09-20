@@ -1,3 +1,4 @@
+import { Suspense } from "react";
 import { PortalGate } from "@/components/platform/provider/PortalGate";
 import { AdminUserDetailPage } from "@/components/platform/provider/admin/users/AdminUserDetailPage";
 
@@ -10,7 +11,9 @@ export default async function AdminUserRoute({ params }: AdminUserRouteProps) {
 
   return (
     <PortalGate role="admin">
-      <AdminUserDetailPage userId={userId} />
+      <Suspense>
+        <AdminUserDetailPage userId={userId} />
+      </Suspense>
     </PortalGate>
   );
 }

@@ -82,12 +82,12 @@ export function CoursePageLayout({
         nav={studentNav}
       >
         <div className="dashboard-screen lectures-page min-w-0 overflow-x-hidden">
-          <header className="mb-3 flex h-10 min-w-0 items-center gap-2 sm:mb-4 sm:h-12 sm:gap-3 md:mb-5 md:gap-4">
+          <header className="mb-3 flex min-h-11 min-w-0 items-center gap-2 sm:mb-4 sm:min-h-12 sm:gap-3 md:mb-5 md:gap-4">
             <button
               type="button"
               aria-label="Open sidebar"
               onClick={openSidebar}
-              className="dashboard-icon-btn flex h-10 w-10 shrink-0 items-center justify-center rounded-full lg:hidden sm:h-12 sm:w-12"
+              className="dashboard-icon-btn flex h-11 w-11 shrink-0 items-center justify-center rounded-full lg:hidden sm:h-12 sm:w-12"
             >
               <Icon icon={Menu} size={18} />
             </button>
@@ -96,13 +96,13 @@ export function CoursePageLayout({
               <Link
                 href={backHref}
                 aria-label={backLabel ?? "Back"}
-                className="dashboard-navy-btn flex h-10 w-10 shrink-0 items-center justify-center rounded-full no-underline sm:h-12 sm:w-12"
+                className="dashboard-navy-btn flex h-11 w-11 shrink-0 items-center justify-center rounded-full no-underline sm:h-12 sm:w-12"
               >
                 <Icon icon={ArrowLeft} size={18} strokeWidth={2.4} />
               </Link>
             ) : null}
 
-            <h1 className="font-sans min-w-0 truncate text-xl font-bold leading-none tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl">
+            <h1 className="font-sans min-w-0 flex-1 truncate text-lg font-bold leading-none tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl md:text-2xl">
               Lectures
             </h1>
           </header>

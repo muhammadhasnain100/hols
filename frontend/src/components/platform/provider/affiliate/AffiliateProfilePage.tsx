@@ -1,33 +1,79 @@
 "use client";
 
-import Link from "next/link";
 import type { FormEvent } from "react";
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ChevronRight, DollarSign, Icon, LayoutDashboard, Menu, Users } from "@/components/icons";
+import { Icon, Menu } from "@/components/icons";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { PortalShell } from "@/components/platform/provider/PortalShell";
-import { ProfilePageSkeleton } from "@/components/platform/provider/student/DashboardSkeletons";
-import { WelcomeChip } from "@/components/platform/provider/student/WelcomeChip";
+import { SkeletonBlock } from "@/components/platform/provider/student/DashboardSkeletons";
 import { affiliateNav } from "@/components/platform/provider/affiliate/affiliateNav";
 import {
   affiliateDisplayName,
   affiliateInitials,
   affiliateProfileToForm,
-  affiliateQuotaLabel,
   buildAffiliateProfilePayload,
   emptyAffiliateProfileForm,
-  formatAffiliateAddress,
-  formatAffiliatePercent,
   type ProfileFormState,
   useAffiliateProfile,
 } from "@/components/platform/provider/affiliate/affiliateProfile";
 import { ApiRequestError } from "@/lib/integrate/client";
-import { updateAffiliateProfile, type AffiliateProfile } from "@/lib/integrate/provider/affiliate/profile/api";
-import { formatDate } from "@/lib/integrate/provider/student/payment/types";
+import {
+  updateAffiliateProfile,
+  type AffiliateProfile,
+} from "@/lib/integrate/provider/affiliate/profile/api";
+import {
+  DEFAULT_COUNTRY_CODE,
+  MANUAL_VALUE,
+  US_STATES,
+  getCitiesForState,
+  resolveCitySelection,
+  resolveStateSelection,
+} from "@/content/locations/us";
 import { cn } from "@/lib/utils";
+
+type LocationUiState = {
+  stateSelect: string;
+  stateManual: string;
+  citySelect: string;
+  cityManual: string;
+};
 
 function openSidebar() {
   window.dispatchEvent(new Event("hols-portal-open-sidebar"));
+}
+
+function toLocationUi(form: ProfileFormState): LocationUiState {
+  const stateSel = resolveStateSelection(form.state);
+  const citySel =
+    stateSel.mode === "select"
+      ? resolveCitySelection(stateSel.code, form.city)
+      : { mode: "manual" as const, value: MANUAL_VALUE, manual: form.city };
+
+  return {
+    stateSelect: stateSel.code || "",
+    stateManual: stateSel.manual,
+    citySelect: citySel.value || "",
+    cityManual: citySel.manual,
+  };
+}
+
+function mergeLocationIntoForm(
+  form: ProfileFormState,
+  location: LocationUiState,
+): ProfileFormState {
+  const state =
+    location.stateSelect === MANUAL_VALUE ? location.stateManual.trim() : location.stateSelect;
+  const city =
+    location.stateSelect === MANUAL_VALUE || location.citySelect === MANUAL_VALUE
+      ? location.cityManual.trim()
+      : location.citySelect;
+
+  return {
+    ...form,
+    country: DEFAULT_COUNTRY_CODE,
+    state,
+    city,
+  };
 }
 
 function DashField({
@@ -38,14 +84,16 @@ function DashField({
   placeholder,
   autoComplete,
   required = false,
+  disabled = false,
 }: {
   id: string;
   label: string;
   value: string;
-  onChange: (value: string) => void;
+  onChange?: (value: string) => void;
   placeholder?: string;
   autoComplete?: string;
   required?: boolean;
+  disabled?: boolean;
 }) {
   return (
     <div className="grid min-w-0 gap-2">
@@ -57,127 +105,119 @@ function DashField({
         name={id}
         type="text"
         value={value}
-        onChange={(event) => onChange(event.target.value)}
+        onChange={(event) => onChange?.(event.target.value)}
         placeholder={placeholder}
         autoComplete={autoComplete}
         required={required}
-        className="dashboard-field"
+        disabled={disabled}
+        className={cn("dashboard-field", disabled && "cursor-not-allowed opacity-70")}
       />
     </div>
   );
 }
 
-function ProfileDetailRow({
+function DashSelect({
+  id,
   label,
   value,
+  onChange,
+  disabled,
+  options,
 }: {
-  label: React.ReactNode;
-  value: React.ReactNode;
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  disabled?: boolean;
+  options: Array<{ value: string; label: string }>;
 }) {
   return (
-    <div className="dashboard-row flex min-w-0 flex-col items-start gap-1 rounded-xl px-2.5 py-2.5 sm:flex-row sm:items-start sm:justify-between sm:gap-3 sm:px-3.5 sm:py-3">
-      <p className="text-brand-caption shrink-0 font-medium text-[color:var(--dash-faint)]">{label}</p>
-      <div className="font-sans min-w-0 w-full whitespace-pre-line break-words text-sm font-medium text-[color:var(--dash-text)] [overflow-wrap:anywhere] sm:w-auto sm:text-right">
-        {value || "—"}
-      </div>
+    <div className="grid min-w-0 gap-2">
+      <label htmlFor={id} className="dashboard-field-label">
+        {label}
+      </label>
+      <select
+        id={id}
+        name={id}
+        value={value}
+        disabled={disabled}
+        onChange={(event) => onChange(event.target.value)}
+        className={cn(
+          "dashboard-field dashboard-field-select min-h-11 w-full min-w-0 max-w-full sm:min-h-10",
+          disabled && "cursor-not-allowed opacity-50",
+        )}
+      >
+        {options.map((option) => (
+          <option key={`${option.value}-${option.label}`} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
     </div>
   );
 }
 
-const shortcutLinks = [
-  {
-    label: "Referrals",
-    href: "/affiliate/referrals",
-    category: "Growth",
-    icon: <Icon icon={Users} size={16} />,
-  },
-  {
-    label: "Earnings",
-    href: "/affiliate/earnings",
-    category: "Billing",
-    icon: <Icon icon={DollarSign} size={16} />,
-  },
-  {
-    label: "Dashboard",
-    href: "/affiliate",
-    category: "Home",
-    icon: <Icon icon={LayoutDashboard} size={16} />,
-  },
-] as const;
-
 export function AffiliateProfilePage() {
   const { profile, refreshing, error, setError, applyProfile } = useAffiliateProfile();
-  const [mode, setMode] = useState<"read" | "edit">("read");
   const [saving, setSaving] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
+  const [photoError, setPhotoError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [baseline, setBaseline] = useState<ProfileFormState>(emptyAffiliateProfileForm);
   const [form, setForm] = useState<ProfileFormState>(emptyAffiliateProfileForm);
-  const [profilePicFile, setProfilePicFile] = useState<File | null>(null);
-  const [profilePicPreview, setProfilePicPreview] = useState<string | null>(null);
-  const previewUrlRef = useRef<string | null>(null);
+  const [location, setLocation] = useState<LocationUiState>(() =>
+    toLocationUi(emptyAffiliateProfileForm()),
+  );
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   useEffect(() => {
-    if (!profile || mode === "edit") return;
-    const timer = window.setTimeout(() => {
-      const nextForm = affiliateProfileToForm(profile);
-      setBaseline(nextForm);
-      setForm(nextForm);
-    }, 0);
-    return () => window.clearTimeout(timer);
-  }, [profile, mode]);
-
-  useEffect(() => {
-    return () => {
-      if (previewUrlRef.current) URL.revokeObjectURL(previewUrlRef.current);
-    };
-  }, []);
-
-  const dirtyPayload = useMemo(
-    () => buildAffiliateProfilePayload(form, baseline),
-    [form, baseline],
-  );
-  const hasChanges = Object.keys(dirtyPayload).length > 0 || Boolean(profilePicFile);
-  const avatarSrc = profilePicPreview ?? profile?.profile_pic;
-  const fullName = affiliateDisplayName(profile);
-
-  function startEdit() {
     if (!profile) return;
     const nextForm = affiliateProfileToForm(profile);
-    setForm(nextForm);
     setBaseline(nextForm);
-    setProfilePicFile(null);
-    setProfilePicPreview(null);
-    setError(null);
-    setSuccess(null);
-    setMode("edit");
-  }
+    setForm(nextForm);
+    setLocation(toLocationUi(nextForm));
+  }, [profile]);
 
-  function cancelEdit() {
+  const composedForm = useMemo(() => mergeLocationIntoForm(form, location), [form, location]);
+  const dirtyPayload = useMemo(
+    () => buildAffiliateProfilePayload(composedForm, baseline),
+    [composedForm, baseline],
+  );
+  const hasChanges = Object.keys(dirtyPayload).length > 0;
+  const usCities = useMemo(() => {
+    if (location.stateSelect && location.stateSelect !== MANUAL_VALUE) {
+      return getCitiesForState(location.stateSelect);
+    }
+    return [];
+  }, [location.stateSelect]);
+
+  const avatarSrc = profile?.profile_pic;
+  const fullName = affiliateDisplayName(profile);
+  const pageError = photoError ?? error;
+
+  function resetForm() {
     setForm(baseline);
-    setProfilePicFile(null);
-    if (previewUrlRef.current) {
-      URL.revokeObjectURL(previewUrlRef.current);
-      previewUrlRef.current = null;
-    }
-    setProfilePicPreview(null);
+    setLocation(toLocationUi(baseline));
     setError(null);
+    setPhotoError(null);
     setSuccess(null);
-    setMode("read");
   }
 
-  function onPickPhoto(file: File | null) {
-    if (previewUrlRef.current) {
-      URL.revokeObjectURL(previewUrlRef.current);
-      previewUrlRef.current = null;
-    }
-    setProfilePicFile(file);
-    if (file) {
-      const url = URL.createObjectURL(file);
-      previewUrlRef.current = url;
-      setProfilePicPreview(url);
-    } else {
-      setProfilePicPreview(null);
+  async function onPickPhoto(file: File | null) {
+    if (!file) return;
+    setUploadingPhoto(true);
+    setPhotoError(null);
+    setError(null);
+    setSuccess(null);
+    try {
+      const data = await updateAffiliateProfile({}, file);
+      applyProfile(data.profile as AffiliateProfile);
+      setSuccess("Photo updated.");
+    } catch (err) {
+      setPhotoError(err instanceof ApiRequestError ? err.message : "Could not update photo.");
+    } finally {
+      setUploadingPhoto(false);
+      if (fileInputRef.current) fileInputRef.current.value = "";
     }
   }
 
@@ -190,22 +230,13 @@ export function AffiliateProfilePage() {
 
     setSaving(true);
     setError(null);
+    setPhotoError(null);
     setSuccess(null);
 
     try {
-      const data = await updateAffiliateProfile(dirtyPayload, profilePicFile);
+      const data = await updateAffiliateProfile(dirtyPayload);
       applyProfile(data.profile as AffiliateProfile);
-      const nextForm = affiliateProfileToForm(data.profile as AffiliateProfile);
-      setBaseline(nextForm);
-      setForm(nextForm);
-      setProfilePicFile(null);
-      if (previewUrlRef.current) {
-        URL.revokeObjectURL(previewUrlRef.current);
-        previewUrlRef.current = null;
-      }
-      setProfilePicPreview(null);
-      setSuccess("Profile saved.");
-      setMode("read");
+      setSuccess("Profile updated.");
     } catch (err) {
       setError(err instanceof ApiRequestError ? err.message : "Could not update profile.");
     } finally {
@@ -222,384 +253,258 @@ export function AffiliateProfilePage() {
       brandBackdrop
       nav={affiliateNav}
     >
-      <div className="dashboard-screen profile-page min-w-0 overflow-x-hidden">
-        <header className="mb-3 flex items-center justify-between gap-2 sm:mb-5 sm:gap-4">
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-            <button
-              type="button"
-              aria-label="Open sidebar"
-              onClick={openSidebar}
-              className="dashboard-icon-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full lg:hidden"
-            >
-              <Icon icon={Menu} size={18} />
-            </button>
-            <h1 className="font-sans truncate text-base font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl md:text-2xl">
-              {mode === "edit" ? (
-                <>
-                  <span className="sm:hidden">Edit</span>
-                  <span className="hidden sm:inline">Edit profile</span>
-                </>
-              ) : (
-                "Profile"
-              )}
-            </h1>
-          </div>
-          <WelcomeChip fallbackName="Affiliate" />
+      <div className="dashboard-screen lectures-page profile-page min-w-0 overflow-x-hidden">
+        <header className="mb-2 flex min-h-10 min-w-0 items-center gap-2 sm:mb-3 sm:min-h-12 sm:gap-3 md:gap-4">
+          <button
+            type="button"
+            aria-label="Open sidebar"
+            onClick={openSidebar}
+            className="dashboard-icon-btn flex h-10 w-10 shrink-0 items-center justify-center rounded-full lg:hidden sm:h-12 sm:w-12"
+          >
+            <Icon icon={Menu} size={18} />
+          </button>
+          <h1 className="font-sans min-w-0 truncate text-lg font-bold leading-none tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl md:text-2xl">
+            Profile
+          </h1>
         </header>
 
-        <div className="grid w-full min-w-0 gap-3 sm:gap-4">
-          {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
-          {success ? <AuthAlert variant="success">{success}</AuthAlert> : null}
+        <p className="text-brand-body mb-4 max-w-2xl text-sm text-[color:var(--dash-muted)] sm:mb-5 sm:text-base">
+          Manage your name, photo, and address.
+        </p>
 
-          {!profile && refreshing ? (
-            <ProfilePageSkeleton />
-          ) : mode === "read" ? (
-            <div className="grid w-full min-w-0 items-start gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1.9fr)_minmax(0,1fr)]">
-              <div className="flex min-w-0 flex-col gap-3 sm:gap-4">
-                <section className="dashboard-hero relative overflow-hidden rounded-2xl p-3.5 sm:p-5 md:p-6">
-                  <div className="flex flex-col gap-3.5 sm:gap-5 lg:flex-row lg:items-end lg:justify-between">
-                    <div className="flex min-w-0 flex-col items-center gap-3 sm:flex-row sm:items-center sm:gap-5">
-                      <span className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-2xl border-4 border-white/70 bg-white/40 font-sans text-sm font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:h-20 sm:w-20 sm:text-lg">
-                        {avatarSrc ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
-                        ) : (
-                          affiliateInitials(profile)
-                        )}
+        {pageError ? (
+          <div className="mb-3 sm:mb-4">
+            <AuthAlert variant="error">{pageError}</AuthAlert>
+          </div>
+        ) : null}
+        {success ? (
+          <div className="mb-3 sm:mb-4">
+            <AuthAlert variant="success">{success}</AuthAlert>
+          </div>
+        ) : null}
+
+        <div className="grid w-full min-w-0 items-start gap-3 sm:gap-4 lg:grid-cols-[minmax(15.5rem,18.75rem)_minmax(0,1fr)]">
+          <aside className="flex min-w-0 flex-col gap-3 sm:gap-4 lg:sticky lg:top-3">
+            <section className="dashboard-glass-card flex flex-col items-center rounded-2xl px-4 py-5 text-center sm:p-5">
+              <span className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] font-sans text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:h-24 sm:w-24 sm:text-xl">
+                {avatarSrc ? (
+                  // eslint-disable-next-line @next/next/no-img-element
+                  <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
+                ) : (
+                  affiliateInitials(profile)
+                )}
+              </span>
+              <input
+                ref={fileInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/gif"
+                className="sr-only"
+                onChange={(event) => void onPickPhoto(event.target.files?.[0] ?? null)}
+              />
+              <button
+                type="button"
+                onClick={() => fileInputRef.current?.click()}
+                disabled={uploadingPhoto || !profile}
+                className="dashboard-pill-soft font-sans mt-3 inline-flex min-h-11 items-center justify-center rounded-full px-4 text-sm font-medium text-[color:var(--dash-text)] transition disabled:opacity-60 sm:min-h-10"
+              >
+                {uploadingPhoto ? "Uploading…" : "Change photo"}
+              </button>
+              <p className="font-sans mt-3 max-w-full break-words text-base font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-lg">
+                {fullName}
+              </p>
+              <p className="text-brand-caption mt-1 max-w-full break-all text-[color:var(--dash-muted)]">
+                {profile?.email || "—"}
+              </p>
+              <span className="mt-3 inline-flex rounded-full bg-[color:var(--dash-soft)] px-2.5 py-1 text-brand-caption font-semibold text-[color:var(--dash-muted)]">
+                Affiliate
+              </span>
+            </section>
+          </aside>
+
+          <div className="min-w-0">
+            {!profile && refreshing ? (
+              <section
+                className="dashboard-glass-card min-w-0 rounded-2xl p-4 sm:p-5 md:p-6"
+                aria-busy="true"
+                aria-label="Loading profile"
+              >
+                <SkeletonBlock className="h-5 w-40 rounded-full" />
+                <SkeletonBlock className="mt-2 h-4 w-64 rounded-full" />
+                <div className="mt-6 grid gap-4">
+                  <SkeletonBlock className="h-11 w-full rounded-2xl" />
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <SkeletonBlock className="h-11 w-full rounded-2xl" />
+                    <SkeletonBlock className="h-11 w-full rounded-2xl" />
+                  </div>
+                  <SkeletonBlock className="h-11 w-full rounded-2xl" />
+                  <SkeletonBlock className="h-11 w-full rounded-2xl" />
+                </div>
+              </section>
+            ) : (
+              <section className="dashboard-glass-card min-w-0 rounded-2xl p-4 sm:p-5 md:p-6">
+                <h2 className="font-sans text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg">
+                  Profile information
+                </h2>
+                <p className="text-brand-body mt-1 text-sm text-[color:var(--dash-muted)] sm:text-base">
+                  Keep your account details current.
+                </p>
+
+                <form className="mt-5 grid gap-3 sm:mt-6 sm:gap-4" onSubmit={handleSubmit}>
+                  <DashField id="email" label="Account email" value={profile?.email ?? ""} disabled />
+                  <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+                    <DashField
+                      id="first_name"
+                      label="First name"
+                      value={form.first_name}
+                      onChange={(value) => setForm((prev) => ({ ...prev, first_name: value }))}
+                      placeholder="First name"
+                      autoComplete="given-name"
+                      required
+                    />
+                    <DashField
+                      id="last_name"
+                      label="Last name"
+                      value={form.last_name}
+                      onChange={(value) => setForm((prev) => ({ ...prev, last_name: value }))}
+                      placeholder="Last name"
+                      autoComplete="family-name"
+                      required
+                    />
+                  </div>
+                  <DashField
+                    id="line1"
+                    label="Address line 1"
+                    value={form.line1}
+                    onChange={(value) => setForm((prev) => ({ ...prev, line1: value }))}
+                    placeholder="Street address"
+                    autoComplete="address-line1"
+                  />
+                  <DashField
+                    id="line2"
+                    label="Address line 2"
+                    value={form.line2}
+                    onChange={(value) => setForm((prev) => ({ ...prev, line2: value }))}
+                    placeholder="Apt, suite, etc. (optional)"
+                    autoComplete="address-line2"
+                  />
+                  <div className="grid min-w-0 gap-3 md:grid-cols-2 md:gap-4">
+                    <DashSelect
+                      id="state"
+                      label="State"
+                      value={location.stateSelect}
+                      onChange={(value) => {
+                        setLocation({
+                          stateSelect: value,
+                          stateManual: value === MANUAL_VALUE ? location.stateManual : "",
+                          citySelect: "",
+                          cityManual: "",
+                        });
+                      }}
+                      options={[
+                        { value: "", label: "Select state" },
+                        ...US_STATES.map((state) => ({ value: state.code, label: state.name })),
+                        { value: MANUAL_VALUE, label: "Other (manual)" },
+                      ]}
+                    />
+                    {location.stateSelect === MANUAL_VALUE ? (
+                      <DashField
+                        id="state_manual"
+                        label="State"
+                        value={location.stateManual}
+                        onChange={(value) => setLocation((prev) => ({ ...prev, stateManual: value }))}
+                        placeholder="Enter state"
+                      />
+                    ) : (
+                      <DashSelect
+                        id="city"
+                        label="City"
+                        value={location.citySelect}
+                        disabled={!location.stateSelect}
+                        onChange={(value) => {
+                          setLocation((prev) => ({
+                            ...prev,
+                            citySelect: value,
+                            cityManual: value === MANUAL_VALUE ? prev.cityManual : "",
+                          }));
+                        }}
+                        options={[
+                          {
+                            value: "",
+                            label: location.stateSelect ? "Select city" : "Select state first",
+                          },
+                          ...usCities.map((city) => ({ value: city, label: city })),
+                          { value: MANUAL_VALUE, label: "Other (manual)" },
+                        ]}
+                      />
+                    )}
+                  </div>
+                  {location.stateSelect === MANUAL_VALUE ? (
+                    <DashField
+                      id="city_manual"
+                      label="City"
+                      value={location.cityManual}
+                      onChange={(value) => setLocation((prev) => ({ ...prev, cityManual: value }))}
+                      placeholder="Enter city"
+                    />
+                  ) : location.citySelect === MANUAL_VALUE ? (
+                    <DashField
+                      id="city_manual_other"
+                      label="City"
+                      value={location.cityManual}
+                      onChange={(value) => setLocation((prev) => ({ ...prev, cityManual: value }))}
+                      placeholder="Enter city"
+                    />
+                  ) : null}
+                  <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+                    <DashField
+                      id="postal_code"
+                      label="ZIP / Postal code"
+                      value={form.postal_code}
+                      onChange={(value) => setForm((prev) => ({ ...prev, postal_code: value }))}
+                      placeholder="ZIP code"
+                      autoComplete="postal-code"
+                    />
+                    <DashField id="country" label="Country" value="United States" disabled />
+                  </div>
+                  <label className="flex cursor-pointer items-start gap-3 rounded-2xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] px-3 py-3 sm:px-3.5">
+                    <input
+                      type="checkbox"
+                      checked={form.marketing_pref}
+                      onChange={(event) =>
+                        setForm((prev) => ({ ...prev, marketing_pref: event.target.checked }))
+                      }
+                      className="mt-0.5 h-4 w-4 shrink-0 rounded border-[color:var(--dash-dim)] accent-[#DDE466]"
+                    />
+                    <span className="min-w-0">
+                      <span className="font-sans block text-sm font-medium text-[color:var(--dash-text)]">
+                        Email me product updates
                       </span>
-                      <div className="min-w-0 flex-1 text-center sm:text-left">
-                        <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
-                          Your profile
-                        </p>
-                        <div className="mt-1.5 flex flex-col items-center gap-1.5 sm:mt-2 sm:flex-row sm:flex-wrap sm:items-end sm:gap-x-2">
-                          <span className="font-sans max-w-full break-words text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl md:text-[2.25rem] md:leading-none">
-                            {fullName}
-                          </span>
-                          <span
-                            className={cn(
-                              "inline-flex rounded-full px-2.5 py-0.5 text-brand-caption font-semibold",
-                              profile?.email_verified
-                                ? "bg-[#DDE466]/25 text-[color:var(--dash-accent)]"
-                                : "bg-[color:var(--dash-soft)] text-[color:var(--dash-faint)]",
-                            )}
-                          >
-                            {profile?.email_verified ? "Verified" : "Unverified"}
-                          </span>
-                        </div>
-                        <p className="text-brand-body mt-1.5 break-all text-[color:var(--dash-muted)] sm:mt-2 sm:truncate sm:break-normal">
-                          {profile?.email}
-                        </p>
-                        {profile?.created_at ? (
-                          <p className="text-brand-caption mt-1 text-[color:var(--dash-faint)]">
-                            Partner since {formatDate(profile.created_at)}
-                          </p>
-                        ) : null}
-                      </div>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={startEdit}
-                      disabled={!profile}
-                      className="font-sans inline-flex min-h-11 w-full items-center justify-center rounded-full bg-[#DDE466] px-5 text-sm font-medium text-[#152744] transition hover:brightness-105 disabled:pointer-events-none disabled:opacity-60 sm:min-h-10 sm:w-auto lg:shrink-0"
-                    >
-                      Edit profile
-                    </button>
-                  </div>
-                </section>
-
-                <section className="dashboard-surface rounded-2xl p-3.5 sm:p-5 md:p-6">
-                  <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-                    Account
-                  </p>
-                  <h2 className="font-sans mt-1 text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg">
-                    Account details
-                  </h2>
-                  <div className="mt-3 space-y-2 sm:mt-4 sm:space-y-2.5">
-                    <ProfileDetailRow label="Email" value={profile?.email} />
-                    <ProfileDetailRow label="Address" value={formatAffiliateAddress(profile?.address)} />
-                    <ProfileDetailRow
-                      label="Marketing"
-                      value={profile?.marketing_pref ? "Subscribed" : "Off"}
-                    />
-                    <ProfileDetailRow label="Invite code" value={profile?.invite_code} />
-                    <ProfileDetailRow
-                      label={
-                        <>
-                          <span className="sm:hidden">Margin</span>
-                          <span className="hidden sm:inline">Commission margin</span>
-                        </>
-                      }
-                      value={formatAffiliatePercent(profile?.margin_percent)}
-                    />
-                    <ProfileDetailRow
-                      label={
-                        <>
-                          <span className="sm:hidden">Quota</span>
-                          <span className="hidden sm:inline">Invitation quota</span>
-                        </>
-                      }
-                      value={affiliateQuotaLabel(profile)}
-                    />
-                  </div>
-                  <p className="text-brand-caption mt-4 rounded-xl bg-[color:var(--dash-soft)] px-3.5 py-3 text-[color:var(--dash-faint)]">
-                    <span className="sm:hidden">Code, margin, and quota are admin-managed.</span>
-                    <span className="hidden sm:inline">
-                      Invite code, margin, and quota are managed by admin.
+                      <span className="text-brand-caption mt-0.5 block text-[color:var(--dash-faint)]">
+                        Occasional news about the partner program.
+                      </span>
                     </span>
-                  </p>
-                </section>
-              </div>
-
-              <div className="flex min-w-0 flex-col gap-3 sm:gap-4">
-                <section className="dashboard-surface rounded-2xl p-3.5 sm:p-5 md:p-6">
-                  <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-                    Shortcuts
-                  </p>
-                  <h2 className="font-sans mt-1 text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg">
-                    Partner tools
-                  </h2>
-                  <div className="mt-2.5 space-y-1 sm:mt-3">
-                    {shortcutLinks.map((link) => (
-                      <Link
-                        key={link.href}
-                        href={link.href}
-                        className="dashboard-row group flex min-h-12 items-center gap-2.5 rounded-xl px-2.5 py-2.5 transition sm:gap-3 sm:px-3 sm:py-3"
-                      >
-                        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--dash-soft)] text-[color:var(--dash-muted)] transition group-hover:bg-[#DDE466]/15 group-hover:text-[color:var(--dash-accent)] sm:h-9 sm:w-9">
-                          {link.icon}
-                        </span>
-                        <span className="min-w-0 flex-1">
-                          <span className="text-brand-caption block text-[color:var(--dash-faint)]">
-                            {link.category}
-                          </span>
-                          <span className="font-sans block truncate text-sm font-medium text-[color:var(--dash-text)]">
-                            {link.label}
-                          </span>
-                        </span>
-                        <Icon
-                          icon={ChevronRight}
-                          size={16}
-                          className="shrink-0 text-[color:var(--dash-dim)] transition group-hover:translate-x-0.5"
-                        />
-                      </Link>
-                    ))}
-                  </div>
-                </section>
-              </div>
-            </div>
-          ) : (
-            <>
-              <section className="dashboard-hero relative overflow-hidden rounded-2xl p-3.5 sm:p-5 md:p-6">
-                <div className="flex flex-col gap-3.5 sm:gap-5 lg:flex-row lg:items-end lg:justify-between">
-                  <div className="min-w-0">
-                    <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
-                      Account settings
-                    </p>
-                    <div className="mt-1.5 flex flex-wrap items-end gap-x-2 gap-y-1 sm:mt-2">
-                      <span className="font-sans text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl md:text-[2.25rem] md:leading-none">
-                        Edit profile
-                      </span>
-                      <span className="mb-0.5 inline-flex rounded-full bg-[#DDE466]/25 px-2.5 py-0.5 text-brand-caption font-semibold text-[color:var(--dash-accent)]">
-                        Editing
-                      </span>
-                    </div>
-                    <p className="text-brand-body mt-1.5 text-sm text-[color:var(--dash-muted)] sm:mt-2 sm:text-base">
-                      Update your name, address, photo, and email preferences.
-                    </p>
-                  </div>
-
-                  <div className="hidden w-full grid-cols-2 gap-2 sm:grid sm:w-auto sm:flex-wrap sm:gap-2.5 lg:flex">
+                  </label>
+                  <div className="mt-1 flex flex-col-reverse gap-2 border-t border-[color:var(--dash-surface-border)] pt-4 sm:flex-row sm:items-center sm:justify-end sm:gap-2.5">
                     <button
                       type="button"
-                      onClick={cancelEdit}
-                      className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center rounded-full px-3 text-sm font-medium text-[color:var(--dash-text)] transition sm:px-5"
+                      onClick={resetForm}
+                      disabled={!hasChanges || saving}
+                      className="dashboard-pill-soft font-sans inline-flex min-h-11 w-full items-center justify-center rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50 sm:min-h-10 sm:w-auto"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      form="affiliate-profile-edit-form"
                       disabled={saving || !hasChanges}
-                      className="font-sans inline-flex min-h-10 items-center justify-center rounded-full bg-[#DDE466] px-3 text-sm font-medium text-[#152744] transition hover:brightness-105 disabled:pointer-events-none disabled:opacity-60 sm:px-5"
+                      className="dashboard-navy-btn font-sans inline-flex min-h-11 w-full items-center justify-center rounded-full px-6 text-sm font-medium tracking-[0.01em] text-white transition disabled:pointer-events-none disabled:opacity-60 sm:min-h-10 sm:w-auto sm:min-w-[10rem]"
                     >
                       {saving ? "Saving…" : "Save changes"}
                     </button>
                   </div>
-                </div>
+                </form>
               </section>
-
-              <div className="grid w-full min-w-0 items-start gap-3 sm:gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.25fr)]">
-                <div className="order-2 flex min-w-0 flex-col gap-3 sm:gap-4 lg:order-1">
-                  <section className="dashboard-surface rounded-2xl p-3.5 sm:p-5 md:p-6">
-                    <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-                      Profile photo
-                    </p>
-                    <h2 className="font-sans mt-1 text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg">
-                      Avatar
-                    </h2>
-                    <div className="mt-3 flex flex-col items-center gap-3 sm:mt-4 sm:flex-row sm:items-center sm:gap-4">
-                      <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] font-sans text-base font-bold text-[color:var(--dash-text)] sm:h-20 sm:w-20 sm:text-lg">
-                        {avatarSrc ? (
-                          // eslint-disable-next-line @next/next/no-img-element
-                          <img src={avatarSrc} alt="" className="h-full w-full object-cover" />
-                        ) : (
-                          affiliateInitials(profile)
-                        )}
-                      </span>
-                      <div className="min-w-0 w-full flex-1 text-center sm:text-left">
-                        <p className="text-brand-body break-all text-sm text-[color:var(--dash-muted)] sm:truncate sm:break-normal">
-                          {profile?.email}
-                        </p>
-                        <p className="text-brand-caption mt-1 text-[color:var(--dash-faint)]">
-                          JPEG, PNG, or WebP up to 5MB
-                        </p>
-                        <div className="mt-3 flex w-full flex-col gap-2 sm:flex-row sm:flex-wrap">
-                          <input
-                            ref={fileInputRef}
-                            type="file"
-                            accept="image/png,image/jpeg,image/webp"
-                            className="sr-only"
-                            onChange={(event) => onPickPhoto(event.target.files?.[0] ?? null)}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => fileInputRef.current?.click()}
-                            className="dashboard-pill-soft font-sans inline-flex min-h-11 w-full items-center justify-center rounded-full px-4 text-sm font-medium text-[color:var(--dash-text)] transition sm:min-h-10 sm:w-auto"
-                          >
-                            Change photo
-                          </button>
-                          {profilePicFile ? (
-                            <button
-                              type="button"
-                              onClick={() => {
-                                onPickPhoto(null);
-                                if (fileInputRef.current) fileInputRef.current.value = "";
-                              }}
-                              className="text-brand-body inline-flex min-h-10 items-center justify-center text-sm font-medium text-[color:var(--dash-faint)] transition hover:text-[color:var(--dash-text)]"
-                            >
-                              Remove
-                            </button>
-                          ) : null}
-                        </div>
-                      </div>
-                    </div>
-                  </section>
-                </div>
-
-                <section className="dashboard-surface order-1 min-w-0 rounded-2xl p-3.5 sm:p-5 md:p-6 lg:order-2">
-                  <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-                    Profile details
-                  </p>
-                  <h2 className="font-sans mt-1 text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg md:text-xl">
-                    Personal information
-                  </h2>
-
-                  <form
-                    id="affiliate-profile-edit-form"
-                    className="mt-4 grid gap-3 sm:mt-5 sm:gap-4"
-                    onSubmit={handleSubmit}
-                  >
-                    <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
-                      <DashField
-                        id="first_name"
-                        label="First name"
-                        value={form.first_name}
-                        onChange={(value) => setForm((prev) => ({ ...prev, first_name: value }))}
-                        autoComplete="given-name"
-                        required
-                      />
-                      <DashField
-                        id="last_name"
-                        label="Last name"
-                        value={form.last_name}
-                        onChange={(value) => setForm((prev) => ({ ...prev, last_name: value }))}
-                        autoComplete="family-name"
-                        required
-                      />
-                    </div>
-
-                    <DashField
-                      id="line1"
-                      label="Address line 1"
-                      value={form.line1}
-                      onChange={(value) => setForm((prev) => ({ ...prev, line1: value }))}
-                      placeholder="Street address"
-                      autoComplete="address-line1"
-                    />
-                    <DashField
-                      id="line2"
-                      label="Address line 2"
-                      value={form.line2}
-                      onChange={(value) => setForm((prev) => ({ ...prev, line2: value }))}
-                      placeholder="Apt, suite, unit"
-                      autoComplete="address-line2"
-                    />
-
-                    <div className="grid gap-3 sm:grid-cols-2 sm:gap-4 md:grid-cols-3">
-                      <DashField
-                        id="city"
-                        label="City"
-                        value={form.city}
-                        onChange={(value) => setForm((prev) => ({ ...prev, city: value }))}
-                        autoComplete="address-level2"
-                      />
-                      <DashField
-                        id="state"
-                        label="State"
-                        value={form.state}
-                        onChange={(value) => setForm((prev) => ({ ...prev, state: value }))}
-                        autoComplete="address-level1"
-                      />
-                      <DashField
-                        id="postal_code"
-                        label="Postal code"
-                        value={form.postal_code}
-                        onChange={(value) => setForm((prev) => ({ ...prev, postal_code: value }))}
-                        autoComplete="postal-code"
-                      />
-                    </div>
-
-                    <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] px-3 py-3 sm:px-3.5">
-                      <input
-                        type="checkbox"
-                        checked={form.marketing_pref}
-                        onChange={(event) =>
-                          setForm((prev) => ({ ...prev, marketing_pref: event.target.checked }))
-                        }
-                        className="mt-0.5 h-4 w-4 shrink-0 rounded border-[color:var(--dash-dim)] accent-[#DDE466]"
-                      />
-                      <span className="min-w-0">
-                        <span className="font-sans block text-sm font-medium text-[color:var(--dash-text)]">
-                          Email me product updates
-                        </span>
-                        <span className="text-brand-caption mt-0.5 block text-[color:var(--dash-faint)]">
-                          Occasional news about the platform.
-                        </span>
-                      </span>
-                    </label>
-
-                    <div className="mt-1 flex flex-col-reverse gap-2 border-t border-[color:var(--dash-surface-border)] pt-4 sm:flex-row sm:items-center sm:justify-between">
-                      <button
-                        type="button"
-                        onClick={cancelEdit}
-                        className="dashboard-pill-soft font-sans inline-flex min-h-11 w-full items-center justify-center rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] transition sm:w-auto"
-                      >
-                        Cancel
-                      </button>
-                      <button
-                        type="submit"
-                        disabled={saving || !hasChanges}
-                        className="font-sans inline-flex min-h-11 w-full items-center justify-center rounded-full bg-[#DDE466] px-6 text-sm font-medium text-[#152744] transition hover:brightness-105 disabled:pointer-events-none disabled:opacity-60 sm:w-auto sm:min-w-[10rem]"
-                      >
-                        {saving ? "Saving…" : "Save changes"}
-                      </button>
-                    </div>
-                  </form>
-                </section>
-              </div>
-            </>
-          )}
+            )}
+          </div>
         </div>
       </div>
     </PortalShell>

@@ -9,6 +9,7 @@ import type {
   Plan,
   PlanType,
   PaymentCard,
+  StudentCommerce,
 } from "@/lib/integrate/provider/student/payment/types";
 
 export type { CardCreatePayload, CardUpdatePayload, Membership, Order, Plan, PlanType, PaymentCard };
@@ -136,7 +137,7 @@ export function purchasePlan(plan_type: PlanType, payment_method_id?: string) {
     }
     // Clear every cached orders page (dashboard uses limit=4, orders page uses others).
     for (const key of [...paymentMemoryCache.keys()]) {
-      if (key.includes(":orders:")) {
+      if (key.includes(":orders:") || key.includes(":commerce")) {
         paymentMemoryCache.delete(key);
         deleteSessionCache(key);
       }
@@ -149,6 +150,14 @@ export function getCurrentMembership(signal?: AbortSignal) {
   return cachedPaymentRequest<{ membership: Membership | null }>(
     cacheKey("membership-current"),
     "/api/payment/membership/current",
+    signal,
+  );
+}
+
+export function getStudentCommerce(signal?: AbortSignal) {
+  return cachedPaymentRequest<StudentCommerce>(
+    cacheKey("commerce"),
+    "/api/payment/commerce",
     signal,
   );
 }

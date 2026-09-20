@@ -10,12 +10,12 @@ export function HeroHeadline() {
   const { headlineLines, body, primaryCta, secondaryCta } = heroContent;
 
   return (
-    <div className="relative w-full md:ml-auto md:text-left">
+    <div className="relative w-full min-w-0 lg:ml-auto lg:text-left">
       <FadeIn className="relative text-left" stagger={0.14} y={40}>
         <div className="hero-reveal">
           <h1 className={heroTypography.headline}>
-            <span className="block md:whitespace-nowrap">{headlineLines[0]}</span>
-            <span className="block md:whitespace-nowrap">{headlineLines[1]}</span>
+            <span className="block lg:whitespace-nowrap">{headlineLines[0]}</span>
+            <span className="block lg:whitespace-nowrap">{headlineLines[1]}</span>
           </h1>
         </div>
 
@@ -23,7 +23,7 @@ export function HeroHeadline() {
           <p className={heroTypography.body}>{body}</p>
         </div>
 
-        <div className="hero-reveal mt-6 flex flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap sm:items-center md:mt-10">
+        <div className="hero-reveal mt-6 flex w-full min-w-0 flex-col gap-3 sm:mt-8 sm:flex-row sm:flex-wrap sm:items-center md:mt-10">
           <HeroButton
             href={primaryCta.href}
             variant="primary"

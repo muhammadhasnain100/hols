@@ -1,10 +1,18 @@
 """Health route service — liveness and test endpoints."""
 
 
-def get_health() -> dict[str, str]:
+from config import settings
+
+
+def get_health() -> dict[str, str | bool]:
+    development = settings.is_development()
     return {
         "status": "ok",
         "message": "HOLS API is running",
+        "environment": settings.environment_name(),
+        "otp_required": not development,
+        "payment_required": True,
+        "payment_gateway_bypass": development,
     }
 
 

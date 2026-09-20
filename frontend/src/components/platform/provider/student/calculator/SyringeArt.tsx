@@ -151,20 +151,19 @@ export function SyringeArt({
           <stop offset="50%" stopColor="#ffffff" />
           <stop offset="100%" stopColor="#64748b" />
         </linearGradient>
-        {/* Translucent bac-water — pale aqua, reads as water not opaque dye. */}
-        <linearGradient id={liquidGrad} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#f4fbfe" stopOpacity="0.42" />
-          <stop offset="0.28" stopColor="#b9e3f4" stopOpacity="0.5" />
-          <stop offset="0.65" stopColor="#7ec8e6" stopOpacity="0.58" />
-          <stop offset="1" stopColor="#5aaed4" stopOpacity="0.66" />
+        <linearGradient id={liquidGrad} className="calc-syringe-liquid-grad" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stopColor="var(--calc-syringe-water-0)" stopOpacity="0.78" />
+          <stop offset="0.28" stopColor="var(--calc-syringe-water-1)" stopOpacity="0.88" />
+          <stop offset="0.65" stopColor="var(--calc-syringe-water-2)" stopOpacity="0.94" />
+          <stop offset="1" stopColor="var(--calc-syringe-water-3)" stopOpacity="0.98" />
         </linearGradient>
         <linearGradient id={liquidEdge} x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0" stopColor="#3d8eb8" stopOpacity="0.22" />
-          <stop offset="0.45" stopColor="#ffffff" stopOpacity="0.08" />
-          <stop offset="1" stopColor="#2f7aa3" stopOpacity="0.2" />
+          <stop offset="0" stopColor="var(--calc-syringe-water-3)" stopOpacity="0.42" />
+          <stop offset="0.45" stopColor="#ffffff" stopOpacity="0.1" />
+          <stop offset="1" stopColor="var(--calc-syringe-water-2)" stopOpacity="0.38" />
         </linearGradient>
         <linearGradient id={liquidShine} x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0" stopColor="#ffffff" stopOpacity="0.55" />
+          <stop offset="0" stopColor="#ffffff" stopOpacity="0.28" />
           <stop offset="0.45" stopColor="#ffffff" stopOpacity="0" />
         </linearGradient>
         <clipPath id={clipId}>
@@ -182,7 +181,7 @@ export function SyringeArt({
             dy="4"
             stdDeviation="4"
             floodColor="#0f172a"
-            floodOpacity="0.15"
+            floodOpacity="0"
           />
         </filter>
         <radialGradient id={glowId} cx="50%" cy="45%" r="50%">

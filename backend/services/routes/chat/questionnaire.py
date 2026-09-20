@@ -572,11 +572,34 @@ def _confidence_sort_key(peptide: dict, confidence: str) -> float:
     return base
 
 
+def _clean_focus_peptides(
+    names: Optional[List[str]],
+    allowed_names: List[str],
+    *,
+    fallback: Optional[str] = None,
+) -> list[str]:
+    allowed = {name for name in allowed_names if name}
+    cleaned: list[str] = []
+    seen: set[str] = set()
+    for raw in names or []:
+        name = str(raw or "").strip()
+        if not name or name in seen or name not in allowed:
+            continue
+        seen.add(name)
+        cleaned.append(name)
+    if cleaned:
+        return cleaned
+    if fallback and fallback in allowed:
+        return [fallback]
+    return [allowed_names[0]] if allowed_names else []
+
+
 def build_recommendation_board(
     evaluation: dict,
     *,
     confidence: str = "balanced",
     preferred: Optional[str] = None,
+    focus_peptides: Optional[List[str]] = None,
 ) -> dict:
     """
     Deterministic War Room board JSON from evaluation.
@@ -618,6 +641,12 @@ def build_recommendation_board(
         )
 
     top_name = ranked[0]["name"] if ranked else None
+    allowed_names = [item["name"] for item in ranked if item.get("name")]
+    focus = _clean_focus_peptides(
+        focus_peptides,
+        allowed_names,
+        fallback=preferred_name or top_name,
+    )
     goal = evaluation.get("primary_goal") or "this case"
     if safety_status == "blocked":
         reply = "Intake safety blocks prevent a peptide shortlist for this case."
@@ -639,6 +668,7 @@ def build_recommendation_board(
         "secondary_goal": evaluation.get("secondary_goal"),
         "confidence": mode,
         "preferred": preferred_name,
+        "focus_peptides": focus,
         "ranked": ranked,
         "labs": list(evaluation.get("labs") or []),
         "stacks": list(evaluation.get("stacks") or []),

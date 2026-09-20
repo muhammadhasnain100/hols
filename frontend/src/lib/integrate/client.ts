@@ -8,6 +8,10 @@ import {
 const API_BASE_URL =
   process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, "") ?? "http://localhost:8000";
 
+export function getApiBaseUrl() {
+  return API_BASE_URL;
+}
+
 export type ApiSuccess<T> = {
   status: true;
   response: T;
@@ -49,8 +53,23 @@ function readAccessToken(): string | null {
 }
 
 function forceLogout() {
+  const refreshToken = getRefreshToken();
+  const accessToken = readAccessToken();
   clearAuthSession();
   notifyAuthLogout();
+  logoutOnServer(refreshToken, accessToken);
+}
+
+export function logoutOnServer(refreshToken: string | null, accessToken: string | null) {
+  if (typeof window === "undefined") return;
+  if (!refreshToken && !accessToken) return;
+  const headers: Record<string, string> = { "Content-Type": "application/json" };
+  if (accessToken) headers.Authorization = `Bearer ${accessToken}`;
+  void fetch(`${API_BASE_URL}/api/auth/logout`, {
+    method: "POST",
+    headers,
+    body: JSON.stringify(refreshToken ? { refresh_token: refreshToken } : {}),
+  }).catch(() => undefined);
 }
 
 async function refreshAccessToken(): Promise<string | null> {

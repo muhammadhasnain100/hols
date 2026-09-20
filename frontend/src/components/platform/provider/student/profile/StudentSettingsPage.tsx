@@ -118,8 +118,8 @@ export function StudentSettingsPage({ section }: { section: SettingsSection }) {
       brandBackdrop
       nav={studentNav}
     >
-      <div className="dashboard-screen lectures-page min-w-0 overflow-x-hidden">
-        <header className="mb-2 flex h-10 min-w-0 items-center gap-2 sm:mb-3 sm:h-12 sm:gap-3 md:gap-4">
+      <div className="dashboard-screen lectures-page profile-page min-w-0 overflow-x-hidden">
+        <header className="mb-2 flex min-h-10 min-w-0 items-center gap-2 sm:mb-3 sm:min-h-12 sm:gap-3 md:gap-4">
           <button
             type="button"
             aria-label="Open sidebar"
@@ -129,7 +129,7 @@ export function StudentSettingsPage({ section }: { section: SettingsSection }) {
             <Icon icon={Menu} size={18} />
           </button>
 
-          <h1 className="font-sans min-w-0 truncate text-xl font-bold leading-none tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl">
+          <h1 className="font-sans min-w-0 truncate text-lg font-bold leading-none tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl md:text-2xl">
             Settings
           </h1>
         </header>
@@ -172,7 +172,7 @@ export function StudentSettingsPage({ section }: { section: SettingsSection }) {
                   type="button"
                   onClick={() => fileInputRef.current?.click()}
                   disabled={uploadingPhoto || !profile}
-                  className="text-brand-caption mt-3 font-medium text-[color:var(--dash-muted)] transition hover:text-[color:var(--dash-text)] disabled:opacity-60"
+                  className="dashboard-pill-soft font-sans mt-3 inline-flex min-h-11 items-center justify-center rounded-full px-4 text-sm font-medium text-[color:var(--dash-text)] transition disabled:opacity-60 sm:min-h-10"
                 >
                   {uploadingPhoto ? "Uploading…" : "Change photo"}
                 </button>
@@ -190,7 +190,7 @@ export function StudentSettingsPage({ section }: { section: SettingsSection }) {
 
               <nav
                 aria-label="Settings sections"
-                className="flex max-w-full gap-1.5 overflow-x-auto overscroll-x-contain pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] lg:hidden [&::-webkit-scrollbar]:hidden"
+                className="grid grid-cols-3 gap-1.5 lg:hidden"
               >
                 {SETTINGS_NAV.map((item) => {
                   const active = item.id === section;
@@ -199,7 +199,7 @@ export function StudentSettingsPage({ section }: { section: SettingsSection }) {
                       key={item.href}
                       href={item.href}
                       className={cn(
-                        "portal-nav-item font-sans inline-flex min-h-10 shrink-0 flex-1 items-center justify-center gap-1.5 rounded-2xl px-3 text-xs font-medium tracking-[0.005em] sm:px-4 sm:text-sm",
+                        "portal-nav-item font-sans inline-flex min-h-11 min-w-0 items-center justify-center gap-1 rounded-2xl px-1.5 text-xs font-medium tracking-[0.005em] sm:min-h-10 sm:gap-1.5 sm:px-3 sm:text-sm",
                         active && "is-active",
                       )}
                       aria-current={active ? "page" : undefined}
@@ -208,9 +208,9 @@ export function StudentSettingsPage({ section }: { section: SettingsSection }) {
                         name={item.icon}
                         size={15}
                         strokeWidth={1.9}
-                        className={cn("portal-nav-icon", !active && "text-[color:var(--dash-muted)]")}
+                        className={cn("portal-nav-icon shrink-0", !active && "text-[color:var(--dash-muted)]")}
                       />
-                      {item.shortLabel}
+                      <span className="truncate">{item.shortLabel}</span>
                     </Link>
                   );
                 })}

@@ -17,12 +17,14 @@ import {
   preloadLectureCoverSrcs,
   preloadSharedLectureCoverAssets,
 } from "@/components/platform/provider/student/lectures/lectureCoverCache";
+import { MembershipLockedButton } from "@/components/platform/provider/student/membership/MembershipGate";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
   listCourses,
   type CourseSummary,
   type PaginationMeta,
 } from "@/lib/integrate/provider/student/lectures";
+import { useStudentMembershipAccess } from "@/lib/integrate/provider/student/payment/membershipAccess";
 import { scrollAppToTopSoon } from "@/lib/scroll-to-top";
 import { cn } from "@/lib/utils";
 
@@ -64,6 +66,7 @@ export function StudentLecturesPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [pagination, setPagination] = useState<PaginationMeta | null>(null);
+  const membershipAccess = useStudentMembershipAccess();
 
   const trimmedSearch = searchQuery.trim();
   const isSearching = trimmedSearch.length > 0;
@@ -163,7 +166,13 @@ export function StudentLecturesPage() {
       ) : (
         <div className="lecture-course-grid grid w-full min-w-0 max-w-full grid-cols-1 gap-4 min-[420px]:grid-cols-2 sm:gap-5 lg:grid-cols-3">
           {visibleCourses.map((course, index) => (
-            <CourseCard key={course.course_id} course={course} index={index} />
+            <CourseCard
+              key={course.course_id}
+              course={course}
+              index={index}
+              locked={membershipAccess.locked}
+              openable={membershipAccess.ready && membershipAccess.unlocked}
+            />
           ))}
         </div>
       )}
@@ -218,8 +227,8 @@ function PagerButton({
 }) {
   const className =
     variant === "next"
-      ? "lesson-next-cta dashboard-navy-btn font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white transition disabled:pointer-events-none disabled:opacity-50 disabled:hover:brightness-100 sm:w-auto"
-      : "lesson-prev-cta dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50 sm:w-auto";
+      ? "lesson-next-cta dashboard-navy-btn font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white transition disabled:pointer-events-none disabled:opacity-50 disabled:hover:brightness-100 sm:min-h-10 sm:w-auto"
+      : "lesson-prev-cta dashboard-pill-soft font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50 sm:min-h-10 sm:w-auto";
 
   return (
     <button type="button" disabled={disabled} onClick={onClick} className={className}>
@@ -258,36 +267,81 @@ function CourseCardSkeleton({ index }: { index: number }) {
   );
 }
 
-function CourseCard({ course, index }: { course: CourseSummary; index: number }) {
+function CourseCard({
+  course,
+  index,
+  locked,
+  openable,
+}: {
+  course: CourseSummary;
+  index: number;
+  locked: boolean;
+  openable: boolean;
+}) {
   // Keep theme subscription so dark/light card chrome stays in sync.
   const serverTheme = useServerPortalTheme();
   useSyncExternalStore(subscribePortalTheme, getPortalThemeSnapshot, () => serverTheme);
 
-  return (
-    <Link
-      href={`/student/lectures/${course.course_id}`}
-      style={{ animationDelay: `${Math.min(index, 11) * 45}ms` }}
-      className={cn(
-        "lecture-course-card group relative flex h-full w-full min-h-0 min-w-0 max-w-full flex-col overflow-hidden rounded-2xl",
-      )}
-    >
-      <div className="lecture-course-card-media relative z-[1] aspect-[5/4] w-full shrink-0 overflow-hidden">
-        <span className="lecture-course-card-shine pointer-events-none absolute inset-0 z-[3]" aria-hidden />
-        <span className="lecture-course-card-sweep pointer-events-none absolute inset-0 z-[3]" aria-hidden />
-        <span className="lecture-course-card-spotlight pointer-events-none absolute inset-0 z-[3]" aria-hidden />
-        <CourseCoverArt courseId={course.course_id} title={course.title} variant="card" />
-      </div>
+  const cardClassName = cn(
+    "lecture-course-card group relative flex h-full w-full min-h-0 min-w-0 max-w-full flex-col overflow-hidden rounded-2xl",
+  );
+  const cardStyle = { animationDelay: `${Math.min(index, 11) * 45}ms` };
 
+  const media = (
+    <div className="lecture-course-card-media relative z-[1] aspect-[5/4] w-full shrink-0 overflow-hidden">
+      <span className="lecture-course-card-shine pointer-events-none absolute inset-0 z-[3]" aria-hidden />
+      <span className="lecture-course-card-sweep pointer-events-none absolute inset-0 z-[3]" aria-hidden />
+      <span className="lecture-course-card-spotlight pointer-events-none absolute inset-0 z-[3]" aria-hidden />
+      <CourseCoverArt courseId={course.course_id} title={course.title} variant="card" />
+    </div>
+  );
+
+  const stats = (
+    <div className="lecture-course-stats">
+      <StatColumn label="Topics" value={course.topic_count} />
+      <StatColumn label="Sections" value={course.section_count} />
+      <StatColumn label="Lectures" value={course.lesson_count} />
+    </div>
+  );
+
+  if (locked) {
+    return (
+      <div style={cardStyle} className={cardClassName}>
+        {media}
+        <div className="lecture-course-card-glass relative z-[2] flex shrink-0 flex-col px-4 pt-3 pb-4">
+          <h2 className="lecture-course-card-title font-sans">{tidyCoverTitle(course.title)}</h2>
+          {stats}
+          <MembershipLockedButton className="lecture-course-card-cta mt-2.5 w-full">
+            Learn more
+          </MembershipLockedButton>
+        </div>
+      </div>
+    );
+  }
+
+  if (!openable) {
+    return (
+      <div style={cardStyle} className={cardClassName} aria-busy="true">
+        {media}
+        <div className="lecture-course-card-glass relative z-[2] flex shrink-0 flex-col px-4 pt-3 pb-4">
+          <h2 className="lecture-course-card-title font-sans">{tidyCoverTitle(course.title)}</h2>
+          {stats}
+          <span className="dashboard-navy-btn lecture-course-card-cta font-sans mt-2.5 inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white sm:min-h-10">
+            Learn more
+            <SidebarSvgIcon name="next" size={15} />
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <Link href={`/student/lectures/${course.course_id}`} style={cardStyle} className={cardClassName}>
+      {media}
       <div className="lecture-course-card-glass relative z-[2] flex shrink-0 flex-col px-4 pt-3 pb-4">
         <h2 className="lecture-course-card-title font-sans">{tidyCoverTitle(course.title)}</h2>
-
-        <div className="lecture-course-stats">
-          <StatColumn label="Topics" value={course.topic_count} />
-          <StatColumn label="Sections" value={course.section_count} />
-          <StatColumn label="Lectures" value={course.lesson_count} />
-        </div>
-
-        <span className="dashboard-navy-btn lecture-course-card-cta font-sans mt-2.5 inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white">
+        {stats}
+        <span className="dashboard-navy-btn lecture-course-card-cta font-sans mt-2.5 inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white sm:min-h-10">
           Learn more
           <SidebarSvgIcon
             name="next"

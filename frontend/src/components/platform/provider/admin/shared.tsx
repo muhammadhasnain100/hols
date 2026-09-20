@@ -1,34 +1,47 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useId, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useId, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { createPortal } from "react-dom";
-import { Check, ChevronDown, Icon, Search, X } from "@/components/icons";
+import { Check, ChevronDown, Icon } from "@/components/icons";
+import { SidebarSvgIcon } from "@/components/platform/provider/sidebar-icons";
 import { cn } from "@/lib/utils";
 
 type PaginationControlsProps = {
   page: number;
+  pageCount?: number;
   hasNext: boolean;
   hasPrevious: boolean;
   total: number;
   loading?: boolean;
+  compact?: boolean;
   onPrevious: () => void;
   onNext: () => void;
 };
 
 export function PaginationControls({
   page,
+  pageCount,
   hasNext,
   hasPrevious,
   total,
   loading,
+  compact,
   onPrevious,
   onNext,
 }: PaginationControlsProps) {
   return (
-    <div className="mt-5 flex flex-col gap-3 border-t border-[color:var(--dash-surface-border)] pt-4 sm:flex-row sm:items-center sm:justify-between">
+    <div
+      className={cn(
+        "flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between",
+        compact
+          ? "pt-1"
+          : "mt-5 border-t border-[color:var(--dash-surface-border)] pt-4",
+      )}
+    >
       <p className="text-brand-caption text-[color:var(--dash-faint)]">
         {total} total · Page {page}
+        {pageCount ? ` of ${pageCount}` : ""}
       </p>
       <div className="grid grid-cols-2 gap-2 sm:flex sm:items-center">
         <button
@@ -48,6 +61,82 @@ export function PaginationControls({
           Next
         </button>
       </div>
+    </div>
+  );
+}
+
+export function DirectoryNativeSelect({
+  id,
+  label,
+  value,
+  onChange,
+  options,
+  className,
+}: {
+  id: string;
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  options: Array<{ value: string; label: string }>;
+  className?: string;
+}) {
+  return (
+    <div className={cn("min-w-0 w-full flex-1 sm:w-[9.75rem] sm:flex-none sm:shrink-0", className)}>
+      <label htmlFor={id} className="sr-only">
+        {label}
+      </label>
+      <select
+        id={id}
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        className="dashboard-field dashboard-field-select dashboard-toolbar-field"
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  );
+}
+
+export function DirectoryFilterPills<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  value: T;
+  options: Array<{ id: T; label: string }>;
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div
+      className="flex w-full min-w-0 shrink-0 flex-wrap gap-1 rounded-full bg-[color:var(--dash-surface)] p-1 sm:w-auto"
+      role="group"
+      aria-label={label}
+    >
+      {options.map((item) => {
+        const active = item.id === value;
+        return (
+          <button
+            key={item.id}
+            type="button"
+            aria-pressed={active}
+            onClick={() => onChange(item.id)}
+            className={cn(
+              "font-sans inline-flex min-h-11 flex-1 items-center justify-center rounded-full px-3 text-sm font-medium tracking-[0.01em] transition sm:min-h-10 sm:flex-none sm:px-4",
+              active
+                ? "dashboard-navy-btn text-white"
+                : "text-[color:var(--dash-muted)] hover:text-[color:var(--dash-text)]",
+            )}
+          >
+            {item.label}
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -300,16 +389,23 @@ export function DirectorySearchBar({
   onChange,
   placeholder,
   label = "Search directory",
+  className,
 }: {
   value: string;
   onChange: (value: string) => void;
   placeholder: string;
   label?: string;
+  className?: string;
 }) {
   return (
-    <label className="hols-hover-border relative mt-4 flex min-h-11 w-full items-center gap-2 rounded-full border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)]/55 px-3.5 transition-[border-color] sm:mt-5">
-      <span className="shrink-0 text-[color:var(--dash-faint)]" aria-hidden>
-        <Icon icon={Search} size={17} strokeWidth={1.9} />
+    <label
+      className={cn(
+        "lecture-library-search lecture-library-search--toolbar",
+        className ?? "mt-4 sm:mt-5",
+      )}
+    >
+      <span className="lecture-library-search-icon" aria-hidden>
+        <SidebarSvgIcon name="search" size={18} />
       </span>
       <input
         type="search"
@@ -317,19 +413,97 @@ export function DirectorySearchBar({
         onChange={(event) => onChange(event.target.value)}
         placeholder={placeholder}
         aria-label={label}
-        className="font-sans min-w-0 flex-1 bg-transparent py-2.5 text-sm text-[color:var(--dash-text)] outline-none placeholder:text-[color:var(--dash-faint)]"
+        className="hols-plain-control lecture-library-search-input"
       />
       {value ? (
         <button
           type="button"
           onClick={() => onChange("")}
-          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[color:var(--dash-faint)] transition hover:bg-[color:var(--dash-soft)] hover:text-[color:var(--dash-text)]"
+          className="lecture-library-search-clear"
           aria-label="Clear search"
         >
-          <Icon icon={X} size={14} strokeWidth={2} />
+          <SidebarSvgIcon name="cross" size={14} />
         </button>
       ) : null}
     </label>
+  );
+}
+
+export function DirectoryMobileRow({
+  title,
+  subtitle,
+  avatar,
+  active,
+  onClick,
+  ariaLabel,
+  stats,
+  wrapSubtitle = false,
+}: {
+  title: string;
+  subtitle?: string;
+  avatar?: string;
+  active?: boolean;
+  onClick: () => void;
+  ariaLabel: string;
+  stats: Array<{ label: string; value: ReactNode }>;
+  wrapSubtitle?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={ariaLabel}
+      onClick={onClick}
+      className={cn(
+        "flex w-full min-w-0 flex-col gap-3.5 overflow-hidden rounded-2xl bg-[color:var(--dash-soft)]/80 px-4 py-4 text-left transition",
+        active && "ring-1 ring-[color:var(--dash-surface-border)]",
+      )}
+    >
+      <div className={cn("flex min-w-0 gap-3 overflow-hidden", wrapSubtitle ? "items-start" : "items-center")}>
+        {avatar ? (
+          <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color:var(--dash-surface)] font-sans text-xs font-bold text-[color:var(--dash-text)]">
+            {avatar}
+          </span>
+        ) : null}
+        <span className="min-w-0 flex-1 overflow-hidden">
+          <span className="font-sans block truncate text-sm font-semibold text-[color:var(--dash-text)]">
+            {title}
+          </span>
+          {subtitle ? (
+            <span
+              className={cn(
+                "text-brand-caption mt-0.5 block text-[color:var(--dash-faint)]",
+                wrapSubtitle ? "text-pretty break-words whitespace-normal" : "truncate",
+              )}
+            >
+              {subtitle}
+            </span>
+          ) : null}
+        </span>
+        <span
+          className="inline-flex h-6 w-6 shrink-0 items-center justify-center text-[color:var(--dash-accent)]"
+          aria-hidden
+        >
+          <SidebarSvgIcon name="next" size={18} strokeWidth={2.2} />
+        </span>
+      </div>
+      {stats.length > 0 ? (
+        <dl
+          className={cn(
+            "grid min-w-0 gap-x-3 gap-y-2.5",
+            stats.length === 3 ? "grid-cols-3" : "grid-cols-2",
+          )}
+        >
+          {stats.map((stat) => (
+            <div key={stat.label} className="min-w-0">
+              <dt className="text-brand-caption text-[color:var(--dash-faint)]">{stat.label}</dt>
+              <dd className="font-sans mt-0.5 min-w-0 truncate text-sm font-semibold tabular-nums text-[color:var(--dash-text)]">
+                {stat.value}
+              </dd>
+            </div>
+          ))}
+        </dl>
+      ) : null}
+    </button>
   );
 }
 

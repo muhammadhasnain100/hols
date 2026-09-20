@@ -4,6 +4,7 @@ import { useState } from "react";
 import { AuthShell } from "@/components/platform/auth/AuthShell";
 import { LoginForm } from "@/components/platform/auth/login/login";
 import type { UserRole } from "@/lib/integrate/auth";
+import { useRestoreSessionOnLogin } from "@/lib/integrate/auth/session";
 
 type LoginAuthClientProps = {
   role?: UserRole;
@@ -34,8 +35,13 @@ export function LoginAuthClient({
   role = "student",
   initialMessage,
 }: LoginAuthClientProps) {
+  const restoring = useRestoreSessionOnLogin();
   const [otpStep, setOtpStep] = useState(false);
   const copy = loginCopy[role];
+
+  if (restoring) {
+    return <div className="min-h-svh bg-transparent" aria-hidden />;
+  }
 
   return (
     <AuthShell

@@ -44,6 +44,10 @@ class Settings(BaseSettings):
     jwt_access_token_expire_minutes: int = 30
     jwt_refresh_token_expire_days: int = 7
 
+    # ---- Environment ----
+    # development | production  (development skips OTP and bypasses the payment processor)
+    app_env: str = "development"
+
     # ---- OTP ----
     otp_required_after_seconds: int = 604800
     otp_expire_seconds: int = 600
@@ -66,10 +70,23 @@ class Settings(BaseSettings):
     embed_model: str = "perplexity/pplx-embed-v1-4b"
     embed_batch_size: int = 32
     top_k: int = 3
-    chat_memory_max_tokens: int = 1800
+    chat_memory_max_tokens: int = 4000
     chat_messages_page_size: int = 30
     chat_max_tokens_intake: int = 650
-    chat_max_tokens_followup: int = 220
+    chat_max_tokens_followup: int = 280
+    chat_max_turns: int = 50
+
+    def environment_name(self) -> str:
+        value = (self.app_env or "development").strip().lower()
+        if value in {"prod", "production"}:
+            return "production"
+        return "development"
+
+    def is_development(self) -> bool:
+        return self.environment_name() == "development"
+
+    def is_production(self) -> bool:
+        return self.environment_name() == "production"
 
 
 @lru_cache

@@ -3,6 +3,7 @@ from typing import Any, List, Optional
 from pydantic import BaseModel, Field
 
 from models.common import ApiSuccessResponse
+from models.users import PaginationMeta
 
 
 class Source(BaseModel):
@@ -36,6 +37,7 @@ class FollowUpRequest(BaseModel):
     messages: List[ChatMessage] = Field(default_factory=list)
     question: str = Field(..., min_length=1, max_length=2000)
     top_k: Optional[int] = Field(default=None, ge=1, le=20)
+    focus_peptides: List[str] = Field(default_factory=list, max_length=8)
 
 
 class FollowUpResponse(BaseModel):
@@ -55,6 +57,7 @@ class SaveIntakeRequest(BaseModel):
 class SendMessageRequest(BaseModel):
     question: str = Field(..., min_length=1, max_length=2000)
     top_k: Optional[int] = Field(default=None, ge=1, le=20)
+    focus_peptides: List[str] = Field(default_factory=list, max_length=8)
 
 
 class UpdateBoardRequest(BaseModel):
@@ -70,6 +73,11 @@ class UpdateBoardRequest(BaseModel):
     clear_preferred: bool = Field(
         default=False,
         description="Clear locked preferred peptide",
+    )
+    focus_peptides: Optional[List[str]] = Field(
+        default=None,
+        max_length=8,
+        description="Peptides currently selected to talk about (one or many)",
     )
 
 
@@ -116,6 +124,8 @@ class PatientDetail(BaseModel):
     sources: List[dict[str, Any]] = Field(default_factory=list)
     primary_goal: Optional[str] = None
     message_count: int = 0
+    turns_used: int = 0
+    turns_max: int = 50
     messages: List[StoredChatMessage] = Field(default_factory=list)
     messages_pagination: Optional[ChatMessagesPagination] = None
     created_at: str
@@ -125,6 +135,7 @@ class PatientDetail(BaseModel):
 class PatientListData(BaseModel):
     patients: List[PatientSummary]
     total: int
+    pagination: PaginationMeta
 
 
 class ChatInfoData(BaseModel):
@@ -141,6 +152,7 @@ class AdviserBootstrapData(BaseModel):
     flow: dict[str, Any]
     patients: List[PatientSummary]
     total: int
+    pagination: Optional[PaginationMeta] = None
     active_patient: Optional[PatientDetail] = None
     active_patient_id: Optional[str] = None
 

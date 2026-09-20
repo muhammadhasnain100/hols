@@ -4,6 +4,7 @@ import json
 from typing import Annotated, Any, Optional
 
 from fastapi import APIRouter, BackgroundTasks, Depends, File, Form, HTTPException, UploadFile, status
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
 from core.route_handlers import handle_route_errors
 from database_entities import UserRole
@@ -18,6 +19,9 @@ from models.auth import (
     LoginResponse,
     LoginSuccessData,
     LoginSuccessResponse,
+    LogoutData,
+    LogoutRequest,
+    LogoutResponse,
     OtpSentData,
     OtpSentResponse,
     ProfileAccessMatrixData,
@@ -26,6 +30,8 @@ from models.auth import (
     ProfileResponse,
     ProfileUpdateRequest,
     RefreshTokenRequest,
+    RestoreSessionRequest,
+    RestoreSessionResponse,
     SendOtpRequest,
     SignupData,
     SignupResponse,
@@ -38,6 +44,7 @@ from models.common import success_response
 from services.routes.auth import service as auth_service
 
 router = APIRouter(prefix="/auth", tags=["auth"])
+optional_bearer = HTTPBearer(auto_error=False)
 
 
 async def _schedule_otp_email(background_tasks: BackgroundTasks, result: dict) -> dict:
@@ -197,6 +204,40 @@ async def refresh(body: RefreshTokenRequest) -> TokenResponse:
     """Exchange a valid refresh token for a new access + refresh token pair."""
     result = await auth_service.refresh_access_token(body.refresh_token)
     return success_response(TokenData(**result))
+
+
+@router.post("/restore-session", response_model=RestoreSessionResponse)
+@handle_route_errors("restore session", log_prefix="Auth")
+async def restore_session(
+    body: RestoreSessionRequest,
+    credentials: Annotated[
+        Optional[HTTPAuthorizationCredentials],
+        Depends(optional_bearer),
+    ],
+) -> RestoreSessionResponse:
+    """Restore a stored portal session from the refresh token. Used by login pages in the background."""
+    result = await auth_service.restore_session(
+        refresh_token=body.refresh_token,
+        access_token=credentials.credentials if credentials else None,
+    )
+    return success_response(LoginSuccessData(**result))
+
+
+@router.post("/logout", response_model=LogoutResponse)
+@handle_route_errors("logout", log_prefix="Auth")
+async def logout(
+    credentials: Annotated[
+        Optional[HTTPAuthorizationCredentials],
+        Depends(optional_bearer),
+    ],
+    body: LogoutRequest = LogoutRequest(),
+) -> LogoutResponse:
+    """Revoke refresh tokens for student, admin, and affiliate portals."""
+    result = await auth_service.logout_session(
+        refresh_token=body.refresh_token,
+        access_token=credentials.credentials if credentials else None,
+    )
+    return success_response(LogoutData(**result))
 
 
 @router.get("/profile/access", response_model=ProfileAccessMatrixResponse)

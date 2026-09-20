@@ -27,6 +27,9 @@ export type WebinarRegistration = {
   webinar_title?: string | null;
   starts_at?: string | null;
   join_url?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  email?: string | null;
 };
 
 export type WebinarNotification = {

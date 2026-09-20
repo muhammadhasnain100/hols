@@ -8,19 +8,28 @@ import time
 from decimal import Decimal
 from typing import Any, Optional
 
-from boto3.dynamodb.conditions import Key
+from boto3.dynamodb.conditions import Attr, Key
 from fastapi import HTTPException, status
 
 from core.async_io import run_sync
 from database import get_table
 from database_entities import UserRole
-from services.common.pagination import build_pagination, decode_cursor, encode_cursor, normalize_value
+from services.common.pagination import (
+    build_pagination,
+    consume_query_page,
+    decode_cursor,
+    encode_cursor,
+    exclusive_start_key,
+    normalize_value,
+    resolve_has_next,
+)
 from services.routes.auth.service import get_user_by_id, public_profile, user_role_count_key
-from services.routes.affiliate_portal.service import sum_affiliate_commission
-from services.routes.payment.service import get_membership, sum_student_spend
+from services.routes.finance.service import student_commerce_from_item
+from services.routes.payout.service import get_wallet, wallet_reporting_fields
 
 logger = logging.getLogger(__name__)
 LIST_CACHE_TTL_SECONDS = 10
+LIST_SCAN_CAP = 500
 _list_cache: dict[str, tuple[float, dict[str, Any]]] = {}
 
 
@@ -32,8 +41,20 @@ def clear_user_list_cache() -> None:
     _list_cache.clear()
 
 
-def _cache_key(role: str, page: int, limit: int, cursor: Optional[str]) -> str:
-    return f"{role}:{page}:{limit}:{cursor or ''}"
+def _cache_key(
+    role: str,
+    page: int,
+    limit: int,
+    cursor: Optional[str],
+    *,
+    sort: str = "newest",
+    empty_referrals: bool = False,
+    empty_orders: bool = False,
+) -> str:
+    return (
+        f"{role}:{page}:{limit}:{cursor or ''}:{sort}:"
+        f"ref{int(empty_referrals)}:ord{int(empty_orders)}"
+    )
 
 
 def _get_cached(key: str) -> Optional[dict[str, Any]]:
@@ -73,8 +94,10 @@ async def _collect_page(
     page: int,
     limit: int,
     cursor: Optional[str],
+    newest_first: bool = True,
+    filter_expression: Any = None,
 ) -> tuple[list[dict[str, Any]], bool, Optional[str], Optional[int]]:
-    """Return (items, has_next, next_cursor) for the requested page."""
+    """Return (items, has_next, next_cursor, total_from_complete_query)."""
     if page < 1:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "page must be >= 1")
     if limit < 1 or limit > 100:
@@ -83,43 +106,102 @@ async def _collect_page(
     start_index = (page - 1) * limit
     collected: list[dict[str, Any]] = []
     skipped = 0
-    exclusive_start_key = decode_cursor(cursor) if cursor else None
+    exclusive_start_key_value = decode_cursor(cursor) if cursor else None
     has_next = False
     next_cursor: Optional[str] = None
     total_from_query: Optional[int] = None
 
     query_kwargs: dict[str, Any] = {
         "KeyConditionExpression": Key("PK").eq(_role_index_pk(role)) & Key("SK").begins_with("USER#"),
-        "ScanIndexForward": False,
+        "ScanIndexForward": not newest_first,
     }
-    if exclusive_start_key:
-        query_kwargs["ExclusiveStartKey"] = exclusive_start_key
+    if filter_expression is not None:
+        query_kwargs["FilterExpression"] = filter_expression
+    if exclusive_start_key_value:
+        query_kwargs["ExclusiveStartKey"] = exclusive_start_key_value
 
     while len(collected) < limit:
         def _query(kw=query_kwargs):
             return _table().query(**kw)
 
         response = await run_sync(_query)
+        items = response.get("Items", []) or []
         last_key = response.get("LastEvaluatedKey")
+        seen_before = skipped + len(collected)
         if not last_key:
-            total_from_query = skipped + response.get("Count", 0)
-        for item in response.get("Items", []):
-            if skipped < start_index:
-                skipped += 1
-                continue
-            collected.append(item)
-            if len(collected) == limit:
-                break
+            total_from_query = seen_before + len(items)
 
-        if len(collected) >= limit:
-            has_next = last_key is not None
-            next_cursor = encode_cursor(last_key)
+        skipped, page_full, page_has_next = consume_query_page(
+            items,
+            start_index=start_index,
+            skipped=skipped,
+            collected=collected,
+            limit=limit,
+            last_key=last_key,
+        )
+        if page_full:
+            has_next = page_has_next
+            next_cursor = encode_cursor(exclusive_start_key(collected[-1]))
             break
         if not last_key:
             break
         query_kwargs["ExclusiveStartKey"] = last_key
 
     return collected, has_next, next_cursor, total_from_query
+
+
+async def _list_role_items(
+    role: str,
+    *,
+    newest_first: bool = True,
+    filter_expression: Any = None,
+    max_items: int = LIST_SCAN_CAP,
+) -> list[dict[str, Any]]:
+    items: list[dict[str, Any]] = []
+    query_kwargs: dict[str, Any] = {
+        "KeyConditionExpression": Key("PK").eq(_role_index_pk(role)) & Key("SK").begins_with("USER#"),
+        "ScanIndexForward": not newest_first,
+    }
+    if filter_expression is not None:
+        query_kwargs["FilterExpression"] = filter_expression
+
+    while len(items) < max_items:
+        def _query(kw=dict(query_kwargs)):
+            return _table().query(**kw)
+
+        response = await run_sync(_query)
+        batch = response.get("Items", []) or []
+        items.extend(batch)
+        last_key = response.get("LastEvaluatedKey")
+        if not last_key:
+            break
+        query_kwargs["ExclusiveStartKey"] = last_key
+
+    return items[:max_items]
+
+
+async def _gather_chunked(items: list[dict[str, Any]], mapper, chunk: int = 20):
+    out: list[Any] = []
+    for index in range(0, len(items), chunk):
+        batch = items[index : index + chunk]
+        out.extend(await asyncio.gather(*[mapper(item) for item in batch]))
+    return out
+
+
+def _empty_referrals_filter():
+    return Attr("student_count").not_exists() | Attr("student_count").eq(0)
+
+
+def _empty_orders_filter():
+    return Attr("order_count").not_exists() | Attr("order_count").eq(0)
+
+
+def _slice_page(items: list[Any], *, page: int, limit: int) -> tuple[list[Any], bool, int]:
+    total = len(items)
+    start = (page - 1) * limit
+    page_items = items[start : start + limit]
+    has_next = start + limit < total
+    return page_items, has_next, total
 
 
 def _affiliate_summary(user: dict[str, Any]) -> dict[str, Any]:
@@ -140,6 +222,10 @@ def _affiliate_summary(user: dict[str, Any]) -> dict[str, Any]:
         "invitation_quota": invitation_quota,
         "student_count": student_count or 0,
         "total_earned": 0.0,
+        "lock_amount": 0.0,
+        "available": 0.0,
+        "pending": 0.0,
+        "paid_out": 0.0,
         "admin_earned": 0.0,
         "total_order_amount": 0.0,
         "order_count": 0,
@@ -156,14 +242,10 @@ async def _affiliate_summary_with_earnings(user: dict[str, Any]) -> dict[str, An
     if not summary.get("user_id"):
         return summary
     try:
-        summed = await sum_affiliate_commission(str(summary["user_id"]))
-        summary["total_earned"] = summed["total_earned"]
-        summary["admin_earned"] = summed["admin_earned"]
-        summary["total_order_amount"] = summed["total_order_amount"]
-        summary["order_count"] = summed["order_count"]
-        summary["earnings_currency"] = summed["currency"]
+        wallet = await get_wallet(str(summary["user_id"]))
+        summary.update(wallet_reporting_fields(wallet))
     except Exception:
-        logger.exception("Failed to sum commission for affiliate_id=%s", summary.get("user_id"))
+        logger.exception("Failed to read wallet for affiliate_id=%s", summary.get("user_id"))
     return summary
 
 
@@ -176,6 +258,7 @@ async def _student_summary(user: dict[str, Any]) -> dict[str, Any]:
         if affiliate_user and affiliate_user.get("role") == UserRole.AFFILIATE.value:
             affiliate = _affiliate_summary(affiliate_user)
 
+    commerce = student_commerce_from_item(user, user_id=clean.get("user_id"))
     return {
         "user_id": clean.get("user_id"),
         "email": clean.get("email"),
@@ -184,58 +267,87 @@ async def _student_summary(user: dict[str, Any]) -> dict[str, Any]:
         "marketing_pref": clean.get("marketing_pref", False),
         "referred_by_affiliate_id": affiliate_id,
         "affiliate": affiliate,
-        "total_spent": 0.0,
-        "admin_earned": 0.0,
-        "order_count": 0,
-        "paid_order_count": 0,
-        "spend_currency": "USD",
-        "current_plan": None,
-        "membership_status": None,
-        "last_purchase_at": None,
-        "last_purchase_amount": None,
+        "total_spent": commerce["total_spent"],
+        "admin_earned": commerce["admin_earned"],
+        "affiliate_earned": commerce["affiliate_earned"],
+        "order_count": commerce["order_count"],
+        "paid_order_count": commerce["paid_order_count"],
+        "spend_currency": commerce["currency"],
+        "current_plan": commerce.get("current_plan"),
+        "membership_status": commerce.get("membership_status"),
+        "last_purchase_at": commerce.get("last_purchase_at"),
+        "last_purchase_amount": commerce.get("last_purchase_amount"),
         "created_at": clean.get("created_at"),
     }
 
 
 async def _student_summary_with_spend(user: dict[str, Any]) -> dict[str, Any]:
-    summary = await _student_summary(user)
-    user_id = summary.get("user_id")
-    if not user_id:
-        return summary
-    try:
-        spend, membership = await asyncio.gather(
-            sum_student_spend(str(user_id)),
-            get_membership(str(user_id)),
-        )
-        summary["total_spent"] = spend["total_spent"]
-        summary["admin_earned"] = spend["admin_earned"]
-        summary["order_count"] = spend["order_count"]
-        summary["paid_order_count"] = spend["paid_order_count"]
-        summary["spend_currency"] = spend["currency"]
-        summary["last_purchase_at"] = spend["last_purchase_at"]
-        summary["last_purchase_amount"] = spend["last_purchase_amount"]
-        if membership:
-            summary["current_plan"] = membership.get("plan_type")
-            summary["membership_status"] = membership.get("status")
-    except Exception:
-        logger.exception("Failed to sum spend for student_id=%s", user_id)
-    return summary
+    return await _student_summary(user)
 
 
-async def list_affiliates(page: int = 1, limit: int = 20, cursor: Optional[str] = None) -> dict[str, Any]:
-    key = _cache_key(UserRole.AFFILIATE.value, page, limit, cursor)
+async def list_affiliates(
+    page: int = 1,
+    limit: int = 20,
+    cursor: Optional[str] = None,
+    *,
+    sort: str = "newest",
+    empty_referrals: bool = False,
+) -> dict[str, Any]:
+    newest_first = sort != "oldest"
+    key = _cache_key(
+        UserRole.AFFILIATE.value,
+        page,
+        limit,
+        cursor,
+        sort=sort,
+        empty_referrals=empty_referrals,
+    )
     if cached := _get_cached(key):
         return cached
 
-    items, has_next, next_cursor, total_from_query = await _collect_page(
+    if empty_referrals:
+        raw_items = await _list_role_items(
+            UserRole.AFFILIATE.value,
+            newest_first=newest_first,
+            filter_expression=_empty_referrals_filter(),
+        )
+        summaries = await _gather_chunked(raw_items, _affiliate_summary_with_earnings)
+        matching = [item for item in summaries if int(item.get("student_count") or 0) == 0]
+        page_items, has_next, total = _slice_page(matching, page=page, limit=limit)
+        logger.info(
+            "Listed affiliates page=%s limit=%s count=%s empty_referrals=1 sort=%s",
+            page,
+            limit,
+            len(page_items),
+            sort,
+        )
+        return _set_cached(key, {
+            "items": list(page_items),
+            "pagination": build_pagination(
+                page=page,
+                limit=limit,
+                total=total,
+                has_next=has_next,
+            ),
+        })
+
+    items, dynamo_has_next, next_cursor, total_from_query = await _collect_page(
         role=UserRole.AFFILIATE.value,
         page=page,
         limit=limit,
         cursor=cursor,
+        newest_first=newest_first,
     )
     total = total_from_query if total_from_query is not None else await _count_by_role(UserRole.AFFILIATE.value)
+    has_next = resolve_has_next(
+        page=page,
+        limit=limit,
+        total=total,
+        collected=len(items),
+        dynamo_has_next=dynamo_has_next,
+    )
     summaries = await asyncio.gather(*[_affiliate_summary_with_earnings(item) for item in items])
-    logger.info("Listed affiliates page=%s limit=%s count=%s", page, limit, len(items))
+    logger.info("Listed affiliates page=%s limit=%s count=%s sort=%s", page, limit, len(items), sort)
     return _set_cached(key, {
         "items": list(summaries),
         "pagination": build_pagination(
@@ -248,20 +360,69 @@ async def list_affiliates(page: int = 1, limit: int = 20, cursor: Optional[str] 
     })
 
 
-async def list_students(page: int = 1, limit: int = 20, cursor: Optional[str] = None) -> dict[str, Any]:
-    key = _cache_key(UserRole.STUDENT.value, page, limit, cursor)
+async def list_students(
+    page: int = 1,
+    limit: int = 20,
+    cursor: Optional[str] = None,
+    *,
+    sort: str = "newest",
+    empty_orders: bool = False,
+) -> dict[str, Any]:
+    newest_first = sort != "oldest"
+    key = _cache_key(
+        UserRole.STUDENT.value,
+        page,
+        limit,
+        cursor,
+        sort=sort,
+        empty_orders=empty_orders,
+    )
     if cached := _get_cached(key):
         return cached
 
-    items, has_next, next_cursor, total_from_query = await _collect_page(
+    if empty_orders:
+        raw_items = await _list_role_items(
+            UserRole.STUDENT.value,
+            newest_first=newest_first,
+            filter_expression=_empty_orders_filter(),
+        )
+        summaries = await _gather_chunked(raw_items, _student_summary_with_spend)
+        matching = [item for item in summaries if int(item.get("order_count") or 0) == 0]
+        page_items, has_next, total = _slice_page(matching, page=page, limit=limit)
+        logger.info(
+            "Listed students page=%s limit=%s count=%s empty_orders=1 sort=%s",
+            page,
+            limit,
+            len(page_items),
+            sort,
+        )
+        return _set_cached(key, {
+            "items": list(page_items),
+            "pagination": build_pagination(
+                page=page,
+                limit=limit,
+                total=total,
+                has_next=has_next,
+            ),
+        })
+
+    items, dynamo_has_next, next_cursor, total_from_query = await _collect_page(
         role=UserRole.STUDENT.value,
         page=page,
         limit=limit,
         cursor=cursor,
+        newest_first=newest_first,
     )
     total = total_from_query if total_from_query is not None else await _count_by_role(UserRole.STUDENT.value)
+    has_next = resolve_has_next(
+        page=page,
+        limit=limit,
+        total=total,
+        collected=len(items),
+        dynamo_has_next=dynamo_has_next,
+    )
     summaries = await asyncio.gather(*[_student_summary_with_spend(item) for item in items])
-    logger.info("Listed students page=%s limit=%s count=%s", page, limit, len(items))
+    logger.info("Listed students page=%s limit=%s count=%s sort=%s", page, limit, len(items), sort)
     return _set_cached(key, {
         "items": list(summaries),
         "pagination": build_pagination(

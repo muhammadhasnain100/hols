@@ -161,6 +161,17 @@ async def submit_lesson_quiz(
         score_percent,
         passed,
     )
+    try:
+        from services.notification import events as notify_events
+
+        notify_events.student_quiz_submitted(
+            user_id=user_id,
+            lesson_title=str(result.lesson_title or "Lesson"),
+            score_percent=score_percent,
+            passed=passed,
+        )
+    except Exception:
+        logger.exception("Failed to queue quiz notification user=%s lesson=%s", user_id, lesson_id)
     return _result_payload(result)
 
 

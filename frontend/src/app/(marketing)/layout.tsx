@@ -8,7 +8,7 @@ export default function MarketingLayout({
 }) {
   return (
     <SmoothScrollProvider>
-      <main className="flex-1">{children}</main>
+      <main className="min-w-0 flex-1 overflow-x-clip">{children}</main>
       <Footer />
     </SmoothScrollProvider>
   );

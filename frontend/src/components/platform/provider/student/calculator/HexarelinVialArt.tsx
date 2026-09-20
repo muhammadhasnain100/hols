@@ -193,13 +193,13 @@ export function HexarelinVialArt({
             </>
           ) : (
             <>
-              <stop offset="0" stopColor="#88919b" stopOpacity=".48" />
-              <stop offset=".08" stopColor="#ffffff" stopOpacity=".8" />
-              <stop offset=".22" stopColor="#d8dde1" stopOpacity=".26" />
-              <stop offset=".48" stopColor="#ffffff" stopOpacity=".12" />
-              <stop offset=".76" stopColor="#d5d9dc" stopOpacity=".28" />
-              <stop offset=".92" stopColor="#ffffff" stopOpacity=".72" />
-              <stop offset="1" stopColor="#7a838c" stopOpacity=".48" />
+              <stop offset="0" stopColor="#88919b" stopOpacity=".32" />
+              <stop offset=".08" stopColor="#ffffff" stopOpacity=".38" />
+              <stop offset=".22" stopColor="#d8dde1" stopOpacity=".14" />
+              <stop offset=".48" stopColor="#ffffff" stopOpacity=".06" />
+              <stop offset=".76" stopColor="#d5d9dc" stopOpacity=".14" />
+              <stop offset=".92" stopColor="#ffffff" stopOpacity=".28" />
+              <stop offset="1" stopColor="#7a838c" stopOpacity=".32" />
             </>
           )}
         </linearGradient>
@@ -330,7 +330,7 @@ export function HexarelinVialArt({
 
       {showBack ? (
         <>
-          <ellipse cx="258" cy="328" rx="67" ry="10" fill="#111827" opacity="0.2" />
+          <ellipse className="calc-vial-contact-shadow" cx="258" cy="336" rx="72" ry="12" />
 
           {/*
             Clip stays on an outer group with NO CSS transform / will-change.
@@ -445,14 +445,7 @@ export function HexarelinVialArt({
               opacity={powder ? (coverMode ? 0.28 : 0.18) : coverMode ? 0.88 : 0.8}
             />
             <ellipse cx="258.5" cy="318" rx="60.5" ry="11" fill="#4e565e" opacity={powder ? 0.08 : coverMode ? 0.2 : 0.17} />
-            <ellipse cx="258.5" cy="318" rx="55" ry="8.2" fill="#ffffff" opacity={powder ? 0.1 : coverMode ? 0.28 : 0.22} />
-
-            {/* Dry cake painted above base glass so it stays visible under the label */}
-            {powder && !empty && !gsapDriven ? (
-              <g clipPath={`url(#${bottleClip})`} data-vial-powder-front>
-                {powderLayer}
-              </g>
-            ) : null}
+            <ellipse cx="258.5" cy="318" rx="55" ry="8.2" fill="#ffffff" opacity={powder ? 0.06 : coverMode ? 0.28 : 0.12} />
 
             {/*
               Glass reflections MUST render BEFORE the label so the paper label
@@ -464,39 +457,45 @@ export function HexarelinVialArt({
               <path
                 d="M205 103 C201 128 202 157 203 186 L203 291 C203 305 208 315 216 321 L224 323 C216 306 215 285 215 260 L215 136 C215 121 218 111 226 104 Z"
                 fill="#ffffff"
-                opacity={coverMode ? 0.32 : 0.28}
+                opacity={coverMode ? 0.32 : 0.16}
               />
               {/* Right-side softer refraction */}
               <path
                 d="M292 102 C305 118 311 132 312 149 L312 297 C312 311 306 322 298 326 L294 326 C299 309 300 290 300 266 L300 131 C300 118 297 109 292 102 Z"
                 fill="#ffffff"
-                opacity={coverMode ? 0.21 : 0.17}
+                opacity={coverMode ? 0.21 : 0.1}
               />
               {/* Bright specular shine strip on the visible left glass */}
               <path
                 d="M208 122 L212 122 L212 320 L208 320 Z"
                 fill="#ffffff"
-                opacity="0.55"
+                opacity={coverMode ? 0.55 : 0.28}
               />
               {/* Softer secondary shine */}
               <path
                 d="M216 122 L219 122 L219 320 L216 320 Z"
                 fill="#ffffff"
-                opacity="0.22"
+                opacity={coverMode ? 0.22 : 0.12}
               />
               {/* Right-side highlight edge */}
               <path
                 d="M303 122 L306 122 L306 320 L303 320 Z"
                 fill="#ffffff"
-                opacity="0.28"
+                opacity={coverMode ? 0.28 : 0.14}
               />
               {/* Shoulder crown reflection */}
-              <ellipse cx="260" cy="127" rx="50" ry="12" fill="#ffffff" opacity={coverMode ? 0.24 : 0.2} />
-              <ellipse cx="260" cy="124" rx="38" ry="4" fill="#ffffff" opacity="0.55" />
+              <ellipse cx="260" cy="127" rx="50" ry="12" fill="#ffffff" opacity={coverMode ? 0.24 : 0.14} />
+              <ellipse cx="260" cy="124" rx="38" ry="4" fill="#ffffff" opacity={coverMode ? 0.55 : 0.28} />
               {/* Base curve reflection */}
-              <ellipse cx="260" cy="322" rx="52" ry="7" fill="#ffffff" opacity="0.18" />
-              <ellipse cx="260" cy="329" rx="46" ry="3" fill="#0f172a" opacity="0.22" />
+              <ellipse cx="260" cy="322" rx="52" ry="7" fill="#ffffff" opacity={coverMode ? 0.18 : 0.1} />
             </g>
+
+            {/* Dry cake above glass shine so it stays readable in the bottom window */}
+            {powder && !empty && !gsapDriven ? (
+              <g clipPath={`url(#${bottleClip})`} data-vial-powder-front>
+                {powderLayer}
+              </g>
+            ) : null}
           </g>
 
           {/* Label + branding — flush to cylinder walls (clipped); opaque so liquid never shows through */}
@@ -875,29 +874,28 @@ export function HexarelinPowderCake({ fillRatio = 0.2 }: { fillRatio?: number })
   return (
     <g data-vial-powder-cake>
       <path
+        className="calc-powder-cake-body"
         d={`M202 ${topY + 2}
             C210 ${topY - 3} 222 ${topY + 5} 236 ${topY - 1}
             C248 ${topY - 4} 258 ${topY + 3} 270 ${topY - 2}
             C282 ${topY - 5} 295 ${topY + 4} 314 ${topY + 1}
             L314 316 C314 324 296 330 258.5 330 C221 330 202 324 202 316 Z`}
-        fill="#efe6d6"
       />
       <path
+        className="calc-powder-cake-top"
         d={`M208 ${topY + 3}
             C220 ${topY - 1} 235 ${topY + 6} 250 ${topY + 1}
             C262 ${topY - 2} 278 ${topY + 5} 308 ${topY + 2}
             L308 ${topY + 12} L208 ${topY + 12} Z`}
-        fill="#faf6ee"
-        opacity="0.95"
+        opacity="0.92"
       />
-      {/* Clumpy highlights — reads as lyophilized cake, not a meniscus */}
-      <ellipse cx="232" cy={topY + 4} rx="9" ry="3.2" fill="#fffdf8" opacity="0.85" />
-      <ellipse cx="258" cy={topY + 2} rx="11" ry="3.6" fill="#e5dcc8" opacity="0.7" />
-      <ellipse cx="286" cy={topY + 5} rx="8" ry="2.8" fill="#fffdf8" opacity="0.75" />
-      <circle cx="244" cy={topY + 8} r="1.4" fill="#d9d0be" opacity="0.8" />
-      <circle cx="267" cy={topY + 9} r="1.1" fill="#d9d0be" opacity="0.7" />
-      <circle cx="278" cy={topY + 7} r="1.3" fill="#cfc5b2" opacity="0.65" />
-      <circle cx="225" cy={topY + 10} r="1" fill="#cfc5b2" opacity="0.6" />
+      <ellipse className="calc-powder-cake-highlight" cx="232" cy={topY + 4} rx="9" ry="3.2" opacity="0.7" />
+      <ellipse className="calc-powder-cake-clump" cx="258" cy={topY + 2} rx="11" ry="3.6" opacity="0.85" />
+      <ellipse className="calc-powder-cake-highlight" cx="286" cy={topY + 5} rx="8" ry="2.8" opacity="0.62" />
+      <circle className="calc-powder-cake-clump" cx="244" cy={topY + 8} r="1.4" opacity="0.9" />
+      <circle className="calc-powder-cake-clump" cx="267" cy={topY + 9} r="1.1" opacity="0.85" />
+      <circle className="calc-powder-cake-clump" cx="278" cy={topY + 7} r="1.3" opacity="0.8" />
+      <circle className="calc-powder-cake-clump" cx="225" cy={topY + 10} r="1" opacity="0.75" />
     </g>
   );
 }

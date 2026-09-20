@@ -4,7 +4,9 @@ from routes.authroute import router as auth_router
 from routes.chatroute import router as chat_router
 from routes.health import router as health_router
 from routes.lectureroute import router as lectures_router
+from routes.notificationroute import router as notifications_router
 from routes.paymentroute import router as payment_router
+from routes.reportsroute import router as reports_router
 from routes.usersroute import router as users_router
 from routes.webinarroute import router as webinars_router
 
@@ -15,7 +17,9 @@ __all__ = [
     "chat_router",
     "health_router",
     "lectures_router",
+    "notifications_router",
     "payment_router",
+    "reports_router",
     "users_router",
     "webinars_router",
 ]

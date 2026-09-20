@@ -7,7 +7,9 @@ from typing import Annotated
 from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 
+from core.route_handlers import raise_api_error
 from database_entities import UserRole
+from models.common import ErrorCodes
 from services.routes.auth import service as auth_service
 
 security = HTTPBearer()
@@ -61,3 +63,58 @@ def require_roles(*roles: UserRole):
         return current_user
 
     return _checker
+
+
+MEMBERSHIP_REQUIRED_ERROR = "An active membership is required to access this feature."
+ADVISER_CHAT_MEMBERSHIP_ERROR = (
+    "An active membership is required to generate a recommendation and open consultation chat."
+)
+
+
+async def student_has_active_membership(current_user: CurrentUser) -> bool:
+    if current_user.is_admin:
+        return True
+
+    from services.routes.payment.service import get_membership, has_active_membership
+
+    membership = await get_membership(current_user.user_id)
+    return has_active_membership(membership)
+
+
+async def ensure_active_membership(
+    current_user: CurrentUser,
+    *,
+    error: str = MEMBERSHIP_REQUIRED_ERROR,
+) -> CurrentUser:
+    """Raise MEMBERSHIP_REQUIRED when a student has no current plan."""
+    if await student_has_active_membership(current_user):
+        return current_user
+
+    raise_api_error(
+        status_code=status.HTTP_403_FORBIDDEN,
+        error=error,
+        error_code=ErrorCodes.MEMBERSHIP_REQUIRED,
+    )
+
+
+async def require_active_membership(
+    current_user: Annotated[
+        CurrentUser,
+        Depends(require_roles(UserRole.STUDENT, UserRole.ADMIN)),
+    ],
+) -> CurrentUser:
+    """Students need a current membership; admins bypass the paywall."""
+    return await ensure_active_membership(current_user)
+
+
+async def require_adviser_chat_membership(
+    current_user: Annotated[
+        CurrentUser,
+        Depends(require_roles(UserRole.STUDENT, UserRole.ADMIN)),
+    ],
+) -> CurrentUser:
+    """Paywall for generating recommendations and opening consultation chat."""
+    return await ensure_active_membership(
+        current_user,
+        error=ADVISER_CHAT_MEMBERSHIP_ERROR,
+    )

@@ -1,4 +1,4 @@
-"""Webinar routes — admin CRUD + student catalog/booking/notifications."""
+"""Webinar routes — admin CRUD + student catalog/booking."""
 
 from typing import Annotated, Optional
 
@@ -17,8 +17,6 @@ from models.webinars import (
     WebinarDetailResponse,
     WebinarListData,
     WebinarListResponse,
-    WebinarNotificationsData,
-    WebinarNotificationsResponse,
     WebinarRegistrantListData,
     WebinarRegistrantListResponse,
     WebinarSummary,
@@ -37,26 +35,29 @@ async def list_webinars(
         Depends(require_roles(UserRole.STUDENT, UserRole.ADMIN)),
     ],
     page: int = Query(default=1, ge=1),
-    limit: int = Query(default=20, ge=1, le=100),
+    limit: int = Query(default=12, ge=1, le=100),
+    q: Optional[str] = Query(default=None, max_length=120),
+    status: Optional[str] = Query(default=None, max_length=32),
+    sort: str = Query(default="newest", max_length=16),
 ) -> WebinarListResponse:
     if current_user.role == UserRole.ADMIN.value:
-        result = await webinars_service.list_webinars_admin(page=page, limit=limit)
+        result = await webinars_service.list_webinars_admin(
+            page=page,
+            limit=limit,
+            q=q,
+            status_value=status,
+            sort=sort,
+        )
     else:
         result = await webinars_service.list_webinars_student(
             user_id=current_user.user_id,
             page=page,
             limit=limit,
+            q=q,
+            status_value=status,
+            sort=sort,
         )
     return success_response(WebinarListData(**result))
-
-
-@router.get("/notifications", response_model=WebinarNotificationsResponse)
-@handle_route_errors("list webinar notifications", log_prefix="Webinars")
-async def list_webinar_notifications(
-    current_user: Annotated[CurrentUser, Depends(require_roles(UserRole.STUDENT))],
-) -> WebinarNotificationsResponse:
-    items = await webinars_service.list_notifications(current_user.user_id)
-    return success_response(WebinarNotificationsData(items=items))
 
 
 @router.get("/mine", response_model=WebinarRegistrantListResponse)

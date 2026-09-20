@@ -54,6 +54,18 @@ class RefreshTokenRequest(BaseModel):
     refresh_token: str
 
 
+class RestoreSessionRequest(BaseModel):
+    refresh_token: str
+
+
+class LogoutRequest(BaseModel):
+    refresh_token: Optional[str] = None
+
+
+class LogoutData(BaseModel):
+    logged_out: bool = True
+
+
 class ProfileUpdateRequest(BaseModel):
     first_name: Optional[str] = Field(default=None, min_length=1, max_length=100)
     last_name: Optional[str] = Field(default=None, min_length=1, max_length=100)
@@ -122,5 +134,7 @@ LoginOtpRequiredResponse = ApiSuccessResponse[LoginOtpRequiredData]
 LoginResponse = Union[LoginSuccessResponse, LoginOtpRequiredResponse]
 OtpSentResponse = ApiSuccessResponse[OtpSentData]
 TokenResponse = ApiSuccessResponse[TokenData]
+RestoreSessionResponse = ApiSuccessResponse[LoginSuccessData]
+LogoutResponse = ApiSuccessResponse[LogoutData]
 ProfileResponse = ApiSuccessResponse[ProfileData]
 ProfileAccessMatrixResponse = ApiSuccessResponse[ProfileAccessMatrixData]

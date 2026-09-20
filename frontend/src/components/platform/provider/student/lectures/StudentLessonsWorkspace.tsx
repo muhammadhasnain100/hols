@@ -8,6 +8,8 @@ import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { SidebarSvgIcon } from "@/components/platform/provider/sidebar-icons";
 import { LessonsWorkspaceSkeleton } from "@/components/platform/provider/student/DashboardSkeletons";
 import { CoursePageLayout } from "@/components/platform/provider/student/lectures/CoursePageLayout";
+import { LectureMembershipLockedScreen } from "@/components/platform/provider/student/lectures/LectureMembershipLock";
+import { LecturesPageLayout } from "@/components/platform/provider/student/lectures/LecturesPageLayout";
 import { LessonContentPanel } from "@/components/platform/provider/student/lectures/LessonContentPanel";
 import {
   LearningModeToggle,
@@ -22,6 +24,10 @@ import {
   type CourseSummary,
   type LessonDetail,
 } from "@/lib/integrate/provider/student/lectures";
+import {
+  isMembershipRequiredError,
+  useStudentMembershipAccess,
+} from "@/lib/integrate/provider/student/payment/membershipAccess";
 import { prefersReducedMotion } from "@/lib/motion";
 import { scrollAppToTop } from "@/lib/scroll-to-top";
 import { cn } from "@/lib/utils";
@@ -64,7 +70,7 @@ function LessonIndexRow({
       type="button"
       onClick={onSelect}
       className={cn(
-        "lesson-index-row flex w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left",
+        "lesson-index-row flex min-h-11 w-full items-start gap-3 rounded-xl px-3 py-2.5 text-left",
         selected ? "bg-[color:var(--dash-soft)]" : "hols-option-hover",
       )}
       aria-current={selected ? "true" : undefined}
@@ -99,10 +105,12 @@ export function StudentLessonsWorkspace({
   l1Name,
   selectedLessonId,
 }: StudentLessonsWorkspaceProps) {
+  const membershipAccess = useStudentMembershipAccess();
   const router = useRouter();
   const stageRef = useRef<HTMLDivElement>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [apiLocked, setApiLocked] = useState(false);
   const [course, setCourse] = useState<CourseSummary | null>(null);
   const [lessons, setLessons] = useState<LessonDetail[]>([]);
   const [activeLessonId, setActiveLessonId] = useState<string | undefined>(selectedLessonId);
@@ -132,6 +140,10 @@ export function StudentLessonsWorkspace({
       setCourse(bundle.course);
       setLessons(bundle.lessons);
     } catch (err) {
+      if (isMembershipRequiredError(err)) {
+        setApiLocked(true);
+        return;
+      }
       setError(err instanceof ApiRequestError ? err.message : "Failed to load lessons.");
     } finally {
       setLoading(false);
@@ -139,9 +151,10 @@ export function StudentLessonsWorkspace({
   }, [courseId]);
 
   useEffect(() => {
+    if (!membershipAccess.ready || membershipAccess.locked) return;
     const timer = window.setTimeout(() => void load(), 0);
     return () => window.clearTimeout(timer);
-  }, [load]);
+  }, [load, membershipAccess.locked, membershipAccess.ready]);
 
   const filteredLessons = useMemo(
     () =>
@@ -194,6 +207,7 @@ export function StudentLessonsWorkspace({
 
   useEffect(() => {
     const timer = window.setTimeout(async () => {
+      if (membershipAccess.locked || !membershipAccess.ready) return;
       if (!activeLessonId || !activeLesson) {
         setLessonDetail(null);
         setDetailLoading(false);
@@ -217,7 +231,11 @@ export function StudentLessonsWorkspace({
       try {
         const data = await getLesson(courseId, activeLessonId);
         setLessonDetail(data.lesson);
-      } catch {
+      } catch (err) {
+        if (isMembershipRequiredError(err)) {
+          setApiLocked(true);
+          return;
+        }
         setLessonDetail(activeLesson);
       } finally {
         setDetailLoading(false);
@@ -225,7 +243,7 @@ export function StudentLessonsWorkspace({
     }, 0);
 
     return () => window.clearTimeout(timer);
-  }, [activeLesson, activeLessonId, courseId]);
+  }, [activeLesson, activeLessonId, courseId, membershipAccess.locked, membershipAccess.ready]);
 
   useGSAP(
     () => {
@@ -269,6 +287,18 @@ export function StudentLessonsWorkspace({
       ? filteredLessons[activeIndex + 1]
       : null;
 
+  if (!membershipAccess.ready) {
+    return (
+      <LecturesPageLayout>
+        <LessonsWorkspaceSkeleton />
+      </LecturesPageLayout>
+    );
+  }
+
+  if (membershipAccess.locked || apiLocked) {
+    return <LectureMembershipLockedScreen />;
+  }
+
   return (
     <>
       {learningMode && displayLesson ? (
@@ -298,7 +328,7 @@ export function StudentLessonsWorkspace({
             </p>
             <Link
               href={`/student/lectures/${courseId}/lessons`}
-              className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center gap-1.5 rounded-full px-4 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)]"
+              className="dashboard-pill-soft font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-4 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] sm:min-h-10 sm:w-auto"
             >
               <SidebarSvgIcon name="lectures" size={15} />
               Show full volume
@@ -316,7 +346,7 @@ export function StudentLessonsWorkspace({
             {(topicId || l1Name) && (
               <Link
                 href={`/student/lectures/${courseId}/lessons`}
-                className="dashboard-navy-btn font-sans mt-4 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white"
+                className="dashboard-navy-btn font-sans mt-4 inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white sm:min-h-10"
               >
                 <SidebarSvgIcon name="lectures" size={15} />
                 View all lessons
@@ -324,14 +354,14 @@ export function StudentLessonsWorkspace({
             )}
           </div>
         ) : (
-          <div ref={stageRef} className="grid gap-3 sm:gap-4 lg:grid-cols-[minmax(220px,280px)_minmax(0,1fr)] lg:items-start">
+          <div ref={stageRef} className="grid w-full min-w-0 max-w-full gap-3 sm:gap-4 lg:grid-cols-[minmax(220px,280px)_minmax(0,1fr)] lg:items-start">
             {/* Mobile: compact sticky index control above reading content */}
-            <div className="order-1 lg:hidden">
+            <div className="order-1 min-w-0 lg:hidden">
               <div className="dashboard-glass-card course-book-index overflow-hidden rounded-2xl">
                 <button
                   type="button"
                   onClick={() => setMobileIndexOpen((open) => !open)}
-                  className="flex w-full items-center gap-3 px-3.5 py-3 text-left sm:px-4"
+                  className="flex min-h-11 w-full items-center gap-3 px-3.5 py-3 text-left sm:px-4"
                   aria-expanded={mobileIndexOpen}
                   aria-controls="lesson-mobile-index"
                 >

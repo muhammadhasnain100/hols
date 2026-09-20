@@ -4,7 +4,6 @@ import Link from "next/link";
 import { useEffect, useId, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
-import { authFieldClass, authLabelClass } from "@/components/platform/auth/auth-styles";
 import { SidebarSvgIcon } from "@/components/platform/provider/sidebar-icons";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
@@ -110,7 +109,7 @@ function QuestionStageList({
           className={cn(
             orientation === "vertical"
               ? "text-brand-caption flex h-5 w-5 shrink-0 items-center justify-center rounded-md font-semibold"
-              : "flex h-4 w-4 shrink-0 items-center justify-center rounded-full text-[10px] font-semibold leading-none",
+              : "flex h-5 w-5 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold leading-none",
             active && "bg-[color:var(--dash-navy)] text-white",
             !active &&
               done &&
@@ -130,21 +129,16 @@ function QuestionStageList({
             index + 1
           )}
         </span>
-        <span
-          className={cn(
-            "min-w-0 leading-tight",
-            orientation === "wrap" ? "whitespace-nowrap" : "truncate",
-          )}
-        >
-          {label}
-        </span>
+        {orientation === "vertical" ? (
+          <span className="min-w-0 truncate leading-tight">{label}</span>
+        ) : null}
       </>
     );
 
     const className = cn(
       "font-sans inline-flex items-center gap-1.5 rounded-lg text-left transition",
       orientation === "vertical" && "flex w-full gap-2 px-2 py-1.5 text-sm",
-      orientation === "wrap" && "min-h-9 shrink-0 px-2 py-1.5 text-xs",
+      orientation === "wrap" && "min-h-11 w-full justify-center px-1 text-xs",
       active && "bg-[color:var(--dash-soft)] font-semibold text-[color:var(--dash-text)] ring-1 ring-[color:var(--dash-surface-border)]",
       !active && done && "bg-[color:var(--dash-soft)] text-[color:var(--dash-muted)]",
       !active && !done && "bg-[color:var(--dash-soft)] text-[color:var(--dash-faint)]",
@@ -171,7 +165,10 @@ function QuestionStageList({
 
   if (orientation === "wrap") {
     return (
-      <ol className="flex gap-1.5 overflow-x-auto overscroll-x-contain pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden md:grid md:grid-cols-4 md:overflow-visible md:pb-0">
+      <ol
+        className="grid gap-1.5"
+        style={{ gridTemplateColumns: `repeat(${Math.min(variants.length, 5)}, minmax(0, 1fr))` }}
+      >
         {variants.map((variant, index) => renderItem(variant, index))}
       </ol>
     );
@@ -200,8 +197,8 @@ function QuizQuestion({
 
   if (options) {
     return (
-      <fieldset className="adviser-intake-field min-w-0 space-y-2.5">
-        <legend className={authLabelClass}>Choose one answer</legend>
+      <fieldset className="min-w-0 space-y-2.5">
+        <legend className="dashboard-field-label">Choose one answer</legend>
         <div className={cn("grid min-w-0 gap-2", options.length <= 3 ? "grid-cols-1" : "grid-cols-1")}>
           {options.map((option) => {
             const checked = value === option;
@@ -234,10 +231,10 @@ function QuizQuestion({
   if (matchingLeft && matchingOptions) {
     const current = typeof value === "object" && value ? (value as Record<string, string>) : {};
     return (
-      <div className="adviser-intake-field min-w-0 space-y-3">
-        <p className={authLabelClass}>Match each item</p>
+      <div className="min-w-0 space-y-3">
+        <p className="dashboard-field-label">Match each item</p>
         {matchingLeft.map((left) => (
-          <label key={left} className="grid min-w-0 gap-2 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] sm:items-center">
+          <label key={left} className="grid min-w-0 gap-1.5">
             <span className="text-brand-body min-w-0 break-words text-[color:var(--dash-muted)]">{left}</span>
             <select
               value={current[left] ?? ""}
@@ -248,7 +245,7 @@ function QuizQuestion({
                   [left]: event.target.value,
                 })
               }
-              className="dashboard-field dashboard-field-select"
+              className="dashboard-field dashboard-field-select min-h-11 w-full min-w-0"
             >
               <option value="">Select match</option>
               {matchingOptions.map((option) => (
@@ -264,15 +261,15 @@ function QuizQuestion({
   }
 
   return (
-    <label className="adviser-intake-field grid min-w-0 gap-2">
-      <span className={authLabelClass}>Your answer</span>
+    <label className="grid min-w-0 gap-2">
+      <span className="dashboard-field-label">Your answer</span>
       <input
         type="text"
         value={typeof value === "string" ? value : ""}
         disabled={disabled}
         onChange={(event) => onChange(event.target.value)}
         placeholder="Type your answer…"
-        className={cn(authFieldClass, "adviser-field h-12 min-h-12 px-4", disabled && "cursor-not-allowed opacity-70")}
+        className={cn("dashboard-field min-h-11", disabled && "cursor-not-allowed opacity-70")}
       />
     </label>
   );
@@ -481,9 +478,28 @@ export function LessonQuizOverlay({
 
   const countdownLabel = secondsLeft > 0 ? String(secondsLeft) : "Go!";
   const canJumpQuestions = inQuiz && !timedOut && !busy;
+  const heading =
+    phase === "confirm"
+      ? "Do you want to continue?"
+      : phase === "countdown"
+        ? "Get ready"
+        : timedOut
+          ? "Time is up"
+          : `Question ${Math.min(questionIndex + 1, Math.max(total, 1))} of ${total}`;
+  const description =
+    phase === "confirm"
+      ? `${total} question${total === 1 ? "" : "s"} · 5 minutes after the countdown.`
+      : phase === "countdown"
+        ? "The quiz starts after this short countdown."
+        : timedOut
+          ? "This attempt is closed. You can start again from the lesson."
+          : `${formatQuizTime(quizSecondsLeft)} remaining`;
+
+  const footerButtonClass =
+    "font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium sm:min-h-10 sm:w-auto";
 
   return createPortal(
-    <div className="adviser-dialog-overlay fixed inset-0 z-[130] flex items-center justify-center bg-black/45 px-3 py-4 max-sm:items-end max-sm:px-0 max-sm:pb-0 max-sm:pt-[env(safe-area-inset-top)] sm:px-4 sm:py-6">
+    <div className="adviser-dialog-overlay adviser-dialog-overlay--center fixed inset-0 z-[130] flex min-h-dvh items-center justify-center bg-black/45 px-[max(0.75rem,env(safe-area-inset-left))] py-[max(1rem,env(safe-area-inset-top),env(safe-area-inset-bottom))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:px-4 sm:py-6">
       <button
         type="button"
         aria-label="Close quiz"
@@ -497,283 +513,233 @@ export function LessonQuizOverlay({
         role="dialog"
         aria-modal="true"
         aria-labelledby={quizTitleId}
-        className="adviser-dialog-panel adviser-onboarding-panel relative z-10 flex max-h-[min(92svh,56rem)] w-full max-w-5xl flex-col overflow-hidden rounded-2xl max-sm:h-[min(94svh,56rem)] max-sm:max-h-none max-sm:rounded-b-none max-sm:rounded-t-3xl max-sm:pb-[env(safe-area-inset-bottom)]"
+        className="adviser-dialog-panel adviser-dialog-panel--center relative z-10 flex max-h-[min(88svh,40rem)] w-full max-w-lg min-w-0 flex-col overflow-hidden rounded-2xl sm:max-w-xl lg:max-h-[min(88svh,48rem)] lg:max-w-2xl"
       >
-        <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-[color:var(--dash-dim)] sm:hidden" aria-hidden />
-
-        <div className="flex shrink-0 items-start justify-between gap-2.5 border-b border-[color:var(--dash-surface-border)] px-3.5 py-3 sm:gap-4 sm:px-5 sm:py-4 md:px-6">
+        <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[color:var(--dash-surface-border)] px-4 py-3.5 sm:gap-4 sm:px-5 sm:py-4 md:px-6">
           <div className="min-w-0 flex-1">
             <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
               Lesson quiz
             </p>
             <h2
               id={quizTitleId}
-              className="font-sans mt-0.5 text-base font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:mt-1 sm:text-xl"
+              className="font-sans mt-1 text-lg font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl"
             >
-              {lessonTitle}
+              {heading}
             </h2>
-            <div className="mt-2.5 hidden max-w-sm sm:mt-3 sm:block">
-              <div className="mb-1.5 flex items-center justify-between gap-3 text-brand-caption text-[color:var(--dash-muted)]">
-                <span className="min-w-0 truncate">
-                  {inQuiz && !timedOut ? (
-                    <span className="inline-flex items-center gap-1.5">
-                      <SidebarSvgIcon name="clock" size={13} strokeWidth={2} />
-                      {formatQuizTime(quizSecondsLeft)} remaining
-                    </span>
-                  ) : (
-                    stageLabel
-                  )}
-                </span>
-                <span className="shrink-0 font-semibold text-[color:var(--dash-text)]">
-                  {progressPercent}%
-                </span>
-              </div>
-              <div className="h-1.5 overflow-hidden rounded-full bg-[color:var(--dash-soft)]">
-                <div
-                  className="h-full rounded-full bg-[color:var(--dash-navy)] transition-[width] duration-300"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-            </div>
+            <p className="text-brand-body mt-1 text-sm text-[color:var(--dash-muted)] sm:text-base">
+              {description}
+            </p>
+            {phase === "confirm" && lessonTitle ? (
+              <p
+                title={lessonTitle}
+                className="text-brand-caption mt-1 line-clamp-2 break-words text-[color:var(--dash-faint)]"
+              >
+                {lessonTitle}
+              </p>
+            ) : null}
           </div>
-
           <button
             type="button"
             disabled={busy}
             onClick={requestLeave}
-            className="adviser-onboarding-close inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50 sm:h-12 sm:w-12"
+            className="adviser-onboarding-close inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50 sm:h-12 sm:w-12"
             aria-label={phase === "confirm" || timedOut ? "Close quiz" : "Leave quiz"}
           >
-            <SidebarSvgIcon name="cross" size={18} strokeWidth={2.15} className="sm:hidden" />
+            <SidebarSvgIcon name="cross" size={24} strokeWidth={2.2} className="sm:hidden" />
             <SidebarSvgIcon name="cross" size={28} strokeWidth={2.15} className="hidden sm:block" />
           </button>
         </div>
 
-        <div className="grid min-h-0 flex-1 lg:grid-cols-[15rem_minmax(0,1fr)]">
-          <aside className="hidden min-h-0 overflow-y-auto border-r border-[color:var(--dash-surface-border)] p-4 lg:block">
-            <p className="text-brand-caption mb-3 font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-              Quiz progress
-            </p>
-            <QuestionStageList
-              variants={variants}
-              currentIndex={inQuiz ? questionIndex : -1}
-              maxVisited={inQuiz ? maxVisited : -1}
-              answers={answers}
-              onSelect={canJumpQuestions ? goToQuestion : undefined}
-            />
-          </aside>
-
-          <div className="flex min-h-0 min-w-0 flex-col">
-            <div className="adviser-onboarding-mobile-progress shrink-0 border-b border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] px-3.5 py-2.5 sm:px-5 sm:py-3 lg:hidden">
-              <div className="mb-2 flex items-center justify-between gap-2">
-                <p className="text-brand-body min-w-0 truncate text-sm font-semibold text-[color:var(--dash-text)]">
-                  {inQuiz && !timedOut
-                    ? `${formatQuizTime(quizSecondsLeft)} remaining`
-                    : stageLabel}
-                </p>
-                <span className="text-brand-caption shrink-0 font-semibold text-[color:var(--dash-muted)]">
-                  {inQuiz ? `${Math.min(questionIndex + 1, total)}/${total}` : `0/${total}`}
-                  <span className="ml-1.5 text-[color:var(--dash-faint)]">· {progressPercent}%</span>
-                </span>
-              </div>
-              <div className="mb-2.5 h-1 overflow-hidden rounded-full bg-[color:var(--dash-surface)] sm:hidden">
-                <div
-                  className="h-full rounded-full bg-[color:var(--dash-navy)] transition-[width] duration-300"
-                  style={{ width: `${progressPercent}%` }}
-                />
-              </div>
-              <QuestionStageList
-                variants={variants}
-                currentIndex={inQuiz ? questionIndex : -1}
-                maxVisited={inQuiz ? maxVisited : -1}
-                answers={answers}
-                orientation="wrap"
-                onSelect={canJumpQuestions ? goToQuestion : undefined}
+        {inQuiz && !timedOut ? (
+          <div className="hidden shrink-0 px-4 pt-3 sm:block sm:px-5 md:px-6">
+            <div className="mb-1.5 flex items-center justify-between gap-3 text-brand-caption text-[color:var(--dash-muted)]">
+              <span className="min-w-0 truncate">{stageLabel}</span>
+              <span className="shrink-0 font-semibold text-[color:var(--dash-text)]">
+                {progressPercent}%
+              </span>
+            </div>
+            <div className="h-1.5 overflow-hidden rounded-full bg-[color:var(--dash-soft)]">
+              <div
+                className="h-full rounded-full bg-[color:var(--dash-navy)] transition-[width] duration-300"
+                style={{ width: `${progressPercent}%` }}
               />
             </div>
+          </div>
+        ) : null}
 
-            <div
-              ref={scrollRef}
-              className="adviser-onboarding-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain px-3.5 py-3.5 sm:p-5 md:p-6"
-            >
-              {error ? (
-                <div className="mb-4">
-                  <AuthAlert variant="error">{error}</AuthAlert>
-                </div>
+        <div
+          ref={scrollRef}
+          className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 sm:py-5 md:px-6"
+        >
+          {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
+
+          {phase === "confirm" ? (
+            <div className="space-y-3 rounded-xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] p-4">
+              <p className="text-brand-body leading-relaxed text-[color:var(--dash-muted)]">
+                You will confirm, wait for a short countdown, then answer one question at a time.
+                Leaving before you submit will discard this attempt.
+              </p>
+            </div>
+          ) : null}
+
+          {phase === "countdown" ? (
+            <div className="flex flex-col items-center justify-center px-2 py-6 text-center sm:py-8">
+              <div className="mb-3 flex h-11 w-11 items-center justify-center rounded-lg bg-[color:var(--dash-soft)]">
+                <SidebarSvgIcon
+                  name={secondsLeft > 0 ? "clock" : "focus"}
+                  size={18}
+                  strokeWidth={2}
+                />
+              </div>
+              <p
+                className="font-sans text-6xl font-bold tabular-nums leading-none tracking-tight text-[color:var(--dash-text)] sm:text-7xl"
+                aria-live="polite"
+              >
+                {countdownLabel}
+              </p>
+              <p className="text-brand-body mt-4 text-[color:var(--dash-faint)]">
+                Focus up — your lesson quiz is about to begin.
+              </p>
+            </div>
+          ) : null}
+
+          {phase === "quiz" && timedOut ? (
+            <AuthAlert variant="error">
+              Time is up. You can no longer submit this quiz attempt. Go back to the lesson and try
+              again.
+            </AuthAlert>
+          ) : null}
+
+          {phase === "quiz" && !timedOut && currentVariant ? (
+            <div key={currentVariant.id} className="space-y-4">
+              {total > 1 ? (
+                <QuestionStageList
+                  variants={variants}
+                  currentIndex={questionIndex}
+                  maxVisited={maxVisited}
+                  answers={answers}
+                  orientation="wrap"
+                  onSelect={canJumpQuestions ? goToQuestion : undefined}
+                />
               ) : null}
 
-              {phase === "confirm" ? (
-                <div className="space-y-4">
-                  <div>
-                    <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-                      Lesson quiz · Start here
-                    </p>
-                    <h3 className="font-sans mt-1 text-lg font-semibold tracking-[0.005em] text-[color:var(--dash-text)] md:text-xl">
-                      Do you want to continue?
-                    </h3>
-                    <p className="text-brand-body mt-1 text-[color:var(--dash-muted)]">
-                      Start the quiz for this lesson. {total} question{total === 1 ? "" : "s"} · 5
-                      minutes after the countdown.
-                    </p>
-                  </div>
-                  <div className="text-brand-body rounded-lg border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] p-4 leading-relaxed text-[color:var(--dash-muted)]">
-                    You will confirm, wait for a short countdown, then answer one question at a time.
-                    Leaving before you submit will discard this attempt.
-                  </div>
-                  <button
-                    type="button"
-                    onClick={startCountdown}
-                    className="dashboard-navy-btn font-sans flex min-h-12 w-full items-center justify-center gap-2 rounded-full px-5 text-sm font-semibold text-white"
-                  >
-                    <SidebarSvgIcon name="check" size={16} strokeWidth={2.4} />
-                    Continue
-                  </button>
-                </div>
-              ) : null}
+              <div>
+                <p className="dashboard-field-label">
+                  {currentVariant.variant_type.replaceAll("_", " ")}
+                  {currentAnswered ? " · Ready" : ""}
+                </p>
+                <h3 className="font-sans mt-1 break-words text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg">
+                  {variantQuestion(currentVariant)}
+                </h3>
+              </div>
 
-              {phase === "countdown" ? (
-                <div className="hols-auth-card rounded-xl p-5 text-center sm:p-8">
-                  <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-[color:var(--dash-soft)]">
-                    <SidebarSvgIcon
-                      name={secondsLeft > 0 ? "clock" : "focus"}
-                      size={18}
-                      strokeWidth={2}
-                    />
-                  </div>
-                  <p
-                    className="font-sans text-6xl font-bold tabular-nums leading-none tracking-tight text-[color:var(--dash-text)] sm:text-7xl"
-                    aria-live="polite"
-                  >
-                    {countdownLabel}
-                  </p>
-                  <p className="text-brand-body mt-4 text-[color:var(--dash-faint)]">
-                    Focus up — your lesson quiz is about to begin.
-                  </p>
-                  <button
-                    type="button"
-                    onClick={requestLeave}
-                    className="dashboard-pill-soft font-sans mt-5 inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] sm:w-auto"
-                  >
-                    <SidebarSvgIcon name="previous" size={14} strokeWidth={2.2} />
-                    Back to lesson
-                  </button>
-                </div>
-              ) : null}
+              <QuizQuestion
+                variant={currentVariant}
+                disabled={busy}
+                value={answers[currentVariant.id]}
+                onChange={(value) =>
+                  setAnswers((current) => ({
+                    ...current,
+                    [currentVariant.id]: value,
+                  }))
+                }
+              />
 
-              {phase === "quiz" && timedOut ? (
-                <div className="hols-auth-card rounded-xl p-5 text-center sm:p-8">
-                  <AuthAlert variant="error">
-                    Time is up. You can no longer submit this quiz attempt. Go back to the lesson and
-                    try again.
-                  </AuthAlert>
-                  <button
-                    type="button"
-                    onClick={onClose}
-                    className="dashboard-navy-btn font-sans mt-5 inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium text-white sm:w-auto"
-                  >
-                    Back to lesson
-                  </button>
-                </div>
-              ) : null}
-
-              {phase === "quiz" && !timedOut && currentVariant ? (
-                <div key={currentVariant.id} className="adviser-intake-step space-y-4">
-                  <div className="adviser-intake-step-meta flex flex-wrap items-center justify-between gap-2 rounded-lg border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] px-3 py-2.5">
-                    <p className="text-brand-caption text-[color:var(--dash-muted)]">
-                      {currentVariant.variant_type.replaceAll("_", " ")}
-                    </p>
-                    <p className="font-sans text-sm font-semibold tabular-nums text-[color:var(--dash-text)]">
-                      {answeredCount}/{total}
-                      {currentAnswered ? (
-                        <span className="ml-2 inline-flex items-center gap-1 text-[color:var(--dash-navy)]">
-                          <SidebarSvgIcon name="check" size={12} strokeWidth={2.6} />
-                          Ready
-                        </span>
-                      ) : null}
-                    </p>
-                  </div>
-
-                  <div>
-                    <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-                      Question {questionIndex + 1} of {total}
-                    </p>
-                    <h3 className="font-sans mt-1 text-lg font-semibold tracking-[0.005em] text-[color:var(--dash-text)] md:text-xl">
-                      {variantQuestion(currentVariant)}
-                    </h3>
-                  </div>
-
-                  <QuizQuestion
-                    variant={currentVariant}
-                    disabled={busy}
-                    value={answers[currentVariant.id]}
-                    onChange={(value) =>
-                      setAnswers((current) => ({
-                        ...current,
-                        [currentVariant.id]: value,
-                      }))
-                    }
-                  />
-
-                  <div className="adviser-intake-nav mt-5 flex flex-col gap-2 sm:mt-6 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-2.5">
-                    {questionIndex > 0 ? (
-                      <button
-                        type="button"
-                        onClick={handleBack}
-                        disabled={busy}
-                        className="dashboard-pill-soft font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] sm:w-auto"
-                      >
-                        <SidebarSvgIcon name="previous" size={14} strokeWidth={2.2} />
-                        Back
-                      </button>
-                    ) : (
-                      <span className="hidden sm:block" />
-                    )}
-                    <div className="flex w-full flex-col gap-1.5 sm:w-auto sm:items-end">
-                      {!currentAnswered ? (
-                        <p className="text-brand-caption text-center text-[color:var(--dash-faint)] sm:text-right">
-                          Complete this question before continuing
-                        </p>
-                      ) : (
-                        <p className="text-brand-caption hidden text-center text-[color:var(--dash-muted)] sm:block sm:text-right">
-                          {lastQuestion
-                            ? "Looking good — submit when ready"
-                            : "Looking good — continue when ready"}
-                        </p>
-                      )}
-                      <button
-                        type="button"
-                        onClick={handleNext}
-                        disabled={!currentAnswered || busy || (lastQuestion && !allAnswered)}
-                        className="dashboard-navy-btn font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-45 sm:w-auto"
-                      >
-                        {submitting ? (
-                          <>
-                            <SidebarSvgIcon name="spinner" size={16} className="animate-spin" />
-                            Submitting…
-                          </>
-                        ) : lastQuestion ? (
-                          <>
-                            <SidebarSvgIcon name="check" size={14} strokeWidth={2.2} />
-                            Submit quiz
-                          </>
-                        ) : (
-                          <>
-                            Continue
-                            <SidebarSvgIcon name="next" size={14} strokeWidth={2.2} />
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  </div>
-                </div>
+              {!currentAnswered ? (
+                <p className="text-brand-caption text-[color:var(--dash-faint)]">
+                  Complete this question before continuing
+                </p>
               ) : null}
             </div>
-          </div>
+          ) : null}
+        </div>
+
+        <div className="flex shrink-0 flex-col-reverse gap-2 border-t border-[color:var(--dash-surface-border)] px-4 py-3.5 sm:flex-row sm:justify-end sm:gap-2.5 sm:px-5 sm:py-4 md:px-6">
+          {phase === "confirm" ? (
+            <>
+              <button
+                type="button"
+                onClick={onClose}
+                className={cn("dashboard-pill-soft text-[color:var(--dash-text)]", footerButtonClass)}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                onClick={startCountdown}
+                className={cn("dashboard-navy-btn font-semibold text-white", footerButtonClass)}
+              >
+                Continue
+                <SidebarSvgIcon name="next" size={14} strokeWidth={2.2} />
+              </button>
+            </>
+          ) : null}
+
+          {phase === "countdown" || timedOut ? (
+            <button
+              type="button"
+              onClick={timedOut ? onClose : requestLeave}
+              className={cn(
+                timedOut
+                  ? "dashboard-navy-btn font-semibold text-white"
+                  : "dashboard-pill-soft text-[color:var(--dash-text)]",
+                footerButtonClass,
+              )}
+            >
+              <SidebarSvgIcon name="previous" size={14} strokeWidth={2.2} />
+              Back to lesson
+            </button>
+          ) : null}
+
+          {inQuiz && !timedOut ? (
+            <>
+              {questionIndex > 0 ? (
+                <button
+                  type="button"
+                  onClick={handleBack}
+                  disabled={busy}
+                  className={cn(
+                    "dashboard-pill-soft text-[color:var(--dash-text)] disabled:pointer-events-none disabled:opacity-50",
+                    footerButtonClass,
+                  )}
+                >
+                  <SidebarSvgIcon name="previous" size={14} strokeWidth={2.2} />
+                  Back
+                </button>
+              ) : null}
+              <button
+                type="button"
+                onClick={handleNext}
+                disabled={!currentAnswered || busy || (lastQuestion && !allAnswered)}
+                className={cn(
+                  "dashboard-navy-btn font-semibold text-white disabled:pointer-events-none disabled:opacity-45",
+                  footerButtonClass,
+                )}
+              >
+                {submitting ? (
+                  <>
+                    <SidebarSvgIcon name="spinner" size={16} className="animate-spin" />
+                    Submitting…
+                  </>
+                ) : lastQuestion ? (
+                  <>
+                    <SidebarSvgIcon name="check" size={14} strokeWidth={2.2} />
+                    Submit quiz
+                  </>
+                ) : (
+                  <>
+                    Continue
+                    <SidebarSvgIcon name="next" size={14} strokeWidth={2.2} />
+                  </>
+                )}
+              </button>
+            </>
+          ) : null}
         </div>
       </div>
 
       {leaveConfirmOpen ? (
-        <div className="absolute inset-0 z-20 flex items-center justify-center bg-black/35 px-3 py-4 max-sm:items-end max-sm:px-0 max-sm:pb-0 max-sm:pt-[env(safe-area-inset-top)] sm:px-4 sm:py-6">
+        <div className="adviser-dialog-overlay adviser-dialog-overlay--center absolute inset-0 z-20 flex items-center justify-center bg-black/35 px-[max(0.75rem,env(safe-area-inset-left))] py-[max(1rem,env(safe-area-inset-top),env(safe-area-inset-bottom))] pr-[max(0.75rem,env(safe-area-inset-right))] sm:px-4 sm:py-6">
           <button
             type="button"
             aria-label="Dismiss leave dialog"
@@ -784,10 +750,8 @@ export function LessonQuizOverlay({
             role="alertdialog"
             aria-modal="true"
             aria-labelledby={leaveTitleId}
-            className="adviser-dialog-panel relative z-10 flex w-full max-w-md flex-col overflow-hidden rounded-2xl max-sm:max-h-[min(90svh,28rem)] max-sm:rounded-b-none max-sm:rounded-t-3xl max-sm:pb-[env(safe-area-inset-bottom)]"
+            className="adviser-dialog-panel adviser-dialog-panel--center relative z-10 flex max-h-[min(88svh,28rem)] w-full max-w-md min-w-0 flex-col overflow-hidden rounded-2xl"
           >
-            <div className="mx-auto mt-2 h-1 w-10 shrink-0 rounded-full bg-[color:var(--dash-dim)] sm:hidden" aria-hidden />
-
             <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[color:var(--dash-surface-border)] px-4 py-3.5 sm:gap-4 sm:px-5 sm:py-4 md:px-6">
               <div className="min-w-0">
                 <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
@@ -807,10 +771,10 @@ export function LessonQuizOverlay({
               <button
                 type="button"
                 onClick={() => setLeaveConfirmOpen(false)}
-                className="adviser-onboarding-close inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[color:var(--dash-text)] transition sm:h-12 sm:w-12"
+                className="adviser-onboarding-close inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[color:var(--dash-text)] transition sm:h-12 sm:w-12"
                 aria-label="Keep taking quiz"
               >
-                <SidebarSvgIcon name="cross" size={18} strokeWidth={2.15} className="sm:hidden" />
+                <SidebarSvgIcon name="cross" size={24} strokeWidth={2.2} className="sm:hidden" />
                 <SidebarSvgIcon name="cross" size={28} strokeWidth={2.15} className="hidden sm:block" />
               </button>
             </div>
@@ -819,14 +783,14 @@ export function LessonQuizOverlay({
               <button
                 type="button"
                 onClick={confirmLeave}
-                className="dashboard-pill-soft font-sans inline-flex min-h-11 w-full items-center justify-center rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] sm:min-h-10 sm:w-auto"
+                className={cn("dashboard-pill-soft text-[color:var(--dash-text)]", footerButtonClass)}
               >
                 Yes, cancel quiz
               </button>
               <button
                 type="button"
                 onClick={() => setLeaveConfirmOpen(false)}
-                className="dashboard-navy-btn font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium text-white sm:min-h-10 sm:w-auto"
+                className={cn("dashboard-navy-btn font-semibold text-white", footerButtonClass)}
               >
                 Keep taking quiz
               </button>
@@ -894,14 +858,14 @@ export function LessonQuizResultCard({ result, courseId, onRetake }: LessonQuizR
       <div className="mt-4 flex flex-col-reverse gap-2 sm:flex-row sm:flex-wrap">
         <Link
           href={`/student/lectures/${courseId}/test-result`}
-          className="dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] sm:w-auto"
+          className="dashboard-pill-soft font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium text-[color:var(--dash-text)] sm:min-h-10 sm:w-auto"
         >
           View all test results
         </Link>
         <button
           type="button"
           onClick={onRetake}
-          className="dashboard-navy-btn font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white sm:w-auto"
+          className="dashboard-navy-btn font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white sm:min-h-10 sm:w-auto"
         >
           <SidebarSvgIcon name="quiz" size={15} />
           Take quiz again

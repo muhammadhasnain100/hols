@@ -252,7 +252,7 @@ export function LessonContentPanel({
                   <button
                     type="button"
                     onClick={() => setQuizOpen(true)}
-                    className="dashboard-navy-btn font-sans mt-4 inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white"
+                    className="dashboard-navy-btn font-sans mt-4 inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white sm:min-h-10 sm:w-auto"
                   >
                     <SidebarSvgIcon name="quiz" size={15} />
                     Take quiz
@@ -289,7 +289,7 @@ export function LessonContentPanel({
                 <Link
                   href={lessonHref(courseId, prevLessonId, topicId, l1Name)}
                   onClick={() => scrollAppToTop()}
-                  className="lesson-prev-cta dashboard-pill-soft font-sans inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition sm:flex-initial"
+                  className="lesson-prev-cta dashboard-pill-soft font-sans inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition sm:min-h-10 sm:flex-initial"
                 >
                   <SidebarSvgIcon name="previous" size={16} />
                   <span className="sm:hidden">Prev</span>
@@ -300,7 +300,7 @@ export function LessonContentPanel({
                 <Link
                   href={lessonHref(courseId, nextLessonId, topicId, l1Name)}
                   onClick={() => scrollAppToTop()}
-                  className="lesson-next-cta dashboard-navy-btn font-sans inline-flex min-h-10 flex-1 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white transition sm:flex-initial"
+                  className="lesson-next-cta dashboard-navy-btn font-sans inline-flex min-h-11 flex-1 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white transition sm:min-h-10 sm:flex-initial"
                 >
                   <span className="sm:hidden">Next</span>
                   <span className="hidden sm:inline">Next page</span>

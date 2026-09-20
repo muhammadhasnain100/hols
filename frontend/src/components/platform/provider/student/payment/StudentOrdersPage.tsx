@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
+import { PaginationControls } from "@/components/platform/provider/admin/shared";
 import { SidebarSvgIcon, type SidebarIconName } from "@/components/platform/provider/sidebar-icons";
 import {
   OrderListRowsSkeleton,
@@ -21,6 +22,8 @@ import {
 } from "@/lib/integrate/provider/student/payment/types";
 import { scrollAppToTopSoon } from "@/lib/scroll-to-top";
 
+const PAGE_SIZE = 10;
+
 const PLAN_ICONS: Record<PlanType, SidebarIconName> = {
   monthly: "clock",
   biannual: "star",
@@ -35,17 +38,27 @@ export function StudentOrdersPanel() {
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [hasNext, setHasNext] = useState(false);
+  const [hasPrevious, setHasPrevious] = useState(false);
+
+  const applyPagination = useCallback((pageNum: number, pagination: {
+    total: number;
+    has_next: boolean;
+    has_previous?: boolean;
+  }) => {
+    setTotal(pagination.total);
+    setHasNext(Boolean(pagination.has_next));
+    setHasPrevious(pagination.has_previous ?? pageNum > 1);
+  }, []);
 
   const loadOrders = useCallback(async (pageNum: number, signal?: AbortSignal) => {
     setLoading(true);
     setError(null);
 
     try {
-      const res = await listOrders({ page: pageNum, limit: 10 }, signal);
+      const res = await listOrders({ page: pageNum, limit: PAGE_SIZE }, signal);
       if (signal?.aborted) return;
       setOrders(res.items);
-      setTotal(res.pagination.total);
-      setHasNext(res.pagination.has_next);
+      applyPagination(pageNum, res.pagination);
     } catch (err) {
       if (signal?.aborted) return;
       if (err instanceof DOMException && err.name === "AbortError") return;
@@ -53,17 +66,16 @@ export function StudentOrdersPanel() {
     } finally {
       if (!signal?.aborted) setLoading(false);
     }
-  }, []);
+  }, [applyPagination]);
 
   useEffect(() => {
     const controller = new AbortController();
 
     if (page === 1) {
-      const cached = getCachedOrders({ page: 1, limit: 10 });
+      const cached = getCachedOrders({ page: 1, limit: PAGE_SIZE });
       if (cached) {
         setOrders(cached.items);
-        setTotal(cached.pagination.total);
-        setHasNext(cached.pagination.has_next);
+        applyPagination(1, cached.pagination);
         setLoading(false);
       }
     }
@@ -144,7 +156,7 @@ export function StudentOrdersPanel() {
             </div>
           </div>
 
-          <div className="mt-5 space-y-1">
+          <div className="mt-5 grid min-w-0 gap-2.5">
             {loading ? (
               <OrderListRowsSkeleton />
             ) : orders.length === 0 ? (
@@ -155,7 +167,7 @@ export function StudentOrdersPanel() {
               orders.map((order) => (
                 <div
                   key={order.order_id}
-                  className="dashboard-row flex items-center justify-between gap-2 rounded-xl px-2.5 py-2.5 sm:gap-3 sm:px-3.5 sm:py-3"
+                  className="dashboard-row flex min-w-0 items-center justify-between gap-3 overflow-hidden rounded-2xl bg-[color:var(--dash-soft)]/80 px-3.5 py-3.5 sm:px-4"
                 >
                   <div className="flex min-w-0 items-center gap-3">
                     <span className="flex h-5 w-5 shrink-0 items-center justify-center text-[color:var(--dash-text)]">
@@ -165,13 +177,13 @@ export function StudentOrdersPanel() {
                         strokeWidth={1.9}
                       />
                     </span>
-                    <div className="min-w-0">
+                    <div className="min-w-0 overflow-hidden">
                       <p className="font-sans truncate text-sm font-medium text-[color:var(--dash-text)]">
                         {planLabels[order.plan_type]} plan
                       </p>
                       <p className="text-brand-caption truncate text-[color:var(--dash-faint)]">
                         {formatDate(order.created_at)}
-                        {latest?.order_id === order.order_id ? " · Latest" : ""}
+                        {latest?.order_id === order.order_id && page === 1 ? " · Latest" : ""}
                       </p>
                     </div>
                   </div>
@@ -183,66 +195,27 @@ export function StudentOrdersPanel() {
             )}
           </div>
 
-          {page > 1 || hasNext ? (
-            <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between">
-              <p className="text-brand-caption text-center text-[color:var(--dash-faint)] sm:text-left">
-                Page {page}
-                {total > 0 ? ` · ${total} ${total === 1 ? "order" : "orders"}` : ""}
-              </p>
-              <div className="grid grid-cols-2 gap-2 sm:flex sm:gap-2">
-                <PagerButton
-                  variant="prev"
-                  disabled={page <= 1 || loading}
-                  onClick={() => {
-                    scrollAppToTopSoon();
-                    setPage((current) => Math.max(1, current - 1));
-                  }}
-                >
-                  <SidebarSvgIcon name="previous" size={16} />
-                  <span className="sm:hidden">Prev</span>
-                  <span className="hidden sm:inline">Previous page</span>
-                </PagerButton>
-                <PagerButton
-                  variant="next"
-                  disabled={!hasNext || loading}
-                  onClick={() => {
-                    scrollAppToTopSoon();
-                    setPage((current) => current + 1);
-                  }}
-                >
-                  <span className="sm:hidden">Next</span>
-                  <span className="hidden sm:inline">Next page</span>
-                  <SidebarSvgIcon name="next" size={16} />
-                </PagerButton>
-              </div>
-            </div>
+          {total > 0 ? (
+            <PaginationControls
+              page={page}
+              total={total}
+              pageCount={Math.max(1, Math.ceil(total / PAGE_SIZE))}
+              hasNext={hasNext}
+              hasPrevious={hasPrevious || page > 1}
+              loading={loading}
+              onPrevious={() => {
+                scrollAppToTopSoon();
+                setPage((current) => Math.max(1, current - 1));
+              }}
+              onNext={() => {
+                scrollAppToTopSoon();
+                setPage((current) => current + 1);
+              }}
+            />
           ) : null}
         </>
       )}
     </section>
-  );
-}
-
-function PagerButton({
-  children,
-  disabled,
-  onClick,
-  variant,
-}: {
-  children: React.ReactNode;
-  disabled?: boolean;
-  onClick: () => void;
-  variant: "prev" | "next";
-}) {
-  const className =
-    variant === "next"
-      ? "lesson-next-cta dashboard-navy-btn font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white transition disabled:pointer-events-none disabled:opacity-50 disabled:hover:brightness-100 sm:w-auto"
-      : "lesson-prev-cta dashboard-pill-soft font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-50 sm:w-auto";
-
-  return (
-    <button type="button" disabled={disabled} onClick={onClick} className={className}>
-      {children}
-    </button>
   );
 }
 

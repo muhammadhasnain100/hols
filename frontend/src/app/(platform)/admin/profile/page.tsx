@@ -1,10 +1,10 @@
 import { PortalGate } from "@/components/platform/provider/PortalGate";
-import { AdminProfilePage } from "@/components/platform/provider/admin/profile/AdminProfilePage";
+import { AdminSettingsPage } from "@/components/platform/provider/admin/profile/AdminSettingsPage";
 
 export default function AdminProfileRoute() {
   return (
     <PortalGate role="admin">
-      <AdminProfilePage />
+      <AdminSettingsPage section="profile" />
     </PortalGate>
   );
 }

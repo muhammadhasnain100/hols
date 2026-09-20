@@ -638,7 +638,7 @@ export function LearningModeToggle({
       disabled={disabled}
       aria-pressed={active}
       className={cn(
-        "dashboard-navy-btn font-sans inline-flex min-h-10 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white",
+        "dashboard-navy-btn font-sans inline-flex min-h-11 w-full items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white sm:min-h-10",
         disabled && "cursor-not-allowed opacity-50",
       )}
     >

@@ -77,6 +77,7 @@ class StudentCommerceData(BaseModel):
     current_plan: Optional[str] = None
     membership_status: Optional[str] = None
     membership_end_date: Optional[str] = None
+    affiliate_earned: float = 0
 
 
 class CardData(BaseModel):

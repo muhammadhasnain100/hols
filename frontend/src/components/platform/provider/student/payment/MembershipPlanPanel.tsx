@@ -12,6 +12,7 @@ type MembershipPlanPanelProps = {
   membership: Membership | null;
   card: PaymentCard | null;
   purchasing?: boolean;
+  gatewayBypassed?: boolean;
   error?: string | null;
   success?: string | null;
   onPurchase: () => void;
@@ -22,6 +23,7 @@ export function MembershipPlanPanel({
   membership,
   card,
   purchasing = false,
+  gatewayBypassed = false,
   error,
   success,
   onPurchase,
@@ -76,7 +78,9 @@ export function MembershipPlanPanel({
         </p>
       ) : (
         <p className="text-brand-body text-sm text-[color:var(--dash-muted)]">
-          You will be charged {priceLabel} on your saved HOLS card.
+          {gatewayBypassed
+            ? `Development mode: the payment processor is skipped. ${priceLabel} is still recorded as paid on your saved card.`
+            : `You will be charged ${priceLabel} on your saved HOLS card.`}
         </p>
       )}
 

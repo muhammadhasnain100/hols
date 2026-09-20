@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowLeft, Icon, Menu } from "@/components/icons";
+import { Icon, Menu } from "@/components/icons";
 import { PortalShell } from "@/components/platform/provider/PortalShell";
+import { SidebarSvgIcon } from "@/components/platform/provider/sidebar-icons";
 import { studentNav } from "@/components/platform/provider/student/studentNav";
 
 type WebinarsPageLayoutProps = {
@@ -34,7 +35,7 @@ export function WebinarsPageLayout({
       nav={studentNav}
     >
       <div className="dashboard-screen lectures-page webinars-page relative min-w-0 overflow-x-hidden">
-        <header className="mb-4 flex h-10 min-w-0 items-center gap-2 sm:mb-5 sm:h-12 sm:gap-3 md:gap-4">
+        <header className="mb-4 flex min-h-10 min-w-0 items-center gap-2 sm:mb-5 sm:min-h-12 sm:gap-3 md:gap-4">
           <button
             type="button"
             aria-label="Open sidebar"
@@ -48,14 +49,14 @@ export function WebinarsPageLayout({
             <Link
               href={backHref}
               aria-label={backLabel}
-              className="dashboard-navy-btn flex h-10 w-10 shrink-0 items-center justify-center rounded-full no-underline sm:h-12 sm:w-12"
+              className="adviser-chat-back-btn dashboard-navy-btn flex h-10 w-10 shrink-0 items-center justify-center rounded-full no-underline sm:h-12 sm:w-12"
             >
-              <Icon icon={ArrowLeft} size={18} strokeWidth={2.4} />
+              <SidebarSvgIcon name="previous" size={18} strokeWidth={2.4} />
             </Link>
           ) : null}
 
           <h1
-            className="font-sans min-w-0 truncate text-xl font-bold leading-none tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl"
+            className="font-sans min-w-0 truncate text-lg font-bold leading-none tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl md:text-2xl"
             title={title}
           >
             {title}

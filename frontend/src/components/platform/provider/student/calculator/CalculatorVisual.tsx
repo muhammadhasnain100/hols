@@ -112,7 +112,7 @@ export function CalculatorVisual({
   return (
     <div
       ref={rootRef}
-      className="dashboard-glass-card relative mx-auto flex h-full w-full max-w-md flex-col justify-center overflow-hidden rounded-2xl px-3 py-2 max-[390px]:px-2.5 max-[390px]:py-1.5 sm:max-w-lg sm:px-5 sm:py-3 md:overflow-hidden md:px-8 md:py-4 lg:mt-0 lg:max-w-none"
+      className="dashboard-glass-card relative mx-auto flex h-full w-full min-w-0 max-w-md flex-col justify-center overflow-hidden rounded-2xl px-3 py-2 max-[390px]:px-2.5 max-[390px]:py-1.5 sm:max-w-lg sm:px-5 sm:py-3 md:px-8 md:py-4 lg:mt-0 lg:max-w-none"
     >
       <div ref={sceneRef}>
         <CalculatorReconScene

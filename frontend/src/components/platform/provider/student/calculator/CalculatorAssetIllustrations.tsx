@@ -4,10 +4,10 @@ import { useId, useLayoutEffect, useRef } from "react";
 import { useGSAP } from "@gsap/react";
 import {
   HOLS_BRAND,
-  SYRINGE_IMAGE_SCALE,
   SYRINGE_LAYOUT_ML,
   syringeDrawBaseHeightPx,
   syringeDrawImageScale,
+  syringeImageScaleForMl,
 } from "@/components/platform/provider/student/calculator/calculatorAssets";
 import {
   SYRINGE_BARREL_TRAVEL,
@@ -215,7 +215,7 @@ export function AssetVial({
             height="100%"
             preserveAspectRatio="xMidYMax meet"
             className={cn(
-              "overflow-visible",
+              "calc-vial-art overflow-visible",
               mini ? "h-24 w-full sm:h-28" : "absolute inset-0 h-full w-full",
             )}
             role="img"
@@ -323,8 +323,8 @@ export function AssetSyringe({
   const uid = useId().replace(/:/g, "");
   const narrowViewport = useCompactCalculatorScene();
   const useCompactScale = compact || narrowViewport;
-  const rawScale = SYRINGE_IMAGE_SCALE[syringeMl] ?? 0.8;
-  const layoutScaleRaw = SYRINGE_IMAGE_SCALE[SYRINGE_LAYOUT_ML] ?? 0.98;
+  const rawScale = syringeImageScaleForMl(syringeMl);
+  const layoutScaleRaw = syringeImageScaleForMl(SYRINGE_LAYOUT_ML);
   // Overview (horizontal) and draw (needleDown) share one size so measurement
   // matches the reconstitution animation.
   const matchDrawSize = needleDown || horizontal;
@@ -406,7 +406,7 @@ export function AssetSyringe({
       viewBox={`-6 ${viewTop} 92 ${viewH}`}
       width={width}
       height={height}
-      className="overflow-visible"
+      className="calc-syringe-art overflow-visible"
       role="img"
       aria-hidden
     >
@@ -511,7 +511,7 @@ export function SyringeSizeOption({
       type="button"
       onClick={onSelect}
       className={cn(
-        "calc-syringe-option relative z-10 inline-flex h-10 min-w-[3.5rem] items-center justify-center rounded-lg border px-2.5 text-xs font-medium leading-none tracking-[0.01em] transition duration-200 sm:h-11 sm:min-w-[4.5rem] sm:px-3.5 sm:text-sm",
+        "calc-syringe-option relative z-10 inline-flex h-10 min-w-[3.5rem] shrink-0 items-center justify-center rounded-lg border px-2.5 text-xs font-medium leading-none tracking-[0.01em] transition duration-200 sm:h-11 sm:min-w-[4.5rem] sm:px-3.5 sm:text-sm",
         selected
           ? "border-[#DDE466] bg-[#DDE466]/25 text-[color:var(--sidebar-active-fg,#6f7a1c)]"
           : "border-[color:var(--dash-surface-border)] text-[color:var(--dash-muted)] hols-option-hover hover:text-[color:var(--dash-text)]",

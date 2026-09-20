@@ -1,4 +1,8 @@
-import type { SyringeSizeMl } from "@/lib/integrate/provider/student/calculator";
+import {
+  SYRINGE_SIZES_ML,
+  type SyringePresetMl,
+  type SyringeSizeMl,
+} from "@/lib/integrate/provider/student/calculator";
 
 export const CALCULATOR_ASSETS = {
   vial: "/assets/calculator/vial.svg",
@@ -23,7 +27,7 @@ export const HOLS_VIAL_BRAND = {
 } as const;
 
 /** Visual scale for each syringe capacity — balanced for overview + draw-scene fit. */
-export const SYRINGE_IMAGE_SCALE: Record<SyringeSizeMl, number> = {
+export const SYRINGE_IMAGE_SCALE: Record<SyringePresetMl, number> = {
   0.25: 0.58,
   0.5: 0.68,
   1: 0.8,
@@ -38,7 +42,7 @@ export const SYRINGE_IMAGE_SCALE: Record<SyringeSizeMl, number> = {
  * (selection) and draw (animation) modes so the animation reads at the same
  * scale users just saw.
  */
-export const SYRINGE_DISPLAY_WIDTH_REM: Record<SyringeSizeMl, number> = {
+export const SYRINGE_DISPLAY_WIDTH_REM: Record<SyringePresetMl, number> = {
   0.25: 15,
   0.5: 17,
   1: 20,
@@ -50,7 +54,7 @@ export const SYRINGE_DISPLAY_WIDTH_REM: Record<SyringeSizeMl, number> = {
  * Narrow-viewport widths — keep the same relative scale as desktop so insert
  * depth, needle length, and vial size stay proportional (not crushed for SE).
  */
-export const SYRINGE_DISPLAY_WIDTH_REM_COMPACT: Record<SyringeSizeMl, number> = {
+export const SYRINGE_DISPLAY_WIDTH_REM_COMPACT: Record<SyringePresetMl, number> = {
   0.25: 8.75,
   0.5: 9.75,
   1: 11,
@@ -58,12 +62,39 @@ export const SYRINGE_DISPLAY_WIDTH_REM_COMPACT: Record<SyringeSizeMl, number> = 
   3: 13,
 };
 
+function interpolatePresetTable(
+  ml: number,
+  table: Record<SyringePresetMl, number>,
+  fallback: number,
+): number {
+  const value = Number.isFinite(ml) && ml > 0 ? ml : 1;
+  const presets = SYRINGE_SIZES_ML;
+  const first = presets[0];
+  const last = presets[presets.length - 1];
+  if (value <= first) return table[first] ?? fallback;
+  if (value >= last) return table[last] ?? fallback;
+  for (let i = 0; i < presets.length - 1; i++) {
+    const left = presets[i];
+    const right = presets[i + 1];
+    if (value <= right) {
+      const span = right - left;
+      const t = span === 0 ? 0 : (value - left) / span;
+      return table[left] + (table[right] - table[left]) * t;
+    }
+  }
+  return fallback;
+}
+
+export function syringeImageScaleForMl(syringeMl: SyringeSizeMl): number {
+  return interpolatePresetTable(syringeMl, SYRINGE_IMAGE_SCALE, 0.8);
+}
+
 export function syringeDisplayWidthRem(
   syringeMl: SyringeSizeMl,
   compact = false,
 ): number {
   const table = compact ? SYRINGE_DISPLAY_WIDTH_REM_COMPACT : SYRINGE_DISPLAY_WIDTH_REM;
-  return table[syringeMl] ?? (compact ? 8.25 : 20);
+  return interpolatePresetTable(syringeMl, table, compact ? 8.25 : 20);
 }
 
 /** Largest capacity — used to reserve a fixed overview/draw layout slot. */
@@ -78,7 +109,7 @@ export function syringeDrawImageScale(
   syringeMl: SyringeSizeMl,
   compact = false,
 ): number {
-  const rawScale = SYRINGE_IMAGE_SCALE[syringeMl] ?? 0.8;
+  const rawScale = syringeImageScaleForMl(syringeMl);
   if (compact) {
     return Math.min(Math.max(rawScale * 0.92, 0.68), 0.92);
   }

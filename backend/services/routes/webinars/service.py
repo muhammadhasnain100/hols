@@ -75,6 +75,7 @@ def _public_registration(
     item: dict[str, Any],
     *,
     webinar: Optional[dict[str, Any]] = None,
+    user: Optional[dict[str, Any]] = None,
 ) -> dict[str, Any]:
     return {
         "webinar_id": item.get("webinar_id"),
@@ -87,7 +88,48 @@ def _public_registration(
         "webinar_title": webinar.get("title") if webinar else None,
         "starts_at": webinar.get("starts_at") if webinar else None,
         "join_url": webinar.get("join_url") if webinar else None,
+        "first_name": user.get("first_name") if user else None,
+        "last_name": user.get("last_name") if user else None,
+        "email": user.get("email") if user else None,
     }
+
+
+def _normalize_sort(sort: Optional[str]) -> str:
+    return "oldest" if str(sort or "").strip().lower() == "oldest" else "newest"
+
+
+def _starts_at_sort_key(item: dict[str, Any]) -> float:
+    raw = str(item.get("starts_at") or "")
+    try:
+        return _parse_iso(raw).timestamp()
+    except HTTPException:
+        return 0.0
+
+
+def _filter_webinars(
+    items: list[dict[str, Any]],
+    *,
+    q: Optional[str] = None,
+    status_value: Optional[str] = None,
+) -> list[dict[str, Any]]:
+    needle = (q or "").strip().lower()
+    status = (status_value or "").strip().lower()
+    filtered = items
+    if status and status not in {"", "all"} and status in VALID_STATUSES:
+        filtered = [item for item in filtered if str(item.get("status") or "") == status]
+    if needle:
+        filtered = [
+            item
+            for item in filtered
+            if needle in str(item.get("title") or "").lower()
+            or needle in str(item.get("join_url") or "").lower()
+        ]
+    return filtered
+
+
+def _sort_webinars(items: list[dict[str, Any]], *, sort: Optional[str] = None) -> list[dict[str, Any]]:
+    reverse = _normalize_sort(sort) == "newest"
+    return sorted(items, key=_starts_at_sort_key, reverse=reverse)
 
 
 async def _get_webinar_item(webinar_id: str) -> dict[str, Any]:
@@ -114,6 +156,32 @@ async def _get_registration(user_id: str, webinar_id: str) -> Optional[dict[str,
     return item
 
 
+async def _list_booked_webinar_ids(user_id: str) -> set[str]:
+    kwargs: dict[str, Any] = {
+        "KeyConditionExpression": Key("PK").eq(WebinarRegistration.pk(user_id))
+        & Key("SK").begins_with("WEBINAR_REG#"),
+    }
+    ids: set[str] = set()
+    while True:
+        def _query(kw=dict(kwargs)):
+            return _table().query(**kw)
+
+        response = await run_sync(_query)
+        for item in response.get("Items") or []:
+            if item.get("entity") != WebinarRegistration.ENTITY:
+                continue
+            if item.get("status") != WebinarRegistrationStatus.BOOKED.value:
+                continue
+            webinar_id = item.get("webinar_id")
+            if webinar_id:
+                ids.add(str(webinar_id))
+        last_key = response.get("LastEvaluatedKey")
+        if not last_key:
+            break
+        kwargs["ExclusiveStartKey"] = last_key
+    return ids
+
+
 async def _list_webinar_items(*, published_only: bool = False) -> list[dict[str, Any]]:
     kwargs: dict[str, Any] = {
         "IndexName": "GSI1",
@@ -138,6 +206,20 @@ async def _list_webinar_items(*, published_only: bool = False) -> list[dict[str,
             break
         kwargs["ExclusiveStartKey"] = last_key
     return items
+
+
+def _webinar_notify_snapshot(item: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "title": str(item.get("title") or "").strip(),
+        "description": str(item.get("description") or "").strip(),
+        "starts_at": str(item.get("starts_at") or ""),
+        "ends_at": str(item.get("ends_at") or ""),
+        "price": float(normalize_value(item.get("price")) or 0),
+        "currency": str(item.get("currency") or "USD").upper(),
+        "capacity": int(item.get("capacity") or 0),
+        "join_url": str(item.get("join_url") or "").strip(),
+        "status": str(item.get("status") or ""),
+    }
 
 
 def _paginate(items: list[dict[str, Any]], *, page: int, limit: int) -> dict[str, Any]:
@@ -211,11 +293,19 @@ async def create_webinar(
     item = webinar.to_item()
     await run_sync(_table().put_item, Item=item)
     logger.info("Webinar created webinar_id=%s by=%s", webinar_id, admin_user_id)
+    try:
+        from services.notification import events as notify_events
+
+        notify_events.webinar_created(webinar=item)
+    except Exception:
+        logger.exception("Failed to queue webinar created notification webinar_id=%s", webinar_id)
     return _public_webinar(item, reveal_join_url=True)
 
 
 async def update_webinar(webinar_id: str, **fields: Any) -> dict[str, Any]:
     item = await _get_webinar_item(webinar_id)
+    previous_status = str(item.get("status") or "")
+    previous_snapshot = _webinar_notify_snapshot(item)
     updates = {key: value for key, value in fields.items() if value is not None}
     if "status" in updates and updates["status"] not in VALID_STATUSES:
         raise HTTPException(status.HTTP_400_BAD_REQUEST, "Invalid webinar status")
@@ -269,6 +359,16 @@ async def update_webinar(webinar_id: str, **fields: Any) -> dict[str, Any]:
     )
     saved = webinar.to_item()
     await run_sync(_table().put_item, Item=saved)
+    try:
+        from services.notification import events as notify_events
+
+        notify_events.webinar_updated(
+            webinar=saved,
+            previous_status=previous_status,
+            changed=_webinar_notify_snapshot(saved) != previous_snapshot,
+        )
+    except Exception:
+        logger.exception("Failed to queue webinar updated notification webinar_id=%s", webinar_id)
     return _public_webinar(saved, reveal_join_url=True)
 
 
@@ -330,8 +430,16 @@ async def upload_webinar_thumbnail(
     return _public_webinar(saved, reveal_join_url=True)
 
 
-async def list_webinars_admin(*, page: int = 1, limit: int = 20) -> dict[str, Any]:
+async def list_webinars_admin(
+    *,
+    page: int = 1,
+    limit: int = 12,
+    q: Optional[str] = None,
+    status_value: Optional[str] = None,
+    sort: Optional[str] = None,
+) -> dict[str, Any]:
     items = await _list_webinar_items(published_only=False)
+    items = _sort_webinars(_filter_webinars(items, q=q, status_value=status_value), sort=sort)
     page_data = _paginate(items, page=page, limit=limit)
     return {
         "items": [_public_webinar(item, reveal_join_url=True) for item in page_data["items"]],
@@ -343,25 +451,28 @@ async def list_webinars_student(
     *,
     user_id: str,
     page: int = 1,
-    limit: int = 20,
+    limit: int = 12,
+    q: Optional[str] = None,
+    status_value: Optional[str] = None,
+    sort: Optional[str] = None,
 ) -> dict[str, Any]:
     items = await _list_webinar_items(published_only=True)
-    now = datetime.now(timezone.utc)
-    upcoming = [
-        item
-        for item in items
-        if _parse_iso(str(item.get("starts_at") or now.isoformat())) >= now
-        or str(item.get("status")) == WebinarStatus.PUBLISHED.value
-    ]
-    # Prefer soonest first; include recently started published sessions too.
-    upcoming.sort(key=lambda item: str(item.get("starts_at") or ""))
-    page_data = _paginate(upcoming, page=page, limit=limit)
+    booked_ids = await _list_booked_webinar_ids(user_id)
+    audience = (status_value or "all").strip().lower()
+    if audience == "booked":
+        items = [item for item in items if str(item.get("webinar_id")) in booked_ids]
+    elif audience == "open":
+        items = [
+            item
+            for item in items
+            if str(item.get("webinar_id")) not in booked_ids
+            and max(int(item.get("capacity") or 0) - int(item.get("seats_taken") or 0), 0) > 0
+        ]
+    items = _sort_webinars(_filter_webinars(items, q=q, status_value=None), sort=sort)
+    page_data = _paginate(items, page=page, limit=limit)
     public_items = []
     for item in page_data["items"]:
-        registration = await _get_registration(user_id, str(item["webinar_id"]))
-        booked = bool(
-            registration and registration.get("status") == WebinarRegistrationStatus.BOOKED.value
-        )
+        booked = str(item["webinar_id"]) in booked_ids
         public_items.append(
             _public_webinar(item, is_booked=booked, reveal_join_url=booked),
         )
@@ -415,8 +526,13 @@ async def list_registrants(
         kwargs["ExclusiveStartKey"] = last_key
 
     page_data = _paginate(items, page=page, limit=limit)
+    public_items = []
+    for item in page_data["items"]:
+        user_id = str(item.get("user_id") or "")
+        user = await get_user_by_id(user_id) if user_id else None
+        public_items.append(_public_registration(item, user=user))
     return {
-        "items": [_public_registration(item) for item in page_data["items"]],
+        "items": public_items,
         "pagination": page_data["pagination"],
     }
 
@@ -492,6 +608,7 @@ async def book_webinar(
         capacity=capacity,
         seats_taken=seats_taken + 1,
         join_url=webinar.get("join_url"),
+        thumbnail_url=webinar.get("thumbnail_url"),
         status=WebinarStatus(webinar.get("status")),
         created_by=webinar.get("created_by"),
         created_at=webinar.get("created_at") or created_at,
@@ -508,6 +625,16 @@ async def book_webinar(
     )
 
     public_webinar = _public_webinar(saved_webinar, is_booked=True, reveal_join_url=True)
+    try:
+        from services.notification import events as notify_events
+
+        notify_events.student_joined_webinar(student=user, webinar=public_webinar)
+    except Exception:
+        logger.exception(
+            "Failed to queue webinar booking notification user_id=%s webinar_id=%s",
+            user_id,
+            webinar_id,
+        )
     return {
         "registration": _public_registration(registration.to_item(), webinar=public_webinar),
         "webinar": public_webinar,
@@ -546,34 +673,3 @@ async def list_my_registrations(user_id: str) -> list[dict[str, Any]]:
         public = _public_webinar(webinar, is_booked=True, reveal_join_url=True) if webinar else None
         results.append(_public_registration(item, webinar=public))
     return results
-
-
-async def list_notifications(user_id: str) -> list[dict[str, Any]]:
-    """Upcoming published webinars for the student notification bell."""
-    catalog = await list_webinars_student(user_id=user_id, page=1, limit=20)
-    notifications: list[dict[str, Any]] = []
-    for webinar in catalog["items"]:
-        booked = bool(webinar.get("is_booked"))
-        title = webinar.get("title") or "Upcoming webinar"
-        price = float(webinar.get("price") or 0)
-        currency = webinar.get("currency") or "USD"
-        if booked:
-            body = "You're booked — open to join or review details."
-        elif price <= 0:
-            body = "Free session — reserve your seat while spaces last."
-        else:
-            body = f"Book a seat · {currency} {price:.2f}."
-        notifications.append(
-            {
-                "webinar_id": webinar.get("webinar_id"),
-                "title": title,
-                "starts_at": webinar.get("starts_at"),
-                "price": price,
-                "currency": currency,
-                "is_booked": booked,
-                "body": body,
-                "thumbnail_url": webinar.get("thumbnail_url"),
-                "seats_remaining": webinar.get("seats_remaining"),
-            }
-        )
-    return notifications

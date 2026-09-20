@@ -66,14 +66,14 @@ export function HeroNavbar({ variant = "landing" }: HeroNavbarProps) {
     return (
       <>
         <header className="absolute inset-x-0 top-0 z-50">
-          {/* Desktop */}
+          {/* Desktop (lg+): full nav. Tablets use the compact bar so links don't wrap. */}
           <div
             className={cn(
-              "hidden w-full items-center md:grid md:grid-cols-[auto_1fr_auto]",
+              "hidden w-full items-center lg:grid lg:grid-cols-[auto_1fr_auto]",
               heroLayout.nav.shell,
             )}
           >
-            <HeroLogo variant="light" className="h-9 shrink-0 md:h-10" />
+            <HeroLogo variant="light" className="h-9 shrink-0 lg:h-10" />
 
             <div className="flex justify-center">
               <OverlayNavLinks />
@@ -100,14 +100,14 @@ export function HeroNavbar({ variant = "landing" }: HeroNavbarProps) {
             </div>
           </div>
 
-          {/* Mobile */}
+          {/* Phone + tablet */}
           <div
             className={cn(
-              "flex w-full items-center justify-between gap-4 md:hidden",
+              "flex w-full min-w-0 items-center justify-between gap-3 sm:gap-4 lg:hidden",
               heroLayout.nav.shell,
             )}
           >
-            <HeroLogo variant="light" className="h-9 shrink-0" />
+            <HeroLogo variant="light" className="h-8 max-w-[min(100%,12.5rem)] shrink-0 sm:h-9 sm:max-w-none" />
             <HeroNavbarMobile tone="overlay" />
           </div>
         </header>
@@ -116,7 +116,7 @@ export function HeroNavbar({ variant = "landing" }: HeroNavbarProps) {
             transforms on this wrapper would trap fixed menu overlays. */}
         <div
           className={cn(
-            "fixed right-6 top-5 z-[110] hidden transition-opacity duration-300 md:block",
+            "fixed right-6 top-5 z-[110] hidden transition-opacity duration-300 lg:block",
             scrolled
               ? "visible opacity-100"
               : "invisible pointer-events-none opacity-0",

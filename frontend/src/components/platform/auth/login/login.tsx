@@ -24,7 +24,7 @@ import {
   type UserRole,
 } from "@/lib/integrate/auth";
 import { getPortalPath } from "@/lib/integrate/auth/routes";
-import { saveAuthSession } from "@/lib/integrate/auth/storage";
+import { enterPortal } from "@/lib/integrate/auth/session";
 import { cn } from "@/lib/utils";
 
 const RESEND_COOLDOWN_SEC = 30;
@@ -129,8 +129,8 @@ export function LoginForm({
     role: UserRole;
     profile: Record<string, unknown>;
   }) {
-    saveAuthSession(result);
-    router.push(getPortalPath(result.role));
+    enterPortal(result);
+    router.replace(getPortalPath(result.role));
     router.refresh();
   }
 

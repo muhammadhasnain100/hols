@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useState } from "react";
+import { SalesMetricGrid } from "@/components/platform/provider/charts/SalesCharts";
 import { DashboardPageLayout } from "@/components/platform/provider/student/dashboard/DashboardPageLayout";
 import {
   SidebarSvgIcon,
@@ -9,6 +10,7 @@ import {
 } from "@/components/platform/provider/sidebar-icons";
 import {
   getCurrentMembership,
+  getStudentCommerce,
   listOrders,
   listPlans,
 } from "@/lib/integrate/provider/student/payment/api";
@@ -104,7 +106,7 @@ function NavyLink({
     <Link
       href={href}
       className={cn(
-        "dashboard-navy-btn font-sans inline-flex min-h-10 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white",
+        "dashboard-navy-btn font-sans inline-flex min-h-11 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white sm:min-h-10",
         className,
       )}
     >
@@ -124,16 +126,20 @@ export function StudentPortal() {
   const [webinarCount, setWebinarCount] = useState<number | null>(null);
   const [recentOrders, setRecentOrders] = useState<Order[]>([]);
   const [nextWebinar, setNextWebinar] = useState<WebinarSummary | null>(null);
+  const [totalSales, setTotalSales] = useState(0);
+  const [totalOrders, setTotalOrders] = useState(0);
+  const [salesCurrency, setSalesCurrency] = useState("USD");
 
   useEffect(() => {
     async function loadSummary() {
       setLoading(true);
       try {
-        const [membershipRes, ordersRes, webinarsRes, plansRes] = await Promise.all([
+        const [membershipRes, ordersRes, webinarsRes, plansRes, commerceRes] = await Promise.all([
           getCurrentMembership(),
           listOrders({ page: 1, limit: 4 }),
           listWebinars({ page: 1, limit: 8 }).catch(() => null),
           listPlans().catch(() => null),
+          getStudentCommerce().catch(() => null),
         ]);
 
         if (membershipRes.membership) {
@@ -153,6 +159,9 @@ export function StudentPortal() {
         setRecentOrders(ordersRes.items);
         setPlanCount(plansRes?.items.length ?? null);
         setWebinarCount(webinarsRes?.pagination.total ?? webinarsRes?.items.length ?? null);
+        setTotalSales(commerceRes?.total_spent ?? 0);
+        setTotalOrders(commerceRes?.order_count ?? 0);
+        setSalesCurrency(commerceRes?.currency ?? "USD");
 
         const now = Date.now();
         const upcoming = (webinarsRes?.items ?? [])
@@ -185,6 +194,34 @@ export function StudentPortal() {
       ) : (
         <>
           <div className="flex min-w-0 flex-col gap-3 sm:gap-4">
+            <SalesMetricGrid
+              items={[
+                {
+                  label: "Total sales",
+                  value: formatMoney(totalSales, salesCurrency),
+                  hint: "Gross collected",
+                  href: "/student/profile/orders",
+                },
+                {
+                  label: "Total orders",
+                  value: String(totalOrders),
+                  hint: "Paid membership purchases",
+                  href: "/student/profile/orders",
+                },
+                {
+                  label: "Membership",
+                  value: membershipLabel,
+                  hint: membershipStatus.charAt(0).toUpperCase() + membershipStatus.slice(1),
+                  href: "/student/payment",
+                },
+                {
+                  label: "Webinars",
+                  value: webinarCount == null ? "—" : String(webinarCount),
+                  hint: "Available webinars",
+                  href: "/student/webinars",
+                },
+              ]}
+            />
             <NextWebinarCard webinar={nextWebinar} />
             <MembershipRingCard
               planLabel={membershipLabel}
@@ -268,56 +305,56 @@ function MembershipRing({
   const size = 236;
   const stroke = 22;
   const radius = (size - stroke) / 2;
+  const cx = size / 2;
+  const cy = size / 2;
   const circumference = 2 * Math.PI * radius;
-  const gap = circumference * 0.035;
-  const usable = Math.max(circumference - gap * 2, 1);
-  const completedRatio = Math.min(0.98, Math.max(0.02, progress || 0.02));
-  const completedLen = usable * completedRatio;
-  const remainingLen = usable - completedLen;
+  const ratio = Math.min(1, Math.max(0, Number.isFinite(progress) ? progress : 0));
   const isActive = (status ?? "").toLowerCase() === "active";
+  const overlayLen = circumference * ratio;
+  const showFullDone = ratio >= 0.995;
+  const showOverlay = !showFullDone && overlayLen > 0.5;
 
   return (
-    <div className="membership-progress-ring relative h-[14.5rem] w-[14.5rem] sm:h-[16.5rem] sm:w-[16.5rem]">
+    <div className="membership-progress-ring relative h-[14.5rem] w-[14.5rem] overflow-visible sm:h-[16.5rem] sm:w-[16.5rem]">
       <svg
         viewBox={`0 0 ${size} ${size}`}
-        className="h-full w-full -rotate-90"
+        className="h-full w-full -rotate-90 overflow-visible"
         aria-hidden
       >
         <circle
-          data-seg="track"
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="var(--dash-ring-left)"
-          strokeWidth={stroke}
-          opacity={0.28}
-        />
-        <circle
-          data-seg="done"
-          cx={size / 2}
-          cy={size / 2}
-          r={radius}
-          fill="none"
-          stroke="var(--dash-ring-done)"
-          strokeWidth={stroke}
-          strokeLinecap="round"
-          strokeDasharray={`${completedLen} ${circumference - completedLen}`}
-        />
-        <circle
           data-seg="left"
-          cx={size / 2}
-          cy={size / 2}
+          cx={cx}
+          cy={cy}
           r={radius}
           fill="none"
           stroke="var(--dash-ring-left)"
           strokeWidth={stroke}
-          strokeLinecap="round"
-          strokeDasharray={`${remainingLen} ${circumference - remainingLen}`}
-          strokeDashoffset={-(completedLen + gap)}
         />
+        {showFullDone ? (
+          <circle
+            data-seg="done"
+            cx={cx}
+            cy={cy}
+            r={radius}
+            fill="none"
+            stroke="var(--dash-ring-done)"
+            strokeWidth={stroke}
+          />
+        ) : showOverlay ? (
+          <circle
+            data-seg="done"
+            cx={cx}
+            cy={cy}
+            r={radius}
+            fill="none"
+            stroke="var(--dash-ring-done)"
+            strokeWidth={stroke}
+            strokeLinecap="round"
+            strokeDasharray={`${overlayLen} ${circumference}`}
+          />
+        ) : null}
       </svg>
-      <div className="absolute inset-[15%] flex flex-col items-center justify-center px-1 text-center">
+      <div className="absolute inset-[15%] flex flex-col items-center justify-center px-2 text-center">
         <p className="flex flex-wrap items-center justify-center gap-1.5">
           <span className="font-sans text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl">
             {label}
@@ -334,7 +371,7 @@ function MembershipRing({
           ) : null}
         </p>
         {caption ? (
-          <p className="text-brand-caption mt-1.5 whitespace-nowrap leading-snug text-[color:var(--dash-muted)]">
+          <p className="text-brand-caption mt-1.5 max-w-[9.5rem] text-balance leading-snug text-[color:var(--dash-muted)] sm:max-w-[11rem]">
             {caption}
           </p>
         ) : null}
@@ -387,11 +424,11 @@ function MembershipRingCard({
               Days Left
             </span>
           </div>
-          <div className="flex justify-center gap-2 md:justify-end">
-            <NavyLink href="/student/payment" className="min-h-9 px-4">
+          <div className="flex w-full justify-center gap-2 md:justify-end">
+            <NavyLink href="/student/payment" className="min-h-11 flex-1 px-4 sm:min-h-10 sm:flex-none">
               View Plan
             </NavyLink>
-            <NavyLink href="/student/profile/orders" className="min-h-9 px-4">
+            <NavyLink href="/student/profile/orders" className="min-h-11 flex-1 px-4 sm:min-h-10 sm:flex-none">
               Orders
             </NavyLink>
           </div>
@@ -409,6 +446,14 @@ function DashboardSkeleton() {
   return (
     <>
       <div className="flex min-w-0 flex-col gap-3 sm:gap-4" aria-busy="true" aria-label="Loading dashboard">
+        <div className="grid min-w-0 grid-cols-2 gap-2.5 sm:grid-cols-4 sm:gap-3">
+          {Array.from({ length: 4 }, (_, index) => (
+            <div key={index} className="dashboard-glass-card min-w-0 rounded-2xl px-3.5 py-3 sm:px-4 sm:py-4">
+              <SkeletonBlock className="h-3 w-16 rounded-full" />
+              <SkeletonBlock className="mt-2 h-6 w-20 rounded-full" />
+            </div>
+          ))}
+        </div>
         <section className="dashboard-glass-card relative overflow-hidden rounded-2xl p-4 sm:p-5">
           <div className="flex items-center justify-between gap-2">
             <SkeletonBlock className="h-3 w-24 rounded-full" />
@@ -512,7 +557,7 @@ function QuickToolsCard() {
 
       <div className="mt-3.5 grid grid-cols-2 gap-2.5 min-[420px]:gap-3 sm:mt-4 sm:grid-cols-4">
         {QUICK_TOOLS.map((tool) => (
-          <Link key={tool.href} href={tool.href} className="group flex flex-col items-center gap-2 rounded-xl px-1 py-1.5">
+          <Link key={tool.href} href={tool.href} className="group flex min-h-11 flex-col items-center justify-center gap-2 rounded-xl px-1 py-2">
             <span className="dashboard-tool-icon flex h-12 w-12 items-center justify-center rounded-full text-[color:var(--dash-text)] transition-colors group-hover:text-[#DDE466]">
               <SidebarSvgIcon name={tool.icon} size={18} />
             </span>
@@ -541,14 +586,14 @@ function ActivityCard({ orders }: { orders: Order[] }) {
         </Link>
       </div>
 
-      <div className="mt-3.5 space-y-1 sm:mt-4">
+      <div className="mt-3.5 grid min-w-0 gap-2.5 sm:mt-4 sm:gap-1">
         {orders.length === 0 ? (
           <p className="text-brand-body py-6 text-center text-[color:var(--dash-faint)]">No orders yet.</p>
         ) : (
           orders.map((order) => (
             <div
               key={order.order_id}
-              className="dashboard-row flex min-w-0 items-center justify-between gap-2 rounded-xl px-2 py-2.5 sm:gap-3 sm:px-1 sm:py-3"
+              className="dashboard-row flex min-w-0 items-center justify-between gap-2 overflow-hidden rounded-2xl bg-[color:var(--dash-soft)]/80 px-3.5 py-3 sm:gap-3 sm:rounded-xl sm:bg-transparent sm:px-1 sm:py-3"
             >
               <div className="flex min-w-0 items-center gap-3">
                 <span className="flex h-5 w-5 shrink-0 items-center justify-center text-[color:var(--dash-text)]">
@@ -586,7 +631,7 @@ function QuickLinksCard({
             <Link
               key={link.href}
               href={link.href}
-              className="dashboard-row group flex items-center gap-3 rounded-xl px-2 py-2.5 transition sm:px-1 sm:py-3"
+              className="dashboard-row group flex min-h-11 items-center gap-3 rounded-xl px-2 py-2.5 transition sm:min-h-0 sm:px-1 sm:py-3"
             >
               <span className="flex h-5 w-5 shrink-0 items-center justify-center text-[color:var(--dash-text)]">
                 <SidebarSvgIcon name={link.icon} size={18} />

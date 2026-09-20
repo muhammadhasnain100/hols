@@ -3,3 +3,4 @@ export * from "@/lib/integrate/auth/storage";
 export * from "@/lib/integrate/auth/routes";
 export * from "@/lib/integrate/auth/types";
 export * from "@/lib/integrate/auth/useStoredUser";
+export * from "@/lib/integrate/auth/session";

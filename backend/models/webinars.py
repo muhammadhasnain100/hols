@@ -76,6 +76,9 @@ class WebinarRegistrationSummary(BaseModel):
     webinar_title: Optional[str] = None
     starts_at: Optional[str] = None
     join_url: Optional[str] = None
+    first_name: Optional[str] = None
+    last_name: Optional[str] = None
+    email: Optional[str] = None
 
 
 class WebinarBookData(BaseModel):

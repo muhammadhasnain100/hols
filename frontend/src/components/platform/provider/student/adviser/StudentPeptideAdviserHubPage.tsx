@@ -8,7 +8,11 @@ import { AdviserPageLayout } from "@/components/platform/provider/student/advise
 import { CreatePatientDialog } from "@/components/platform/provider/student/adviser/CreatePatientDialog";
 import { IntakeOnboardingDialog } from "@/components/platform/provider/student/adviser/IntakeOnboardingDialog";
 import { INTAKE_STAGES } from "@/components/platform/provider/student/adviser/IntakeWizard";
-import { PatientListPanel } from "@/components/platform/provider/student/adviser/PatientListPanel";
+import {
+  PatientListPanel,
+  type SortFilter,
+  type StatusFilter,
+} from "@/components/platform/provider/student/adviser/PatientListPanel";
 import { AdviserHubPageSkeleton } from "@/components/platform/provider/student/DashboardSkeletons";
 import { ApiRequestError } from "@/lib/integrate/client";
 import {
@@ -27,6 +31,11 @@ import {
   type QuestionnaireFlow,
 } from "@/lib/integrate/provider/student/chat";
 import { ACTIVE_PATIENT_STORAGE_KEY } from "@/lib/integrate/provider/student/chat/constants";
+import { scrollAppToTopSoon } from "@/lib/scroll-to-top";
+import {
+  isMembershipRequiredError,
+  useStudentMembershipAccess,
+} from "@/lib/integrate/provider/student/payment/membershipAccess";
 
 function hasValue(value: unknown) {
   if (Array.isArray(value)) return value.length > 0;
@@ -68,9 +77,11 @@ export function resolveStep(patient: PatientDetail): number {
   return 7;
 }
 
-function progressLabel(patient: PatientSummary, answersStep?: number) {
+function progressLabel(patient: PatientSummary, answersStep?: number, chatLocked = false) {
   if (patient.has_recommendation) {
-    return `${patient.message_count} messages · Open chat`;
+    return chatLocked
+      ? "Membership required to open chat"
+      : `${patient.message_count} messages · Open chat`;
   }
   if (patient.status === "draft") {
     const step = answersStep ?? 0;
@@ -84,8 +95,11 @@ function chatRouteForPatient(patientId: string) {
   return `/student/adviser/chat/${patientId}`;
 }
 
+const PATIENT_PAGE_SIZE = 10;
+
 export function StudentPeptideAdviserHubPage() {
   const router = useRouter();
+  const membershipAccess = useStudentMembershipAccess();
   const [flow, setFlow] = useState<QuestionnaireFlow | null>(null);
   const [patients, setPatients] = useState<PatientSummary[]>([]);
   const [activePatient, setActivePatient] = useState<PatientDetail | null>(null);
@@ -99,12 +113,58 @@ export function StudentPeptideAdviserHubPage() {
   const [createDialogError, setCreateDialogError] = useState<string | null>(null);
   const [onboardingOpen, setOnboardingOpen] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  const [filter, setFilter] = useState<StatusFilter>("all");
+  const [sort, setSort] = useState<SortFilter>("newest");
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [hasNext, setHasNext] = useState(false);
+  const [hasPrevious, setHasPrevious] = useState(false);
+  const [listLoading, setListLoading] = useState(true);
+  const [appliedListKey, setAppliedListKey] = useState("");
+  const listKey = `${page}|${debouncedSearch}|${filter}|${sort}`;
+  const listPending = listLoading || appliedListKey !== listKey;
 
-  const refreshPatients = useCallback(async () => {
-    const result = await listPatients();
-    setPatients(result.patients);
-    return result.patients;
-  }, []);
+  useEffect(() => {
+    const timer = window.setTimeout(() => {
+      const next = searchQuery.trim();
+      setDebouncedSearch((current) => {
+        if (current !== next) setPage(1);
+        return next;
+      });
+    }, 300);
+    return () => window.clearTimeout(timer);
+  }, [searchQuery]);
+
+  const refreshPatients = useCallback(
+    async (overrides?: { page?: number; q?: string; status?: StatusFilter; sort?: SortFilter }) => {
+      const nextPage = overrides?.page ?? page;
+      const nextQuery = overrides?.q ?? debouncedSearch;
+      const nextStatus = overrides?.status ?? filter;
+      const nextSort = overrides?.sort ?? sort;
+      setListLoading(true);
+      try {
+        const result = await listPatients({
+          page: nextPage,
+          limit: PATIENT_PAGE_SIZE,
+          q: nextQuery || undefined,
+          status: nextStatus,
+          sort: nextSort,
+        });
+        setPatients(result.patients);
+        const pagination = result.pagination;
+        setTotal(pagination?.total ?? result.total ?? 0);
+        setHasNext(Boolean(pagination?.has_next));
+        setHasPrevious(Boolean(pagination?.has_previous ?? nextPage > 1));
+        setAppliedListKey(`${nextPage}|${nextQuery}|${nextStatus}|${nextSort}`);
+        return result.patients;
+      } finally {
+        setListLoading(false);
+      }
+    },
+    [debouncedSearch, filter, page, sort],
+  );
 
   const routeToChat = useCallback(
     (patientId: string) => {
@@ -124,12 +184,13 @@ export function StudentPeptideAdviserHubPage() {
     let cancelled = false;
 
     async function bootstrap() {
+      if (!membershipAccess.ready) return;
+
       try {
         const storedPatientId = window.sessionStorage.getItem(ACTIVE_PATIENT_STORAGE_KEY);
         const cached = getCachedAdviserBootstrap(storedPatientId ?? undefined);
         if (cached && !cancelled) {
           setFlow(cached.flow);
-          setPatients(cached.patients);
           setLoading(false);
           if (cached.active_patient && !cached.active_patient.recommendation) {
             openOnboarding(cached.active_patient);
@@ -140,7 +201,6 @@ export function StudentPeptideAdviserHubPage() {
         if (cancelled) return;
 
         setFlow(payload.flow);
-        setPatients(payload.patients);
 
         if (payload.active_patient && !payload.active_patient.recommendation) {
           if (payload.active_patient_id) {
@@ -165,13 +225,52 @@ export function StudentPeptideAdviserHubPage() {
     return () => {
       cancelled = true;
     };
-  }, [openOnboarding]);
+  }, [membershipAccess.ready, openOnboarding]);
+
+  useEffect(() => {
+    if (!membershipAccess.ready) return;
+    let cancelled = false;
+
+    async function loadPage() {
+      setListLoading(true);
+      try {
+        const result = await listPatients({
+          page,
+          limit: PATIENT_PAGE_SIZE,
+          q: debouncedSearch || undefined,
+          status: filter,
+          sort,
+        });
+        if (cancelled) return;
+        setPatients(result.patients);
+        const pagination = result.pagination;
+        setTotal(pagination?.total ?? result.total ?? 0);
+        setHasNext(Boolean(pagination?.has_next));
+        setHasPrevious(Boolean(pagination?.has_previous ?? page > 1));
+        setAppliedListKey(`${page}|${debouncedSearch}|${filter}|${sort}`);
+      } catch (err) {
+        if (cancelled) return;
+        setActionError(err instanceof ApiRequestError ? err.message : "Could not load patients.");
+      } finally {
+        if (!cancelled) setListLoading(false);
+      }
+    }
+
+    void loadPage();
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedSearch, filter, membershipAccess.ready, page, sort]);
 
   const selectPatient = useCallback(
     async (patientId: string) => {
       setActionError(null);
       const summary = patients.find((patient) => patient.patient_id === patientId);
       if (summary?.has_recommendation) {
+        if (membershipAccess.locked) {
+          router.push("/student/payment");
+          return;
+        }
         routeToChat(patientId);
         return;
       }
@@ -181,10 +280,14 @@ export function StudentPeptideAdviserHubPage() {
         const patient = await getPatient(patientId);
         openOnboarding(patient);
       } catch (err) {
+        if (isMembershipRequiredError(err)) {
+          router.push("/student/payment");
+          return;
+        }
         setActionError(err instanceof ApiRequestError ? err.message : "Could not load patient.");
       }
     },
-    [openOnboarding, patients, routeToChat],
+    [membershipAccess.locked, openOnboarding, patients, routeToChat, router],
   );
 
   const handleCreatePatient = useCallback(
@@ -195,7 +298,12 @@ export function StudentPeptideAdviserHubPage() {
       try {
         const patient = await createPatient(displayName);
         window.sessionStorage.setItem(ACTIVE_PATIENT_STORAGE_KEY, patient.patient_id);
-        await refreshPatients();
+        setSearchQuery("");
+        setDebouncedSearch("");
+        setFilter("all");
+        setSort("newest");
+        setPage(1);
+        await refreshPatients({ page: 1, q: "", status: "all", sort: "newest" });
         setCreateDialogOpen(false);
         openOnboarding(patient);
       } catch (err) {
@@ -238,6 +346,10 @@ export function StudentPeptideAdviserHubPage() {
 
   const handleGenerateRecommendation = useCallback(async () => {
     if (!activePatient) return;
+    if (membershipAccess.locked) {
+      router.push("/student/payment");
+      return;
+    }
 
     setActionError(null);
     setIsGenerating(true);
@@ -247,13 +359,17 @@ export function StudentPeptideAdviserHubPage() {
       setOnboardingOpen(false);
       routeToChat(activePatient.patient_id);
     } catch (err) {
+      if (isMembershipRequiredError(err)) {
+        router.push("/student/payment");
+        return;
+      }
       setActionError(
         err instanceof ApiRequestError ? err.message : "Could not generate recommendation.",
       );
     } finally {
       setIsGenerating(false);
     }
-  }, [activePatient, refreshPatients, routeToChat]);
+  }, [activePatient, membershipAccess.locked, refreshPatients, routeToChat, router]);
 
   const showRecommendPrompt =
     Boolean(activePatient) &&
@@ -271,7 +387,7 @@ export function StudentPeptideAdviserHubPage() {
     <AdviserPageLayout>
       <CreatePatientDialog
         open={createDialogOpen}
-        defaultName={`Patient ${patients.length + 1}`}
+        defaultName={`Patient ${total + 1}`}
         isSubmitting={isCreating}
         error={createDialogError}
         onClose={() => {
@@ -291,6 +407,7 @@ export function StudentPeptideAdviserHubPage() {
           isGenerating={isGenerating}
           error={actionError}
           showRecommendPrompt={showRecommendPrompt}
+          accessLocked={membershipAccess.locked}
           onClose={closeOnboarding}
           onStepChange={setStep}
           onAnswersChange={(answers: IntakeAnswers) =>
@@ -317,10 +434,37 @@ export function StudentPeptideAdviserHubPage() {
             onSelect={(patientId) => void selectPatient(patientId)}
             onCreate={openCreateDialog}
             isCreating={isCreating}
+            chatLocked={membershipAccess.locked}
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            filter={filter}
+            onFilterChange={(value) => {
+              setFilter(value);
+              setPage(1);
+            }}
+            sort={sort}
+            onSortChange={(value) => {
+              setSort(value);
+              setPage(1);
+            }}
+            page={page}
+            total={total}
+            hasNext={hasNext}
+            hasPrevious={hasPrevious}
+            listLoading={listPending}
+            onPreviousPage={() => {
+              scrollAppToTopSoon();
+              setPage((current) => Math.max(1, current - 1));
+            }}
+            onNextPage={() => {
+              scrollAppToTopSoon();
+              setPage((current) => current + 1);
+            }}
             progressLabelFor={(patient) =>
               progressLabel(
                 patient,
                 activePatient?.patient_id === patient.patient_id ? step : undefined,
+                membershipAccess.locked,
               )
             }
             headerExtra={
@@ -328,7 +472,7 @@ export function StudentPeptideAdviserHubPage() {
                 <button
                   type="button"
                   onClick={() => setOnboardingOpen(true)}
-                  className="dashboard-row flex w-full items-center gap-3 rounded-2xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] px-3.5 py-3 text-left sm:px-4"
+                  className="dashboard-row flex min-h-11 w-full min-w-0 items-center gap-3 rounded-2xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)] px-3.5 py-3 text-left sm:px-4"
                 >
                   <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color:var(--dash-navy)] text-white">
                     <SidebarSvgIcon name="next" size={16} />

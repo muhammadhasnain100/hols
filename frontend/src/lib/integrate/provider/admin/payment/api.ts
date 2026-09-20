@@ -13,10 +13,11 @@ export function getCachedAdminPlans() {
   return readAdminCache<{ items: Plan[] }>(adminCacheKey("plans"))?.items;
 }
 
-export function listPlans() {
+export function listPlans(signal?: AbortSignal) {
   return cachedAdminRequest<{ items: Plan[] }>(
     adminCacheKey("plans"),
     "/api/payment/plans",
+    signal,
   );
 }
 

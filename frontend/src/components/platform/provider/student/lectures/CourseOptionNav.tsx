@@ -13,38 +13,33 @@ type CourseOptionNavProps = {
 const OPTIONS: Array<{
   id: CourseOption;
   label: string;
-  shortLabel: string;
   href: (courseId: string) => string;
 }> = [
   {
     id: "overview",
     label: "Overview",
-    shortLabel: "Overview",
     href: (courseId) => `/student/lectures/${courseId}`,
   },
   {
     id: "lessons",
     label: "Lessons",
-    shortLabel: "Lessons",
     href: (courseId) => `/student/lectures/${courseId}/lessons`,
   },
   {
     id: "calculator",
     label: "Calculator",
-    shortLabel: "Calc",
     href: (courseId) => `/student/lectures/${courseId}/calculator`,
   },
   {
     id: "test-result",
-    label: "Test result",
-    shortLabel: "Results",
+    label: "Results",
     href: (courseId) => `/student/lectures/${courseId}/test-result`,
   },
 ];
 
 const optionClass = (isActive: boolean) =>
   cn(
-    "font-sans inline-flex min-h-10 shrink-0 items-center justify-center gap-1.5 rounded-full px-4 text-sm font-medium tracking-[0.01em] transition",
+    "font-sans inline-flex min-h-11 w-full min-w-0 items-center justify-center whitespace-nowrap rounded-full px-2 text-sm font-medium tracking-[0.01em] transition sm:min-h-10 sm:w-auto sm:shrink-0 sm:px-4",
     isActive
       ? "dashboard-navy-btn text-white"
       : "dashboard-pill-soft text-[color:var(--dash-text)]",
@@ -54,7 +49,7 @@ export function CourseOptionNav({ courseId, active }: CourseOptionNavProps) {
   return (
     <nav
       aria-label="Course sections"
-      className="flex max-w-full gap-1.5 overflow-x-auto overscroll-x-contain pb-0.5 [-ms-overflow-style:none] [scrollbar-width:none] sm:flex-wrap sm:gap-2 [&::-webkit-scrollbar]:hidden"
+      className="grid w-full min-w-0 grid-cols-2 gap-1.5 sm:flex sm:flex-wrap sm:gap-2"
     >
       {OPTIONS.map((option) => {
         const isActive = option.id === active;
@@ -65,8 +60,7 @@ export function CourseOptionNav({ courseId, active }: CourseOptionNavProps) {
             className={optionClass(isActive)}
             aria-current={isActive ? "page" : undefined}
           >
-            <span className="sm:hidden">{option.shortLabel}</span>
-            <span className="hidden sm:inline">{option.label}</span>
+            {option.label}
           </Link>
         );
       })}

@@ -86,6 +86,7 @@ export type RecommendationBoard = {
   secondary_goal?: string | null;
   confidence: BoardConfidence | string;
   preferred?: string | null;
+  focus_peptides?: string[];
   ranked: RecommendationBoardPeptide[];
   labs: string[];
   stacks: string[];
@@ -143,15 +144,37 @@ export type PatientDetail = {
   sources?: Array<Record<string, string>>;
   primary_goal?: string | null;
   message_count?: number;
+  turns_used?: number;
+  turns_max?: number;
   messages: StoredChatMessage[];
   messages_pagination?: ChatMessagesPagination | null;
   created_at: string;
   updated_at: string;
 };
 
+export type PatientListParams = {
+  page?: number;
+  limit?: number;
+  q?: string;
+  status?: "all" | "progress" | "chat";
+  sort?: "newest" | "oldest";
+};
+
+export type PatientListPagination = {
+  page: number;
+  limit: number;
+  total: number;
+  total_pages?: number;
+  has_next: boolean;
+  has_previous?: boolean;
+  next_page?: number | null;
+  previous_page?: number | null;
+};
+
 export type PatientListData = {
   patients: PatientSummary[];
   total: number;
+  pagination: PatientListPagination;
 };
 
 export type AdviserBootstrapData = {
@@ -159,6 +182,7 @@ export type AdviserBootstrapData = {
   flow: QuestionnaireFlow;
   patients: PatientSummary[];
   total: number;
+  pagination?: PatientListPagination | null;
   active_patient?: PatientDetail | null;
   active_patient_id?: string | null;
 };

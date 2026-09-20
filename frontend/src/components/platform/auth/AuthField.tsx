@@ -62,8 +62,8 @@ export function AuthField({
           required={required}
           className={cn(
             authFieldClass,
-            icon && "auth-field--icon",
-            trailing && "auth-field--trailing",
+            icon ? "auth-field--icon" : undefined,
+            trailing ? "auth-field--trailing" : undefined,
           )}
         />
 

@@ -27,7 +27,19 @@ from database_entities import (
     now_iso,
 )
 from models.common import ErrorCodes
-from services.common.pagination import build_pagination, decode_cursor, encode_cursor, normalize_value
+from services.common.pagination import (
+    build_pagination,
+    consume_query_page,
+    decode_cursor,
+    encode_cursor,
+    exclusive_start_key,
+    normalize_value,
+    resolve_has_next,
+)
+from services.common.payment_gateway import (
+    CardChargeRequest,
+    process_card_charge,
+)
 from services.common.payment_crypto import (
     detect_card_brand,
     encrypt_value,
@@ -371,6 +383,30 @@ async def list_cards(user_id: str) -> list[dict[str, Any]]:
     return [_public_card(item) for item in await _list_payment_methods(user_id)]
 
 
+def _parse_iso_datetime(value: str) -> datetime:
+    parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=timezone.utc)
+    return parsed
+
+
+def has_active_membership(membership: Optional[dict[str, Any]]) -> bool:
+    """True when the student has a non-expired active membership."""
+    if not membership:
+        return False
+    status_value = str(membership.get("status") or "").lower()
+    if status_value != MembershipStatus.ACTIVE.value:
+        return False
+    end_date = membership.get("end_date")
+    if not end_date:
+        return False
+    try:
+        expires_at = _parse_iso_datetime(str(end_date))
+    except ValueError:
+        return False
+    return expires_at > _utcnow()
+
+
 async def get_membership(user_id: str) -> Optional[dict[str, Any]]:
     def _fetch():
         response = _table().get_item(
@@ -423,90 +459,53 @@ def _public_order_item(item: dict[str, Any], *, include_affiliate: bool = False)
         "status": item.get("status"),
         "payment_method_id": item.get("payment_method_id"),
         "created_at": item.get("created_at"),
+        "gateway_transaction_id": item.get("gateway_transaction_id"),
+        "payment_processor": item.get("payment_processor"),
     }
     if include_affiliate:
         row["affiliate_id"] = item.get("affiliate_id")
         commission = normalize_value(item.get("affiliate_commission"))
         row["affiliate_commission"] = commission
+        profit = normalize_value(item.get("platform_profit"))
+        if profit is None:
+            amount = float(row.get("amount") or 0)
+            profit = round(amount - float(commission or 0), 2)
+        row["platform_profit"] = profit
     return row
 
 
 async def sum_student_spend(user_id: str) -> dict[str, Any]:
-    """Sum paid order amounts for a student and capture the latest purchase."""
-    query_kwargs: dict[str, Any] = {
-        "KeyConditionExpression": Key("PK").eq(Membership.pk(user_id))
-        & Key("SK").begins_with("ORDER#"),
-        "ScanIndexForward": False,
-    }
+    """Stored student commerce. Kept as a named helper for older call sites."""
+    from services.routes.finance.service import get_stored_student_commerce
 
-    total_spent = 0.0
-    admin_earned = 0.0
-    order_count = 0
-    paid_count = 0
-    currency = "USD"
-    last_purchase_at: Optional[str] = None
-    last_purchase_amount: Optional[float] = None
-    last_plan_type: Optional[str] = None
-
-    while True:
-        def _query(kw=query_kwargs):
-            return _table().query(**kw)
-
-        response = await run_sync(_query)
-        for item in response.get("Items", []):
-            order_count += 1
-            status_value = str(item.get("status") or "").lower()
-            amount = float(normalize_value(item.get("amount")) or 0)
-            commission = float(normalize_value(item.get("affiliate_commission")) or 0)
-            if status_value == OrderStatus.PAID.value:
-                paid_count += 1
-                total_spent += amount
-                admin_earned += max(amount - commission, 0)
-                currency = str(item.get("currency") or currency)
-                if last_purchase_at is None:
-                    last_purchase_at = item.get("created_at")
-                    last_purchase_amount = round(amount, 2)
-                    last_plan_type = item.get("plan_type")
-
-        last_key = response.get("LastEvaluatedKey")
-        if not last_key:
-            break
-        query_kwargs["ExclusiveStartKey"] = last_key
-
+    commerce = await get_stored_student_commerce(user_id)
     return {
-        "total_spent": round(total_spent, 2),
-        "admin_earned": round(admin_earned, 2),
-        "order_count": order_count,
-        "paid_order_count": paid_count,
-        "currency": currency,
-        "last_purchase_at": last_purchase_at,
-        "last_purchase_amount": last_purchase_amount,
-        "last_plan_type": last_plan_type,
+        "total_spent": commerce["total_spent"],
+        "admin_earned": commerce["admin_earned"],
+        "order_count": commerce["order_count"],
+        "paid_order_count": commerce["paid_order_count"],
+        "currency": commerce["currency"],
+        "last_purchase_at": commerce["last_purchase_at"],
+        "last_purchase_amount": commerce["last_purchase_amount"],
+        "last_plan_type": commerce["last_plan_type"],
     }
 
 
 async def get_student_commerce_summary(user_id: str) -> dict[str, Any]:
-    """Admin-facing spend + membership snapshot for one student."""
+    """Spend + membership snapshot stored on the student profile."""
+    from services.routes.finance.service import get_stored_student_commerce
+
     user = await get_user_by_id(user_id)
     if not user or user.get("role") != UserRole.STUDENT.value:
         raise HTTPException(status.HTTP_404_NOT_FOUND, "Student not found")
 
-    spend = await sum_student_spend(user_id)
+    commerce = await get_stored_student_commerce(user_id)
     membership = await get_membership(user_id)
-    return {
-        "user_id": user_id,
-        "total_spent": spend["total_spent"],
-        "admin_earned": spend["admin_earned"],
-        "order_count": spend["order_count"],
-        "paid_order_count": spend["paid_order_count"],
-        "currency": spend["currency"],
-        "last_purchase_at": spend["last_purchase_at"],
-        "last_purchase_amount": spend["last_purchase_amount"],
-        "last_plan_type": spend["last_plan_type"],
-        "current_plan": membership.get("plan_type") if membership else None,
-        "membership_status": membership.get("status") if membership else None,
-        "membership_end_date": membership.get("end_date") if membership else None,
-    }
+    if membership:
+        commerce["current_plan"] = membership.get("plan_type") or commerce.get("current_plan")
+        commerce["membership_status"] = membership.get("status") or commerce.get("membership_status")
+        commerce["membership_end_date"] = membership.get("end_date") or commerce.get("membership_end_date")
+    return commerce
 
 
 async def list_orders(
@@ -524,9 +523,9 @@ async def list_orders(
 
     total = await _count_orders(user_id)
     start_index = (page - 1) * limit
-    collected: list[dict[str, Any]] = []
+    raw_items: list[dict[str, Any]] = []
     skipped = 0
-    has_next = False
+    dynamo_has_next = False
     next_cursor: Optional[str] = None
 
     query_kwargs: dict[str, Any] = {
@@ -534,34 +533,44 @@ async def list_orders(
         & Key("SK").begins_with("ORDER#"),
         "ScanIndexForward": False,
     }
-    exclusive_start_key = decode_cursor(cursor)
-    if exclusive_start_key:
-        query_kwargs["ExclusiveStartKey"] = exclusive_start_key
+    start_key = decode_cursor(cursor)
+    if start_key:
+        query_kwargs["ExclusiveStartKey"] = start_key
 
-    while len(collected) < limit:
+    while len(raw_items) < limit:
         def _query(kw=query_kwargs):
             return _table().query(**kw)
 
         response = await run_sync(_query)
-        for item in response.get("Items", []):
-            if skipped < start_index:
-                skipped += 1
-                continue
-            collected.append(_public_order_item(item, include_affiliate=include_affiliate))
-            if len(collected) == limit:
-                break
-
+        items = response.get("Items", []) or []
         last_key = response.get("LastEvaluatedKey")
-        if len(collected) >= limit:
-            has_next = last_key is not None
-            next_cursor = encode_cursor(last_key)
+        skipped, page_full, page_has_next = consume_query_page(
+            items,
+            start_index=start_index,
+            skipped=skipped,
+            collected=raw_items,
+            limit=limit,
+            last_key=last_key,
+        )
+        if page_full:
+            dynamo_has_next = page_has_next
+            next_cursor = encode_cursor(exclusive_start_key(raw_items[-1]))
             break
         if not last_key:
             break
         query_kwargs["ExclusiveStartKey"] = last_key
 
+    has_next = resolve_has_next(
+        page=page,
+        limit=limit,
+        total=total,
+        collected=len(raw_items),
+        dynamo_has_next=dynamo_has_next,
+    )
     return {
-        "items": collected,
+        "items": [
+            _public_order_item(item, include_affiliate=include_affiliate) for item in raw_items
+        ],
         "pagination": build_pagination(
             page=page,
             limit=limit,
@@ -596,6 +605,10 @@ async def purchase_plan(
     created_at = now_iso()
     affiliate_id = user.get("referred_by_affiliate_id")
     affiliate_commission = None
+    affiliate = None
+    previous = await get_membership(user_id)
+    previous_plan = str(previous.get("plan_type") or "") if previous else ""
+    plan_changed = bool(previous_plan) and previous_plan != plan_type.value
 
     if affiliate_id:
         affiliate = await get_user_by_id(affiliate_id)
@@ -603,6 +616,42 @@ async def purchase_plan(
         if margin is not None:
             affiliate_commission = round(float(amount) * float(margin) / 100, 2)
 
+    charge = await process_card_charge(
+        CardChargeRequest(
+            user_id=user_id,
+            payment_method_id=resolved_payment_method_id,
+            amount=float(amount),
+            currency=plan.get("currency", "USD"),
+            plan_type=plan_type.value,
+            order_id=order_id,
+            card_last4=card.get("card_last4"),
+            card=card,
+        )
+    )
+    if not charge.success:
+        from services.notification import events as notify_events
+
+        notify_events.payment_failed(
+            user=user,
+            plan_type=plan_type.value,
+            amount=float(amount),
+            currency=plan.get("currency", "USD"),
+            order_id=order_id,
+            card_last4=card.get("card_last4"),
+            failure_reason=charge.message or "Card charge failed.",
+            previous_plan=previous_plan or None,
+        )
+        raise HTTPException(
+            status.HTTP_402_PAYMENT_REQUIRED,
+            detail={
+                "error": charge.message or "Card charge failed.",
+                "error_code": ErrorCodes.PAYMENT_FAILED,
+            },
+        )
+
+    processor = "bypass" if charge.bypassed else "gateway"
+    commission_value = round(float(affiliate_commission or 0), 2)
+    platform_profit = round(float(amount) - commission_value, 2)
     order = Order(
         user_id=user_id,
         order_id=order_id,
@@ -613,6 +662,9 @@ async def purchase_plan(
         payment_method_id=resolved_payment_method_id,
         affiliate_id=affiliate_id,
         affiliate_commission=affiliate_commission,
+        platform_profit=platform_profit,
+        gateway_transaction_id=charge.transaction_id,
+        payment_processor=processor,
         created_at=created_at,
     )
     membership = Membership(
@@ -625,7 +677,95 @@ async def purchase_plan(
     )
     await run_sync(_table().put_item, Item=order.to_item())
     await run_sync(_table().put_item, Item=membership.to_item())
-    logger.info("Plan purchase completed user_id=%s order_id=%s plan=%s", user_id, order_id, plan_type.value)
+    try:
+        from services.routes.finance.service import adjust_admin_finance, increment_student_commerce
+
+        await increment_student_commerce(
+            user_id=user_id,
+            amount=float(amount),
+            admin_earned=platform_profit,
+            currency=plan.get("currency", "USD"),
+            plan_type=plan_type.value,
+            paid_at=created_at,
+            membership_status=MembershipStatus.ACTIVE.value,
+            membership_end_date=membership.end_date,
+        )
+        await adjust_admin_finance(
+            revenue=float(amount),
+            profit=platform_profit,
+            order_count=1,
+            currency=plan.get("currency", "USD"),
+        )
+    except Exception:
+        logger.exception(
+            "Failed to write stored commerce totals user_id=%s order_id=%s",
+            user_id,
+            order_id,
+        )
+    try:
+        from services.routes.sales.service import record_paid_sale
+
+        await record_paid_sale(
+            order_id=order_id,
+            plan_type=plan_type.value,
+            amount=float(amount),
+            currency=plan.get("currency", "USD"),
+            paid_at=created_at,
+            affiliate_id=affiliate_id,
+            affiliate_commission=affiliate_commission,
+        )
+    except Exception:
+        logger.exception(
+            "Failed to record sales snapshot user_id=%s order_id=%s",
+            user_id,
+            order_id,
+        )
+    if affiliate_id and affiliate_commission:
+        try:
+            from services.routes.payout.service import credit_affiliate_commission
+
+            await credit_affiliate_commission(
+                affiliate_id=affiliate_id,
+                order_id=order_id,
+                commission=affiliate_commission,
+                order_amount=float(amount),
+                currency=plan.get("currency", "USD"),
+                plan_type=plan_type.value,
+                paid_at=created_at,
+                student_user_id=user_id,
+            )
+        except Exception:
+            logger.exception(
+                "Failed to credit affiliate wallet affiliate_id=%s order_id=%s",
+                affiliate_id,
+                order_id,
+            )
+    logger.info(
+        "Plan purchase completed user_id=%s order_id=%s plan=%s amount=%s processor=%s",
+        user_id,
+        order_id,
+        plan_type.value,
+        amount,
+        processor,
+    )
+    try:
+        from services.notification import events as notify_events
+
+        notify_events.purchase_paid(
+            user=user,
+            plan_type=plan_type.value,
+            previous_plan=previous_plan or None,
+            plan_changed=plan_changed,
+            amount=float(amount),
+            currency=plan.get("currency", "USD"),
+            order_id=order_id,
+            card_last4=card.get("card_last4"),
+            end_date=membership.end_date,
+            affiliate=affiliate,
+            affiliate_commission=commission_value,
+        )
+    except Exception:
+        logger.exception("Failed to queue purchase notifications order_id=%s", order_id)
 
     return {
         "order": {
@@ -636,6 +776,8 @@ async def purchase_plan(
             "status": OrderStatus.PAID.value,
             "payment_method_id": resolved_payment_method_id,
             "created_at": created_at,
+            "gateway_transaction_id": charge.transaction_id,
+            "payment_processor": processor,
         },
         "membership": await get_membership(user_id),
     }

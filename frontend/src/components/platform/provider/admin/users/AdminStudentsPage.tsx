@@ -1,33 +1,49 @@
 "use client";
 
-import Link from "next/link";
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { AuthAlert } from "@/components/platform/auth/AuthAlert";
 import { Icon, Menu } from "@/components/icons";
 import { PortalShell } from "@/components/platform/provider/PortalShell";
 import {
-  DataField,
-  DirectoryListSkeleton,
+  DirectoryMobileRow,
+  DirectoryNativeSelect,
   DirectorySearchBar,
   PaginationControls,
-  StatPill,
-  StatusBadge,
 } from "@/components/platform/provider/admin/shared";
 import { adminNav } from "@/components/platform/provider/admin/adminNav";
-import { WelcomeChip } from "@/components/platform/provider/student/WelcomeChip";
+import {
+  FinanceOverviewCard,
+  studentsFinanceMetrics,
+} from "@/components/platform/provider/admin/finance/AdminFinanceOverview";
+import { useAdminFinance } from "@/components/platform/provider/admin/finance/useAdminFinance";
+import { AdminStudentDetailPanel } from "@/components/platform/provider/admin/users/AdminStudentDetailPanel";
+import { SidebarSvgIcon } from "@/components/platform/provider/sidebar-icons";
+import { DashRightDrawer } from "@/components/platform/provider/student/DashRightDrawer";
 import { ApiRequestError } from "@/lib/integrate/client";
+import { getUserProfile } from "@/lib/integrate/provider/admin/profile/api";
+import {
+  getAffiliate,
+  getCachedAffiliate,
+  listAdminAffiliateStudents,
+  listAllAffiliateStudents,
+} from "@/lib/integrate/provider/admin/affiliates";
 import {
   getCachedStudents,
+  getStudentCommerce,
+  listAllStudents,
+  listStudentOrders,
   listStudents,
   type StudentSummary,
 } from "@/lib/integrate/provider/admin/users/api";
-import { exportStudentsPaymentExcel } from "@/lib/integrate/provider/admin/users/exportPayments";
+import type { AffiliateSummary } from "@/lib/integrate/provider/admin/users/types";
 import {
-  formatDate,
   formatMoney,
   planLabels,
+  type Order,
   type PlanType,
 } from "@/lib/integrate/provider/student/payment/types";
+import { cn } from "@/lib/utils";
 
 function openSidebar() {
   window.dispatchEvent(new Event("hols-portal-open-sidebar"));
@@ -37,11 +53,17 @@ function initials(first: string, last: string) {
   return `${first?.[0] ?? ""}${last?.[0] ?? ""}`.toUpperCase() || "S";
 }
 
-function affiliateLabel(student: StudentSummary) {
-  if (student.affiliate) {
-    return `${student.affiliate.first_name} ${student.affiliate.last_name}`;
-  }
-  return null;
+function studentName(student: StudentSummary) {
+  return [student.first_name, student.last_name].filter(Boolean).join(" ") || "Student";
+}
+
+function personName(first: string, last: string, fallback: string) {
+  return [first, last].filter(Boolean).join(" ") || fallback;
+}
+
+function planLabel(plan?: string | null) {
+  if (!plan) return "No plan";
+  return planLabels[plan as PlanType] ?? plan;
 }
 
 function studentMatchesSearch(student: StudentSummary, query: string) {
@@ -55,6 +77,7 @@ function studentMatchesSearch(student: StudentSummary, query: string) {
     student.affiliate?.email,
     student.affiliate?.invite_code,
     student.referred_by_affiliate_id,
+    student.user_id,
   ]
     .filter(Boolean)
     .join(" ")
@@ -62,23 +85,115 @@ function studentMatchesSearch(student: StudentSummary, query: string) {
   return haystack.includes(query);
 }
 
-export function AdminStudentsPage() {
+function summaryFromProfile(
+  userId: string,
+  profile: Record<string, unknown>,
+  commerce?: {
+    total_spent?: number;
+    admin_earned?: number;
+    order_count?: number;
+    paid_order_count?: number;
+    spend_currency?: string;
+    currency?: string;
+    current_plan?: string | null;
+    membership_status?: string | null;
+    last_purchase_at?: string | null;
+    last_purchase_amount?: number | null;
+  },
+): StudentSummary {
+  return {
+    user_id: String(profile.user_id || userId),
+    email: String(profile.email || ""),
+    first_name: String(profile.first_name || ""),
+    last_name: String(profile.last_name || ""),
+    marketing_pref: Boolean(profile.marketing_pref),
+    referred_by_affiliate_id: profile.referred_by_affiliate_id
+      ? String(profile.referred_by_affiliate_id)
+      : undefined,
+    total_spent: commerce?.total_spent ?? Number(profile.total_spent || 0),
+    admin_earned: commerce?.admin_earned ?? Number(profile.admin_earned || 0),
+    order_count: commerce?.order_count ?? Number(profile.order_count || 0),
+    paid_order_count: commerce?.paid_order_count ?? Number(profile.paid_order_count || 0),
+    spend_currency: commerce?.spend_currency || commerce?.currency || String(profile.spend_currency || "USD"),
+    current_plan: (commerce?.current_plan ?? (profile.current_plan as string | null | undefined)) || null,
+    membership_status:
+      (commerce?.membership_status ?? (profile.membership_status as string | null | undefined)) || null,
+    last_purchase_at: commerce?.last_purchase_at ?? (profile.last_purchase_at as string | null | undefined) ?? null,
+    last_purchase_amount:
+      commerce?.last_purchase_amount ??
+      (typeof profile.last_purchase_amount === "number" ? profile.last_purchase_amount : null),
+    created_at: profile.created_at ? String(profile.created_at) : undefined,
+  };
+}
+
+const PAGE_SIZE = 15;
+const ORDERS_PAGE_SIZE = 8;
+
+export function AdminStudentsPage({ affiliateId }: { affiliateId?: string }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const focusUser = searchParams.get("user")?.trim() || "";
+  const focusOrder = searchParams.get("order")?.trim() || "";
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [students, setStudents] = useState<StudentSummary[]>([]);
+  const [affiliate, setAffiliate] = useState<AffiliateSummary | null>(null);
   const [searchPool, setSearchPool] = useState<StudentSummary[] | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [page, setPage] = useState(1);
   const [total, setTotal] = useState(0);
   const [hasNext, setHasNext] = useState(false);
   const [hasPrevious, setHasPrevious] = useState(false);
-  const [exporting, setExporting] = useState(false);
+  const [selectedId, setSelectedId] = useState<string | null>(focusUser || null);
+  const [pinnedStudent, setPinnedStudent] = useState<StudentSummary | null>(null);
+  const [orders, setOrders] = useState<Order[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(false);
+  const [ordersPage, setOrdersPage] = useState(1);
+  const [ordersTotal, setOrdersTotal] = useState(0);
+  const [ordersHasNext, setOrdersHasNext] = useState(false);
+  const [sort, setSort] = useState<"newest" | "oldest">("newest");
+  const [emptyOrders, setEmptyOrders] = useState(false);
+  const { finance, currency: financeCurrency, loading: financeLoading } = useAdminFinance();
 
   const trimmedSearch = searchQuery.trim();
   const isSearching = trimmedSearch.length > 0;
+  const listParams = {
+    sort,
+    empty_orders: emptyOrders,
+  } as const;
+  const affiliateName = affiliate
+    ? personName(affiliate.first_name, affiliate.last_name, "Affiliate")
+    : "Affiliate";
 
   const loadStudents = useCallback(async () => {
-    const cachedPage = getCachedStudents({ page, limit: 15 });
+    if (affiliateId) {
+      const cachedAffiliate = getCachedAffiliate(affiliateId);
+      if (cachedAffiliate) {
+        setAffiliate(cachedAffiliate.affiliate);
+      }
+      setLoading(true);
+      setError(null);
+      try {
+        const [detail, data] = await Promise.all([
+          getAffiliate(affiliateId),
+          listAdminAffiliateStudents(affiliateId, { page, limit: PAGE_SIZE, ...listParams }),
+        ]);
+        setAffiliate(detail.affiliate);
+        setStudents(data.items);
+        setTotal(data.pagination.total);
+        setHasNext(data.pagination.has_next);
+        setHasPrevious(data.pagination.has_previous);
+      } catch (err) {
+        setError(
+          err instanceof ApiRequestError ? err.message : "Failed to load this affiliate’s students.",
+        );
+      } finally {
+        setLoading(false);
+      }
+      return;
+    }
+
+    const cachedPage = getCachedStudents({ page, limit: PAGE_SIZE, ...listParams });
     if (cachedPage) {
       setStudents(cachedPage.items);
       setTotal(cachedPage.pagination.total);
@@ -91,7 +206,7 @@ export function AdminStudentsPage() {
     setError(null);
 
     try {
-      const data = await listStudents({ page, limit: 15 });
+      const data = await listStudents({ page, limit: PAGE_SIZE, ...listParams });
       setStudents(data.items);
       setTotal(data.pagination.total);
       setHasNext(data.pagination.has_next);
@@ -101,7 +216,7 @@ export function AdminStudentsPage() {
     } finally {
       setLoading(false);
     }
-  }, [page]);
+  }, [affiliateId, emptyOrders, page, sort]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
@@ -111,15 +226,51 @@ export function AdminStudentsPage() {
   }, [loadStudents]);
 
   useEffect(() => {
+    if (focusUser) setSelectedId(focusUser);
+  }, [focusUser]);
+
+  useEffect(() => {
+    if (!selectedId) {
+      setPinnedStudent(null);
+      return;
+    }
+    const known =
+      students.some((student) => student.user_id === selectedId) ||
+      Boolean(searchPool?.some((student) => student.user_id === selectedId));
+    if (known) {
+      setPinnedStudent(null);
+      return;
+    }
+    let cancelled = false;
+    void Promise.all([getUserProfile(selectedId), getStudentCommerce(selectedId)])
+      .then(([profileData, commerce]) => {
+        if (cancelled) return;
+        setPinnedStudent(
+          summaryFromProfile(selectedId, (profileData.profile || {}) as Record<string, unknown>, commerce),
+        );
+      })
+      .catch(() => {
+        if (!cancelled) setPinnedStudent(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [searchPool, selectedId, students]);
+
+  useEffect(() => {
     if (!isSearching) {
       setSearchPool(null);
       return;
     }
 
     let cancelled = false;
-    void listStudents({ page: 1, limit: 100 })
-      .then((data) => {
-        if (!cancelled) setSearchPool(data.items);
+    const request = affiliateId
+      ? listAllAffiliateStudents(affiliateId, listParams)
+      : listAllStudents(listParams);
+
+    void request
+      .then((items) => {
+        if (!cancelled) setSearchPool(items);
       })
       .catch(() => {
         if (!cancelled) setSearchPool(null);
@@ -128,7 +279,7 @@ export function AdminStudentsPage() {
     return () => {
       cancelled = true;
     };
-  }, [isSearching]);
+  }, [affiliateId, emptyOrders, isSearching, sort]);
 
   const visibleStudents = useMemo(() => {
     const source = isSearching ? searchPool ?? students : students;
@@ -137,334 +288,383 @@ export function AdminStudentsPage() {
     return source.filter((student) => studentMatchesSearch(student, query));
   }, [isSearching, searchPool, students, trimmedSearch]);
 
-  const visibleReferredCount = visibleStudents.filter(
-    (student) => student.affiliate || student.referred_by_affiliate_id,
-  ).length;
-  const visibleMarketingCount = visibleStudents.filter((student) => student.marketing_pref).length;
-  const visibleSpent = visibleStudents.reduce((sum, student) => sum + (student.total_spent ?? 0), 0);
-  const visibleAdminEarned = visibleStudents.reduce(
-    (sum, student) => sum + (student.admin_earned ?? student.total_spent ?? 0),
-    0,
-  );
+  const selected =
+    visibleStudents.find((student) => student.user_id === selectedId) ??
+    (pinnedStudent?.user_id === selectedId ? pinnedStudent : null);
   const spendCurrency =
-    visibleStudents.find((student) => student.spend_currency)?.spend_currency ?? "USD";
+    visibleStudents.find((student) => student.spend_currency)?.spend_currency ??
+    affiliate?.earnings_currency ??
+    "USD";
+  const busy = loading && visibleStudents.length === 0;
+  const overviewCurrency = finance.currency || financeCurrency || spendCurrency;
+  const overviewItems = affiliateId
+    ? affiliate
+      ? [
+          {
+            label: "Students",
+            value: String(affiliate.student_count ?? total),
+            hint: "Referred students",
+          },
+          {
+            label: "Orders",
+            value: String(affiliate.order_count ?? 0),
+            hint: "Paid referred purchases",
+          },
+          {
+            label: "Student spend",
+            value: formatMoney(affiliate.total_order_amount ?? 0, overviewCurrency),
+            hint: "Gross collected from referrals",
+          },
+          {
+            label: "Your earnings",
+            value: formatMoney(affiliate.admin_earned ?? 0, overviewCurrency),
+            hint: "After affiliate commission",
+          },
+        ]
+      : studentsFinanceMetrics(finance, overviewCurrency, true)
+    : studentsFinanceMetrics(finance, overviewCurrency, financeLoading);
 
-  async function handleExportPayments() {
-    setExporting(true);
-    setError(null);
-    try {
-      await exportStudentsPaymentExcel(
-        isSearching ? { students: visibleStudents } : undefined,
-      );
-    } catch (err) {
-      setError(
-        err instanceof ApiRequestError ? err.message : "Failed to export student payments.",
-      );
-    } finally {
-      setExporting(false);
+  useEffect(() => {
+    setOrdersPage(1);
+  }, [selectedId]);
+
+  useEffect(() => {
+    if (!selectedId) {
+      setOrders([]);
+      setOrdersTotal(0);
+      setOrdersHasNext(false);
+      setOrdersLoading(false);
+      return;
     }
-  }
+    const controller = new AbortController();
+    setOrdersLoading(true);
+    void listStudentOrders(selectedId, { page: ordersPage, limit: ORDERS_PAGE_SIZE })
+      .then((data) => {
+        if (controller.signal.aborted) return;
+        setOrders(data.items);
+        setOrdersTotal(data.pagination.total);
+        setOrdersHasNext(Boolean(data.pagination.has_next));
+      })
+      .catch(() => {
+        if (!controller.signal.aborted) {
+          setOrders([]);
+          setOrdersTotal(0);
+          setOrdersHasNext(false);
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) setOrdersLoading(false);
+      });
+    return () => controller.abort();
+  }, [ordersPage, selectedId]);
 
   return (
     <PortalShell
       role="admin"
-      title="Students"
+      title={affiliateId ? `${affiliateName} students` : "Students"}
       showPageHeader={false}
       contentFlush
       brandBackdrop
       nav={adminNav}
     >
-      <div className="dashboard-screen min-w-0 overflow-x-hidden">
-        <header className="mb-3 flex items-center justify-between gap-2 sm:mb-5 sm:gap-4">
-          <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+      <div className="dashboard-screen lectures-page min-w-0 overflow-x-hidden">
+        <header className="mb-4 flex min-h-10 min-w-0 items-center gap-2 sm:mb-5 sm:min-h-12 sm:gap-3 md:gap-4">
+          <button
+            type="button"
+            aria-label="Open sidebar"
+            onClick={openSidebar}
+            className="dashboard-icon-btn flex h-10 w-10 shrink-0 items-center justify-center rounded-full lg:hidden sm:h-12 sm:w-12"
+          >
+            <Icon icon={Menu} size={18} />
+          </button>
+          {affiliateId ? (
             <button
               type="button"
-              aria-label="Open sidebar"
-              onClick={openSidebar}
-              className="dashboard-icon-btn flex h-9 w-9 shrink-0 items-center justify-center rounded-full lg:hidden"
+              aria-label="Back to affiliates"
+              onClick={() => router.push("/admin/affiliates")}
+              className="adviser-chat-back-btn dashboard-navy-btn flex h-10 w-10 shrink-0 items-center justify-center rounded-full sm:h-12 sm:w-12"
             >
-              <Icon icon={Menu} size={18} />
+              <SidebarSvgIcon name="previous" size={18} strokeWidth={2.4} />
             </button>
-            <h1 className="font-sans truncate text-base font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl md:text-2xl">
+          ) : null}
+          <div className="min-w-0 flex-1">
+            <h1 className="font-sans min-w-0 truncate text-lg font-bold leading-none tracking-[0.01em] text-[color:var(--dash-text)] sm:text-xl md:text-2xl">
               Students
             </h1>
+            {affiliateId && affiliate ? (
+              <p className="text-brand-caption mt-1 truncate text-[color:var(--dash-faint)]">
+                {affiliateName}
+                {affiliate.email ? ` · ${affiliate.email}` : ""}
+              </p>
+            ) : null}
           </div>
-          <WelcomeChip fallbackName="Admin" />
         </header>
 
         <div className="grid w-full min-w-0 gap-3 sm:gap-4">
           {error ? <AuthAlert variant="error">{error}</AuthAlert> : null}
 
-          <section className="dashboard-hero relative overflow-hidden rounded-2xl p-3.5 sm:p-5 md:p-6">
-            <div className="flex flex-col gap-3.5 sm:gap-5 lg:flex-row lg:items-end lg:justify-between">
-              <div className="min-w-0">
-                <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-text)]/55">
-                  Student directory
-                </p>
-                <div className="mt-2 flex flex-wrap items-end gap-x-2 gap-y-1">
-                  <span className="font-sans text-xl font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-2xl md:text-[2.25rem] md:leading-none">
-                    {loading ? "—" : total}
-                  </span>
-                  <span className="mb-0.5 text-brand-caption font-medium text-[color:var(--dash-faint)]">
-                    {total === 1 ? "student" : "students"}
-                  </span>
-                </div>
-                <p className="text-brand-body mt-2 text-sm text-[color:var(--dash-muted)] sm:text-base">
-                  Spend, membership plan, and purchase history for each learner. Your earnings are
-                  student spend minus affiliate commissions.
-                </p>
-              </div>
+          <FinanceOverviewCard items={overviewItems} />
 
-              <div className="grid w-full grid-cols-2 gap-2 sm:flex sm:w-auto sm:flex-wrap sm:gap-2.5">
-                <button
-                  type="button"
-                  disabled={exporting || loading || (isSearching && visibleStudents.length === 0)}
-                  onClick={() => void handleExportPayments()}
-                  className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center rounded-full px-3 text-sm font-medium text-[color:var(--dash-text)] transition disabled:pointer-events-none disabled:opacity-55 sm:px-5"
-                >
-                  {exporting ? "Exporting…" : "Export Excel"}
-                </button>
-                <Link
-                  href="/admin/affiliates"
-                  className="dashboard-pill-soft font-sans inline-flex min-h-10 items-center justify-center rounded-full px-3 text-sm font-medium text-[color:var(--dash-text)] transition sm:px-5"
-                >
-                  Affiliates
-                </Link>
-                <Link
-                  href="/admin"
-                  className="font-sans col-span-2 inline-flex min-h-10 items-center justify-center rounded-full bg-[#DDE466] px-3 text-sm font-medium text-[#152744] transition hover:brightness-105 sm:col-span-1 sm:px-5"
-                >
-                  Dashboard
-                </Link>
-              </div>
-            </div>
-          </section>
-
-          <div className="grid min-w-0 gap-2.5 grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 sm:gap-3">
-            <StatPill label="Total students" value={loading ? "—" : String(total)} />
-            <StatPill
-              label={
-                <>
-                  <span className="sm:hidden">Your earn</span>
-                  <span className="hidden sm:inline">Your earnings</span>
-                </>
-              }
-              value={loading ? "—" : formatMoney(visibleAdminEarned, spendCurrency)}
-            />
-            <StatPill
-              label={
-                <>
-                  <span className="sm:hidden">Spent</span>
-                  <span className="hidden sm:inline">Student spend</span>
-                </>
-              }
-              value={loading ? "—" : formatMoney(visibleSpent, spendCurrency)}
-            />
-            <StatPill
-              label={
-                <>
-                  <span className="sm:hidden">Referred</span>
-                  <span className="hidden sm:inline">Referred (this page)</span>
-                </>
-              }
-              value={loading ? "—" : String(visibleReferredCount)}
-            />
-            <StatPill
-              label={
-                <>
-                  <span className="sm:hidden">Marketing</span>
-                  <span className="hidden sm:inline">Marketing opt-in</span>
-                </>
-              }
-              value={loading ? "—" : String(visibleMarketingCount)}
-            />
-          </div>
-
-          <section className="dashboard-surface min-w-0 rounded-2xl p-4 sm:p-5 md:p-6">
-            <div className="flex flex-wrap items-end justify-between gap-2">
-              <div className="min-w-0">
-                <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
-                  Accounts
-                </p>
-                <h2 className="font-sans mt-1 text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg md:text-xl">
-                  All students
-                </h2>
-              </div>
-              <span className="text-brand-caption font-medium text-[color:var(--dash-accent)]">
-                {isSearching
-                  ? `${visibleStudents.length} match${visibleStudents.length === 1 ? "" : "es"}`
-                  : `Page ${page}`}
-              </span>
-            </div>
-
+          <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:items-center sm:gap-3">
             <DirectorySearchBar
               value={searchQuery}
               onChange={setSearchQuery}
-              placeholder="Search by name, email, plan, or affiliate…"
+              placeholder={
+                affiliateId
+                  ? "Search by name, email, or plan…"
+                  : "Search by name, email, plan, or affiliate…"
+              }
               label="Search students"
+              className="mt-0 w-full min-w-0 sm:max-w-[22rem] sm:shrink-0"
             />
+            <div className="flex min-w-0 items-center gap-2 sm:ml-auto">
+              <DirectoryNativeSelect
+                id="student-orders-filter"
+                label="Order filter"
+                value={emptyOrders ? "empty" : "all"}
+                onChange={(value) => {
+                  setEmptyOrders(value === "empty");
+                  setPage(1);
+                }}
+                options={[
+                  { value: "all", label: "All" },
+                  { value: "empty", label: "No orders" },
+                ]}
+              />
+              <DirectoryNativeSelect
+                id="student-sort-filter"
+                label="Sort students"
+                value={sort}
+                onChange={(value) => {
+                  setSort(value === "oldest" ? "oldest" : "newest");
+                  setPage(1);
+                }}
+                options={[
+                  { value: "newest", label: "Newest" },
+                  { value: "oldest", label: "Oldest" },
+                ]}
+              />
+            </div>
+          </div>
 
-            <div className="mt-4 space-y-3 sm:mt-5 sm:space-y-4">
-              {loading && visibleStudents.length === 0 ? (
-                <DirectoryListSkeleton />
-              ) : visibleStudents.length === 0 ? (
-                <p className="text-brand-body py-10 text-center text-[color:var(--dash-faint)]">
-                  {isSearching ? "No students match your search." : "No students found."}
+          <section className="dashboard-glass-card min-w-0 overflow-hidden rounded-2xl">
+            <div className="flex flex-wrap items-end justify-between gap-2 px-4 py-4 sm:px-5">
+              <div className="min-w-0">
+                <p className="text-brand-caption font-semibold uppercase tracking-[0.08em] text-[color:var(--dash-faint)]">
+                  Directory
                 </p>
-              ) : (
-                visibleStudents.map((student) => {
-                  const referredName = affiliateLabel(student);
-                  const fullName = `${student.first_name} ${student.last_name}`.trim() || "Student";
-                  const profileHref = student.user_id
-                    ? `/admin/users/${encodeURIComponent(student.user_id)}`
-                    : null;
-
-                  return (
-                    <article
-                      key={student.user_id || student.email}
-                      className="relative z-0 min-w-0 overflow-hidden rounded-2xl border border-[color:var(--dash-surface-border)] bg-[color:var(--dash-soft)]/35 p-3.5 transition hover:bg-[color:var(--dash-soft)]/55 sm:p-5"
-                    >
-                      <div className="relative z-10 flex flex-col gap-3.5 sm:flex-row sm:items-start sm:justify-between sm:gap-4">
-                        <div className="flex min-w-0 items-start gap-3 sm:gap-4">
-                          <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-[#DDE466]/20 font-sans text-sm font-bold text-[color:var(--dash-accent)] sm:h-14 sm:w-14 sm:text-base">
-                            {initials(student.first_name, student.last_name)}
-                          </span>
-                          <div className="min-w-0 flex-1">
-                            <div className="flex min-w-0 flex-wrap items-center gap-2">
-                              {profileHref ? (
-                                <Link
-                                  href={profileHref}
-                                  className="font-sans min-w-0 max-w-full break-words text-base font-bold tracking-[0.01em] text-[color:var(--dash-text)] underline-offset-2 transition hover:text-[color:var(--dash-accent)] hover:underline sm:text-lg"
-                                >
-                                  {fullName}
-                                </Link>
-                              ) : (
-                                <h3 className="font-sans min-w-0 max-w-full break-words text-base font-bold tracking-[0.01em] text-[color:var(--dash-text)] sm:text-lg">
-                                  {fullName}
-                                </h3>
-                              )}
-                              <StatusBadge tone={student.marketing_pref ? "accent" : "muted"}>
-                                <span className="sm:hidden">{student.marketing_pref ? "On" : "Off"}</span>
-                                <span className="hidden sm:inline">
-                                  {student.marketing_pref ? "Marketing on" : "Marketing off"}
-                                </span>
-                              </StatusBadge>
-                            </div>
-                            <p className="text-brand-body mt-1 break-all text-sm text-[color:var(--dash-muted)] sm:break-normal sm:truncate">
-                              {student.email}
-                            </p>
-                          </div>
-                        </div>
-
-                        {profileHref ? (
-                          <Link
-                            href={profileHref}
-                            prefetch
-                            className="relative z-20 font-sans inline-flex min-h-11 w-full shrink-0 items-center justify-center rounded-full bg-[#DDE466] px-5 text-sm font-medium text-[#152744] transition hover:brightness-105 sm:min-h-10 sm:w-auto"
-                          >
-                            View profile
-                          </Link>
-                        ) : (
-                          <span className="font-sans inline-flex min-h-11 w-full shrink-0 items-center justify-center rounded-full bg-[color:var(--dash-soft)] px-5 text-sm font-medium text-[color:var(--dash-faint)] sm:min-h-10 sm:w-auto">
-                            Unavailable
-                          </span>
-                        )}
-                      </div>
-
-                      <div className="mt-3.5 grid grid-cols-1 gap-3 border-t border-[color:var(--dash-surface-border)] pt-3.5 min-[420px]:grid-cols-2 lg:grid-cols-3 xl:grid-cols-6 sm:mt-4 sm:pt-4">
-                        <DataField
-                          label="Total spent"
-                          value={formatMoney(
-                            student.total_spent ?? 0,
-                            student.spend_currency ?? "USD",
-                          )}
-                        />
-                        <DataField
-                          label="Your earnings"
-                          value={
-                            <span className="text-[color:var(--dash-accent)]">
-                              {formatMoney(
-                                student.admin_earned ?? student.total_spent ?? 0,
-                                student.spend_currency ?? "USD",
-                              )}
-                            </span>
-                          }
-                        />
-                        <DataField
-                          label="Plan"
-                          value={
-                            student.current_plan
-                              ? planLabels[student.current_plan as PlanType] ?? student.current_plan
-                              : "No plan"
-                          }
-                        />
-                        <DataField
-                          label="Orders"
-                          value={String(student.paid_order_count ?? student.order_count ?? 0)}
-                        />
-                        <DataField
-                          label="Affiliate"
-                          value={
-                            referredName ? (
-                              <span>{referredName}</span>
-                            ) : student.referred_by_affiliate_id ? (
-                              <span className="font-mono text-xs">{student.referred_by_affiliate_id}</span>
-                            ) : (
-                              <span className="text-[color:var(--dash-faint)]">Direct signup</span>
-                            )
-                          }
-                        />
-                        <DataField
-                          label="Last purchase"
-                          value={
-                            student.last_purchase_at
-                              ? `${formatDate(student.last_purchase_at)}${
-                                  student.last_purchase_amount != null
-                                    ? ` · ${formatMoney(
-                                        student.last_purchase_amount,
-                                        student.spend_currency ?? "USD",
-                                      )}`
-                                    : ""
-                                }`
-                              : "—"
-                          }
-                        />
-                        <DataField
-                          label="Joined"
-                          value={student.created_at ? formatDate(student.created_at) : "—"}
-                        />
-                      </div>
-
-                      {student.affiliate?.invite_code || student.affiliate?.email ? (
-                        <div className="mt-3 grid grid-cols-1 gap-3 rounded-xl bg-[color:var(--dash-soft)] px-3 py-3 min-[420px]:grid-cols-2 sm:px-3.5">
-                          {student.affiliate.email ? (
-                            <DataField label="Affiliate email" value={student.affiliate.email} />
-                          ) : null}
-                          {student.affiliate.invite_code ? (
-                            <DataField label="Invite code" value={student.affiliate.invite_code} />
-                          ) : null}
-                        </div>
-                      ) : null}
-                    </article>
-                  );
-                })
-              )}
+                <h2 className="font-sans mt-1 text-base font-semibold tracking-[0.005em] text-[color:var(--dash-text)] sm:text-lg">
+                  {affiliateId ? `${affiliateName}’s students` : "All students"}
+                </h2>
+              </div>
+              <p className="text-brand-caption text-[color:var(--dash-faint)]">
+                {isSearching
+                  ? `${visibleStudents.length} match${visibleStudents.length === 1 ? "" : "es"}`
+                  : `${total} total`}
+              </p>
             </div>
 
-            {!isSearching ? (
-              <PaginationControls
-                page={page}
-                total={total}
-                hasNext={hasNext}
-                hasPrevious={hasPrevious}
-                loading={loading}
-                onPrevious={() => setPage((current) => Math.max(1, current - 1))}
-                onNext={() => setPage((current) => current + 1)}
-              />
-            ) : null}
+            {busy ? (
+              <div className="space-y-2 px-4 pb-5 sm:px-5" aria-busy="true" aria-label="Loading students">
+                {Array.from({ length: 3 }, (_, i) => (
+                  <span key={i} className="dashboard-skeleton-block block h-16 w-full rounded-xl" />
+                ))}
+              </div>
+            ) : visibleStudents.length === 0 ? (
+              <div className="flex flex-col items-center px-5 py-12 text-center sm:py-14">
+                <span className="dashboard-tool-icon flex h-14 w-14 items-center justify-center rounded-full text-[color:var(--dash-text)]">
+                  <SidebarSvgIcon name="users" size={22} strokeWidth={1.85} />
+                </span>
+                <p className="font-sans mt-4 text-base font-semibold text-[color:var(--dash-text)] sm:text-lg">
+                  {isSearching
+                    ? "No students match your search."
+                    : emptyOrders
+                      ? "No students with zero orders"
+                      : "No students yet"}
+                </p>
+                <p className="text-brand-body mt-1.5 max-w-sm text-[color:var(--dash-muted)]">
+                  {emptyOrders
+                    ? "Students who have not placed an order yet will show here."
+                    : affiliateId
+                      ? "Students this affiliate refers will show here with spend, orders, and earnings."
+                      : "Spend, orders, membership, and earnings will show here as students join and buy plans."}
+                </p>
+              </div>
+            ) : (
+              <>
+                <ul className="grid gap-2.5 px-3.5 pb-4 sm:gap-3 sm:px-5 md:hidden">
+                  {visibleStudents.map((student) => {
+                    const currency = student.spend_currency || spendCurrency;
+                    return (
+                      <li key={student.user_id || student.email} className="min-w-0">
+                        <DirectoryMobileRow
+                          title={studentName(student)}
+                          subtitle={student.email}
+                          avatar={initials(student.first_name, student.last_name)}
+                          active={selectedId === student.user_id}
+                          ariaLabel={`Open ${studentName(student)} details`}
+                          onClick={() => setSelectedId(student.user_id)}
+                          stats={[
+                            { label: "Plan", value: planLabel(student.current_plan) },
+                            { label: "Orders", value: student.paid_order_count ?? student.order_count ?? 0 },
+                            { label: "Spent", value: formatMoney(student.total_spent ?? 0, currency) },
+                            {
+                              label: "Your earnings",
+                              value: formatMoney(student.admin_earned ?? student.total_spent ?? 0, currency),
+                            },
+                          ]}
+                        />
+                      </li>
+                    );
+                  })}
+                </ul>
+                <div className="hidden min-w-0 overflow-x-auto md:block">
+                  <table className="w-full min-w-[40rem] border-separate border-spacing-0 text-left">
+                    <thead>
+                      <tr className="bg-[color:var(--dash-soft)] text-brand-caption font-semibold uppercase tracking-[0.06em] text-[color:var(--dash-faint)]">
+                        <th scope="col" className="px-4 py-3 font-semibold sm:px-5">
+                          Student
+                        </th>
+                        <th scope="col" className="px-3 py-3 font-semibold">
+                          Plan
+                        </th>
+                        <th scope="col" className="px-3 py-3 font-semibold">
+                          Spent
+                        </th>
+                        <th scope="col" className="px-3 py-3 font-semibold">
+                          Your earnings
+                        </th>
+                        <th scope="col" className="px-3 py-3 font-semibold">
+                          Orders
+                        </th>
+                        <th scope="col" className="px-4 py-3 text-right font-semibold sm:px-5">
+                          <span className="sr-only">Open</span>
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {visibleStudents.map((student) => {
+                        const active = selectedId === student.user_id;
+                        const currency = student.spend_currency || spendCurrency;
+                        return (
+                          <tr
+                            key={student.user_id || student.email}
+                            tabIndex={0}
+                            role="button"
+                            aria-label={`Open ${studentName(student)} details`}
+                            className={cn(
+                              "cursor-pointer outline-none transition focus-visible:bg-[color:var(--dash-soft)]",
+                              active ? "bg-[color:var(--dash-soft)]" : "hover:bg-[color:var(--dash-soft)]",
+                            )}
+                            onClick={() => setSelectedId(student.user_id)}
+                            onKeyDown={(event) => {
+                              if (event.key === "Enter" || event.key === " ") {
+                                event.preventDefault();
+                                setSelectedId(student.user_id);
+                              }
+                            }}
+                          >
+                            <td className="border-t border-[color:var(--dash-surface-border)] px-4 py-3 sm:px-5">
+                              <div className="flex min-w-0 items-center gap-3">
+                                <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[color:var(--dash-soft)] font-sans text-xs font-bold text-[color:var(--dash-text)]">
+                                  {initials(student.first_name, student.last_name)}
+                                </span>
+                                <div className="min-w-0">
+                                  <p className="font-sans truncate text-sm font-semibold text-[color:var(--dash-text)]">
+                                    {studentName(student)}
+                                  </p>
+                                  <p className="text-brand-caption truncate text-[color:var(--dash-faint)]">
+                                    {student.email}
+                                  </p>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="border-t border-[color:var(--dash-surface-border)] px-3 py-3">
+                              <span className="text-brand-caption inline-flex rounded-full bg-[color:var(--dash-soft)] px-2.5 py-1 font-semibold text-[color:var(--dash-text)]">
+                                {planLabel(student.current_plan)}
+                              </span>
+                            </td>
+                            <td className="border-t border-[color:var(--dash-surface-border)] px-3 py-3">
+                              <span className="font-sans text-sm font-semibold tabular-nums text-[color:var(--dash-text)]">
+                                {formatMoney(student.total_spent ?? 0, currency)}
+                              </span>
+                            </td>
+                            <td className="border-t border-[color:var(--dash-surface-border)] px-3 py-3">
+                              <span className="font-sans text-sm font-semibold tabular-nums text-[color:var(--dash-accent)]">
+                                {formatMoney(
+                                  student.admin_earned ?? student.total_spent ?? 0,
+                                  currency,
+                                )}
+                              </span>
+                            </td>
+                            <td className="border-t border-[color:var(--dash-surface-border)] px-3 py-3">
+                              <span className="font-sans text-sm font-semibold tabular-nums text-[color:var(--dash-text)]">
+                                {student.paid_order_count ?? student.order_count ?? 0}
+                              </span>
+                            </td>
+                            <td className="border-t border-[color:var(--dash-surface-border)] px-4 py-3 text-right sm:px-5">
+                              <span className="inline-flex items-center justify-end gap-1 text-brand-caption font-medium text-[color:var(--dash-accent)]">
+                                View
+                                <SidebarSvgIcon name="next" size={14} />
+                              </span>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {!isSearching ? (
+                  <div className="px-4 pb-4 sm:px-5">
+                    <PaginationControls
+                      page={page}
+                      total={total}
+                      hasNext={hasNext}
+                      hasPrevious={hasPrevious}
+                      loading={loading}
+                      onPrevious={() => setPage((current) => Math.max(1, current - 1))}
+                      onNext={() => setPage((current) => current + 1)}
+                    />
+                  </div>
+                ) : null}
+              </>
+            )}
           </section>
         </div>
       </div>
+
+      {selected ? (
+        <DashRightDrawer
+          eyebrow="Student"
+          title={studentName(selected)}
+          onClose={() => {
+            setSelectedId(null);
+            if (focusUser || focusOrder) {
+              router.replace(
+                affiliateId
+                  ? `/admin/affiliates/${encodeURIComponent(affiliateId)}/students`
+                  : "/admin/students",
+              );
+            }
+          }}
+        >
+          <AdminStudentDetailPanel
+            student={selected}
+            currency={spendCurrency}
+            highlightOrderId={focusOrder || null}
+            orders={orders}
+            ordersLoading={ordersLoading}
+            ordersPage={ordersPage}
+            ordersTotal={ordersTotal}
+            ordersHasNext={ordersHasNext}
+            ordersHasPrevious={ordersPage > 1}
+            onOrdersPrevious={() => setOrdersPage((current) => Math.max(1, current - 1))}
+            onOrdersNext={() => setOrdersPage((current) => current + 1)}
+            showAffiliate={!affiliateId}
+          />
+        </DashRightDrawer>
+      ) : null}
     </PortalShell>
   );
 }

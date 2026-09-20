@@ -1,16 +1,4 @@
 {
-  "provider_agreement_ready": {
-    "subject": "Your Provider Agreement Is Ready To Sign",
-    "preheader": "Review and sign your HOLS provider agreement to finish onboarding.",
-    "headline": "Your Provider Agreement",
-    "headline_accent": "Is Ready To Sign",
-    "body": "Welcome to Hols. To complete your onboarding, please review and sign your provider agreement.",
-    "body_secondary": "Once signed, we'll set up your account and send you a link to create your login credentials.",
-    "cta_label": "Review & Sign",
-    "cta_path": "/login",
-    "notice": "This signing link expires on {{expiry_date}}.",
-    "footer_note": "If you have any questions, our support team is here to help."
-  },
   "otp_verification": {
     "subject": "Your HOLS login verification code",
     "preheader": "Your HOLS verification code is {{otp_code}}. It expires in {{expiry_minutes}} minutes.",
@@ -91,7 +79,7 @@
     "body": "Your HOLS affiliate account has been created. Use the details below to sign in.",
     "body_secondary": "Please log in and change your password if required by your account policy.",
     "cta_label": "Log in to HOLS",
-    "cta_path": "/login",
+    "cta_path": "/login/affiliate",
     "notice": "Email: {{account_email}} · Invite code: {{invite_code}} · Temporary password: {{password}}",
     "footer_note": "If you have any questions, our support team is here to help."
   },
@@ -113,9 +101,9 @@
     "headline": "New commission",
     "headline_accent": "added to your earnings",
     "body": "{{student_name}} completed a {{plan_name}} purchase. Your affiliate commission of {{commission_amount}} has been added to your pending payout.",
-    "body_secondary": "Track commissions, pending payout, and referral orders anytime in Earnings.",
-    "cta_label": "View earnings",
-    "cta_path": "/affiliate/earnings",
+    "body_secondary": "Track commissions, pending payout, and customer orders anytime in Payout.",
+    "cta_label": "View payout",
+    "cta_path": "/affiliate/payout",
     "notice": "Student: {{student_name}} · Plan: {{plan_name}} · Order: {{amount}} · Commission: {{commission_amount}} ({{margin_percent}}) · Order {{order_id}} · Pending payout: {{pending_payout}}",
     "footer_note": "If you have any questions, our support team is here to help."
   },
@@ -125,9 +113,9 @@
     "headline": "Your payout",
     "headline_accent": "was sent",
     "body": "We sent your affiliate payout of {{payout_amount}}. Funds should appear according to your payout method's processing time.",
-    "body_secondary": "You can review this transfer and remaining pending earnings in your affiliate Earnings page.",
+    "body_secondary": "You can review this transfer and remaining pending earnings on your Payout page.",
     "cta_label": "View payout details",
-    "cta_path": "/affiliate/earnings",
+    "cta_path": "/affiliate/payout",
     "notice": "Amount: {{payout_amount}} · Method: {{payout_method}} · Sent {{payout_date}} · Reference {{payout_id}} · Remaining pending: {{pending_payout}}",
     "footer_note": "If you have any questions, our support team is here to help."
   },
@@ -138,9 +126,69 @@
     "headline_accent": "did not go through",
     "body": "We could not complete your affiliate payout of {{payout_amount}}. The amount remains in your pending earnings.",
     "body_secondary": "Please confirm your payout details, then try again or contact support if the issue continues.",
-    "cta_label": "Review earnings",
-    "cta_path": "/affiliate/earnings",
+    "cta_label": "Review payout",
+    "cta_path": "/affiliate/payout",
     "notice": "Amount: {{payout_amount}} · Method: {{payout_method}} · Reason: {{failure_reason}} · {{attempted_at}} · Reference {{payout_id}}",
+    "footer_note": "If you have any questions, our support team is here to help."
+  },
+  "affiliate_payout_requested": {
+    "subject": "We received your HOLS payout request",
+    "preheader": "Your request for {{payout_amount}} is pending admin review.",
+    "headline": "Payout request",
+    "headline_accent": "submitted",
+    "body": "Your payout request for {{payout_amount}} is in review. That amount has moved from available into pending until it is accepted or declined.",
+    "body_secondary": "You will get another email when the request is accepted or rejected.",
+    "cta_label": "View payout status",
+    "cta_path": "/affiliate/payout",
+    "notice": "Amount: {{payout_amount}} · Status: Pending review · Submitted {{requested_at}} · Reference {{payout_id}}",
+    "footer_note": "If you have any questions, our support team is here to help."
+  },
+  "affiliate_payout_rejected": {
+    "subject": "Your HOLS payout request was declined",
+    "preheader": "{{payout_amount}} was returned to your available balance.",
+    "headline": "Payout request",
+    "headline_accent": "declined",
+    "body": "Your payout request for {{payout_amount}} was declined. The amount has been moved back to your available balance so you can request it again.",
+    "body_secondary": "Review your payout details on the Payout page, or contact support if you need help.",
+    "cta_label": "View available balance",
+    "cta_path": "/affiliate/payout",
+    "notice": "Amount: {{payout_amount}} · Status: Declined · Reviewed {{reviewed_at}} · Reference {{payout_id}}",
+    "footer_note": "If you have any questions, our support team is here to help."
+  },
+  "affiliate_lock_released": {
+    "subject": "{{amount}} is now available to withdraw",
+    "preheader": "Commission of {{amount}} moved from lock to your available balance.",
+    "headline": "Locked earnings",
+    "headline_accent": "are now available",
+    "body": "{{amount}} in referral commission has finished its hold period and is now in your available balance.",
+    "body_secondary": "You can request a payout from your available balance whenever you are ready.",
+    "cta_label": "Request a payout",
+    "cta_path": "/affiliate/payout",
+    "notice": "Released: {{amount}} · Order {{order_id}} · Available {{released_at}}",
+    "footer_note": "If you have any questions, our support team is here to help."
+  },
+  "affiliate_referral_order": {
+    "subject": "{{student_name}} placed a HOLS order",
+    "preheader": "{{student_name}} purchased {{plan_name}} for {{amount}}.",
+    "headline": "Referral order",
+    "headline_accent": "placed",
+    "body": "{{student_name}} just purchased the {{plan_name}} plan for {{amount}}. This order is tied to your affiliate account.",
+    "body_secondary": "Your commission for this order is listed in a separate earnings email and on your Payout page.",
+    "cta_label": "View customers",
+    "cta_path": "/affiliate/customers",
+    "notice": "Student: {{student_name}} · Plan: {{plan_name}} · Order: {{amount}} · Order {{order_id}} · {{order_date}}",
+    "footer_note": "If you have any questions, our support team is here to help."
+  },
+  "student_order_placed": {
+    "subject": "Your HOLS {{plan_name}} order is confirmed",
+    "preheader": "Order {{order_id}} for {{plan_name}} ({{amount}}) is confirmed.",
+    "headline": "Your order",
+    "headline_accent": "is confirmed",
+    "body": "Your {{plan_name}} order has been placed and confirmed. Membership access is active.",
+    "body_secondary": "You can review this order, invoices, and plan details from your account.",
+    "cta_label": "View order",
+    "cta_path": "/student/profile/orders",
+    "notice": "Plan: {{plan_name}} · Amount: {{amount}} · Placed {{order_date}} · Active through {{end_date}} · Order {{order_id}}",
     "footer_note": "If you have any questions, our support team is here to help."
   }
 }

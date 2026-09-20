@@ -5,6 +5,19 @@ import type {
   StudentSummary,
 } from "@/lib/integrate/provider/admin/users/types";
 
+export type AffiliateReferralTotals = {
+  student_count: number;
+  total_spent: number;
+  affiliate_earned: number;
+  currency: string;
+};
+
+export type AffiliateReferralStudentList = {
+  items: StudentSummary[];
+  pagination: AdminPaginationMeta;
+  totals?: AffiliateReferralTotals;
+};
+
 export type AffiliateInviteUrl = {
   affiliate_id: string;
   invite_code?: string | null;
@@ -65,7 +78,7 @@ export function sendAffiliateInvites(payload: AffiliateInvitePayload) {
 }
 
 export function listAffiliateReferralStudents(params: PaginationParams = {}, signal?: AbortSignal) {
-  return apiRequest<{ items: StudentSummary[]; pagination: AdminPaginationMeta }>(
+  return apiRequest<AffiliateReferralStudentList>(
     `/api/affiliate/referrals/students${buildQuery(params)}`,
     { auth: true, signal },
   );

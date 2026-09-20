@@ -5,7 +5,7 @@ import { HeroLogo } from "@/components/hero/HeroLogo";
 
 export function AuthCreativeAside() {
   return (
-    <aside className="relative hidden min-h-svh overflow-hidden lg:sticky lg:top-0 lg:block lg:h-svh">
+    <aside className="relative hidden min-h-0 overflow-hidden lg:block lg:h-full">
       <Image
         src="/assets/creatives/01%20Clinic%20owners.png"
         alt=""

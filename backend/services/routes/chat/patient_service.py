@@ -6,9 +6,9 @@ import asyncio
 import logging
 import time
 import uuid
-from typing import Any, Optional
+from typing import Any, Literal, Optional
 
-from boto3.dynamodb.conditions import Key
+from boto3.dynamodb.conditions import Attr, Key
 from fastapi import HTTPException, status
 
 from config import settings
@@ -20,7 +20,7 @@ from database_entities import (
     AdviserPatientStatus,
     now_iso,
 )
-from services.common.pagination import normalize_value
+from services.common.pagination import build_pagination, normalize_value
 from services.routes.chat.questionnaire import sanitize_intake_answers
 
 logger = logging.getLogger(__name__)
@@ -65,6 +65,14 @@ def _chat_from_item(item: dict[str, Any]) -> AdviserPatientChat:
     )
 
 
+def _count_user_turns(messages: list[dict[str, Any]] | None) -> int:
+    return sum(
+        1
+        for message in messages or []
+        if message.get("role") == "user" and message.get("kind", "message") == "message"
+    )
+
+
 def _patient_summary(entity: AdviserPatient, message_count: int = 0) -> dict[str, Any]:
     return normalize_value(
         {
@@ -104,6 +112,8 @@ def _patient_detail(
         "sources": entity.sources,
         "primary_goal": entity.primary_goal,
         "message_count": entity.message_count if entity.message_count else len(chat.messages),
+        "turns_used": _count_user_turns(chat.messages),
+        "turns_max": settings.chat_max_turns,
         "created_at": entity.created_at,
         "updated_at": entity.updated_at,
     }
@@ -303,18 +313,41 @@ async def create_patient(*, user_id: str, display_name: str) -> dict[str, Any]:
         table.put_item(Item=chat.to_item())
 
     await run_sync(_write)
+    try:
+        from services.notification import events as notify_events
+
+        notify_events.student_patient_created(user_id=user_id, patient_name=patient.display_name)
+    except Exception:
+        logger.exception("Failed to queue patient notification user_id=%s", user_id)
     return _patient_detail(patient, chat)
 
 
-async def list_patients(*, user_id: str) -> dict[str, Any]:
+async def list_patients(
+    *,
+    user_id: str,
+    page: int = 1,
+    limit: int = 10,
+    q: Optional[str] = None,
+    status: Literal["all", "progress", "chat"] = "all",
+    sort: Literal["newest", "oldest"] = "newest",
+) -> dict[str, Any]:
     def _query():
-        return _table().query(
-            KeyConditionExpression=Key("PK").eq(AdviserPatient.pk(user_id))
+        table = _table()
+        collected: list[dict[str, Any]] = []
+        kwargs: dict[str, Any] = {
+            "KeyConditionExpression": Key("PK").eq(AdviserPatient.pk(user_id))
             & Key("SK").begins_with("PATIENT#"),
-        ).get("Items", [])
+            "FilterExpression": Attr("entity").eq(AdviserPatient.ENTITY),
+        }
+        while True:
+            response = table.query(**kwargs)
+            collected.extend(response.get("Items", []))
+            last_key = response.get("LastEvaluatedKey")
+            if not last_key:
+                return collected
+            kwargs["ExclusiveStartKey"] = last_key
 
-    items = await run_sync(_query)
-    patient_items = [item for item in items if item.get("entity") == AdviserPatient.ENTITY]
+    patient_items = await run_sync(_query)
     missing_count_ids = [
         str(item["patient_id"])
         for item in patient_items
@@ -335,9 +368,38 @@ async def list_patients(*, user_id: str) -> dict[str, Any]:
             message_count = entity.message_count
         patients.append(_patient_summary(entity, message_count))
 
-    patients.sort(key=lambda entry: entry.get("updated_at") or "", reverse=True)
-    logger.info("Listed %d adviser patients for user %s", len(patients), user_id)
-    return {"patients": patients, "total": len(patients)}
+    needle = (q or "").strip().lower()
+    if needle:
+        patients = [
+            entry
+            for entry in patients
+            if needle in (entry.get("display_name") or "").lower()
+            or needle in (entry.get("primary_goal") or "").lower()
+        ]
+    if status == "progress":
+        patients = [entry for entry in patients if not entry.get("has_recommendation")]
+    elif status == "chat":
+        patients = [entry for entry in patients if entry.get("has_recommendation")]
+
+    patients.sort(key=lambda entry: entry.get("updated_at") or "", reverse=sort != "oldest")
+    total = len(patients)
+    start = max(0, (page - 1) * limit)
+    page_items = patients[start : start + limit]
+    pagination = build_pagination(
+        page=page,
+        limit=limit,
+        total=total,
+        has_next=start + limit < total,
+    )
+    logger.info(
+        "Listed %d/%d adviser patients for user %s (page=%s status=%s)",
+        len(page_items),
+        total,
+        user_id,
+        page,
+        status,
+    )
+    return {"patients": page_items, "total": total, "pagination": pagination}
 
 
 async def get_patient_messages(
@@ -405,30 +467,33 @@ async def get_adviser_bootstrap(
     user_id: str,
     patient_id: Optional[str] = None,
     message_limit: Optional[int] = None,
+    include_messages: bool = True,
+    page: int = 1,
+    patients_limit: int = 10,
 ) -> dict[str, Any]:
     started = time.perf_counter()
     limit = message_limit or settings.chat_messages_page_size
 
     if patient_id:
         patients_result, active_patient = await asyncio.gather(
-            list_patients(user_id=user_id),
+            list_patients(user_id=user_id, page=page, limit=patients_limit),
             get_patient(
                 user_id=user_id,
                 patient_id=patient_id,
-                include_messages=True,
+                include_messages=include_messages,
                 message_limit=limit,
             ),
         )
         active_id = patient_id
     else:
-        patients_result = await list_patients(user_id=user_id)
+        patients_result = await list_patients(user_id=user_id, page=page, limit=patients_limit)
         active_id = patients_result["patients"][0]["patient_id"] if patients_result["patients"] else None
         active_patient = None
         if active_id:
             active_patient = await get_patient(
                 user_id=user_id,
                 patient_id=active_id,
-                include_messages=True,
+                include_messages=include_messages,
                 message_limit=limit,
             )
 
@@ -442,6 +507,7 @@ async def get_adviser_bootstrap(
     return {
         "patients": patients_result["patients"],
         "total": patients_result["total"],
+        "pagination": patients_result["pagination"],
         "active_patient": active_patient,
         "active_patient_id": active_id,
     }
@@ -539,9 +605,9 @@ async def save_patient_board(
     user_id: str,
     patient_id: str,
     recommendation_board: dict[str, Any],
-    receipt: str,
+    receipt: Optional[str] = None,
 ) -> dict[str, Any]:
-    """Persist War Room board settings and append a chat receipt."""
+    """Persist War Room board settings. Chat receipt is optional (focus-only saves stay silent)."""
     patient_item = await _get_patient_item(user_id, patient_id)
     patient = _patient_from_item(patient_item)
     if not patient.evaluation or not patient.recommendation:
@@ -554,30 +620,33 @@ async def save_patient_board(
     patient.recommendation_board = recommendation_board
     patient.updated_at = timestamp
 
+    receipt_text = str(receipt or "").strip()
     chat_item = await _get_chat_item(user_id, patient_id)
     chat = _chat_from_item(chat_item) if chat_item else AdviserPatientChat(
         user_id=user_id,
         patient_id=patient_id,
         created_at=timestamp,
     )
-    chat.messages.append(
-        {
-            "message_id": str(uuid.uuid4()),
-            "role": "assistant",
-            "content": receipt,
-            "created_at": timestamp,
-            "kind": "board_update",
-        }
-    )
-    chat.updated_at = timestamp
-    patient.message_count = len(chat.messages)
-    if patient.status == AdviserPatientStatus.RECOMMENDED:
-        patient.status = AdviserPatientStatus.CHATTING
+    if receipt_text:
+        chat.messages.append(
+            {
+                "message_id": str(uuid.uuid4()),
+                "role": "assistant",
+                "content": receipt_text,
+                "created_at": timestamp,
+                "kind": "board_update",
+            }
+        )
+        chat.updated_at = timestamp
+        patient.message_count = len(chat.messages)
+        if patient.status == AdviserPatientStatus.RECOMMENDED:
+            patient.status = AdviserPatientStatus.CHATTING
 
     def _write():
         table = _table()
         table.put_item(Item=patient.to_item())
-        table.put_item(Item=chat.to_item())
+        if receipt_text or chat_item:
+            table.put_item(Item=chat.to_item())
 
     await run_sync(_write)
     _invalidate_message_cache(user_id, patient_id)
@@ -589,6 +658,7 @@ async def append_patient_messages(
     user_id: str,
     patient_id: str,
     entries: list[dict[str, str]],
+    recommendation_board: Optional[dict[str, Any]] = None,
 ) -> AdviserPatientChat:
     """Append multiple chat messages in a single read/write cycle."""
     patient_item = await _get_patient_item(user_id, patient_id)
@@ -604,6 +674,9 @@ async def append_patient_messages(
         user_id=user_id,
         patient_id=patient_id,
     )
+
+    if recommendation_board is not None:
+        patient.recommendation_board = recommendation_board
 
     timestamp = now_iso()
     for entry in entries:

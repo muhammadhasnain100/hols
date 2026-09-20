@@ -13,10 +13,12 @@ const PARALLAX_MAX = 14;
 type HookHolsBallProps = {
   innerRef?: (node: HTMLDivElement | null) => void;
   className?: string;
+  /** Stack the HOLS wordmark in flow (mobile vertical diagram). Desktop keeps it out of flow. */
+  labelInFlow?: boolean;
 };
 
 /** HOLS ball hub for the Hook section diagram — idle float + cursor parallax. */
-export function HookHolsBall({ innerRef, className }: HookHolsBallProps) {
+export function HookHolsBall({ innerRef, className, labelInFlow = false }: HookHolsBallProps) {
   const { hook } = landingContent;
   const [reduceMotion, setReduceMotion] = useState(false);
   const shellRef = useRef<HTMLDivElement | null>(null);
@@ -30,7 +32,7 @@ export function HookHolsBall({ innerRef, className }: HookHolsBallProps) {
   }, []);
 
   useEffect(() => {
-    if (reduceMotion) return;
+    if (reduceMotion || labelInFlow) return;
 
     const clamp = (v: number) => Math.max(-PARALLAX_MAX, Math.min(PARALLAX_MAX, v));
 
@@ -72,7 +74,7 @@ export function HookHolsBall({ innerRef, className }: HookHolsBallProps) {
       window.removeEventListener("mousemove", onMove);
       if (rafRef.current !== null) cancelAnimationFrame(rafRef.current);
     };
-  }, [reduceMotion]);
+  }, [reduceMotion, labelInFlow]);
 
   const setShellRef = useCallback(
     (node: HTMLDivElement | null) => {
@@ -108,7 +110,13 @@ export function HookHolsBall({ innerRef, className }: HookHolsBallProps) {
         </div>
       </div>
 
-      <div className="pointer-events-none absolute top-full left-1/2 mt-3 w-max -translate-x-1/2 text-center">
+      <div
+        className={
+          labelInFlow
+            ? "pointer-events-none relative z-30 mt-3 w-max bg-[#E5E5E5] px-4 py-0.5 text-center"
+            : "pointer-events-none absolute top-full left-1/2 z-30 mt-3 w-max -translate-x-1/2 text-center"
+        }
+      >
         <p className="font-sans text-lg font-bold tracking-[0.04em] text-primary">{hook.hubLabel}</p>
       </div>
     </div>

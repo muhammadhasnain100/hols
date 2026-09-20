@@ -76,12 +76,12 @@ export function BacWaterVialArt({
     <g shapeRendering="geometricPrecision">
       <defs>
         <linearGradient id={glassGrad} x1="0" y1="0" x2="1" y2="0">
-          <stop offset="0%" stopColor="#6b7280" stopOpacity="0.35" />
-          <stop offset="8%" stopColor="#ffffff" stopOpacity="0.85" />
-          <stop offset="22%" stopColor="#e5e7eb" stopOpacity="0.2" />
-          <stop offset="48%" stopColor="#ffffff" stopOpacity="0.08" />
-          <stop offset="78%" stopColor="#ffffff" stopOpacity="0.7" />
-          <stop offset="100%" stopColor="#6b7280" stopOpacity="0.32" />
+          <stop offset="0%" stopColor="#6b7280" stopOpacity="0.28" />
+          <stop offset="8%" stopColor="#ffffff" stopOpacity="0.22" />
+          <stop offset="22%" stopColor="#e5e7eb" stopOpacity="0.08" />
+          <stop offset="48%" stopColor="#ffffff" stopOpacity="0.03" />
+          <stop offset="78%" stopColor="#ffffff" stopOpacity="0.16" />
+          <stop offset="100%" stopColor="#6b7280" stopOpacity="0.26" />
         </linearGradient>
         <linearGradient id={glassEdge} x1="0" y1="0" x2="0" y2="1">
           <stop offset="0%" stopColor="#ffffff" stopOpacity="0.35" />
@@ -146,7 +146,7 @@ export function BacWaterVialArt({
 
       {showBack ? (
         <>
-          <ellipse cx={cx} cy="204" rx="46" ry="4.5" fill="#0f172a" opacity="0.16" />
+          <ellipse className="calc-vial-contact-shadow" cx={cx} cy="207" rx="52" ry="7" />
           <g clipPath={`url(#${bottleClip})`}>
             {/*
               When gsapDriven, omit `transform` from React props entirely.
@@ -201,7 +201,7 @@ export function BacWaterVialArt({
           <path
             d="M40 176 C40 194 54 202 80 202 C106 202 120 194 120 176 L120 184 C120 198 106 206 80 206 C54 206 40 198 40 184 Z"
             fill={`url(#${glassEdge})`}
-            opacity="0.7"
+            opacity="0.35"
           />
 
           {/* Glass edge highlights — drawn under the label so text stays crisp */}
@@ -210,12 +210,12 @@ export function BacWaterVialArt({
             <path
               d="M46 50 C44 78 44 100 45 118 L45 118 C45 118 52 118 56 118 L56 100 C56 78 58 58 64 48 Z"
               fill="#ffffff"
-              opacity="0.34"
+              opacity="0.2"
             />
             {/* Bright vertical specular strip (visible above + below the label) */}
-            <rect x="48" y="46" width="3" height="160" fill="#ffffff" opacity="0.55" />
+            <rect x="48" y="46" width="3" height="160" fill="#ffffff" opacity="0.18" />
             {/* Softer secondary strip */}
-            <rect x="54" y="46" width="1.8" height="160" fill="#ffffff" opacity="0.28" />
+            <rect x="54" y="46" width="1.8" height="160" fill="#ffffff" opacity="0.14" />
             {/* Bottom-left curve reflection */}
             <path
               d="M46 172 C45 180 45 190 45 196 C45 202 54 204 64 204 L64 204 C56 198 56 184 56 172 Z"
@@ -239,10 +239,17 @@ export function BacWaterVialArt({
             {/* Shoulder crown highlight above the label */}
             <ellipse cx="80" cy="72" rx="30" ry="4" fill="#ffffff" opacity="0.35" />
             {/* Base contact reflection */}
-            <ellipse cx="80" cy="200" rx="34" ry="3.5" fill="#ffffff" opacity="0.22" />
-            <ellipse cx="80" cy="205" rx="30" ry="2" fill="#0f172a" opacity="0.2" />
+            <ellipse cx="80" cy="200" rx="34" ry="3.5" fill="#ffffff" opacity="0.14" />
           </g>
           </g>
+
+          {!gsapDriven && !empty ? (
+            <g clipPath={`url(#${bottleClip})`} pointerEvents="none">
+              <g transform={fillTransform}>
+                <BacWaterLiquidFill />
+              </g>
+            </g>
+          ) : null}
 
           {/*
             Label — flush to cylinder walls (clipped) with edge falloff shading.
@@ -400,36 +407,42 @@ export function BacWaterVialArt({
 export function BacWaterLiquidFill() {
   const { interiorTop, interiorHeight, cx } = BAC_WATER_SRC;
   return (
-    <>
-      {/* Water column — layered pale aqua for depth, visible above the label. */}
+    <g className="calc-water-liquid">
       <rect
+        className="calc-water-liquid-body"
         x="42"
         y={interiorTop}
         width="76"
         height={interiorHeight + 14}
-        fill="#a8d8ec"
-        opacity="0.5"
       />
       <rect
+        className="calc-water-liquid-sheen"
         x="42"
         y={interiorTop}
         width="76"
         height={interiorHeight + 14}
-        fill="#e6f4fa"
-        opacity="0.32"
       />
-      {/* Subtle vertical light refraction */}
       <rect
+        className="calc-water-liquid-refraction"
         x="52"
         y={interiorTop}
         width="4"
         height={interiorHeight + 14}
-        fill="#ffffff"
-        opacity="0.18"
       />
-      {/* Meniscus — bright surface line + faint underside shadow */}
-      <ellipse cx={cx} cy={interiorTop + 1} rx="34" ry="3.5" fill="#ffffff" opacity="0.65" />
-      <ellipse cx={cx} cy={interiorTop + 3} rx="30" ry="1.3" fill="#5aa4c4" opacity="0.28" />
-    </>
+      <ellipse
+        className="calc-water-liquid-meniscus"
+        cx={cx}
+        cy={interiorTop + 1}
+        rx="34"
+        ry="3.5"
+      />
+      <ellipse
+        className="calc-water-liquid-meniscus-edge"
+        cx={cx}
+        cy={interiorTop + 3}
+        rx="30"
+        ry="1.3"
+      />
+    </g>
   );
 }

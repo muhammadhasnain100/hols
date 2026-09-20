@@ -15,9 +15,9 @@ const WHO_IT_FOR_POSTER = "/assets/whoitfor/background.png";
 type WhoItsForSlide = (typeof landingContent.whoItsFor.slides)[number];
 
 const WIF_RAW_TEXT =
-  "font-body text-[1.25rem] font-light leading-[1.45] tracking-[0.02em] text-balance text-white drop-shadow-[0_2px_14px_rgba(0,0,0,0.4)] sm:text-[1.625rem] sm:leading-[1.5] md:text-[2.125rem] lg:text-[2.35rem] lg:leading-[1.45]";
+  "font-body w-full min-w-0 max-w-full text-[1.25rem] font-light leading-[1.45] tracking-[0.01em] text-pretty text-white drop-shadow-[0_2px_14px_rgba(0,0,0,0.4)] sm:text-[1.625rem] sm:leading-[1.5] md:text-[2.125rem] lg:text-[2.35rem] lg:leading-[1.45] lg:tracking-[0.02em]";
 const WIF_BULLET_LABEL =
-  "font-body text-[1.125rem] font-light tracking-[0.02em] text-white/95 drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)] sm:text-[1.375rem] md:text-[1.75rem] lg:text-[2rem]";
+  "font-body min-w-0 max-w-full text-center text-[1.125rem] font-light tracking-[0.01em] text-pretty text-white/95 drop-shadow-[0_2px_12px_rgba(0,0,0,0.35)] sm:text-[1.375rem] md:text-[1.75rem] lg:text-[2rem] lg:tracking-[0.02em]";
 
 function StepCapsule({ step }: { step: number }) {
   return (
@@ -55,7 +55,7 @@ function ScrollProgressLine({
 
 function RawTextSlide({ lines }: { lines: readonly string[] }) {
   return (
-    <div className="mx-auto w-full max-w-4xl px-1 text-center sm:px-2">
+    <div className="mx-auto w-full min-w-0 max-w-4xl px-1 text-center sm:px-2">
       {lines.map((line) => (
         <p key={line} className={WIF_RAW_TEXT}>
           {line}
@@ -67,11 +67,11 @@ function RawTextSlide({ lines }: { lines: readonly string[] }) {
 
 function BulletSlide({ items }: { items: readonly string[] }) {
   return (
-    <ul className="mx-auto flex w-full max-w-4xl flex-col items-center gap-6 px-1 sm:flex-row sm:flex-wrap sm:items-start sm:justify-center sm:gap-x-10 sm:gap-y-10 sm:px-2 md:gap-x-14 lg:gap-x-16">
+    <ul className="mx-auto flex w-full min-w-0 max-w-4xl flex-col items-center gap-6 px-1 sm:flex-row sm:flex-wrap sm:items-start sm:justify-center sm:gap-x-10 sm:gap-y-10 sm:px-2 md:gap-x-14 lg:gap-x-16">
       {items.map((item) => (
         <li
           key={item}
-          className="flex flex-col items-center gap-3 sm:gap-4 md:gap-5"
+          className="flex min-w-0 flex-col items-center gap-3 sm:gap-4 md:gap-5"
         >
           <span data-wif-bullet className={WIF_BULLET_LABEL}>
             {item}
@@ -89,7 +89,7 @@ function BulletSlide({ items }: { items: readonly string[] }) {
 
 function WhoItsForSlideContent({ slide }: { slide: WhoItsForSlide }) {
   return (
-    <div className="w-full">
+    <div className="w-full min-w-0 max-w-full">
       {slide.type === "text" ? (
         <RawTextSlide lines={slide.lines} />
       ) : (
@@ -569,7 +569,7 @@ export function WhoItsForSection() {
 
         <div
           className={cn(
-            "relative mx-auto flex h-full min-h-0 w-full max-w-5xl flex-col items-center",
+            "relative mx-auto flex h-full min-h-0 w-full min-w-0 max-w-5xl flex-col items-center",
             heroLayout.gutterX,
           )}
         >
@@ -577,21 +577,22 @@ export function WhoItsForSection() {
             <StepCapsule step={activeIndex + 1} />
           </div>
 
-          <div className="relative flex min-h-0 w-full flex-1 items-center justify-center overflow-hidden py-4 sm:py-8 md:py-12">
-            <div className="relative w-full max-h-full">
+          <div className="relative flex min-h-0 w-full min-w-0 flex-1 items-center justify-center overflow-hidden py-4 sm:py-8 md:py-12">
+            <div className="relative w-full min-w-0 max-h-full">
               {whoItsFor.slides.map((slide) => (
                 <div
                   key={slide.id}
                   data-wif-slide
-                  className="absolute inset-0 flex items-center justify-center will-change-transform"
+                  className="absolute inset-0 flex min-w-0 items-center justify-center will-change-transform"
                 >
                   <WhoItsForSlideContent slide={slide} />
                 </div>
               ))}
 
-              {/* Height sizer: grid stacks every slide so layout uses the tallest */}
+              {/* Height sizer: grid stacks every slide so layout uses the tallest.
+                  Must stay invisible — it is the same copy as the live slides. */}
               <div
-                className="pointer-events-none invisible grid"
+                className="pointer-events-none invisible grid opacity-0"
                 aria-hidden
               >
                 {whoItsFor.slides.map((slide) => (

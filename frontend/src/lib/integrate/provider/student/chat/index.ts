@@ -42,6 +42,8 @@ export type {
   IntakeEvaluation,
   PatientDetail,
   PatientListData,
+  PatientListPagination,
+  PatientListParams,
   PatientMessagesData,
   PatientSummary,
   QuestionnaireFlow,

@@ -1,10 +1,5 @@
-import { PortalGate } from "@/components/platform/provider/PortalGate";
-import { AffiliateEarningsPage } from "@/components/platform/provider/affiliate";
+import { redirect } from "next/navigation";
 
-export default function AffiliateEarningsRoute() {
-  return (
-    <PortalGate role="affiliate">
-      <AffiliateEarningsPage />
-    </PortalGate>
-  );
+export default function AffiliateEarningsRedirect() {
+  redirect("/affiliate/payout");
 }

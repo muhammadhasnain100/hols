@@ -18,6 +18,8 @@ import {
   CoursePageLayout,
 } from "@/components/platform/provider/student/lectures/CoursePageLayout";
 import { CoursePageSkeleton } from "@/components/platform/provider/student/DashboardSkeletons";
+import { LectureMembershipLockedScreen } from "@/components/platform/provider/student/lectures/LectureMembershipLock";
+import { LecturesPageLayout } from "@/components/platform/provider/student/lectures/LecturesPageLayout";
 import {
   getPortalThemeSnapshot,
   subscribePortalTheme,
@@ -32,6 +34,10 @@ import {
   type SectionSummary,
   type TopicSummary,
 } from "@/lib/integrate/provider/student/lectures";
+import {
+  isMembershipRequiredError,
+  useStudentMembershipAccess,
+} from "@/lib/integrate/provider/student/payment/membershipAccess";
 import { cn } from "@/lib/utils";
 
 type StudentCoursePageProps = {
@@ -43,8 +49,10 @@ type TopicGroup = TopicSummary & {
 };
 
 export function StudentCoursePage({ courseId }: StudentCoursePageProps) {
+  const membershipAccess = useStudentMembershipAccess();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [apiLocked, setApiLocked] = useState(false);
   const [course, setCourse] = useState<CourseSummary | null>(null);
   const [topics, setTopics] = useState<TopicSummary[]>([]);
   const [sections, setSections] = useState<SectionSummary[]>([]);
@@ -61,6 +69,10 @@ export function StudentCoursePage({ courseId }: StudentCoursePageProps) {
       setSections(bundle.sections);
       setExpandedTopic((current) => current ?? bundle.topics[0]?.l1_name ?? null);
     } catch (err) {
+      if (isMembershipRequiredError(err)) {
+        setApiLocked(true);
+        return;
+      }
       setError(err instanceof ApiRequestError ? err.message : "Failed to load course.");
     } finally {
       setLoading(false);
@@ -68,9 +80,10 @@ export function StudentCoursePage({ courseId }: StudentCoursePageProps) {
   }, [courseId]);
 
   useEffect(() => {
+    if (!membershipAccess.ready || membershipAccess.locked) return;
     const timer = window.setTimeout(() => void load(), 0);
     return () => window.clearTimeout(timer);
-  }, [load]);
+  }, [load, membershipAccess.locked, membershipAccess.ready]);
 
   const topicGroups = useMemo<TopicGroup[]>(() => {
     return [...topics]
@@ -124,6 +137,18 @@ export function StudentCoursePage({ courseId }: StudentCoursePageProps) {
     },
     { dependencies: [course?.course_id, topicGroups.length], scope: stageRef },
   );
+
+  if (!membershipAccess.ready) {
+    return (
+      <LecturesPageLayout>
+        <CoursePageSkeleton />
+      </LecturesPageLayout>
+    );
+  }
+
+  if (membershipAccess.locked || apiLocked) {
+    return <LectureMembershipLockedScreen />;
+  }
 
   return (
     <CoursePageLayout
@@ -247,7 +272,7 @@ function HolsVolume({
                   }}
                   aria-label="Close volume"
                 >
-                  <SidebarSvgIcon name="cross" size={18} strokeWidth={2.15} className="sm:hidden" />
+                  <SidebarSvgIcon name="cross" size={24} strokeWidth={2.15} className="sm:hidden" />
                   <SidebarSvgIcon name="cross" size={28} strokeWidth={2.15} className="hidden sm:block" />
                 </button>
               </div>
@@ -326,6 +351,7 @@ function HolsVolume({
                 className={cn(
                   "book-cover-content",
                   isCustomVialCover && "book-cover-content--photo-vial",
+                  hideTitleOverlay && "book-cover-content--art-title",
                 )}
               >
                 <header className="book-cover-header">
@@ -374,7 +400,7 @@ function HolsVolume({
                 <h2
                   className={cn(
                     "book-cover-title font-sans",
-                    hideTitleOverlay && "sr-only",
+                    hideTitleOverlay && "sm:sr-only",
                   )}
                 >
                   {displayTitle}
@@ -446,7 +472,7 @@ function TableOfContents({
         </div>
         <Link
           href={`/student/lectures/${courseId}/lessons`}
-          className="dashboard-navy-btn font-sans inline-flex min-h-10 w-full shrink-0 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white sm:w-auto"
+          className="dashboard-navy-btn font-sans inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-1.5 rounded-full px-5 text-sm font-medium tracking-[0.01em] text-white sm:min-h-10 sm:w-auto"
         >
           Start reading
           <SidebarSvgIcon name="next" size={15} />
@@ -522,7 +548,7 @@ function TopicChapter({
         onClick={onToggle}
         data-expanded={expanded}
         className={cn(
-          "course-toc-row flex w-full items-start gap-2.5 rounded-xl px-2.5 py-2.5 text-left sm:items-center sm:gap-4 sm:px-3.5 sm:py-3",
+          "course-toc-row flex min-h-11 w-full items-start gap-2.5 rounded-xl px-2.5 py-2.5 text-left sm:min-h-0 sm:items-center sm:gap-4 sm:px-3.5 sm:py-3",
           expanded && "bg-[color:var(--dash-soft)]",
         )}
         aria-expanded={expanded}
@@ -542,7 +568,7 @@ function TopicChapter({
         </span>
         <span
           className={cn(
-            "course-toc-chevron mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-full sm:mt-0 sm:h-9 sm:w-9",
+            "course-toc-chevron mt-0.5 flex h-11 w-11 shrink-0 items-center justify-center rounded-full sm:mt-0 sm:h-9 sm:w-9",
             expanded
               ? "dashboard-navy-btn text-white"
               : "dashboard-pill-soft text-[color:var(--dash-muted)]",
@@ -555,11 +581,11 @@ function TopicChapter({
 
       <div ref={panelRef} className="overflow-hidden" style={{ height: 0, opacity: 0 }}>
         <div className="pb-3 pl-2 pr-2 sm:pl-[3.25rem]">
-          <div className="mb-2 flex items-center justify-between gap-2">
+          <div className="mb-2 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <p className="text-brand-caption text-[color:var(--dash-faint)]">In this chapter</p>
             <Link
               href={topicLessonsHref}
-              className="text-brand-caption font-medium text-[color:var(--dash-text)] transition hover:opacity-80"
+              className="dashboard-pill-soft text-brand-caption inline-flex min-h-11 items-center justify-center rounded-full px-3.5 font-medium text-[color:var(--dash-text)] transition hover:opacity-80 sm:min-h-8 sm:px-3"
             >
               Open chapter
             </Link>
@@ -599,7 +625,7 @@ function SectionEntry({
     <li>
       <Link
         href={href}
-        className="course-section-row hols-option-hover flex items-start gap-2.5 rounded-lg px-2 py-2.5 sm:items-baseline sm:gap-3 sm:px-2.5"
+        className="course-section-row hols-option-hover flex min-h-11 items-start gap-2.5 rounded-lg px-2 py-2.5 sm:min-h-0 sm:items-baseline sm:gap-3 sm:px-2.5"
       >
         <span className="font-sans mt-0.5 w-6 shrink-0 text-xs font-semibold tabular-nums text-[color:var(--dash-dim)] sm:mt-0">
           {String(index + 1).padStart(2, "0")}

@@ -9,7 +9,7 @@ export const authSubtitleClass = "text-brand-body mt-3 text-sm text-primary/70 s
 export const authLabelClass = "dashboard-field-label";
 
 export const authFieldClass =
-  "auth-field dashboard-field hols-hover-border w-full shadow-none outline-none ring-0 transition-[border-color] focus:shadow-none focus:outline-none focus:ring-0 focus-visible:shadow-none focus-visible:outline-none focus-visible:ring-0";
+  "auth-field dashboard-field hols-hover-border w-full appearance-none shadow-none outline-none ring-0 transition-[border-color] focus:shadow-none focus:outline-none focus:ring-0 focus-visible:shadow-none focus-visible:outline-none focus-visible:ring-0";
 
 export const authHelperTextClass = "text-brand-body text-sm text-primary/70 sm:text-base";
 

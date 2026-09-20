@@ -119,6 +119,22 @@ def user_role_index_item(user: dict[str, Any]) -> dict[str, Any]:
         "student_count": user.get("student_count", 0) if role == UserRole.AFFILIATE.value else None,
         "created_at": created_at,
     }
+    if role == UserRole.STUDENT.value:
+        item.update(
+            {
+                "total_spent": user.get("total_spent", 0),
+                "admin_earned": user.get("admin_earned", 0),
+                "order_count": user.get("order_count", 0),
+                "paid_order_count": user.get("paid_order_count", 0),
+                "spend_currency": user.get("spend_currency"),
+                "last_purchase_at": user.get("last_purchase_at"),
+                "last_purchase_amount": user.get("last_purchase_amount"),
+                "last_plan_type": user.get("last_plan_type"),
+                "current_plan": user.get("current_plan"),
+                "membership_status": user.get("membership_status"),
+                "membership_end_date": user.get("membership_end_date"),
+            }
+        )
     return {key: value for key, value in item.items() if value is not None}
 
 
@@ -195,6 +211,12 @@ async def save_user(profile: UserProfile) -> dict[str, Any]:
 
     saved = await run_sync(_save)
     _clear_user_list_cache()
+    try:
+        from services.routes.finance.service import bump_admin_role_count
+
+        await bump_admin_role_count(saved.get("role"), delta=1)
+    except Exception:
+        logger.exception("Failed to bump admin role count after save user_id=%s", saved.get("user_id"))
     return saved
 
 
@@ -267,6 +289,17 @@ async def update_user_fields(user_id: str, fields: dict[str, Any]) -> dict[str, 
 
     updated_user = await run_sync(_update)
     _clear_user_list_cache()
+    if existing_user and existing_user.get("role") != updated_user.get("role"):
+        try:
+            from services.routes.finance.service import bump_admin_role_count
+
+            await bump_admin_role_count(existing_user.get("role"), delta=-1)
+            await bump_admin_role_count(updated_user.get("role"), delta=1)
+        except Exception:
+            logger.exception(
+                "Failed to adjust admin role counts after role change user_id=%s",
+                user_id,
+            )
     return updated_user
 
 
@@ -318,6 +351,34 @@ async def delete_refresh_token(user_id: str, token_id: str) -> None:
             "SK": RefreshTokenRecord.sk(token_id),
         },
     )
+
+
+async def delete_all_refresh_tokens(user_id: str) -> int:
+    kwargs: dict[str, Any] = {
+        "KeyConditionExpression": Key("PK").eq(RefreshTokenRecord.pk(user_id))
+        & Key("SK").begins_with("REFRESH#"),
+        "ProjectionExpression": "PK, SK",
+    }
+    deleted = 0
+    while True:
+        query_kwargs = dict(kwargs)
+
+        def _query(kw=query_kwargs):
+            return _table().query(**kw)
+
+        response = await run_sync(_query)
+        for item in response.get("Items") or []:
+            pk = item.get("PK")
+            sk = item.get("SK")
+            if not pk or not sk:
+                continue
+            await run_sync(_table().delete_item, Key={"PK": pk, "SK": sk})
+            deleted += 1
+        last_key = response.get("LastEvaluatedKey")
+        if not last_key:
+            break
+        kwargs["ExclusiveStartKey"] = last_key
+    return deleted
 
 
 # --------------------------------------------------------------------------- #
@@ -401,6 +462,15 @@ def decode_token(token: str, expected_type: str | None = None) -> dict[str, Any]
     return payload
 
 
+def try_decode_token(token: Optional[str], expected_type: str | None = None) -> Optional[dict[str, Any]]:
+    if not token:
+        return None
+    try:
+        return decode_token(token, expected_type)
+    except HTTPException:
+        return None
+
+
 # --------------------------------------------------------------------------- #
 # OTP
 # --------------------------------------------------------------------------- #
@@ -413,6 +483,9 @@ def otp_is_required(last_login_at: Optional[str], role: str) -> bool:
 
     Applies to admin, affiliate, and student logins.
     """
+    _ = role
+    if settings.is_development():
+        return False
     if not last_login_at:
         return True
     last_login = _parse_iso(last_login_at)
@@ -424,12 +497,18 @@ async def send_otp_email(user: dict[str, Any], code: str) -> None:
     """Send the OTP code email using the shared HTML template."""
     first_name = user.get("first_name") or "there"
     try:
+        role = user.get("role")
+        cta_path = "/login"
+        if role == UserRole.ADMIN.value:
+            cta_path = "/login/admin"
+        elif role == UserRole.AFFILIATE.value:
+            cta_path = "/login/affiliate"
         email = email_service.render_email(
             "otp_verification",
             recipient_name=first_name,
             otp_code=code,
             expiry_minutes=max(1, settings.otp_expire_seconds // 60),
-            cta_url=email_service.frontend_url("/login"),
+            cta_path=cta_path,
         )
         await email_service.send_email_async(
             to=user["email"],
@@ -542,9 +621,17 @@ async def signup_student(
         password_hash=hash_password(password),
     )
     user = await save_user(profile)
+    referred_affiliate = None
     if referred_by_affiliate_id:
         await _increment_affiliate_student_count(referred_by_affiliate_id)
+        referred_affiliate = await get_user_by_id(referred_by_affiliate_id)
     logger.info("Student signup completed for user_id=%s", user_id)
+    try:
+        from services.notification import events as notify_events
+
+        notify_events.student_signed_up(student=user, affiliate=referred_affiliate)
+    except Exception:
+        logger.exception("Failed to queue student signup notifications user_id=%s", user_id)
     return public_profile(user)
 
 
@@ -687,6 +774,88 @@ async def refresh_access_token(refresh_token: str) -> dict[str, Any]:
         "token_type": "bearer",
         "expires_in": settings.jwt_access_token_expire_minutes * 60,
     }
+
+
+def _session_payload(
+    user: dict[str, Any],
+    *,
+    access_token: str,
+    refresh_token: str,
+    expires_in: int,
+) -> dict[str, Any]:
+    return {
+        "access_token": access_token,
+        "refresh_token": refresh_token,
+        "token_type": "bearer",
+        "expires_in": expires_in,
+        "otp_required": False,
+        "role": user["role"],
+        "user_id": user["user_id"],
+        "profile": public_profile(user),
+    }
+
+
+async def restore_session(*, refresh_token: str, access_token: Optional[str] = None) -> dict[str, Any]:
+    """Return the current portal session from a stored refresh token."""
+    payload = try_decode_token(refresh_token, TOKEN_TYPE_REFRESH)
+    if not payload:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid refresh token")
+
+    user_id = str(payload.get("sub") or "")
+    token_id = payload.get("tid")
+    raw = payload.get("rt")
+    if not user_id or not token_id or not raw:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid refresh token")
+
+    stored = await get_refresh_token(user_id, token_id)
+    if not stored:
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Refresh token revoked")
+    if _parse_iso(stored["expires_at"]) < _utcnow():
+        await delete_refresh_token(user_id, token_id)
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Refresh token expired")
+    if stored["token_hash"] != _hash_token(raw):
+        await delete_refresh_token(user_id, token_id)
+        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Invalid refresh token")
+
+    user = await get_user_by_id(user_id)
+    if not user:
+        raise HTTPException(status.HTTP_404_NOT_FOUND, "User not found")
+
+    access_payload = try_decode_token(access_token, TOKEN_TYPE_ACCESS)
+    if access_payload and str(access_payload.get("sub") or "") == user_id:
+        remaining = max(1, int(access_payload.get("exp") or 0) - int(_utcnow().timestamp()))
+        return _session_payload(
+            user,
+            access_token=access_token or "",
+            refresh_token=refresh_token,
+            expires_in=remaining,
+        )
+
+    await delete_refresh_token(user_id, token_id)
+    access = create_access_token(user_id, user["role"], user["email"])
+    new_refresh, _ = await create_refresh_token_value(user_id, user["role"])
+    return _session_payload(
+        user,
+        access_token=access,
+        refresh_token=new_refresh,
+        expires_in=settings.jwt_access_token_expire_minutes * 60,
+    )
+
+
+async def logout_session(*, refresh_token: Optional[str] = None, access_token: Optional[str] = None) -> dict[str, Any]:
+    """Revoke refresh tokens for this session. Always succeeds so logout can fire in the background."""
+    user_id: Optional[str] = None
+    refresh_payload = try_decode_token(refresh_token, TOKEN_TYPE_REFRESH)
+    if refresh_payload:
+        user_id = str(refresh_payload.get("sub") or "") or None
+    if not user_id:
+        access_payload = try_decode_token(access_token, TOKEN_TYPE_ACCESS)
+        if access_payload:
+            user_id = str(access_payload.get("sub") or "") or None
+    if user_id:
+        deleted = await delete_all_refresh_tokens(user_id)
+        logger.info("Logged out user_id=%s revoked=%s", user_id, deleted)
+    return {"logged_out": True}
 
 
 async def get_profile(

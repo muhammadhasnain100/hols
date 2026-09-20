@@ -50,6 +50,9 @@ Reply like a fast clinical SMS to the provider:
 - 1–4 short bullets OR 2 short sentences — never both walls of text
 - Bold peptide names only; no ### headers
 - Stay on this patient case
+- If FOCUS PEPTIDES lists one peptide, answer only about that peptide.
+- If FOCUS PEPTIDES lists several and the question is general or a comparison, cover each named peptide. Do not drop any selected name and do not swap in unselected shortlist peptides.
+- If FOCUS PEPTIDES lists several but the question names one of them, answer about that named peptide only. Do not introduce unselected shortlist peptides.
 - Never prescribe doses / start therapy
 - Never suggest blocked peptides
 - Skip greetings, disclaimers, and restating the whole card unless asked
@@ -161,11 +164,27 @@ def recommend_questionnaire(req: IntakeRequest) -> dict:
     }
 
 
+def _normalize_focus_peptides(names: Optional[List[str]]) -> list[str]:
+    seen: set[str] = set()
+    cleaned: list[str] = []
+    for raw in names or []:
+        name = str(raw or "").strip()
+        if not name or name in seen:
+            continue
+        seen.add(name)
+        cleaned.append(name)
+        if len(cleaned) >= 8:
+            break
+    return cleaned
+
+
 def followup_questionnaire(req: FollowUpRequest) -> dict:
     ensure_initialized()
     question = req.question.strip()
     if not question:
         raise HTTPException(status_code=400, detail="Empty question.")
+
+    focus_peptides = _normalize_focus_peptides(req.focus_peptides)
 
     # Skip RAG for ultra-short meta questions — evaluation context is enough.
     needs_rag = _question_needs_rag(question)
@@ -175,8 +194,9 @@ def followup_questionnaire(req: FollowUpRequest) -> dict:
         k = min(req.top_k or settings.top_k, settings.top_k)
         rag_q = f"{question}. Patient goal: {req.evaluation.get('primary_goal', '')}. "
         recs = req.evaluation.get("recommendations") or []
-        if recs:
-            rag_q += "Peptides: " + ", ".join(p.get("name", "") for p in recs[:4])
+        peptide_names = focus_peptides or [p.get("name", "") for p in recs[:4] if p.get("name")]
+        if peptide_names:
+            rag_q += "Peptides: " + ", ".join(peptide_names)
         context, sources = _retrieve(rag_q, k)
         if not context.strip():
             context = "(No additional KB context.)"
@@ -189,6 +209,7 @@ def followup_questionnaire(req: FollowUpRequest) -> dict:
             req.messages,
             question,
             context,
+            focus_peptides=focus_peptides,
         )
     except Exception as exc:
         raise HTTPException(status_code=502, detail=f"LLM error: {exc}") from exc
@@ -225,6 +246,15 @@ async def recommend_for_patient(
         recommendation_board=board,
     )
     logger.info("Recommendation saved for patient %s user %s", patient_id, user_id)
+    try:
+        from services.notification import events as notify_events
+
+        notify_events.student_recommendation_ready(
+            user_id=user_id,
+            patient_name=str(patient.get("display_name") or "Patient"),
+        )
+    except Exception:
+        logger.exception("Failed to queue recommendation notification user=%s patient=%s", user_id, patient_id)
     return await patient_service.build_patient_messages_response(
         user_id=user_id,
         patient_id=patient_id,
@@ -238,6 +268,7 @@ async def update_board_for_patient(
     confidence: Optional[str] = None,
     preferred: Optional[str] = None,
     clear_preferred: bool = False,
+    focus_peptides: Optional[List[str]] = None,
 ) -> dict:
     """Rebuild War Room board from stored evaluation (deterministic, no LLM)."""
     from services.routes.chat import patient_service
@@ -257,10 +288,15 @@ async def update_board_for_patient(
     else:
         next_preferred = current.get("preferred")
 
+    next_focus = (
+        focus_peptides if focus_peptides is not None else current.get("focus_peptides")
+    )
+
     board = build_recommendation_board(
         evaluation,
         confidence=str(next_confidence),
         preferred=next_preferred,
+        focus_peptides=next_focus,
     )
 
     changes: list[dict] = []
@@ -283,7 +319,7 @@ async def update_board_for_patient(
             }
         )
 
-    receipt = format_board_receipt(board, changes=changes or None)
+    receipt = format_board_receipt(board, changes=changes) if changes else None
     return await patient_service.save_patient_board(
         user_id=user_id,
         patient_id=patient_id,
@@ -298,6 +334,7 @@ async def send_message_for_patient(
     patient_id: str,
     question: str,
     top_k: Optional[int] = None,
+    focus_peptides: Optional[List[str]] = None,
 ) -> dict:
     from services.routes.chat import patient_service
 
@@ -305,6 +342,42 @@ async def send_message_for_patient(
     patient_entity, chat_entity = await patient_service.get_patient_for_chat(user_id, patient_id)
     if not patient_entity.evaluation or not patient_entity.recommendation:
         raise HTTPException(status_code=400, detail="Generate a recommendation before chatting.")
+
+    turns_used = sum(
+        1
+        for message in chat_entity.messages
+        if message.get("role") == "user" and message.get("kind", "message") == "message"
+    )
+    if turns_used >= settings.chat_max_turns:
+        raise HTTPException(
+            status_code=400,
+            detail=f"This consultation has reached the {settings.chat_max_turns}-turn limit.",
+        )
+
+    allowed_names = {
+        str(item.get("name") or "").strip()
+        for item in (patient_entity.recommendation_board or {}).get("ranked") or []
+        if item.get("name")
+    }
+    if not allowed_names:
+        allowed_names = {
+            str(item.get("name") or "").strip()
+            for item in (patient_entity.evaluation or {}).get("recommendations") or []
+            if item.get("name")
+        }
+    current_board = patient_entity.recommendation_board or {}
+    requested_focus = _normalize_focus_peptides(focus_peptides)
+    if not requested_focus:
+        requested_focus = _normalize_focus_peptides(current_board.get("focus_peptides"))
+    scoped_focus = [name for name in requested_focus if name in allowed_names]
+    if not scoped_focus:
+        preferred = str(current_board.get("preferred") or "").strip()
+        if preferred and preferred in allowed_names:
+            scoped_focus = [preferred]
+        else:
+            scoped_focus = [next(iter(allowed_names))] if allowed_names else []
+
+    is_first_chat = not chat_entity.messages
 
     history, memory_stats = trim_chat_history(chat_entity.messages)
     logger.info(
@@ -321,6 +394,7 @@ async def send_message_for_patient(
         messages=history,
         question=question,
         top_k=top_k,
+        focus_peptides=scoped_focus,
     )
 
     # Generate first, then persist user+assistant in one Dynamo write (lower latency).
@@ -332,6 +406,15 @@ async def send_message_for_patient(
         (time.perf_counter() - llm_started) * 1000,
     )
 
+    next_board = None
+    if patient_entity.evaluation:
+        next_board = build_recommendation_board(
+            patient_entity.evaluation,
+            confidence=str(current_board.get("confidence") or "balanced"),
+            preferred=current_board.get("preferred"),
+            focus_peptides=scoped_focus,
+        )
+
     await patient_service.append_patient_messages(
         user_id=user_id,
         patient_id=patient_id,
@@ -339,6 +422,7 @@ async def send_message_for_patient(
             {"role": "user", "content": question, "kind": "message"},
             {"role": "assistant", "content": result["answer"], "kind": "message"},
         ],
+        recommendation_board=next_board,
     )
 
     response = await patient_service.build_patient_messages_response(
@@ -351,6 +435,16 @@ async def send_message_for_patient(
         user_id,
         (time.perf_counter() - started) * 1000,
     )
+    if is_first_chat:
+        try:
+            from services.notification import events as notify_events
+
+            notify_events.student_chat_started(
+                user_id=user_id,
+                patient_name=patient_entity.display_name,
+            )
+        except Exception:
+            logger.exception("Failed to queue chat notification user=%s patient=%s", user_id, patient_id)
     return response
 
 
@@ -518,8 +612,16 @@ def _generate_followup(
     history: List[ChatMessage],
     question: str,
     context: str,
+    focus_peptides: Optional[List[str]] = None,
 ) -> str:
+    focus = _normalize_focus_peptides(focus_peptides)
+    focus_line = (
+        f"FOCUS PEPTIDES: {', '.join(focus)}. Answer only about these unless asked otherwise.\n"
+        if focus
+        else ""
+    )
     case_block = (
+        f"{focus_line}"
         f"INTAKE:{json.dumps(_compact_answers(answers), separators=(',', ':'))}\n"
         f"EVAL:{json.dumps(_compact_evaluation(evaluation), separators=(',', ':'))}\n"
         f"CARD:{_truncate(recommendation, 1200)}\n"
@@ -533,8 +635,8 @@ def _generate_followup(
             "content": "Ready — ask briefly.",
         },
     ]
-    # Keep only the last few turns for speed
-    recent = history[-6:] if history else []
+    # Keep enough recent turns for a 50-question consult; memory already token-trims.
+    recent = history[-100:] if history else []
     for msg in recent:
         content = msg.content
         if msg.role == "assistant":
@@ -542,10 +644,23 @@ def _generate_followup(
         else:
             content = _truncate(content, 400)
         llm_messages.append({"role": msg.role, "content": content})
+    if not focus:
+        focus_hint = ""
+    elif len(focus) == 1:
+        focus_hint = (
+            f"Selected peptides: {focus[0]}. Answer only about {focus[0]}; "
+            "do not switch to other shortlist peptides.\n\n"
+        )
+    else:
+        named = ", ".join(focus)
+        focus_hint = (
+            f"Selected peptides: {named}. Cover each of these peptides in the reply. "
+            "Do not omit any selected name and do not discuss unselected shortlist peptides.\n\n"
+        )
     llm_messages.append(
         {
             "role": "user",
-            "content": f"{question}\n\n(Reply ≤80 words. Bullets preferred.)",
+            "content": f"{focus_hint}{question}\n\n(Reply ≤80 words. Bullets preferred.)",
         }
     )
 

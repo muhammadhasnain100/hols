@@ -1,0 +1,65 @@
+"use client";
+
+import { cn } from "@/lib/utils";
+
+export type ChartPeriod = "weekly" | "monthly" | "yearly";
+
+export function shortPeriodLabel(label: string, period: ChartPeriod) {
+  if (period === "yearly") return label;
+  if (period === "monthly") return label.split(" ")[0] ?? label;
+  return label.split("–")[0]?.trim() ?? label;
+}
+
+export function periodCaption(period: ChartPeriod) {
+  if (period === "monthly") return "This month";
+  if (period === "yearly") return "This year";
+  return "This week";
+}
+
+const PERIODS: Array<{ id: ChartPeriod; label: string }> = [
+  { id: "weekly", label: "Weekly" },
+  { id: "monthly", label: "Monthly" },
+  { id: "yearly", label: "Yearly" },
+];
+
+export function PeriodTabs({
+  period,
+  onChange,
+  disabled,
+  label = "Period",
+}: {
+  period: ChartPeriod;
+  onChange: (period: ChartPeriod) => void;
+  disabled?: boolean;
+  label?: string;
+}) {
+  return (
+    <div
+      className="flex w-full shrink-0 flex-wrap gap-1 rounded-full bg-[color:var(--dash-surface)] p-1 sm:w-auto"
+      role="tablist"
+      aria-label={label}
+    >
+      {PERIODS.map((item) => {
+        const active = item.id === period;
+        return (
+          <button
+            key={item.id}
+            type="button"
+            role="tab"
+            aria-selected={active}
+            disabled={disabled}
+            onClick={() => onChange(item.id)}
+            className={cn(
+              "font-sans inline-flex min-h-11 flex-1 items-center justify-center rounded-full px-3 text-sm font-medium tracking-[0.01em] transition sm:min-h-10 sm:flex-none sm:px-4",
+              active
+                ? "dashboard-navy-btn text-white"
+                : "text-[color:var(--dash-muted)] hover:text-[color:var(--dash-text)] disabled:opacity-50",
+            )}
+          >
+            {item.label}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
