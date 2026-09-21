@@ -4,7 +4,6 @@ import { DM_Sans, Outfit } from "next/font/google";
 import { BrandStyles } from "@/components/BrandStyles";
 import {
   parsePortalTheme,
-  PORTAL_THEME_BOOTSTRAP_SCRIPT,
   PORTAL_THEME_COOKIE,
 } from "@/components/platform/provider/portal-theme";
 import { brand } from "@/config/brand";
@@ -57,9 +56,6 @@ export default async function RootLayout({
       suppressHydrationWarning
       className={`${primaryFont.variable} ${secondaryFont.variable} h-full antialiased`}
     >
-      <head>
-        <script dangerouslySetInnerHTML={{ __html: PORTAL_THEME_BOOTSTRAP_SCRIPT }} />
-      </head>
       <body className="min-h-full flex flex-col" suppressHydrationWarning>
         <BrandStyles />
         {children}

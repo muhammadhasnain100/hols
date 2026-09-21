@@ -5048,34 +5048,39 @@ html:has(.portal-shell[data-theme="dark"]) .calc-water-liquid-meniscus-edge {
 }
 
 .calc-powder-cake-body {
-  fill: #c4a56e;
+  fill: #f4f6f8;
 }
 
 .calc-powder-cake-top {
-  fill: #e2c994;
+  fill: #ffffff;
 }
 
 .calc-powder-cake-clump {
-  fill: #a88852;
+  fill: #d5d9df;
 }
 
 .calc-powder-cake-highlight {
-  fill: #f0ddb4;
+  fill: #ffffff;
 }
 
 .portal-shell[data-theme="dark"] .calc-powder-cake-body,
 html:has(.portal-shell[data-theme="dark"]) .calc-powder-cake-body {
-  fill: #e0c48a;
+  fill: #f7f8fa;
 }
 
 .portal-shell[data-theme="dark"] .calc-powder-cake-top,
 html:has(.portal-shell[data-theme="dark"]) .calc-powder-cake-top {
-  fill: #f3dcab;
+  fill: #ffffff;
 }
 
 .portal-shell[data-theme="dark"] .calc-powder-cake-clump,
 html:has(.portal-shell[data-theme="dark"]) .calc-powder-cake-clump {
-  fill: #c9a45e;
+  fill: #e2e6eb;
+}
+
+.portal-shell[data-theme="dark"] .calc-powder-cake-highlight,
+html:has(.portal-shell[data-theme="dark"]) .calc-powder-cake-highlight {
+  fill: #ffffff;
 }
 
 .calc-syringe-art {

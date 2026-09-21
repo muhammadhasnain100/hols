@@ -91,7 +91,7 @@ function VialMesh({
       ) : (
         <mesh position={[0, -0.7, 0]} rotation={[Math.PI / 2, 0, 0]}>
           <circleGeometry args={[0.38, 24]} />
-          <meshStandardMaterial color="#CBD5E1" roughness={0.9} />
+          <meshStandardMaterial color="#ffffff" roughness={0.92} />
         </mesh>
       )}
 

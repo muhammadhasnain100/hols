@@ -863,7 +863,7 @@ export function HexarelinVialArt({
 }
 
 /** Powder cake — kept in the clear glass band BELOW the label so the dry
- *  cake is visible. Uneven cream surface so it never reads as liquid. */
+ *  cake is visible. Uneven white surface so it never reads as liquid. */
 export function HexarelinPowderCake({ fillRatio = 0.2 }: { fillRatio?: number }) {
   const clamped = Math.min(0.95, Math.max(0.08, fillRatio));
   // Label (after +18 shift) ends ~289; base cake sits ~318. Visible window ≈ 289–318.

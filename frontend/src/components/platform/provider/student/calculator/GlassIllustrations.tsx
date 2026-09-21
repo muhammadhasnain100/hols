@@ -158,7 +158,7 @@ export function GlassVial({
             />
           </g>
         ) : (
-          <ellipse cx="60" cy="154" rx="24" ry="7" fill="#FFF1B8" opacity="0.9" />
+          <ellipse cx="60" cy="154" rx="24" ry="7" fill="#ffffff" opacity="0.95" />
         )}
         <rect x="32" y="108" width="56" height="33" fill="#FFF1B8" opacity="0.78" />
         <text x="38" y="122" fill="#153238" fontSize="7" fontWeight="700">

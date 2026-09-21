@@ -16,6 +16,7 @@ import {
   Sparkles,
   User,
 } from "@/components/icons";
+import { CalculatorReconScene } from "@/components/platform/provider/student/calculator/CalculatorReconScene";
 import { landingContent } from "@/content/landing";
 import { cn } from "@/lib/utils";
 
@@ -567,74 +568,31 @@ export function HookInteractiveDashboard({
               ) : null}
 
               {activeNav === "calculator" ? (
-                <div className="flex h-full flex-col rounded-xl border p-2.5" style={{ backgroundColor: t.cardBg, borderColor: t.cardBorder }}>
-                  <p className="mb-2 shrink-0 font-sans text-[9px] font-bold" style={{ color: t.text }}>
-                    Peptide dose helper
+                <div
+                  className="flex h-full flex-col overflow-hidden rounded-xl border"
+                  style={{
+                    backgroundColor: t.cardBg,
+                    borderColor: t.cardBorder,
+                    color: t.text,
+                    ["--dash-text" as string]: t.text,
+                    ["--dash-muted" as string]: t.muted,
+                    ["--dash-faint" as string]: t.faint,
+                  }}
+                >
+                  <p className="shrink-0 px-2.5 pt-2 font-sans text-[9px] font-bold" style={{ color: t.text }}>
+                    Peptide calculator
                   </p>
-                  <label className="mb-2 block shrink-0">
-                    <span className="font-sans text-[8px]" style={{ color: t.muted }}>
-                      Dose (mcg)
-                    </span>
-                    <input
-                      type="range"
-                      min={50}
-                      max={500}
-                      step={25}
-                      value={doseMg}
-                      onChange={(event) => setDoseMg(Number(event.target.value))}
-                      className="mt-1 w-full cursor-pointer accent-[#DDE466]"
+                  <div className="min-h-0 flex-1 overflow-hidden px-1 pb-1">
+                    <CalculatorReconScene
+                      layout="overview"
+                      preview
+                      syringeMl={1}
+                      waterFill={0.68}
+                      medFill={0.28}
+                      medPowder
+                      peptideUnit="mg"
+                      instantFill
                     />
-                    <span className="font-sans text-[10px] font-bold" style={{ color: t.text }}>
-                      {doseMg} mcg
-                    </span>
-                  </label>
-                  <div className="grid shrink-0 grid-cols-2 gap-2">
-                    <label>
-                      <span className="font-sans text-[8px]" style={{ color: t.muted }}>
-                        Vial (mg)
-                      </span>
-                      <input
-                        type="number"
-                        min={1}
-                        max={20}
-                        value={vialMg}
-                        onChange={(event) => setVialMg(Math.max(1, Number(event.target.value) || 1))}
-                        className="hols-hover-border mt-1 w-full rounded-md border bg-transparent px-2 py-1 font-sans text-[10px] outline-none transition-[border-color] duration-150"
-                        style={{
-                          borderColor: t.softBorder,
-                          color: t.text,
-                          colorScheme: darkMode ? "dark" : "light",
-                          ["--hols-field-hover-border" as string]: darkMode ? "#dde466" : "#142644",
-                        }}
-                      />
-                    </label>
-                    <label>
-                      <span className="font-sans text-[8px]" style={{ color: t.muted }}>
-                        Water (mL)
-                      </span>
-                      <input
-                        type="number"
-                        min={0.5}
-                        max={10}
-                        step={0.5}
-                        value={waterMl}
-                        onChange={(event) => setWaterMl(Math.max(0.5, Number(event.target.value) || 0.5))}
-                        className="hols-hover-border mt-1 w-full rounded-md border bg-transparent px-2 py-1 font-sans text-[10px] outline-none transition-[border-color] duration-150"
-                        style={{
-                          borderColor: t.softBorder,
-                          color: t.text,
-                          colorScheme: darkMode ? "dark" : "light",
-                          ["--hols-field-hover-border" as string]: darkMode ? "#dde466" : "#142644",
-                        }}
-                      />
-                    </label>
-                  </div>
-                  <div className="min-h-0 flex-1" />
-                  <div
-                    className="shrink-0 rounded-lg px-2.5 py-2 font-sans text-[10px] font-bold"
-                    style={{ backgroundColor: LIME, color: TEXT_NAVY }}
-                  >
-                    Draw ~{units} units
                   </div>
                 </div>
               ) : null}

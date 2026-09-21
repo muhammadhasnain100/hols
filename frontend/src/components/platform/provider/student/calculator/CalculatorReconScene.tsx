@@ -34,6 +34,8 @@ type CalculatorReconSceneProps = {
   drawSyringeLarge?: boolean;
   instantFill?: boolean;
   gsapDriven?: boolean;
+  /** Tight stage for the landing portal mock — same art, no tall floor. */
+  preview?: boolean;
   className?: string;
 };
 
@@ -168,6 +170,7 @@ export function CalculatorReconScene({
   drawSyringeLarge = false,
   instantFill = false,
   gsapDriven = false,
+  preview = false,
   className,
 }: CalculatorReconSceneProps) {
   const compact = useCompactCalculatorScene();
@@ -194,11 +197,15 @@ export function CalculatorReconScene({
     return (
       <div
         className={cn(
-          // Syringe near top (pt); leftover space between syringe & vials;
-          // vials pinned to the bottom of the stage.
-          "mx-auto flex w-full max-w-[18rem] flex-col items-center px-2 pt-6 pb-7 max-[390px]:max-w-[17rem] max-[390px]:px-1.5 max-[390px]:pt-5 max-[390px]:pb-6 sm:max-w-[24rem] sm:px-2 sm:pt-7 sm:pb-8 md:max-w-lg md:pt-8 md:pb-9",
-          // Keep stage tall after shrinking vials so the card doesn’t collapse.
-          "min-h-[18rem] max-[390px]:min-h-[17rem] sm:min-h-[22rem] md:min-h-[26rem]",
+          preview
+            ? "mx-auto flex h-full min-h-0 w-full flex-col items-center px-1 pt-1.5 pb-1"
+            : [
+                // Syringe near top (pt); leftover space between syringe & vials;
+                // vials pinned to the bottom of the stage.
+                "mx-auto flex w-full max-w-[18rem] flex-col items-center px-2 pt-6 pb-7 max-[390px]:max-w-[17rem] max-[390px]:px-1.5 max-[390px]:pt-5 max-[390px]:pb-6 sm:max-w-[24rem] sm:px-2 sm:pt-7 sm:pb-8 md:max-w-lg md:pt-8 md:pb-9",
+                // Keep stage tall after shrinking vials so the card doesn’t collapse.
+                "min-h-[18rem] max-[390px]:min-h-[17rem] sm:min-h-[22rem] md:min-h-[26rem]",
+              ],
           className,
         )}
       >
@@ -219,7 +226,14 @@ export function CalculatorReconScene({
           </div>
         ) : null}
 
-        <div className="min-h-8 w-full min-w-0 flex-1 max-[390px]:min-h-6 sm:min-h-10 md:min-h-12" aria-hidden />
+        <div
+          className={
+            preview
+              ? "min-h-3 w-full min-w-0 flex-1"
+              : "min-h-8 w-full min-w-0 flex-1 max-[390px]:min-h-6 sm:min-h-10 md:min-h-12"
+          }
+          aria-hidden
+        />
 
         <div className="flex w-full min-w-0 shrink-0 items-end justify-center gap-3 max-[390px]:gap-2.5 sm:gap-6 md:gap-12">
           <AssetVial

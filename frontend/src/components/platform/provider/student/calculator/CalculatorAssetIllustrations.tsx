@@ -51,12 +51,12 @@ type LiquidPalette = {
 function peptidePalette(_unit: MassUnit = "mg"): LiquidPalette {
   // Reconstituted peptide reads as a clear, faintly cloudy clinical liquid —
   // pale blue-white with a soft meniscus. The dry lyophilized cake stays
-  // cream (see `powder`) so the two states are visually distinct.
+  // white (see `powder`) so the two states are visually distinct.
   return {
     top: "#eef6fb",
     bottom: "#c9def0",
     edge: "#8fb4d3",
-    powder: "#f0ebe1",
+    powder: "#ffffff",
     cap: HOLS_BRAND.prussianBlue,
     capDark: "#0a1424",
     glow: "transparent",
