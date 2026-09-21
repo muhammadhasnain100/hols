@@ -176,6 +176,30 @@ export function svgLayersTranslateXSetter(
   };
 }
 
+/** Imperative translateY for every matching fill layer (back + front vial art). */
+export function svgLayersTranslateYSetter(
+  elements: ArrayLike<Element> | null,
+): ((y: number) => void) | null {
+  if (!elements || elements.length === 0) return null;
+  const setters = Array.from(elements)
+    .map((el) => svgLayerTranslateYSetter(el))
+    .filter((fn): fn is (y: number) => void => fn !== null);
+  if (setters.length === 0) return null;
+  return (y: number) => {
+    for (const set of setters) set(y);
+  };
+}
+
+/**
+ * First-paint seed for GSAP-owned layers. React must not keep passing
+ * `transform` or it will wipe the attribute on every status re-render.
+ */
+export function seedSvgTranslateY(element: Element | null, y: number) {
+  if (!element || element.getAttribute("data-fill-seeded") === "1") return;
+  element.setAttribute("transform", `translate(0 ${y})`);
+  element.setAttribute("data-fill-seeded", "1");
+}
+
 export function measureStaticDrawTargets(scene: HTMLElement, wrap: HTMLElement): StaticDrawTargets | null {
   const waterStopper = scene.querySelector('[data-vial-root="water"] [data-vial-stopper]');
   const medStopper = scene.querySelector('[data-vial-root="med"] [data-vial-stopper]');

@@ -108,8 +108,8 @@ function DrawVialColumn({
     <div
       className={cn(
         "flex shrink-0 flex-col items-center justify-end self-end transition-[opacity,filter] duration-500",
-        dimmed && "opacity-[0.58] brightness-[0.94] saturate-[0.88]",
-        active && "opacity-100 brightness-100 saturate-100",
+        dimmed && "opacity-80",
+        active && "opacity-100",
         columnClass,
       )}
       {...rootAttrs}
@@ -199,13 +199,7 @@ export function CalculatorReconScene({
         className={cn(
           preview
             ? "mx-auto flex h-full min-h-0 w-full flex-col items-center px-1 pt-1.5 pb-1"
-            : [
-                // Syringe near top (pt); leftover space between syringe & vials;
-                // vials pinned to the bottom of the stage.
-                "mx-auto flex w-full max-w-[18rem] flex-col items-center px-2 pt-6 pb-7 max-[390px]:max-w-[17rem] max-[390px]:px-1.5 max-[390px]:pt-5 max-[390px]:pb-6 sm:max-w-[24rem] sm:px-2 sm:pt-7 sm:pb-8 md:max-w-lg md:pt-8 md:pb-9",
-                // Keep stage tall after shrinking vials so the card doesn’t collapse.
-                "min-h-[18rem] max-[390px]:min-h-[17rem] sm:min-h-[22rem] md:min-h-[26rem]",
-              ],
+            : "mx-auto flex w-full max-w-[18rem] min-h-[18rem] flex-col items-center px-2 pt-6 pb-7 max-[390px]:max-w-[17rem] max-[390px]:min-h-[17rem] max-[390px]:px-1.5 max-[390px]:pt-5 max-[390px]:pb-6 sm:max-w-[24rem] sm:min-h-[22rem] sm:px-2 sm:pt-7 sm:pb-8 md:max-w-lg md:min-h-[26rem] md:pt-8 md:pb-9",
           className,
         )}
       >

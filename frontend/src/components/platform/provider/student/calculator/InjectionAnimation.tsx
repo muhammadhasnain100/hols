@@ -32,6 +32,7 @@ import {
   measureStaticDrawTargets,
   svgAttrSetter,
   svgLayerTranslateYSetter,
+  svgLayersTranslateYSetter,
   syringeFillOffsetY,
   syringeLiquidLayout,
   vialLiquidOffsetY,
@@ -144,7 +145,7 @@ type Dom = {
   medColumn: HTMLElement | null;
   waterLiquidLayer: HTMLElement | null;
   medLiquidLayer: HTMLElement | null;
-  medPowderLayer: HTMLElement | null;
+  medPowderLayers: NodeListOf<HTMLElement> | null;
   waterSurfaceMarker: HTMLElement | null;
   medSurfaceMarker: HTMLElement | null;
   syringeLiquidLayer: HTMLElement | null;
@@ -173,9 +174,13 @@ function queryDom(scene: HTMLElement, wrap: HTMLElement): Dom | null {
   const medRoot = scene.querySelector('[data-vial-root="med"]');
   if (!waterRoot || !medRoot) return null;
 
-  const waterLiquidLayer = waterRoot.querySelector<HTMLElement>("[data-vial-liquid-layer]");
+  const waterLiquidLayers = scene.querySelectorAll<HTMLElement>(
+    '[data-vial-column="water"] [data-vial-liquid-layer], [data-vial-column="water-front"] [data-vial-liquid-layer]',
+  );
+  const waterLiquidLayer =
+    waterLiquidLayers[0] ?? waterRoot.querySelector<HTMLElement>("[data-vial-liquid-layer]");
   const medLiquidLayer = medRoot.querySelector<HTMLElement>("[data-vial-liquid-layer]");
-  const medPowderLayer = medRoot.querySelector<HTMLElement>("[data-vial-powder-layer]");
+  const medPowderLayers = scene.querySelectorAll<HTMLElement>("[data-vial-powder-layer]");
   const waterSurfaceMarker = waterRoot.querySelector<HTMLElement>("[data-vial-liquid-surface]");
   const medSurfaceMarker = medRoot.querySelector<HTMLElement>("[data-vial-liquid-surface]");
   const syringeLiquidLayer = wrap.querySelector<HTMLElement>("[data-syringe-liquid-layer]");
@@ -210,7 +215,7 @@ function queryDom(scene: HTMLElement, wrap: HTMLElement): Dom | null {
     medColumn,
     waterLiquidLayer,
     medLiquidLayer,
-    medPowderLayer,
+    medPowderLayers,
     waterSurfaceMarker,
     medSurfaceMarker,
     syringeLiquidLayer,
@@ -223,7 +228,7 @@ function queryDom(scene: HTMLElement, wrap: HTMLElement): Dom | null {
     medGlow,
     mixBubbles,
     mixBubbleNodes,
-    setWaterLiquidY: svgLayerTranslateYSetter(waterLiquidLayer),
+    setWaterLiquidY: svgLayersTranslateYSetter(waterLiquidLayers) ?? svgLayerTranslateYSetter(waterLiquidLayer),
     setWaterSurfaceY: svgLayerTranslateYSetter(waterSurfaceMarker),
     setMedLiquidY: svgLayerTranslateYSetter(medLiquidLayer),
     setMedSurfaceY: svgLayerTranslateYSetter(medSurfaceMarker),
@@ -498,15 +503,15 @@ export function InjectionAnimation({
           on.forEach((el) => {
             gsap.to(el, {
               opacity: 1,
-              filter: "brightness(1) saturate(1)",
+              filter: "none",
               duration: 0.3,
               overwrite: "auto",
             });
           });
           off.forEach((el) => {
             gsap.to(el, {
-              opacity: 0.55,
-              filter: "brightness(0.94) saturate(0.88)",
+              opacity: 0.82,
+              filter: "none",
               duration: 0.3,
               overwrite: "auto",
             });
@@ -583,8 +588,10 @@ export function InjectionAnimation({
           dom.medLiquidLayer.setAttribute("opacity", "0");
           (dom.medLiquidLayer as HTMLElement).style.transform = "";
         }
-        if (dom.medPowderLayer) {
-          (dom.medPowderLayer as HTMLElement).style.transform = "";
+        if (dom.medPowderLayers) {
+          dom.medPowderLayers.forEach((layer) => {
+            layer.style.transform = "";
+          });
         }
         if (dom.syringeLiquidLayer) {
           dom.syringeLiquidLayer.setAttribute("opacity", "0");
@@ -789,8 +796,8 @@ export function InjectionAnimation({
             () => {
               medPowder = false;
               proxy.medFill = 0.06;
-              if (dom.medPowderLayer) {
-                gsap.to(dom.medPowderLayer, {
+              if (dom.medPowderLayers && dom.medPowderLayers.length > 0) {
+                gsap.to(dom.medPowderLayers, {
                   attr: { opacity: 0 },
                   duration: STAGE.inject * 0.55,
                   ease: "power1.out",

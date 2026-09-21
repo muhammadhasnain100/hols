@@ -5,7 +5,14 @@
  */
 
 import type { ReactNode, Ref } from "react";
+import { seedSvgTranslateY } from "@/components/platform/provider/student/calculator/calculatorGeometry";
 import { cylinderLabelPath } from "@/components/platform/provider/student/calculator/cylinderLabel";
+
+function bindRef<T>(ref: Ref<T> | undefined, node: T | null) {
+  if (!ref) return;
+  if (typeof ref === "function") ref(node);
+  else (ref as { current: T | null }).current = node;
+}
 
 export const BAC_WATER_SRC = {
   viewW: 160,
@@ -153,7 +160,10 @@ export function BacWaterVialArt({
               Passing transform={undefined} clears the attribute GSAP sets.
             */}
             <g
-              ref={liquidLayerRef}
+              ref={(el) => {
+                bindRef(liquidLayerRef, el);
+                if (gsapDriven) seedSvgTranslateY(el, fillOffsetY);
+              }}
               data-vial-liquid-layer
               {...(!gsapDriven
                 ? {
@@ -162,7 +172,7 @@ export function BacWaterVialArt({
                       : fillTransform,
                   }
                 : {})}
-              opacity={empty ? 0 : 1}
+              opacity={empty && !gsapDriven ? 0 : 1}
               style={{ display: empty && !gsapDriven ? "none" : undefined }}
             >
               {empty && !gsapDriven ? null : liquidLayer}
@@ -170,7 +180,10 @@ export function BacWaterVialArt({
           </g>
           <circle data-vial-stopper cx={cx} cy={stopperY} r="2.5" fill="transparent" />
           <circle
-            ref={surfaceRef}
+            ref={(el) => {
+              bindRef(surfaceRef, el);
+              if (gsapDriven) seedSvgTranslateY(el, fillOffsetY);
+            }}
             data-vial-liquid-surface
             cx={cx}
             cy={interiorTop + 1}
@@ -243,10 +256,14 @@ export function BacWaterVialArt({
           </g>
           </g>
 
-          {!gsapDriven && !empty ? (
+          {!empty || gsapDriven ? (
             <g clipPath={`url(#${bottleClip})`} pointerEvents="none">
-              <g transform={fillTransform}>
-                <BacWaterLiquidFill />
+              <g
+                data-vial-liquid-layer
+                ref={gsapDriven ? (el) => seedSvgTranslateY(el, fillOffsetY) : undefined}
+                {...(!gsapDriven && fillTransform ? { transform: fillTransform } : {})}
+              >
+                {empty && !gsapDriven ? null : <BacWaterLiquidFill />}
               </g>
             </g>
           ) : null}

@@ -490,9 +490,14 @@ export function HexarelinVialArt({
               <ellipse cx="260" cy="322" rx="52" ry="7" fill="#ffffff" opacity={coverMode ? 0.18 : 0.1} />
             </g>
 
-            {/* Dry cake above glass shine so it stays readable in the bottom window */}
-            {powder && !empty && !gsapDriven ? (
-              <g clipPath={`url(#${bottleClip})`} data-vial-powder-front>
+            {/* Dry cake above glass shine so it stays readable in the bottom window.
+                Same pass during the animation so powder matches the selected step. */}
+            {powder && !empty ? (
+              <g
+                clipPath={`url(#${bottleClip})`}
+                data-vial-powder-front
+                data-vial-powder-layer
+              >
                 {powderLayer}
               </g>
             ) : null}
